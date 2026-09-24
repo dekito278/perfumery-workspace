@@ -259,11 +259,12 @@ const button = read('components', 'storefront', 'OverseasInquiryButton.jsx');
 // One label for one action, from the message file. The panel and the always-visible button once carried
 // different wording, which an English visitor saw twice on one page as two different offers.
 //
-// The label is now chosen by overseasDraftKeys, because the two shops ask for different things: in the
-// Indonesian shop this button sits BESIDE a working Add to cart and asks about shipping abroad, while
-// the English shop has no cart at all and this button is the purchase. Still one label per shop, still
-// out of the message file, still never assembled inline.
-assert.match(button, /\{t\(overseasDraftKeys\([a-zA-Z]+\)\.labelKey\)\}/,
+// The label used to be chosen PER SHOP: an enquiry in the Indonesian shop, beside a working Add to
+// cart, and "Order this on WhatsApp" in the English one, because that shop had no cart and this button
+// was the purchase. Both shops sell through the cart now, so that second label sat directly under
+// "Add to cart — US$95" offering a slower way to buy the same bottle. One errand in both shops now —
+// ask — still out of the message file, still never assembled inline.
+assert.match(button, /\{t\(overseasDraftKeys\(\)\.labelKey\)\}/,
   'the enquiry button speaks the language the buyer was just reading, from the message file');
 assert.doesNotMatch(button, /english \? 'Ask about/, 'and there is only one label, not one per surface');
 assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
@@ -272,10 +273,17 @@ assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
 // is send the reader to WhatsApp rather than imply a form somewhere.
 assert.match(MESSAGES.en['export.ask'], /WhatsApp/i);
 assert.match(MESSAGES.id['export.ask'], /WhatsApp/i);
-assert.match(MESSAGES.en['export.order'], /order/i);
-assert.match(MESSAGES.id['export.order'], /[Pp]esan/);
-assert.notEqual(MESSAGES.en['export.ask'], MESSAGES.en['export.order'],
-  'the two shops would say the same thing, so one of them misdescribes what its button does');
+// export.order and export.waOrderDraft are GONE, and their absence is the rule now. They were the
+// English shop's "Order this on WhatsApp" pair, correct while that shop had no cart; once it had one
+// they offered a second, slower till under the real one. A key that comes back is a label that competes
+// with the checkout again.
+for (const key of ['export.order', 'export.waOrderDraft']) {
+  for (const locale of ['id', 'en']) {
+    assert.equal(MESSAGES[locale][key], undefined,
+      `${locale}.${key} is back — that pair told an overseas buyer to place their order on WhatsApp, `
+      + 'under a button that takes it at the checkout');
+  }
+}
 // And so does the message it drafts — checked in the message file now, because that is where it lives.
 // It used to be an inline pair chosen by a prop that only one of the three callers passed, so the
 // product page handed an English reader an Indonesian draft to send.
@@ -301,11 +309,10 @@ assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned t
 assert.match(MESSAGES.en['export.waDraft'], /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
 assert.match(MESSAGES.id['export.waDraft'], /belum memesan stok/);
-// The English shop's version is an ORDER, not an enquiry — and it must be just as careful. Nothing is
-// held until the shipping is quoted by hand, which is the whole reason this is a conversation.
-assert.match(MESSAGES.en['export.waOrderDraft'], /nothing is reserved/i,
-  'the order draft lets a buyer believe a bottle is being held for them');
-assert.match(MESSAGES.id['export.waOrderDraft'], /belum ada botol yang ditahan/);
+// One draft serves both shops now, and each language already addresses its own reader: the Indonesian
+// one asks about sending a bottle abroad, the English one about a bottle reaching "my country". The
+// carefulness above is the part that had to survive the merge — an enquiry holds nothing, whoever sends
+// it, which is the whole reason this is a conversation and not a purchase.
 
 // --- 9b. The HEADLINE price is region-gated; the enquiry line is not -------------------------------------
 // useExportPrice returns the export price to EVERYONE — that is its job, and it is what lets the

@@ -303,7 +303,6 @@ const MobileProductDetailPage = () => {
               <a
                 href={buildWhatsAppCheckoutUrl(buildOverseasDraft({
                   t,
-                  isInternational,
                   name: product.name,
                   size: selectedSize,
                   price: overseasPrice ? formatRupiah(overseasPrice) : formatRupiah(selectedPrice),
@@ -312,7 +311,7 @@ const MobileProductDetailPage = () => {
                 rel="noopener noreferrer"
                 className="m-editorial-pdp__sticky-btn"
               >
-                <Globe className="h-4 w-4" /> {t(overseasDraftKeys(isInternational).labelKey)}
+                <Globe className="h-4 w-4" /> {t(overseasDraftKeys().labelKey)}
               </a>
             ) : (
               <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>

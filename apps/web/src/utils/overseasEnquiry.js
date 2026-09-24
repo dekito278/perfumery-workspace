@@ -10,22 +10,26 @@
  * all, so an order placed from the bar arrived as "I'd like to ask about international shipping" with
  * nothing to ship. On the phone the sticky bar is the only button most buyers ever press.
  *
- * The wording splits on the shop, not on the reader:
- *   - Indonesian shop — this is an ENQUIRY beside a working Add to cart, for an Indonesian buyer who
- *     wants a bottle sent abroad.
- *   - English shop — there is no cart; this IS how you buy, so it says so.
+ * It used to split on the shop: an enquiry in the Indonesian shop, beside a working Add to cart — and in
+ * the English shop "Order this on WhatsApp", because there was no cart and this IS how you bought.
  *
- * Neither version claims a bottle is held. Shipping is quoted by hand and nothing is reserved until
- * that conversation happens, and a draft that implies otherwise makes a promise the atelier has not
- * made.
+ * Both shops sell through the cart now, so that second button sat directly under "Add to cart — US$95"
+ * offering a second, slower way to buy the same bottle. Two tills on one page, and the one we spent this
+ * project building was the one without a verb on it.
+ *
+ * So there is one errand in both shops: ask. Each language's draft already addresses its own reader —
+ * the Indonesian one asks about sending a bottle abroad, the English one asks about a bottle reaching
+ * "my country" — which is why one key serves both.
+ *
+ * Neither version claims a bottle is held. Shipping is quoted by hand for the destinations the checkout
+ * cannot price, nothing is reserved until that conversation happens, and a draft that implies otherwise
+ * makes a promise the atelier has not made.
  */
-export const overseasDraftKeys = (isInternational) => (isInternational
-  ? { labelKey: 'export.order', draftKey: 'export.waOrderDraft' }
-  : { labelKey: 'export.ask', draftKey: 'export.waDraft' });
+export const overseasDraftKeys = () => ({ labelKey: 'export.ask', draftKey: 'export.waDraft' });
 
-export const buildOverseasDraft = ({ t, isInternational = false, name = '', size = '', price = '' } = {}) => {
+export const buildOverseasDraft = ({ t, name = '', size = '', price = '' } = {}) => {
   if (typeof t !== 'function' || !name) return '';
-  const { draftKey } = overseasDraftKeys(isInternational);
+  const { draftKey } = overseasDraftKeys();
   return t(draftKey, {
     item: `${name}${size ? ` (${size})` : ''}`,
     line: price ? t('export.waDraftPrice', { price }) : '',

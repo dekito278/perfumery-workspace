@@ -50,7 +50,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // purchase — it IS the purchase. Same builder as both sticky bars, so the three cannot drift.
   const quoted = exportPrice ? formatRupiah(exportPrice) : price;
   const message = buildOverseasDraft({
-    t, isInternational: overseasVisitor, name: product.name, size, price: quoted,
+    t, name: product.name, size, price: quoted,
   });
 
   const link = (
@@ -65,7 +65,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
       <Globe className="h-4 w-4" />
       {/* One label for one action. The panel and the always-visible button used to carry different
           wording, which an English visitor saw twice on the same page as two different offers. */}
-      {t(overseasDraftKeys(overseasVisitor).labelKey)}
+      {t(overseasDraftKeys().labelKey)}
     </a>
   );
 

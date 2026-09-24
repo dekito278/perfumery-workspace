@@ -38,7 +38,6 @@ const read = (...parts) => readFileSync(join(srcRoot, ...parts), 'utf8');
 const t = (key, vars = {}) => {
   const table = {
     'export.waDraft': 'ASK about international shipping for {item}.{line}',
-    'export.waOrderDraft': 'ORDER {item}.{line}',
     'export.waDraftPrice': ' price {price}.',
   };
   return String(table[key] ?? key).replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''));
@@ -48,11 +47,25 @@ const english = buildOverseasDraft({ t, isInternational: true, name: 'La Tulipe'
 assert.ok(english.includes('La Tulipe'), `the draft does not name the perfume:\n${english}`);
 assert.ok(english.includes('30 ml'), `the draft does not say which bottle:\n${english}`);
 assert.ok(english.includes('Rp 1.020.000'), `the draft does not carry the price the page quoted:\n${english}`);
-assert.ok(english.startsWith('ORDER'), 'the English shop has no cart, so its draft must read as an order, not an enquiry');
+// INVERTED. This required the English draft to read as an ORDER, because that shop had no cart and the
+// WhatsApp button was the purchase. Once /en had a checkout, that draft became a second till sitting
+// directly under "Add to cart — US$95" — and this assertion was holding it there.
+//
+// One errand in both shops now: ask. Each language's draft already addresses its own reader, so the
+// same key serves both, and neither may read as placing an order.
+assert.ok(english.startsWith('ASK'),
+  'the English draft reads as placing an order. The checkout takes the order; this button asks about '
+  + 'the destinations it cannot price');
 
 const indonesian = buildOverseasDraft({ t, isInternational: false, name: 'La Tulipe', size: '30 ml', price: 'Rp 260.000' });
-assert.ok(indonesian.startsWith('ASK'), 'the Indonesian shop still sells through the cart; its overseas button is an enquiry beside it');
-assert.notEqual(english, indonesian, 'both shops send the same draft — one of the two is wrong');
+assert.ok(indonesian.startsWith('ASK'), 'the Indonesian shop sells through the cart; its overseas button is an enquiry beside it');
+// Same inputs, not merely the same shape: the two above carry different prices on purpose, so comparing
+// THEM would have compared the prices. The first version of this assertion did exactly that and failed
+// on a difference it had introduced itself.
+const sameInputs = (isInternational) => buildOverseasDraft({ t, isInternational, name: 'La Tulipe', size: '30 ml', price: 'Rp 260.000' });
+assert.equal(sameInputs(true), sameInputs(false),
+  'the two shops draft different errands again — they have the same cart and the same checkout, so the '
+  + 'button has the same job in both');
 
 // A price the caller could not resolve must leave the line out rather than print an empty one.
 assert.ok(!buildOverseasDraft({ t, isInternational: true, name: 'La Tulipe' }).includes('price'),
@@ -61,8 +74,11 @@ assert.ok(!buildOverseasDraft({ t, isInternational: true, name: 'La Tulipe' }).i
 assert.equal(buildOverseasDraft({ t, isInternational: true, name: '' }), '');
 assert.equal(buildOverseasDraft(), '');
 
-assert.notEqual(overseasDraftKeys(true).labelKey, overseasDraftKeys(false).labelKey,
-  'the button reads the same in both shops, so one of them is lying about what it does');
+assert.equal(overseasDraftKeys().labelKey, 'export.ask',
+  'the button must name the errand it actually has — asking, not ordering');
+assert.equal(overseasDraftKeys.length, 0,
+  'the keys must not depend on which shop the reader is in again: both shops have a cart, so the button '
+  + 'has one job');
 
 // --- 1b. And the button that opens WhatsApp still builds its message from the product ---------------
 // This used to scan the product pages, because both sticky bars called buildWhatsAppCheckoutUrl directly
