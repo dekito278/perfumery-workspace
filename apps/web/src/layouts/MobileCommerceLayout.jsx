@@ -12,18 +12,20 @@ import { useMobileFormEnhancements } from '@/hooks/useMobileFormEnhancements.js'
 import { useMobileTouchFeedback } from '@/hooks/useMobileTouchFeedback.js';
 import { cn } from '@/lib/utils.js';
 
-// The English shop takes its orders on WhatsApp, so it has no cart tab — /mobile/cart redirects there
-// anyway, and a tab that bounces you back is worse than no tab.
+// The English shop used to take its orders on WhatsApp, so it had no cart tab: /mobile/cart redirected,
+// and a tab that bounces you back is worse than no tab. Both halves of that stopped being true when /en
+// got a cart and a checkout — and the tab stayed missing, on the surface almost every buyer is actually
+// on. Someone could add a bottle at US$95 and find no cart anywhere in the navigation.
 // Tailwind scans source text, so the class names have to appear literally somewhere — a computed
 // `grid-cols-${n}` compiles to nothing.
 const navGridColumns = { 5: 'grid-cols-5', 6: 'grid-cols-6' };
 
-const commerceNavItemsFor = (isInternational) => [
+const commerceNavItemsFor = () => [
   { path: '/mobile/dashboard', labelKey: 'nav.home', icon: Home },
   { path: '/mobile/catalog', labelKey: 'nav.shop', icon: Search, aliases: ['/mobile/products'] },
   { path: '/mobile/articles', labelKey: 'nav.articles', icon: BookOpenText },
   { path: '/mobile/bespoke', labelKey: 'nav.bespokeShort', icon: MessageCircle },
-  ...(isInternational ? [] : [{ path: '/mobile/cart', labelKey: 'nav.cart', icon: ShoppingBag }]),
+  { path: '/mobile/cart', labelKey: 'nav.cart', icon: ShoppingBag },
   // Was "Cek Order": tracking is what an account DOES, not why anyone opens one. The reason is the price.
   { path: '/mobile/customer', labelKey: 'nav.accountShort', icon: UserRound },
 ];
@@ -38,10 +40,10 @@ const preserveScrollOnCommerceTabTap = (path) => (
 const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const { isAdmin } = useAuth();
   const { summary } = useCart();
-  const commerceNavItems = commerceNavItemsFor(isInternational);
+  const commerceNavItems = commerceNavItemsFor();
   const keyboardActive = useMobileKeyboardState();
   useMobileKeyboardAvoidance();
   useMobileFormEnhancements();

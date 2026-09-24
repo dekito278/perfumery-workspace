@@ -113,6 +113,10 @@ for (const rel of ['pages/PaymentPage.jsx', 'pages/CustomerPortalPage.jsx']) {
 // why they are named here rather than scanned for.
 const doors = [
   [['components', 'storefront', 'PublicHeader.jsx'], /<Link to="\/cart"/, 'the header cart icon'],
+  // The phone's bottom navigation, which is the surface almost every buyer is on. Its cart tab was the
+  // last of these to be found, three commits after the cart opened: the desktop header, the catalogue
+  // and the account page were all fixed while the phone still had no cart anywhere in its navigation.
+  [['layouts', 'MobileCommerceLayout.jsx'], /path: '\/mobile\/cart'/, "the phone's cart tab"],
   [['pages', 'CatalogPage.jsx'], /onClick=\{\(event\) => handleQuickAdd\(event, product\)\}/, "the catalogue's quick-add"],
   [['pages', 'CustomerPortalPage.jsx'], /onClick=\{\(\) => onReorder\(order\)\}/, "the account page's Order again"],
 ];
