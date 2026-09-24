@@ -1246,7 +1246,13 @@ const createBespokeOrderViaEndpoint = (request) => postAuthoritativeOrder({
 export const createCatalogOrderViaEndpoint = (orderData, refs = {}) => postAuthoritativeOrder({
   source: orderData.source || 'storefront',
   customer: { name: orderData.customerName || '', code: orderData.customerCode || '', contact: orderData.contact || '' },
-  delivery: { address: orderData.deliveryAddress || '', area: orderData.deliveryArea || '' },
+  // country is what makes this order international, and the endpoint prices from it. Empty for a
+  // domestic order, which is how the endpoint tells the two apart.
+  delivery: {
+    address: orderData.deliveryAddress || '',
+    area: orderData.deliveryArea || '',
+    country: orderData.deliveryCountry || '',
+  },
   items: (orderData.items || []).filter((item) => item.type !== 'voucher_discount'),
   notes: orderData.notes || '',
   checkoutDraft: orderData.checkoutDraft || '',

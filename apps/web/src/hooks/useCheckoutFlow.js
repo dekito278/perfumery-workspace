@@ -28,6 +28,8 @@ import {
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { hasValidWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
+import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
+import { destinationFor } from '@/utils/internationalDestination.js';
 import { clearCheckoutDraft, readCheckoutDraft, writeCheckoutDraft } from '@/utils/checkoutDraftStorage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
@@ -94,6 +96,12 @@ export const useCheckoutFlow = ({
   const [contact, setContact] = useState(savedDraft.contact || '');
   const [deliveryAddress, setDeliveryAddress] = useState(savedDraft.deliveryAddress || '');
   const [deliveryArea, setDeliveryArea] = useState(savedDraft.deliveryArea || '');
+  // An international order is addressed by COUNTRY and priced by it. There is no courier list and no
+  // area search: RajaOngkir only knows Indonesian addresses and answers a foreign city with an empty
+  // list and HTTP 200, which is the dead end the old notice existed to explain.
+  const [deliveryCountry, setDeliveryCountry] = useState(savedDraft.deliveryCountry || '');
+  const { isInternational } = useStorefrontRegion();
+  const destination = useMemo(() => destinationFor(deliveryCountry), [deliveryCountry]);
   const [notes, setNotes] = useState(savedDraft.notes || '');
   const [saving, setSaving] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState(null);
@@ -116,11 +124,16 @@ export const useCheckoutFlow = ({
   const paymentMethod = paymentMethodDetails.label;
   const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
   const isQrisPayment = isDokuQrisPayment(paymentMethodDetails.provider);
-  const shippingFee = Number(selectedShipping?.cost || 0);
+  // Nothing is added for an international parcel. Either the price already carries the freight — that is
+  // the sentence on every product page — or it is quoted by hand afterwards, which is a figure this
+  // screen does not have and must not invent. The courier rate belongs to the domestic half only.
+  const shippingFee = isInternational ? 0 : Number(selectedShipping?.cost || 0);
   const discountAmount = Math.min(Number(voucherDiscount || 0), Number(summary.subtotal || 0));
   const discountedSubtotal = Math.max(Number(summary.subtotal || 0) - discountAmount, 0);
   const totalDue = discountedSubtotal + shippingFee;
-  const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
+  const shippingSummary = isInternational
+    ? (destination ? `${destination.regionLabel}${destination.shippingIncluded ? ' — shipping included' : ' — shipping quoted separately'}` : '')
+    : (selectedShipping ? describeShippingRate(selectedShipping) : '');
   const shippingWeight = useMemo(() => getCheckoutShippingWeight(items), [items]);
 
   // Changing quantity changes the parcel weight, which changes the courier price. The previously quoted
@@ -145,16 +158,23 @@ export const useCheckoutFlow = ({
   //
   // Whether the button is pressable is a different question, and each surface already answers it by
   // checking `saving` where the button is.
-  const canSubmitCheckout = Boolean(
+  // Two shops, two rules, one function. The international half asks for a destination COUNTRY where the
+  // domestic half asks for a courier, an area and a rate — none of which exist for a parcel leaving the
+  // country. Everything before the split is the same in both, because a name, a reachable phone and an
+  // address are what a parcel needs wherever it goes.
+  const checkoutBasicsFilled = Boolean(
     items.length
     && !blockedItems.length
     && customerName.trim()
     && validPhoneContact
     && deliveryAddress.trim()
-    && selectedCourier
-    && selectedDestination
-    && selectedShipping
     && selectedPaymentMethod
+  );
+  const canSubmitCheckout = Boolean(
+    checkoutBasicsFilled
+    && (isInternational
+      ? destination
+      : (selectedCourier && selectedDestination && selectedShipping))
   );
 
   // Prefill from the logged-in customer's saved account, without overriding a draft.
@@ -545,6 +565,9 @@ export const useCheckoutFlow = ({
         contact,
         deliveryAddress,
         deliveryArea,
+        // Empty on a domestic order. It is what tells the endpoint to price internationally, so it rides
+        // on the order rather than being inferred from the shop the browser happened to be showing.
+        deliveryCountry: isInternational ? deliveryCountry : '',
         notes: buildOrderNotes({ deliveryAddress, deliveryArea, paymentMethod, shippingSummary, notes }),
         // Same courier, as a field and not only as a line inside the notes. Both order paths must agree:
         // the endpoint sets courier_name from its own server-side summary.
@@ -752,6 +775,10 @@ export const useCheckoutFlow = ({
     shippingSummary,
     shippingWeight,
     canSubmitCheckout,
+    deliveryCountry,
+    setDeliveryCountry,
+    destination,
+    isInternational,
     blockedItems,
     setCustomerName,
     setContact,

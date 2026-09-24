@@ -1,5 +1,6 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
+import InternationalDeliveryFields from '@/components/storefront/InternationalDeliveryFields.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
 import React, { useMemo, useState } from 'react';
@@ -53,6 +54,7 @@ const CheckoutPage = () => {
     canSubmitCheckout, blockedItems, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
     updateDestinationSearch, chooseShippingCourier, autoCalculateShipping, loadShippingRates, setSelectedShipping,
     setSelectedPaymentMethod, lookupCustomer, submitOrder,
+    deliveryCountry, setDeliveryCountry, destination, isInternational,
   } = checkout;
   const visibleShippingOptions = useMemo(() => (
     selectedCourier ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier) : shippingOptions
@@ -63,9 +65,15 @@ const CheckoutPage = () => {
     !customerName.trim() ? t('checkout.fieldName') : '',
     !contact.trim() ? t('checkout.fieldContact') : (!validPhoneContact ? t('checkout.fieldValidPhone') : ''),
     !deliveryAddress.trim() ? t('checkout.fieldAddress') : '',
-    !selectedDestination ? t('checkout.fieldDestination') : '',
-    !selectedCourier ? t('checkout.fieldCourier') : '',
-    !selectedShipping ? t('checkout.fieldRate') : '',
+    // The two shops ask for different things, and a notice listing "courier" to a buyer in Berlin names
+    // a field that is not on their screen.
+    ...(isInternational
+      ? [!destination ? t('checkout.fieldCountry') : '']
+      : [
+        !selectedDestination ? t('checkout.fieldDestination') : '',
+        !selectedCourier ? t('checkout.fieldCourier') : '',
+        !selectedShipping ? t('checkout.fieldRate') : '',
+      ]),
     !selectedPaymentMethod ? t('checkout.fieldPayment') : '',
     // canSubmitCheckout also refuses lines whose product is gone or sold out; name them, otherwise the
     // notice names nothing to act on (audit round 9).
@@ -225,9 +233,19 @@ const CheckoutPage = () => {
               </label>
             </fieldset>
 
-            {/* Shipping */}
+            {/* Shipping. The international half asks where the parcel goes and stops there: there is no
+                courier list to show, because RajaOngkir only knows Indonesian addresses. */}
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">{t('checkout.deliveryLegend')}</legend>
+              {isInternational ? (
+                <InternationalDeliveryFields
+                  value={deliveryCountry}
+                  onChange={setDeliveryCountry}
+                  destination={destination}
+                  invalid={triedSubmit && !destination}
+                />
+              ) : (
+              <>
               <label className="checkout-field">
                 <span>{t('checkout.courier')}</span>
                 <div className="checkout-select-wrap">
@@ -282,6 +300,8 @@ const CheckoutPage = () => {
                 </div>
               ) : null}
               {selectedDestination ? <p className="checkout-notice is-success">{t('ship.area', { area: selectedDestination.label })}</p> : null}
+              </>
+              )}
             </fieldset>
 
             {/* Voucher */}

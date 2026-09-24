@@ -25,8 +25,12 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Numbe
 const CartPage = () => {
   const { items, summary, updateQuantity, removeItem } = useCart();
   const { index: memberIndex } = useMemberPrices();
-  const memberSaving = memberSavingForCart(items, memberIndex);
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
+  // Never in the English shop. The member price is a domestic loyalty price, and the cart there totals
+  // the international one — so the "saving" it computed was the gap between two prices that never apply
+  // to the same buyer. It read "save Rp 937.000 · Sign in" against an international total, which is not
+  // a discount, it is a different product line.
+  const memberSaving = isInternational ? 0 : memberSavingForCart(items, memberIndex);
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const subtotal = summary.subtotal;
   const totalAfterVoucher = Math.max(subtotal - voucher.discountAmount, 0);

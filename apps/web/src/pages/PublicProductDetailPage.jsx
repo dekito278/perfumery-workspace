@@ -1,12 +1,11 @@
-import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
-import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
+import { formatUsdPrice } from '@/utils/usdPrice.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
-import { Globe, CheckCircle2, ShoppingBag, ChevronRight } from 'lucide-react';
+import { CheckCircle2, ShoppingBag, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
@@ -124,6 +123,15 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const selectedSize = selectedVariant?.size || product.size;
   const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
   const selectedPriceLabel = selectedPrice > 0 ? formatRupiah(selectedPrice) : product.price;
+  // What the buy button says, and what the cart will total: the international price where there is one.
+  // A domestic figure on an English button is the oldest version of this bug.
+  //
+  // Declared AFTER selectedPriceLabel, not before it. Putting it above threw "Cannot access
+  // 'selectedPriceLabel' before initialization" and killed the whole page — with the build still green,
+  // for the third time in this file.
+  // In dollars where the buyer pays in dollars. The headline above this button reads US$80; a button
+  // reading Rp 1.260.000 under it asks them to reconcile two currencies before they can press it.
+  const buyPriceLabel = exportPrice ? (formatUsdPrice(exportPrice) || formatRupiah(exportPrice)) : selectedPriceLabel;
   // Public variants carry `availability` ('Available'|'Inquire'), not a raw stock count — use it so we
   // don't expose exact inventory. Fall back to the product-level publicStatus when there are no variants.
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
@@ -309,21 +317,23 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             ) : null}
 
             <div className="pdp-actions" data-reveal>
-              {/* The cart is a domestic-delivery flow: RajaOngkir prices it and a foreign address returns
-                  an empty area list. Offering it in the English shop invites a form nobody can finish, so
-                  the enquiry takes its place — and SwitchToIndonesiaHint keeps the way back one tap away
-                  for whoever is actually shipping inside Indonesia. */}
-              {isInternational ? null : (
-                <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
-                  {soldOut ? (
-                    <>{t('pdp.soldOut')}</>
-                  ) : lastAddedSlug === product.slug ? (
-                    <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
-                  ) : (
-                    <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: selectedPriceLabel })}</>
-                  )}
-                </button>
-              )}
+              {/* Offered in both shops since 2026-09-25. The cart was domestic-only while shipping came
+                  from RajaOngkir — a foreign address returned an empty area list — and while the cart
+                  totalled the Indonesian price under a page quoting the international one. The checkout
+                  now asks for a destination country instead of a courier, and the cart totals what this
+                  page shows, so the buyer can finish the form they start.
+                  The price on the button is the one they are actually charged, which in the English shop
+                  is the international price — the domestic figure on an English button is the oldest
+                  version of this bug. */}
+              <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
+                {soldOut ? (
+                  <>{t('pdp.soldOut')}</>
+                ) : lastAddedSlug === product.slug ? (
+                  <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
+                ) : (
+                  <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: buyPriceLabel })}</>
+                )}
+              </button>
               <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel} className="mt-3" />
               <ShareProductButton product={product} className="mt-3" />
               <SwitchToIndonesiaHint className="mt-3" />
@@ -368,43 +378,25 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               <span className="pdp-sticky-bar__price">{exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel}</span>
             </div>
           </div>
-          {/* The sticky bar is a second add-to-cart. In the English shop the cart is not offered, so it
-              carries the enquiry instead — a bar that still says "Add to cart" undoes the whole page
-              above it. Missing this the first time is exactly why both nudges had to be gated twice. */}
-          {isInternational ? (
-            <a
-              href={buildWhatsAppCheckoutUrl(buildOverseasDraft({
-                t,
-                isInternational,
-                name: product.name,
-                size: selectedSize,
-                price: exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel,
-              }), getStorefrontWhatsAppNumber())}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pdp-add-btn magnetic-hover"
-              tabIndex={showStickyBar ? 0 : -1}
-            >
-              <Globe className="h-4 w-4" /> {t(overseasDraftKeys(isInternational).labelKey)}
-            </a>
-          ) : (
-            <button
-              type="button"
-              className="pdp-add-btn magnetic-hover"
-              onClick={() => handleAddToCart()}
-              onMouseMove={magnetic}
-              tabIndex={showStickyBar ? 0 : -1}
-              disabled={soldOut}
-            >
-              {soldOut ? (
-                <>{t('pdp.soldOut')}</>
-              ) : lastAddedSlug === product.slug ? (
-                <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
-              ) : (
-                <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCart')}</>
-              )}
-            </button>
-          )}
+          {/* The sticky bar is a second add-to-cart and must say the same thing as the first. It carried
+              the WhatsApp enquiry while the cart was domestic-only; a bar that disagreed with the button
+              above it is how the English shop leaked a domestic price twice. */}
+          <button
+            type="button"
+            className="pdp-add-btn magnetic-hover"
+            onClick={() => handleAddToCart()}
+            onMouseMove={magnetic}
+            tabIndex={showStickyBar ? 0 : -1}
+            disabled={soldOut}
+          >
+            {soldOut ? (
+              <>{t('pdp.soldOut')}</>
+            ) : lastAddedSlug === product.slug ? (
+              <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
+            ) : (
+              <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCart')}</>
+            )}
+          </button>
         </div>
       </div>
     </>
