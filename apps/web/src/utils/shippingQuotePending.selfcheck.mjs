@@ -105,4 +105,16 @@ assert.match(calculator, /shippingQuotePending: true/, 'the calculator must be a
 assert.match(calculator, /const shippingCharged = quoteLater\s*\?\s*0/,
   'an order awaiting a quote is written with no shipping, not with a guess');
 
+// --- 6. And Studio has somewhere to see them -----------------------------------------------------------
+// These orders cannot be paid and their clock is stopped, so nothing moves them along on its own. That
+// is the point — and also the risk: without a queue they sit until the buyer gives up, and the buyer has
+// been told the figure is coming within 24 hours.
+const fulfillment = read('pages', 'mobile', 'MobileFulfillmentPage.jsx');
+assert.match(fulfillment, /orders\.filter\(isAwaitingShippingQuote\)/,
+  'the shipping screen must collect the orders waiting on a quote');
+assert.match(fulfillment, /Menunggu ongkir dari kamu/,
+  'and say whose turn it is — the buyer is not the one holding this up');
+assert.match(fulfillment, /awaitingQuoteOrders\.slice\(0, 5\)\.map/,
+  'and list them, so the queue is one tap from the order rather than a number to go looking for');
+
 console.log('shippingQuotePending selfcheck OK (no account and no clock until the total is final)');

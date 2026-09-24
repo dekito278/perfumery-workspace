@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, Clipboard, Copy, CreditCard, Download, ExternalLink, Loader2, MessageCircle, PackageCheck, PackageOpen, ScanLine, Search, Send, Truck } from 'lucide-react';
+import { ArrowRight, Clipboard, Copy, CreditCard, Download, ExternalLink, Globe2, Loader2, MessageCircle, PackageCheck, PackageOpen, ScanLine, Search, Send, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
@@ -25,6 +25,7 @@ import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
+  isAwaitingShippingQuote,
   isBlockedByBespokeProduction,
   isReadyToPack,
   isShippedOrder,
@@ -130,6 +131,9 @@ const MobileFulfillmentPage = () => {
     || (order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status))
   )), [orders]);
   const blockedPaidOrders = useMemo(() => paidOrders.filter(isBlockedByBespokeProduction), [paidOrders]);
+  // Orders waiting on US for a freight figure. They cannot be paid and their reservation clock is
+  // stopped, so nothing moves them along on its own — without a queue they sit until the buyer gives up.
+  const awaitingQuoteOrders = useMemo(() => orders.filter(isAwaitingShippingQuote), [orders]);
   const displayedOrders = useMemo(() => {
     if (queueFilter === 'packing') return readyOrders.filter((order) => order.shipmentStatus === 'packing');
     if (queueFilter === 'shipped') return shippedOrders;
@@ -490,6 +494,38 @@ const MobileFulfillmentPage = () => {
                   <span className="min-w-0 truncate text-xs font-bold text-[#1f2937]">{order.orderNumber}</span>
                   <span className="shrink-0 text-[10px] font-bold uppercase text-amber-800">
                     {bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {awaitingQuoteOrders.length ? (
+          <section className="mobile-card border border-amber-100 bg-amber-50/70 p-3">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-amber-700">
+                <Globe2 className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase text-amber-800">Menunggu ongkir dari kamu</div>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">
+                  {awaitingQuoteOrders.length} order internasional sudah masuk tapi belum bisa dibayar. Halaman
+                  bayarnya menahan nomor rekening, dan hitungan 24 jamnya tidak jalan — sampai kamu isi ongkirnya.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {awaitingQuoteOrders.slice(0, 5).map((order) => (
+                <button
+                  key={order.id || order.orderNumber}
+                  type="button"
+                  onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`, { state: getMobileFromState(location) })}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-left"
+                >
+                  <span className="min-w-0 truncate text-xs font-bold text-[#1f2937]">{order.orderNumber}</span>
+                  <span className="shrink-0 text-[10px] font-bold uppercase text-amber-800">
+                    {order.paymentResponse?.destinationCountry || 'Luar negeri'}
                   </span>
                 </button>
               ))}
