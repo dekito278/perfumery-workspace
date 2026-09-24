@@ -425,6 +425,18 @@ export default async function handler(req, res) {
       : productItems;
 
     const paymentProvider = input.paymentProvider || 'manual';
+    // DOKU is Indonesian rails — a virtual account, QRIS, a card charged in rupiah — and none of it
+    // reaches a buyer in Berlin. Worse, api/doku/checkout.js writes its session into payment_response,
+    // the same column this endpoint uses to carry the dollar figure, the Jenius account and the
+    // "waiting for a shipping quote" flag. An international order paid that way loses all three: the
+    // buyer is shown an account they cannot pay into, and the 24-hour reservation clock starts running
+    // on an order that is waiting for a freight number nobody has sent yet, so it cancels itself.
+    // Refused here and not only hidden in the form, because the provider arrives from the browser.
+    if (destination && !['manual_transfer_bca', 'manual'].includes(paymentProvider)) {
+      return jsonResponse(res, 422, {
+        message: 'Pesanan ke luar negeri dibayar lewat transfer bank internasional, bukan DOKU',
+      });
+    }
     const payload = {
       // High-entropy suffix so order numbers can't be enumerated by guessing timestamps (matches
       // orderService.createOrderNumber). The anon payment-session lookup RPC keys off this number.

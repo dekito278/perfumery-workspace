@@ -1,6 +1,7 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -220,7 +221,11 @@ const CartPage = () => {
                   <div className="catalog-card__info">
                     <span className="catalog-card__category">{item.category}</span>
                     <h3>{item.name}</h3>
-                    <span className="catalog-card__price">{item.price}</span>
+                    {/* The same component the catalog grid uses, and for the same reason: item.price is
+                        the Indonesian member price. It printed Rp 386.000 under a cart totalling
+                        Rp 1.260.000 for the same size bottle — a domestic loyalty price, which does not
+                        travel, offered to a buyer shipping to Berlin. */}
+                    <CardPrice product={item} className="catalog-card__price" memberClassName="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>
                 </Link>
               ))}

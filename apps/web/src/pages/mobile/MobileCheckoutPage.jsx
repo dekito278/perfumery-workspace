@@ -18,7 +18,6 @@ import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
-import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
@@ -106,7 +105,7 @@ const MobileCheckoutPage = () => {
   const {
     customerCode, customerName, contact, deliveryAddress, notes, saving, securityChallenge, securityAnswer, lookupLoading,
     repeatCustomer, repeatAddressMode, destinationSearch, destinationOptions, selectedDestination, shippingOptions, selectedCourier,
-    selectedShipping, shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, discountedSubtotal, totalDue, selectedPaymentMethod, isManualPayment, validPhoneContact,
+    selectedShipping, shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, discountedSubtotal, totalDue, selectedPaymentMethod, availablePaymentMethods, isManualPayment, validPhoneContact,
     canSubmitCheckout, blockedItems, setCustomerName, setContact, setDeliveryAddress, setNotes, setSecurityAnswer, setSelectedShipping,
     setSelectedPaymentMethod, chooseShippingCourier, updateCustomerCode, updateDestinationSearch, useCustomerLastAddress,
     useCustomerNewAddress, autoCalculateShipping, loadShippingRates, lookupCustomer, verifyCustomerSecurity, submitOrder,
@@ -450,7 +449,7 @@ const MobileCheckoutPage = () => {
             {/* A radiogroup, not two info cards: the old buttons carried no radio and only a faint tint
                 when chosen, so nothing said a choice was being asked for (UX backlog U-6). */}
             <div role="radiogroup" aria-label={t('checkout.paymentMethod')} className="grid gap-2">
-              {checkoutPaymentMethods.map((method) => {
+              {availablePaymentMethods.map((method) => {
                 const active = selectedPaymentMethod === method.id;
                 return (
                   <button

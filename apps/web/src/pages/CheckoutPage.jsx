@@ -17,7 +17,6 @@ import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
-import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -50,7 +49,7 @@ const CheckoutPage = () => {
     customerCode, customerName, contact, deliveryAddress, notes, saving, lookupLoading,
     securityChallenge, securityAnswer, setSecurityAnswer, verifyCustomerSecurity,
     destinationSearch, destinationOptions, selectedDestination, selectedCourier, selectedShipping, shippingOptions,
-    shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, selectedPaymentMethod,
+    shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, selectedPaymentMethod, availablePaymentMethods,
     canSubmitCheckout, blockedItems, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
     updateDestinationSearch, chooseShippingCourier, autoCalculateShipping, loadShippingRates, setSelectedShipping,
     setSelectedPaymentMethod, lookupCustomer, submitOrder,
@@ -341,7 +340,7 @@ const CheckoutPage = () => {
                 <span>{t('checkout.paymentMethod')}</span>
                 <div className="checkout-select-wrap">
                   <select value={selectedPaymentMethod} onChange={(event) => setSelectedPaymentMethod(event.target.value)}>
-                    {checkoutPaymentMethods.map((method) => (
+                    {availablePaymentMethods.map((method) => (
                       <option key={method.id} value={method.id}>{t(method.labelKey)}</option>
                     ))}
                   </select>

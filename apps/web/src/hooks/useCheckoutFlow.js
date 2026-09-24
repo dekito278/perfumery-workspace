@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import {
   buildCheckoutDraft,
   buildOrderNotes,
+  checkoutPaymentMethods,
   getCheckoutPaymentMethod,
   isDokuQrisPayment,
   isManualTransferPayment,
@@ -124,6 +125,24 @@ export const useCheckoutFlow = ({
   const paymentMethod = paymentMethodDetails.label;
   const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
   const isQrisPayment = isDokuQrisPayment(paymentMethodDetails.provider);
+  // DOKU is Indonesian rails: a virtual account, QRIS, a card charged in rupiah. None of it reaches a
+  // buyer abroad, and api/doku/checkout.js writes its session into payment_response — the same column an
+  // international order carries its dollar amount, its Jenius account and its "waiting for a shipping
+  // quote" flag in. Choosing it would erase all three and restart the 24-hour clock on an order that is
+  // waiting for a freight figure nobody has sent yet.
+  // Keyed on the DESTINATION and not the shop's language: an Indonesian reading the English shop ships
+  // to an Indonesian address and still pays with it. api/orders/create.js refuses the same combination,
+  // because the provider arrives from the browser.
+  const availablePaymentMethods = useMemo(
+    () => (destination
+      ? checkoutPaymentMethods.filter((method) => isManualTransferPayment(method.provider))
+      : checkoutPaymentMethods),
+    [destination],
+  );
+  useEffect(() => {
+    if (availablePaymentMethods.some((method) => method.id === selectedPaymentMethod)) return;
+    setSelectedPaymentMethod(availablePaymentMethods[0]?.id || MANUAL_TRANSFER_PAYMENT.id);
+  }, [availablePaymentMethods, selectedPaymentMethod]);
   // Nothing is added for an international parcel. Either the price already carries the freight — that is
   // the sentence on every product page — or it is quoted by hand afterwards, which is a figure this
   // screen does not have and must not invent. The courier rate belongs to the domestic half only.
@@ -511,13 +530,28 @@ export const useCheckoutFlow = ({
       toast.error('Nomor WhatsApp/telepon wajib diisi untuk pengiriman');
       return;
     }
-    if (!selectedDestination) {
-      toast.error('Pilih area tujuan dari hasil pencarian RajaOngkir dulu');
-      return;
-    }
-    if (!selectedShipping) {
-      toast.error('Pilih ekspedisi dulu');
-      return;
+    // The same split canSubmitCheckout makes, made again here — and it has to be made again, because
+    // these two lists of conditions are what the buyer meets in sequence: the first decides whether the
+    // button complains, the second decides whether the order is actually written. They disagreed once.
+    // canSubmitCheckout learned about international destinations and this did not, so an overseas buyer
+    // filled in every field, read no complaint, pressed the button, and was told in Indonesian to pick a
+    // RajaOngkir area that is not on their screen and does not exist for a parcel leaving the country.
+    // The checkout looked finished and could not take a single order.
+    // submitOrderMirrorsCanSubmit.selfcheck.mjs fails the build if they drift apart again.
+    if (isInternational) {
+      if (!destination) {
+        toast.error('Pilih negara tujuan dulu');
+        return;
+      }
+    } else {
+      if (!selectedDestination) {
+        toast.error('Pilih area tujuan dari hasil pencarian RajaOngkir dulu');
+        return;
+      }
+      if (!selectedShipping) {
+        toast.error('Pilih ekspedisi dulu');
+        return;
+      }
     }
     if (!selectedPaymentMethod) {
       toast.error('Pilih metode pembayaran dulu');
@@ -761,6 +795,7 @@ export const useCheckoutFlow = ({
     selectedCourier,
     selectedShipping,
     selectedPaymentMethod,
+    availablePaymentMethods,
     paymentMethodDetails,
     shippingLoading,
     shippingError,

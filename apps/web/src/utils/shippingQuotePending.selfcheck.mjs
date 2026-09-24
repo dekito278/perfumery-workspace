@@ -117,4 +117,36 @@ assert.match(fulfillment, /Menunggu ongkir dari kamu/,
 assert.match(fulfillment, /awaitingQuoteOrders\.slice\(0, 5\)\.map/,
   'and list them, so the queue is one tap from the order rather than a number to go looking for');
 
+// --- 7. Nothing else may write over the column this order lives in -------------------------------------
+// payment_response carries all three of an international order's facts: the dollar amount, the account,
+// and the pending flag. api/doku/checkout.js writes its own session into that same column, so a buyer who
+// picked DOKU would have had the lot replaced — shown an Indonesian virtual account they cannot pay into,
+// and handed back the 24-hour clock on an order waiting for a freight figure nobody had sent. It would
+// have cancelled itself while the buyer waited.
+//
+// So the endpoint refuses the combination. The form not offering DOKU is the courtesy; this is the rule,
+// because the provider is whatever the browser sent.
+assert.match(endpoint, /if \(destination && !\[[^\]]*\]\.includes\(paymentProvider\)\)/,
+  'an international order must be refused unless it is paid by manual transfer — DOKU overwrites '
+  + 'payment_response and takes the account, the amount and the pending flag with it');
+const dokuEndpoint = read('..', 'api', 'doku', 'checkout.js');
+assert.match(dokuEndpoint, /payment_response:/,
+  'this rule exists because api/doku/checkout.js writes payment_response; if it stopped, re-examine it '
+  + 'rather than deleting the refusal');
+
+// And the form does not offer what the endpoint will refuse.
+const hook = read('hooks', 'useCheckoutFlow.js');
+assert.match(hook, /destination\s*\?\s*checkoutPaymentMethods\.filter\(/,
+  'the payment list must narrow once a destination country is chosen');
+assert.doesNotMatch(hook, /isInternational\s*\?\s*checkoutPaymentMethods\.filter\(/,
+  'narrow on the DESTINATION, not the shop language — an Indonesian reading English still ships '
+  + 'domestically and still pays with DOKU');
+for (const page of [['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx']]) {
+  const source = read(...page);
+  assert.match(source, /availablePaymentMethods\.map\(/,
+    `${page.join('/')} must render the narrowed list`);
+  assert.doesNotMatch(source, /checkoutPaymentMethods\.map\(/,
+    `${page.join('/')} still renders the unfiltered list, so DOKU is offered for a parcel to Berlin`);
+}
+
 console.log('shippingQuotePending selfcheck OK (no account and no clock until the total is final)');

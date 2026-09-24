@@ -8,7 +8,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -22,6 +22,21 @@ import {
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf8'));
+
+/** Every page and storefront component on disk, as path segments relative to src/. Walked rather than
+ *  listed: a guard that names its files can only ever catch the files someone remembered. */
+const everyStorefrontJsx = () => {
+  const found = [];
+  const walk = (parts) => {
+    for (const entry of readdirSync(join(root, ...parts), { withFileTypes: true })) {
+      if (entry.isDirectory()) walk([...parts, entry.name]);
+      else if (entry.name.endsWith('.jsx')) found.push([...parts, entry.name]);
+    }
+  };
+  walk(['pages']);
+  walk(['components', 'storefront']);
+  return found;
+};
 
 // --- 1. Every Indonesian zone means "not abroad" -----------------------------------------------------
 // Getting one of these wrong shows an English export panel, at 2,5x the price, to a buyer in Indonesia.
@@ -317,11 +332,13 @@ assert.match(button, /useExportPrice\(product, variant\)/,
 
 // A card must never print a raw price alongside CardPrice: a sabotage kept the component in a dead
 // branch and put the rupiah span back next to it, and every "does CardPrice appear?" check passed.
-for (const file of [
-  ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
-  ['pages', 'mobile', 'MobileStorefrontPage.jsx'], ['pages', 'HomePage.jsx'],
-  ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
-]) {
+//
+// The list of files used to be written out here by hand, and the cart's "you may also like" rail was
+// never on it. That rail printed item.price — the Indonesian MEMBER price — four cards wide under a
+// cart totalling the international one: Rp 386.000 offered beside Rp 1.260.000 for the same size
+// bottle, to a buyer shipping to Berlin. Six files were guarded and the seventh was the one that broke,
+// so the list is now whatever is actually on disk.
+for (const file of everyStorefrontJsx()) {
   const source = read(...file);
   const raw = source.match(/<span[^>]*card__price[^>]*>\{(?:product|item)[.?]/g) || [];
   assert.deepEqual(raw, [],
