@@ -485,13 +485,17 @@ const OrderDetailPage = () => {
   const sendShippingQuote = async () => {
     setSendingQuote(true);
     try {
-      await sendInternationalShippingQuote(orderKey, {
+      const quoted = await sendInternationalShippingQuote(orderKey, {
         shippingFee: Number(String(quoteFee).replace(/[^\d]/g, '')),
         carrier: quoteCarrier,
       });
-      await refreshOrder();
+      const nextOrder = await refreshOrder();
       setQuoteFee('');
-      toast.success('Ongkir terkirim. Pembeli sekarang bisa membayar.');
+      // Writing the figure is half the job. The buyer was told at checkout that the freight follows by
+      // hand and that nothing is charged until they agree — until this line existed, the only way they
+      // could learn it had arrived was to keep reloading a page that had been telling them to wait.
+      await prepareCustomerNotification(nextOrder || quoted, 'shipping_quoted');
+      toast.success('Ongkir terkirim. Pesan untuk pembeli sudah disalin.');
     } catch (error) {
       toast.error(error?.message || 'Gagal mengirim ongkir');
     } finally {

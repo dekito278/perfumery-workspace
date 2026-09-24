@@ -19,6 +19,10 @@ const window = { location: { origin: 'https://www.solivagantscent.com' } };
 const getOrderProductItems = (order = {}) => order.items || [];
 const getOrderVoucherSnapshot = (order = {}) => order.voucherSnapshot || null;
 const normalizeWhatsAppPhoneNumber = (value = '') => String(value).replace(/\\D/g, '');
+// The templates now ask which currency the buyer was asked for. Stubbed as "domestic, not waiting" so
+// the language assertions below keep testing language; notificationAmount.selfcheck.mjs owns the money.
+const internationalOrderSummary = () => null;
+const isAwaitingShippingQuote = () => false;
 `;
 const runnable = stubs + source.split('\n').filter((line) => !line.startsWith('import ')).join('\n');
 const { buildNotificationMessage, buildNotificationSubject } = await import(

@@ -340,7 +340,10 @@ const MobileOrderDetailPage = () => {
       });
       setOrder(nextOrder || order);
       setQuoteFee('');
-      toast.success('Ongkir terkirim. Pembeli sekarang bisa membayar.');
+      // The panel below is pre-loaded with the message rather than sent for him: this screen hands over
+      // to WhatsApp, and the buyer was promised the figure within 24 hours.
+      setNotificationEvent('shipping_quoted');
+      toast.success('Ongkir terkirim. Pesan untuk pembeli siap di panel notifikasi.');
     } catch (error) {
       toast.error(error?.message || 'Gagal mengirim ongkir');
     } finally {
