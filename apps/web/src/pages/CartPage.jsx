@@ -74,9 +74,18 @@ const CartPage = () => {
                 {t('checkout.pricesUpdated')}
               </p>
             ) : null}
-            {unavailableItems.length ? (
+            {/* Two reasons, two sentences. A bottle with no international price is not "no longer
+                available" — it is on sale in Indonesia right now, which is exactly what the buyer can
+                see on its own page. Telling them otherwise sends them looking for a bottle that is
+                sitting there. */}
+            {unavailableItems.filter((item) => !item.noInternationalPrice).length ? (
               <p className="checkout-notice is-error" role="alert">
-                {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
+                {t('cart.unavailable', { names: unavailableItems.filter((item) => !item.noInternationalPrice).map((item) => item.name).join(', ') })}
+              </p>
+            ) : null}
+            {unavailableItems.filter((item) => item.noInternationalPrice).length ? (
+              <p className="checkout-notice is-error" role="alert">
+                {t('cart.noInternationalPrice', { names: unavailableItems.filter((item) => item.noInternationalPrice).map((item) => item.name).join(', ') })}
               </p>
             ) : null}
             {!items.length ? (

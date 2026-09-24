@@ -48,7 +48,13 @@ export const useCart = () => {
         linePrice: retail,
         region: shippingRegion,
       });
-      if (!international) return line;
+      // No international price means the ONLY number this line has is the Indonesian one, and
+      // api/orders/create.js refuses to write an order carrying it. Returning the line unchanged left
+      // the domestic price on screen for a buyer in Berlin, who filled in the whole form and was then
+      // answered with the endpoint's sanitised "Pesanan belum bisa dibuat" — a sentence naming nothing.
+      // Blocked and named here instead, where it is still one tap to remove it. Reaches the checkout
+      // through the same blockedItems path as a sold-out bottle.
+      if (!international) return { ...line, unavailable: true, noInternationalPrice: true };
       return { ...line, priceNumber: international, price: formatRupiah(international) };
     });
   }, [storedItems, catalog, isInternational, shippingRegion, tierIndex]);

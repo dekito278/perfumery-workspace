@@ -147,9 +147,16 @@ const MobileCartPage = () => {
             {t('checkout.pricesUpdated')}
           </p>
         ) : null}
-        {unavailableItems.length ? (
+        {/* Two reasons, two sentences — see CartPage. A bottle with no international price is still
+            on sale in Indonesia, so "no longer available" sends the buyer looking for nothing. */}
+        {unavailableItems.filter((item) => !item.noInternationalPrice).length ? (
           <p role="alert" style={{ margin: '0 16px 8px', borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
-            {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
+            {t('cart.unavailable', { names: unavailableItems.filter((item) => !item.noInternationalPrice).map((item) => item.name).join(', ') })}
+          </p>
+        ) : null}
+        {unavailableItems.filter((item) => item.noInternationalPrice).length ? (
+          <p role="alert" style={{ margin: '0 16px 8px', borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
+            {t('cart.noInternationalPrice', { names: unavailableItems.filter((item) => item.noInternationalPrice).map((item) => item.name).join(', ') })}
           </p>
         ) : null}
         <section style={{ display: 'grid', gap: 0 }}>
