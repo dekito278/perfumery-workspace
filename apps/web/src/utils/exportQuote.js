@@ -34,9 +34,14 @@ export const buildExportQuote = ({ destinationName = '', lines = [], shipping = 
     )),
     '',
     `Subtotal produk: ${formatMoney(subtotal)}`,
-    shipping
+    // Zero is an ANSWER here, not a missing number: on most destinations the international price already
+    // carries the shipping. Printing "Ongkir: Rp 0" invites the buyer to ask what the catch is; printing
+    // what is actually true does not.
+    shipping && shippingTotal > 0
       ? `Ongkir (${shipping.label || `${shipping.chargeableKg} kg`}): ${formatMoney(shippingTotal)}`
-      : 'Ongkir: negara ini belum ada di daftar tujuan kurir — saya cek dulu ya.',
+      : (shipping?.label
+        ? `Ongkir: ${shipping.label}.`
+        : 'Ongkir: negara ini belum ada di daftar tujuan kurir — saya cek dulu ya.'),
     `Total: ${formatMoney(subtotal + shippingTotal)}`,
     '',
     // Both lines are promises this quote must not accidentally make.
