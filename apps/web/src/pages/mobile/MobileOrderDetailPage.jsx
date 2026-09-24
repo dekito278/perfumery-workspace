@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
-import { getNextOrderStatusForPayment, hasShippingLabelPrinted, isArchivedOrder, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { getNextOrderStatusForPayment, hasShippingLabelPrinted, internationalOrderSummary, isArchivedOrder, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -815,6 +815,15 @@ const MobileOrderDetailPage = () => {
               {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
             </StatusChip>
             {order.trackingNumber ? <StatusChip size="sm" tone="success">Resi siap</StatusChip> : null}
+            {/* Same reason as the desktop card: the buyer was asked for dollars, this page shows rupiah,
+                and this is where the transfer gets checked. */}
+            {internationalOrderSummary(order) ? (
+              <StatusChip size="sm" tone="warning">
+                {[internationalOrderSummary(order).country,
+                  internationalOrderSummary(order).amountLabel,
+                  internationalOrderSummary(order).awaitingQuote ? 'menunggu ongkir' : ''].filter(Boolean).join(' · ')}
+              </StatusChip>
+            ) : null}
           </div>
         </section>
 

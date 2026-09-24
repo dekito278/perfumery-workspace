@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { buildOrderCopyText, parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
+import { Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Globe, Loader2, MessageCircle, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -36,6 +36,7 @@ import {
   countOrdersByFilter,
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
+  internationalOrderSummary,
   isArchivedOrder,
   isShippedOrder,
   matchesOrderFilter,
@@ -605,7 +606,19 @@ const OrdersPage = () => {
                           </a>
                         </>
                       ) : null}
-                      {order.paymentResponse && Object.keys(order.paymentResponse).length ? (
+                      {/* The facts, not the fact that there are facts. This chip used to read "Respons
+                          checkout tersimpan" for every order carrying the column — it knew the blob was
+                          there and said nothing about what was in it. For an order to Berlin that blob
+                          holds the country, the dollar figure the buyer was asked to transfer, and
+                          whether it is still waiting on a shipping quote. */}
+                      {internationalOrderSummary(order) ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-amber-800">
+                          <Globe className="h-3.5 w-3.5" />
+                          {[internationalOrderSummary(order).country,
+                            internationalOrderSummary(order).amountLabel,
+                            internationalOrderSummary(order).awaitingQuote ? 'menunggu ongkir' : ''].filter(Boolean).join(' · ')}
+                        </span>
+                      ) : order.paymentResponse && Object.keys(order.paymentResponse).length ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-muted-foreground">
                           <ReceiptText className="h-3.5 w-3.5" />
                           Respons checkout tersimpan

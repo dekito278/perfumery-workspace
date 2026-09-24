@@ -77,6 +77,7 @@ import {
   hasShippingLabelPrinted,
   isArchivedOrder,
   isShippedOrder,
+  internationalOrderSummary,
   paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 import { formatClientContext } from '@/utils/clientContext.js';
@@ -847,6 +848,25 @@ const OrderDetailPage = () => {
               <StatusChip tone={paymentProofToneByStatus[paymentProofStatus] || 'warning'}>{paymentProofStatusLabels[paymentProofStatus] || paymentProofStatus}</StatusChip>
             </div>
             <p className="mt-3 text-sm font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</p>
+            {/* This is the screen where a transfer is checked against what was asked for, and for an
+                order that left the country those are two different currencies. The buyer was asked for
+                dollars, frozen at the rate this order was priced with; the rupiah above is what that was
+                worth then, not what will land in Jenius. Without the dollar figure here there is nothing
+                on the screen for the deposit to be checked against. */}
+            {internationalOrderSummary(order) ? (
+              <div className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">
+                <div>
+                  Tujuan {internationalOrderSummary(order).country || '-'}
+                  {internationalOrderSummary(order).amountLabel ? ` · ditagih ${internationalOrderSummary(order).amountLabel}` : ''}
+                </div>
+                {internationalOrderSummary(order).bankName ? (
+                  <div className="mt-1 font-semibold">Masuk ke {internationalOrderSummary(order).bankName}</div>
+                ) : null}
+                {internationalOrderSummary(order).awaitingQuote ? (
+                  <div className="mt-1 font-semibold">Menunggu ongkir dari kamu — pembeli belum diberi total akhir</div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <div className="rounded-2xl border border-editorial-charcoal/10 bg-white p-4 shadow-sm">
             <div className="text-xs font-bold uppercase text-muted-foreground">Fulfillment</div>

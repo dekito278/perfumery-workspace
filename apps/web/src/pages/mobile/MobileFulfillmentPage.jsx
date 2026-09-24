@@ -22,15 +22,7 @@ import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
-import {
-  hasShippingLabelPrinted,
-  isArchivedOrder,
-  isAwaitingShippingQuote,
-  isBlockedByBespokeProduction,
-  isReadyToPack,
-  isShippedOrder,
-  paymentStatusLabels,
-} from '@/utils/orderWorkflow.js';
+import { hasShippingLabelPrinted, internationalOrderSummary, isArchivedOrder, isAwaitingShippingQuote, isBlockedByBespokeProduction, isReadyToPack, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -525,7 +517,7 @@ const MobileFulfillmentPage = () => {
                 >
                   <span className="min-w-0 truncate text-xs font-bold text-[#1f2937]">{order.orderNumber}</span>
                   <span className="shrink-0 text-[10px] font-bold uppercase text-amber-800">
-                    {order.paymentResponse?.destinationCountry || 'Luar negeri'}
+                    {internationalOrderSummary(order)?.country || 'Luar negeri'}
                   </span>
                 </button>
               ))}

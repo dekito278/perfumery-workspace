@@ -93,6 +93,33 @@ export const isAwaitingShippingQuote = (order = {}) => {
   return ['unpaid', 'pending'].includes(paymentStatus) && !isArchivedOrder(order);
 };
 
+/**
+ * What Studio needs to know about an order that left the country, from the column the endpoint wrote it
+ * into. Returns null for a domestic order, so a caller can render nothing without asking twice.
+ *
+ * Studio used to say "Respons checkout tersimpan" and stop there — it knew the blob existed and told
+ * Dekito nothing that was in it. On the phone, where he actually works, it said nothing at all: an order
+ * to Berlin looked exactly like one to Bekasi. The gap that costs money is the amount. The buyer is asked
+ * to transfer US$95, frozen at the rate the order was priced with; Studio showed Rp 1.510.000, so when a
+ * dollar deposit landed in Jenius there was no figure on the screen to check it against.
+ *
+ * Both spellings, for the same reason isAwaitingShippingQuote reads both: the client normalises to
+ * paymentResponse and the server-side sweeps read raw rows.
+ */
+export const internationalOrderSummary = (order = {}) => {
+  if (!order || typeof order !== 'object') return null;
+  const response = order.paymentResponse || order.payment_response || {};
+  if (response?.currency !== 'USD') return null;
+  const amountUsd = Number(response.amountUsd) || 0;
+  return {
+    country: String(response.destinationCountry || '').toUpperCase(),
+    amountUsd,
+    amountLabel: amountUsd ? `US$${amountUsd}` : '',
+    bankName: String(response.bankName || ''),
+    awaitingQuote: Boolean(response.shippingQuotePending),
+  };
+};
+
 export const isFrontQueueOrder = (order = {}) => (
   !isArchivedOrder(order)
   && !hasShippingLabelPrinted(order)
