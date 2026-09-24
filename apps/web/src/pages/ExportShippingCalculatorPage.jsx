@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button.jsx';
 import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
+import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
+import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
+import { USD_PER_RUPIAH_RATE, USD_RATE_SET_ON } from '@/utils/overseasVisitor.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
@@ -96,10 +99,28 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // deliberate, and the manual field below is the answer to it.
   const carrierQuote = quoteInternationalShipping({ countryCode, weightGram, outsideDeliveryArea });
   const quote = carrierQuote?.total ? carrierQuote : null;
+  // What the buyer is CHARGED, from the published rate card — the number Dekito committed to, which the
+  // carrier cost above does not decide. The card is written for 30 ml bottles, so a cart holding other
+  // sizes is counted but flagged rather than quietly quoted at a price the card never covered.
+  const priceCard = quoteInternationalShippingPrice({ countryCode, bottles });
+  const priceCardIdr = priceCard?.usd ? Math.round(priceCard.usd * USD_PER_RUPIAH_RATE) : 0;
+  const offCardSizes = [...new Set(lines
+    .filter((line) => line.product && Number(line.quantity) > 0 && !String(line.size || '').startsWith(String(SHIPPING_RATE_BOTTLE_SIZE_ML)))
+    .map((line) => line.size))];
+  // One shipping figure for the whole page. The summary Dekito copies into WhatsApp and the order he
+  // creates from it were reading two different sources, so the message quoted the carrier cost while the
+  // order billed the card price — Rp 180.000 against Rp 2.227.500 for the same six bottles to Malaysia.
+  const typedShipping = Math.max(0, Math.round(Number(manualShipping) || 0));
+  const shippingCharged = typedShipping || priceCardIdr || Number(quote?.total) || 0;
+  const shippingLabel = typedShipping
+    ? 'dikutip manual'
+    : (priceCard?.usd
+      ? `${priceCard.regionLabel}, ${priceCard.tierLabel} — ${formatShippingUsd(priceCard.usd)}`
+      : (quote ? `${quote.carrier === 'rayspeed' ? 'RaySpeed' : `LTU Express zona ${quote.zone}`}, ${quote.chargeableKg} kg` : ''));
   const summary = buildExportQuote({
     destinationName: destination?.name || '',
     lines,
-    shipping: quote,
+    shipping: shippingCharged > 0 ? { total: shippingCharged, label: shippingLabel } : null,
     formatMoney: formatPrice,
   });
 
@@ -118,7 +139,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
 
   // The tariff table when the country is served; a hand-typed number when it is not, which is the only
   // way an unlisted country could be ordered from at all.
-  const shippingCharged = quote ? summary.shippingTotal : Math.max(0, Math.round(Number(manualShipping) || 0));
+
   const draftOrder = buildExportOrderData({
     lines,
     shippingTotal: shippingCharged,
@@ -411,9 +432,11 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
 
           {/* Only when the tariff table has no answer. Without it an unlisted country — which is most of
               the world for this courier — could be quoted by hand but never written down. */}
-          {quote ? null : (
+          {quote && priceCard?.usd ? null : (
             <label className="mt-3 grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
-              Ongkir (isi manual — tarif negara ini belum diukur)
+              {priceCard?.onRequest
+                ? 'Ongkir (isi manual — kartu tarif bilang "quoted on request")'
+                : 'Ongkir (isi manual — tarif negara ini belum diukur)'}
               <input
                 type="number"
                 min="0"
@@ -458,6 +481,39 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
             <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold leading-relaxed text-emerald-900">
               Order <strong>{createdOrder.orderNumber}</strong> dibuat dan ditandai toko EN. Buka di daftar
               order untuk mengirim konfirmasinya — pesannya sudah berbahasa Inggris.
+            </p>
+          ) : null}
+        </section>
+
+        {/* The published price comes first and the carrier cost sits under it: the buyer is quoted from the
+            card, and the kilo rate only says what the parcel costs us. Reading them the other way round
+            is how a shop quotes its own cost price. */}
+        <section className="mt-4 rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-editorial-charcoal">
+            Kartu tarif {SHIPPING_RATES_EFFECTIVE_YEAR} · ditagih ke pembeli
+          </p>
+          {priceCard?.usd ? (
+            <>
+              <p className="mt-1 text-3xl font-bold text-editorial-charcoal">{formatShippingUsd(priceCard.usd)}</p>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">
+                {priceCard.regionLabel} · {priceCard.tierLabel} · {priceCard.bottles} botol · ≈ {formatPrice(priceCardIdr)}
+                {' '}(kurs {USD_PER_RUPIAH_RATE.toLocaleString('id-ID')}, {USD_RATE_SET_ON})
+              </p>
+            </>
+          ) : (
+            <p className="mt-1 text-sm font-semibold leading-relaxed text-[#6b7280]">
+              {priceCard?.onRequest === 'bottles'
+                ? `${priceCard.bottles} botol — di atas 6 botol kartu tarifnya minta dikutip manual. Isi ongkirnya di bawah.`
+                : 'Negara ini tidak ada di kartu tarif. Kutip manual, lalu isi ongkirnya di bawah.'}
+            </p>
+          )}
+          {offCardSizes.length ? (
+            <p className="mt-2 flex gap-2 text-xs font-semibold leading-relaxed text-amber-900">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Kartu tarifnya ditulis untuk botol {SHIPPING_RATE_BOTTLE_SIZE_ML} ml. Di keranjang ini ada{' '}
+                {offCardSizes.join(', ')} — jumlahnya tetap dihitung per botol, tapi cek dulu sebelum dikutip.
+              </span>
             </p>
           ) : null}
         </section>
