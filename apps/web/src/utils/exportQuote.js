@@ -5,7 +5,11 @@
 /**
  * @param destinationName  the country, as it will appear in the message
  * @param lines            [{ name, size, quantity, unitPrice, overseasPriceSet }]
- * @param shipping         the quoteExportShipping() result, or null when the country is not served
+ * @param shipping         { total, label } — what the buyer is charged and where that figure came from,
+ *                         or null when there is no figure yet. The label used to be the hardcoded string
+ *                         "LTU Express", which stayed on the message long after the shop moved to
+ *                         RaySpeed and then to a published rate card: a quote that names the wrong
+ *                         carrier, and later the wrong basis, to a real buyer.
  * @param formatMoney      the app's own Rupiah formatter, passed in rather than reimplemented
  */
 export const buildExportQuote = ({ destinationName = '', lines = [], shipping = null, formatMoney = String } = {}) => {
@@ -31,7 +35,7 @@ export const buildExportQuote = ({ destinationName = '', lines = [], shipping = 
     '',
     `Subtotal produk: ${formatMoney(subtotal)}`,
     shipping
-      ? `Ongkir (LTU Express, ${shipping.chargeableKg} kg): ${formatMoney(shippingTotal)}`
+      ? `Ongkir (${shipping.label || `${shipping.chargeableKg} kg`}): ${formatMoney(shippingTotal)}`
       : 'Ongkir: negara ini belum ada di daftar tujuan kurir — saya cek dulu ya.',
     `Total: ${formatMoney(subtotal + shippingTotal)}`,
     '',
