@@ -15,7 +15,14 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, '..', 'services', 'cartService.js'), 'utf8');
 
+// The real account object, not a stand-in: internationalAccount.js is import-free precisely so it can be
+// read like this, and cartService now builds the international payment method out of it. A stub here
+// would let the two drift and this guard would still pass.
+const account = readFileSync(join(here, '..', 'data', 'internationalAccount.js'), 'utf8')
+  .replace(/^export /gm, '');
+
 const runnable = 'const STUB_ENV = {};\nconst normalizeWhatsAppPhoneNumber = (v = "") => String(v).replace(/\\D/g, "");\n'
+  + `${account}\n`
   // One LINE at a time. The old pattern was `^(?:import|export)[\s\S]*?from '...';` — lazy across
   // newlines — so the first `export ... from` appearing later in the file made it swallow everything
   // from the preceding `export const` down to that line. Adding one re-export deleted

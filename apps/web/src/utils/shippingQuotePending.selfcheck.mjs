@@ -20,6 +20,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Buffer } from 'node:buffer';
+import { MESSAGES } from '../i18n/messages.js';
 
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source
@@ -136,11 +137,47 @@ assert.match(dokuEndpoint, /payment_response:/,
 
 // And the form does not offer what the endpoint will refuse.
 const hook = read('hooks', 'useCheckoutFlow.js');
-assert.match(hook, /destination\s*\?\s*checkoutPaymentMethods\.filter\(/,
-  'the payment list must narrow once a destination country is chosen');
-assert.doesNotMatch(hook, /isInternational\s*\?\s*checkoutPaymentMethods\.filter\(/,
-  'narrow on the DESTINATION, not the shop language — an Indonesian reading English still ships '
-  + 'domestically and still pays with DOKU');
+assert.match(hook, /checkoutPaymentMethodsFor\(destination\)/,
+  'the payment list must narrow on the DESTINATION — not on the shop language, because an Indonesian '
+  + 'reading the English shop ships domestically and still pays with DOKU');
+assert.doesNotMatch(hook, /\bcheckoutPaymentMethods\b(?!For)/,
+  'the hook must never reach for the unnarrowed list; that is how DOKU gets back onto a form for Berlin');
+
+// --- 8. The international method is the same payment, pointed at the right bank -------------------------
+// It is deliberately NOT INTERNATIONAL_TRANSFER_PAYMENT itself: that object carries its own id,
+// 'manual_transfer_usd', which api/orders/create.js does not recognise — it would land the order as
+// 'unpaid' and then be refused by the very rule above. The id and provider have to stay the manual
+// transfer's, so the order goes down the same upload-your-receipt path a local buyer's does.
+const cart = read('services', 'cartService.js');
+const method = cart.slice(cart.indexOf('export const INTERNATIONAL_TRANSFER_METHOD'),
+  cart.indexOf('export const checkoutPaymentMethodsFor'));
+assert.match(method, /\.\.\.MANUAL_TRANSFER_PAYMENT,/,
+  'the international method must inherit the manual transfer id and provider, or the endpoint refuses it');
+assert.doesNotMatch(method, /\bid:|\bprovider:/,
+  'it must not set its own id or provider — payment_status and the receipt flow key off the inherited ones');
+for (const field of ['bankName', 'swift', 'accountNumber', 'accountName']) {
+  assert.match(method, new RegExp(`${field}: INTERNATIONAL_TRANSFER_PAYMENT\\.${field}`),
+    `the international method must take ${field} from the Jenius account — these values are copied into `
+    + 'the payment session, and BCA\'s numbers in front of a buyer in Berlin is the defect this fixes');
+}
+assert.match(method, /labelKey: 'paymethod\.international'/,
+  'the buyer must read the international label, not "BCA bank transfer"');
+assert.match(method, /label: 'Transfer bank internasional \(USD\)'/,
+  'and Studio must read the same fact in Indonesian — label is what buildOrderNotes stores');
+for (const locale of ['id', 'en']) {
+  assert.ok(MESSAGES[locale]['paymethod.international'],
+    `paymethod.international is missing in ${locale}`);
+}
+assert.notEqual(MESSAGES.id['paymethod.international'], MESSAGES.en['paymethod.international'],
+  'the two shops must say it in their own language');
+
+// The details the payment page falls back to must follow the destination, not a lookup in the full list.
+assert.match(hook, /const paymentMethodDetails = destination/,
+  'paymentMethodDetails must resolve from the narrowed list — resolving the chosen id against the full '
+  + 'one hands back the BCA account for a parcel to Berlin');
+assert.ok(hook.indexOf('const availablePaymentMethods') < hook.indexOf('const paymentMethodDetails'),
+  'availablePaymentMethods must be declared before the line that reads it — a const used above itself is '
+  + 'a blank page at runtime with a green build');
 for (const page of [['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx']]) {
   const source = read(...page);
   assert.match(source, /availablePaymentMethods\.map\(/,

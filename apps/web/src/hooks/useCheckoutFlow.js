@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   buildCheckoutDraft,
   buildOrderNotes,
-  checkoutPaymentMethods,
+  checkoutPaymentMethodsFor,
   getCheckoutPaymentMethod,
   isDokuQrisPayment,
   isManualTransferPayment,
@@ -121,10 +121,6 @@ export const useCheckoutFlow = ({
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
   const [shippingNotice, setShippingNotice] = useState('');
-  const paymentMethodDetails = getCheckoutPaymentMethod(selectedPaymentMethod);
-  const paymentMethod = paymentMethodDetails.label;
-  const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
-  const isQrisPayment = isDokuQrisPayment(paymentMethodDetails.provider);
   // DOKU is Indonesian rails: a virtual account, QRIS, a card charged in rupiah. None of it reaches a
   // buyer abroad, and api/doku/checkout.js writes its session into payment_response — the same column an
   // international order carries its dollar amount, its Jenius account and its "waiting for a shipping
@@ -133,16 +129,23 @@ export const useCheckoutFlow = ({
   // Keyed on the DESTINATION and not the shop's language: an Indonesian reading the English shop ships
   // to an Indonesian address and still pays with it. api/orders/create.js refuses the same combination,
   // because the provider arrives from the browser.
-  const availablePaymentMethods = useMemo(
-    () => (destination
-      ? checkoutPaymentMethods.filter((method) => isManualTransferPayment(method.provider))
-      : checkoutPaymentMethods),
-    [destination],
-  );
+  const availablePaymentMethods = useMemo(() => checkoutPaymentMethodsFor(destination), [destination]);
   useEffect(() => {
     if (availablePaymentMethods.some((method) => method.id === selectedPaymentMethod)) return;
     setSelectedPaymentMethod(availablePaymentMethods[0]?.id || MANUAL_TRANSFER_PAYMENT.id);
   }, [availablePaymentMethods, selectedPaymentMethod]);
+  // An international order's details come from the list the destination narrowed, not from a lookup in
+  // the full one: the buyer picks an id, and for a parcel leaving Indonesia that id resolves to the BCA
+  // account. bankName/accountNumber/accountName here are copied into the payment session the payment
+  // page falls back to, so resolving it the old way put BCA's numbers in front of a buyer in Berlin.
+  // Declared AFTER availablePaymentMethods, which it reads: a const used above its own line is a blank
+  // page at runtime with a green build, and this file has produced that exact crash before.
+  const paymentMethodDetails = destination
+    ? availablePaymentMethods[0]
+    : getCheckoutPaymentMethod(selectedPaymentMethod);
+  const paymentMethod = paymentMethodDetails.label;
+  const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
+  const isQrisPayment = isDokuQrisPayment(paymentMethodDetails.provider);
   // Nothing is added for an international parcel. Either the price already carries the freight — that is
   // the sentence on every product page — or it is quoted by hand afterwards, which is a figure this
   // screen does not have and must not invent. The courier rate belongs to the domestic half only.
