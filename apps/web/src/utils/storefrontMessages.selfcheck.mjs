@@ -92,6 +92,9 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // The install card: "install" is the loanword Indonesian phones already use, the brand name is the
   // brand name, and "Share -> Add to Home Screen" is iOS quoting its own two buttons back at the reader.
   'pwa.installTitle', 'pwa.install', 'pwa.iosShare',
+  // SWIFT/BIC is the label printed on the form at every bank in both countries. Translating it would
+  // mean inventing an Indonesian name for a code the sender has to type exactly as it is.
+  'pay.swift',
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {

@@ -135,6 +135,7 @@ const buildManualTransferFromOrder = (order) => ({
     bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: order.paymentResponse?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
     accountName: order.paymentResponse?.accountName || MANUAL_TRANSFER_PAYMENT.accountName,
+    swift: order.paymentResponse?.swift || '',
     amount: order.subtotal,
   },
   createdAt: order.createdAt,
@@ -602,6 +603,9 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
     bankName: session.manualTransfer?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: session.manualTransfer?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
     accountName: session.manualTransfer?.accountName || MANUAL_TRANSFER_PAYMENT.accountName,
+    // Only an international order carries these, and both are useless on a domestic one: a SWIFT code
+    // means nothing for a BCA transfer, and the "OUR" charge option does not exist there either.
+    swift: session.manualTransfer?.swift || '',
   };
 
   const copyValue = async (label, value) => {
@@ -747,6 +751,17 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 <Copy className="h-4 w-4 text-editorial-charcoal" />
               </div>
             </button>
+            {transfer.swift ? (
+              <button type="button" onClick={() => copyValue(t("pay.swift"), transfer.swift)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground">{t("pay.swift")}</div>
+                    <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-editorial-charcoal">{transfer.swift}</div>
+                  </div>
+                  <Copy className="h-4 w-4 text-editorial-charcoal" />
+                </div>
+              </button>
+            ) : null}
             <button type="button" onClick={() => copyValue(t("pay.accountNameLabel"), transfer.accountName)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -760,6 +775,14 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          {transfer.swift ? (
+            /* Dekito's own line, off the invoice he already sends by hand. "OUR" makes the SENDER pay every
+               fee in the chain, so the amount arrives whole instead of losing $15-25 to an intermediary
+               bank — an exact fix where the rounding in usdPrice.js is only a cushion. */
+            <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-amber-900">
+              {t('pay.ourCharges')}
+            </p>
+          ) : null}
           <div className="text-xs font-bold uppercase">{t('pay.instructions')}</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>{t('pay.step1', { amount: payableAmount(session) })}</li>

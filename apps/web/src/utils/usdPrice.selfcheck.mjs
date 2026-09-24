@@ -93,6 +93,30 @@ assert.match(guarded, /amountUsd \|\| 0\) > 0/,
   'the rupiah line must only render underneath a dollar total, never instead of one');
 assert.match(paymentPage, /const payableAmount = \(session\)/, 'one function must decide how the amount reads');
 
+// --- 6b. The dollars and the account they go to are written together ----------------------------------
+// A payment page that knows the amount but hands out the domestic BCA account is worse than one that
+// knows neither: the buyer sends the right number to the wrong bank.
+const cart = read('services', 'cartService.js');
+assert.match(cart, /INTERNATIONAL_TRANSFER_PAYMENT = \{/, 'the international account must live beside the domestic one');
+for (const field of ['bankName', 'swift', 'accountNumber', 'accountName']) {
+  assert.match(cart, new RegExp(`${field}:`), `the international account is missing ${field}`);
+}
+// A SWIFT code is what makes an international transfer possible at all — an account number alone sends
+// the buyer back to ask, and a buyer who has to ask has already lost confidence.
+assert.match(cart, /swift: '[A-Z]{6}[A-Z0-9]{2,5}'/, 'the SWIFT/BIC must be a real code, not a placeholder');
+
+assert.match(calculator, /INTERNATIONAL_TRANSFER_PAYMENT\.swift/,
+  'an order quoted in dollars must carry the account those dollars go to');
+
+assert.match(paymentPage, /swift: session\.manualTransfer\?\.swift \|\| ''/,
+  'the payment page must read the SWIFT off the order, and show nothing when there is none');
+assert.match(paymentPage, /t\('pay\.ourCharges'\)/,
+  'the charge-option instruction must reach the buyer — it is what makes the full amount arrive');
+// Both are meaningless on a domestic transfer and must not render there.
+const swiftBlock = paymentPage.slice(paymentPage.indexOf('pay.ourCharges') - 300, paymentPage.indexOf('pay.ourCharges'));
+assert.match(swiftBlock, /transfer\.swift \?/,
+  'the OUR instruction must be gated on an international order — a BCA transfer has no such option');
+
 // --- 7. The English payment page has no Indonesian left in it -----------------------------------------
 // "Ongkir" sat hardcoded in the breakdown, inside a ternary, so the i18n guards never saw it: a bare
 // string in JSX is not a missing key.
