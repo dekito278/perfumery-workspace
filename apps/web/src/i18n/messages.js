@@ -295,7 +295,8 @@ export const MESSAGES = {
     "intl.noticeCatalogPrice": "Harga yang dipakai adalah harga internasional yang tertera di halaman produk, dan ongkirnya sudah termasuk untuk Asia Tenggara, Asia Timur, Australia, dan Amerika Utara.",
     'intl.noticeCta': 'Atur pesanan luar negeri lewat WhatsApp',
     'intl.noticeMessage': 'Halo SOLIVAGANT, saya mau memesan ke luar negeri. Boleh dibantu?',
-    'intl.domesticOk': 'Untuk tujuan lain \u2014 Eropa, Timur Tengah, Asia Selatan \u2014 ongkirnya kami hitung manual dan kami kirim sebelum kamu membayar.',
+    'intl.noticeQuoted': 'Untuk tujuan lain \u2014 Eropa, Timur Tengah, Asia Selatan \u2014 ongkirnya kami hitung manual dan kami kirim sebelum kamu membayar.',
+    'intl.domesticOk': 'Kalau alamat kirimnya di Indonesia, lanjutkan checkout seperti biasa dengan harga Indonesia.',
 
     'checkout.tab': 'Checkout - SOLIVAGANT',
     'checkout.eyebrow': 'CHECKOUT',
@@ -1453,7 +1454,8 @@ export const MESSAGES = {
     "intl.noticeCatalogPrice": "You are charged the international price shown on each product page, and shipping is already included for Southeast Asia, East Asia, Australia and North America.",
     'intl.noticeCta': 'Arrange an international order on WhatsApp',
     'intl.noticeMessage': 'Hello SOLIVAGANT, I would like to order for delivery outside Indonesia. Could you help?',
-    'intl.domesticOk': 'For anywhere else \u2014 Europe, the Middle East, South Asia \u2014 we work the shipping out by hand and send it to you before you pay.',
+    'intl.noticeQuoted': 'For anywhere else \u2014 Europe, the Middle East, South Asia \u2014 we work the shipping out by hand and send it to you before you pay.',
+    'intl.domesticOk': 'Shipping to an address in Indonesia? Carry on through checkout as normal, at Indonesian prices.',
 
     'checkout.tab': 'Checkout - SOLIVAGANT',
     'checkout.eyebrow': 'CHECKOUT',

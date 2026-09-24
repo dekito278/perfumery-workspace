@@ -1,14 +1,25 @@
 // `node src/utils/englishShopHasNoCart.selfcheck.mjs`
 //
-// The English shop does not take orders through this checkout. It cannot: shipping is priced by
-// RajaOngkir, which only knows Indonesian addresses, and the product pages quote the INTERNATIONAL
-// price while the cart totals the domestic one.
+// THIS RULE INVERTED on 2026-09-25, and the file keeps its name so the history is findable.
 //
-// Measured before this guard existed: /en/catalog/la-tulipe offered La Tulipe 30 ml at Rp 1.020.000
-// under the line "Price for delivery outside Indonesia", and the quick-add button on the catalogue card
-// beside it put the same bottle in the cart at Rp 260.000 — where /en/checkout then asked for a domestic
-// courier. The product PAGE had been gated; the card, the header cart, the phone's cart tab and the two
-// routes had not. Half a rule is what this guard exists to stop.
+// It used to hold that the English shop has no cart, and it had to: shipping was priced by RajaOngkir,
+// which only knows Indonesian addresses, and the product pages quoted the INTERNATIONAL price while the
+// cart totalled the domestic one. Measured before that guard existed: /en/catalog/la-tulipe offered
+// La Tulipe 30 ml at Rp 1.020.000 under "Price for delivery outside Indonesia", and the quick-add button
+// on the card beside it put the same bottle in the cart at Rp 260.000 — where /en/checkout then asked
+// for a domestic courier. The product PAGE had been gated; the card, the header cart, the phone's cart
+// tab and the two routes had not. Half a rule is what it existed to stop.
+//
+// Both reasons are now answered: the checkout asks for a destination COUNTRY instead of a courier, the
+// cart totals the same international price the product page shows, and the order endpoint recomputes
+// that price server-side from the country. So the cart is offered in both shops — and the rule that
+// replaces "no cart" is NARROWER, not gone:
+//
+//   the English shop may sell, but every number in it must be the international one, and the checkout
+//   must ask where the parcel is going before it will take an order.
+//
+// Deleting the old rule without putting this in its place would reopen the exact bug above, which is why
+// the file was rewritten rather than removed.
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -53,47 +64,86 @@ assert.equal(buildOverseasDraft(), '');
 assert.notEqual(overseasDraftKeys(true).labelKey, overseasDraftKeys(false).labelKey,
   'the button reads the same in both shops, so one of them is lying about what it does');
 
-// --- 1b. And every WhatsApp link on a product page uses that builder ---------------------------------
-// The assertions above prove the builder is right; they say nothing about whether the page still calls
-// it. Both sticky bars passed a generic message for months while a perfectly good builder sat beside
-// them, so the call sites are checked by rule rather than by memory.
-for (const page of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
-  const source = read(page);
-  const calls = [...source.matchAll(/buildWhatsAppCheckoutUrl\(/g)];
-  assert.ok(calls.length, `${page} no longer opens WhatsApp at all`);
-  for (const call of calls) {
-    const window = source.slice(call.index, call.index + 200);
-    assert.match(window, /buildOverseasDraft/,
-      `${page} opens WhatsApp with a message that is not built from the product — the buyer taps "order" `
-      + `and Dekito receives a note naming no perfume:\n  ${window.split('\n')[0].trim()}`);
-  }
-}
+// --- 1b. And the button that opens WhatsApp still builds its message from the product ---------------
+// This used to scan the product pages, because both sticky bars called buildWhatsAppCheckoutUrl directly
+// and passed a generic line for months. They no longer call it at all — the primary action there is now
+// Add to cart — so the rule follows the call to where it actually lives.
+const inquiry = read('components/storefront/OverseasInquiryButton.jsx');
+const inquiryCalls = [...inquiry.matchAll(/buildWhatsAppCheckoutUrl\(/g)];
+assert.ok(inquiryCalls.length, 'OverseasInquiryButton no longer opens WhatsApp at all');
+assert.match(inquiry, /buildOverseasDraft\(/,
+  'OverseasInquiryButton opens WhatsApp with a message that is not built from the product — the buyer '
+  + 'taps "ask" and Dekito receives a note naming no perfume');
 
-// --- 2. The cart and checkout routes do not exist in the English shop --------------------------------
+// --- 2. The cart and checkout are reachable in BOTH shops --------------------------------------------
+// The gate is gone, and its absence is asserted: a redirect quietly reintroduced here would send an
+// international buyer back to the catalogue from a cart they had just filled, with no message.
 const app = read('App.jsx');
 for (const path of ['/cart', '/checkout', '/mobile/cart', '/mobile/checkout']) {
   const line = app.split('\n').find((row) => row.includes(`<Route path="${path}"`));
   assert.ok(line, `the route ${path} has disappeared from App.jsx`);
-  assert.match(line, /<DomesticOnly>/,
-    `${path} is reachable in the English shop, where its prices and its courier list are both wrong:\n  ${line.trim()}`);
+  assert.doesNotMatch(line, /DomesticOnly|StorefrontPurchase/,
+    `${path} is wrapped in a gate again — the English shop can check out now, and a pass-through wrapper
+     also hides the page from every guard that resolves a route to what it renders:\n  ${line.trim()}`);
 }
-// And the wrapper must actually send the visitor away, not merely exist.
-const gate = app.slice(app.indexOf('const DomesticOnly'), app.indexOf('const DomesticOnly') + 400);
-assert.match(gate, /isInternational/, 'DomesticOnly does not consult the shop at all');
-assert.match(gate, /<Navigate/, 'DomesticOnly renders no redirect, so the gated pages still render');
+assert.doesNotMatch(app, /const DomesticOnly/, 'the old gate is back');
 
-// --- 3. NO buyer surface reaches the cart without asking which shop it is in -------------------------
-// Found by scanning, not by a list: the next add-to-cart button somebody adds has to be caught by this
-// too, and a hardcoded list would quietly pass it.
+// --- 3. …but every number the English shop shows is the international one -----------------------------
+// This replaces "no surface may reach the cart". The surfaces may reach it; what they may not do is put
+// a domestic price on an English screen, which is the bug the old rule prevented by amputation.
+//
+// The cart totals what the product page quoted.
+const cartHook = read('hooks/useCart.js');
+assert.match(cartHook, /isInternational/,
+  'useCart no longer asks which shop it is in — the English cart totals the Indonesian price again');
+assert.match(cartHook, /internationalPriceFor\(/,
+  'the English cart must total the international price, from the shared rule');
+assert.match(cartHook, /retailPriceNumber/,
+  'the international price must be built on RETAIL — a member discount multiplied into an export price '
+  + 'made the same bottle cheaper abroad the moment someone signed in');
+
+// The buy button says the price it will charge.
+const detail = read('pages/PublicProductDetailPage.jsx');
+assert.match(detail, /const buyPriceLabel = exportPrice \?/,
+  'the buy button must name the international price where there is one');
+assert.match(detail, /addToCartWithPrice', \{ price: buyPriceLabel \}/,
+  'the button prints a price that is not the one the buyer is charged');
+
+// The checkout asks where the parcel goes, in both layouts, and never offers a domestic courier abroad.
+for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
+  const source = read(page);
+  // Imported AND rendered. Checking for the bare name passed a sabotage that renamed only the import,
+  // leaving a JSX element bound to nothing — a page that crashes for the buyer while the guard is green.
+  assert.match(source, /import InternationalDeliveryFields from/,
+    `${page} does not import the country field`);
+  assert.match(source, /<InternationalDeliveryFields/,
+    `${page} does not ask an international buyer which country the parcel is going to`);
+  assert.match(source, /isInternational \?/,
+    `${page} shows the same delivery step to both shops — one of them is being offered a courier it `
+    + 'cannot use');
+}
+
+// And the order it creates carries that country, or the endpoint prices it as domestic.
+const flow = read('hooks/useCheckoutFlow.js');
+assert.match(flow, /deliveryCountry: isInternational \? deliveryCountry : ''/,
+  'the order must carry the destination country — it is what makes the endpoint price it internationally');
+assert.match(flow, /const shippingFee = isInternational \? 0 :/,
+  'an international order must not add a domestic courier fee');
+const service = read('services/orderService.js');
+assert.match(service, /country: orderData\.deliveryCountry \|\| ''/,
+  'the endpoint payload drops the country, so the server prices the order as domestic');
+
+// The file scan §4 uses. It lived under the old §3 ("no surface may reach the cart"), which this rewrite
+// replaced — the tills are still worth scanning even though the cart is no longer one of them.
 const jsxFilesIn = (rel) => readdirSync(join(srcRoot, rel))
   .filter((name) => name.endsWith('.jsx'))
   .map((name) => join(rel, name));
 
 const STUDIO = /Studio|Admin|Formula|Material|Batch|Inventory|Supplier|Report|Dashboard|Order|Shipment|Customers|Journal(Editor|Page|Detail)|Validation|Curation|Voucher|Quotation|Login|Auth/;
-// Reached only after an order already exists, and the destination it links to is itself gated above.
+// Reached only after an order already exists.
 const EXEMPT = new Set(['pages/PaymentPage.jsx']);
-// These ARE the cart and the checkout. They are kept out of the English shop by their routes, not by a
-// branch inside themselves — a page that renders half of itself is how the first attempt leaked.
+// These ARE the cart and the checkout, and they are now allowed to take an international payment — that
+// is the whole point of this rewrite. They answer to §2 and §3 instead.
 const GATED_BY_ROUTE = /^(pages\/CartPage|pages\/CheckoutPage|pages\/mobile\/MobileCartPage|pages\/mobile\/MobileCheckoutPage)\.jsx$/;
 
 const candidates = [
@@ -102,34 +152,6 @@ const candidates = [
   ...jsxFilesIn(join('components', 'storefront')),
   ...jsxFilesIn('layouts'),
 ].map((rel) => rel.split('\\').join('/'));
-
-// Any name of the shape add…Item(, not the one spelling we happened to look for first: the customer
-// portal's reorder calls addCartItem(), slipped past a pattern that only knew addItem(), and quietly
-// filled a basket the English shop cannot open.
-const REACHES_CART = /\badd[A-Za-z]*Item\(|to="\/cart"|'\/cart'|"\/mobile\/cart"|'\/mobile\/cart'/;
-let checked = 0;
-for (const rel of candidates) {
-  if (EXEMPT.has(rel) || GATED_BY_ROUTE.test(rel) || STUDIO.test(rel)) continue;
-  const source = read(rel);
-  if (!REACHES_CART.test(source)) continue;
-  checked += 1;
-  // TWO tests, because the obvious one is not enough. Simply searching for the word `isInternational`
-  // passes on a file that still MENTIONS it in dead JSX after the binding was deleted — which is what
-  // three of the sabotage runs did: remove it from the destructuring and the gate silently stops working
-  // while the guard stays green. So: the file must BIND it, and must actually branch on it.
-  assert.match(source, /const\s*\{[^}]*\bisInternational\b[^}]*\}\s*=/,
-    `${rel} reaches the cart but never reads which shop it is in — in the English shop that is a domestic `
-    + 'price under an international one.');
-  // Branching on it directly, or handing it to a named rule that does — bespoke routes three surfaces
-  // through bespokeTakesPayment() rather than repeating the ternary, which is the better answer and
-  // must not read as "never used".
-  assert.match(source, /isInternational\s*\?|!\s*isInternational|\w+\(\s*isInternational\s*\)|\(\s*\w+,\s*isInternational\s*\)/,
-    `${rel} reads which shop it is in and then does nothing with it — the cart is still offered in the `
-    + 'English shop.');
-}
-// The scan must actually be finding files. A regex that matches nothing would pass every assertion above
-// while guarding nothing at all, which is the way this class of guard usually dies.
-assert.ok(checked >= 4, `the cart-surface scan only found ${checked} file(s); it has stopped seeing the shop`);
 
 // --- 4. And no buyer page takes a PAYMENT in the English shop ----------------------------------------
 //
@@ -238,4 +260,4 @@ assert.equal(
 assert.match(buildBespokeEnquiryDraft({ t: stub }), /\|-\|-\|-\|-$/, 'an unanswered field must read as a dash, not as "undefined"');
 assert.equal(buildBespokeEnquiryDraft(), '', 'no translator, no draft');
 
-console.log(`englishShopHasNoCart selfcheck OK (no cart and no till in the English shop: ${checked} buy surface(s) and ${payChecked} payment surface(s) gated, 4 routes redirected, and the WhatsApp draft names the bottle and its international price)`);
+console.log(`englishShopHasNoCart selfcheck OK (the English shop sells, at international prices: 4 routes open, ${payChecked} payment surface(s) still gated, and the checkout asks where the parcel goes)`);

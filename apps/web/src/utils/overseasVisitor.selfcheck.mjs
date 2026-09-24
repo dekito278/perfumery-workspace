@@ -204,8 +204,16 @@ for (const page of [
     `${page.join('/')} keeps the way back for a domestic buyer reading English`);
   assert.doesNotMatch(source, /<OverseasPriceNote/, 'and does not repeat the same number in a second panel');
 }
-// And none of the three offers the cart to a reader being quoted internationally. RajaOngkir prices the
-// cart and a foreign address returns an empty area list, so the button leads to a form nobody can finish.
+// INVERTED on 2026-09-25, the third rule in this file to turn over rather than be deleted.
+//
+// It used to hold that none of the three product pages may offer the cart to a reader being quoted
+// internationally: RajaOngkir priced the cart and a foreign address returned an empty area list, so the
+// button led to a form nobody could finish. The checkout now asks for a destination country instead of a
+// courier, and the cart totals the international price, so the button is offered to everyone.
+//
+// What replaces it is the part that was always the real risk: the price ON that button. An add-to-cart
+// reading the Indonesian figure under an international headline is the original bug, and it survives the
+// gate being removed — so the rule now follows the number rather than the button.
 for (const page of [
   ['pages', 'PublicProductDetailPage.jsx'],
   ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
@@ -213,32 +221,16 @@ for (const page of [
 ]) {
   const source = read(...page);
   const name = page.join('/');
-  // Read by bracket depth rather than by regex. The first version looked for ") : (" between the gate
-  // and the button and found the soldOut ternary's own ") : (" instead, so moving the cart onto the
-  // international side of the gate walked straight through it.
-  const trueBranchOf = (from) => {
-    let depth = 0;
-    for (let i = from; i < source.length; i += 1) {
-      const c = source[i];
-      if ('([{'.includes(c)) depth += 1;
-      else if (')]}'.includes(c)) { if (depth === 0) return source.slice(from, i); depth -= 1; }
-      else if (c === ':' && depth === 0 && source[i - 1] !== '?') return source.slice(from, i);
-    }
-    return source.slice(from);
-  };
-
-  const gates = [...source.matchAll(/isInternational \?/g)];
-  assert.ok(gates.length, `${name}: nothing is gated on the region at all`);
-  for (const gate of gates) {
-    assert.ok(!trueBranchOf(gate.index + gate[0].length).includes('addToCartWithPrice'),
-      `${name}: an add-to-cart sits on the INTERNATIONAL side of an isInternational gate — offered to `
-      + 'exactly the buyer whose address the cart cannot ship to');
-  }
-  // And every add-to-cart has a gate above it, or it is offered to everyone.
-  for (const match of source.matchAll(/addToCartWithPrice/g)) {
-    const gateAt = source.slice(0, match.index).lastIndexOf('isInternational ?');
-    assert.ok(gateAt !== -1 && match.index - gateAt < 900,
-      `${name}: an add-to-cart is offered with no isInternational gate above it — the cart cannot ship abroad`);
+  if (!/addToCartWithPrice/.test(source)) continue;
+  // Every add-to-cart that prints a price prints one derived from the export price, never the raw
+  // domestic label.
+  for (const match of source.matchAll(/addToCartWithPrice',\s*\{\s*price:\s*(\w+)\s*\}/g)) {
+    const priceVar = match[1];
+    const declared = source.match(new RegExp(`const ${priceVar} = ([^;]+);`));
+    assert.ok(declared, `${name}: the add-to-cart price ${priceVar} is not declared in this file`);
+    assert.match(declared[1], /exportPrice/,
+      `${name}: the add-to-cart prints ${priceVar}, which is not built from the export price — an `
+      + 'Indonesian figure on an English button is the oldest version of this bug');
   }
   // The export price must be the REGION-GATED one here, or the domestic price is what gets replaced for
   // an Indonesian reader too.
@@ -336,17 +328,20 @@ for (const file of [
     `${file.join('/')} prints a card price outside CardPrice: ${raw.join(' | ')}`);
 }
 
-// EVERY add-to-cart on a product page is gated, not just the obvious one. The desktop page has two — the
-// main button and the sticky bar — and gating only the first left a bar at the bottom of the English
-// page still saying "Add to cart" under a price it cannot charge. Two nudges had to be gated twice for
-// the same reason; this is the third time that shape has appeared.
+// EVERY add-to-cart on a product page has to agree with the one above it. The desktop page has two — the
+// main button and the sticky bar — and for months only the first was region-aware, leaving a bar at the
+// bottom of the English page saying "Add to cart" under a price it could not charge. The gate is gone
+// now, but the pairing is the part that kept breaking: a page whose two buttons disagree is the same
+// defect wearing the new rule's clothes.
 for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
   const source = read(...page);
   const carts = (source.match(/t\('pdp\.addToCart(?:WithPrice)?'/g) || []).length;
-  const gates = (source.match(/isInternational \?/g) || []).length;
-  assert.ok(carts > 0, `${page.join('/')} still has an add-to-cart to gate`);
-  assert.ok(gates >= carts,
-    `${page.join('/')} has ${carts} add-to-cart labels but only ${gates} region gates — one of them still offers the cart in the English shop`);
+  assert.ok(carts > 0, `${page.join('/')} no longer offers the cart at all`);
+  // Whatever price either button prints, it is the same expression on both — so one of them cannot drift
+  // back to the domestic figure while the other shows dollars.
+  const printed = [...source.matchAll(/addToCartWithPrice',\s*\{\s*price:\s*(\w+)\s*\}/g)].map((m) => m[1]);
+  assert.equal(new Set(printed).size <= 1, true,
+    `${page.join('/')} prints two different prices on its add-to-cart buttons: ${printed.join(' vs ')}`);
 }
 
 // CardPrice looks the price up through the PRIMARY VARIANT. Every export price is keyed by variant, so a

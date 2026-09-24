@@ -55,13 +55,25 @@ for (const key of ['intl.noticeTitle', 'intl.noticeDomesticOnly', 'intl.domestic
   assert.ok(notice.includes(`t('${key}')`), `${key} is rendered, not just defined`);
 }
 
-// --- 3. It reconciles the two prices the same visitor has just seen ---------------------------------------------
-// Without this, the product page said Rp 2.630.000 and the cart says Rp 750.000, and the buyer has to
-// guess which one they will be charged.
-assert.match(MESSAGES.en['intl.noticeDomesticOnly'], /Indonesian prices/i, 'the cart total is named as the Indonesian price');
-assert.match(MESSAGES.en['intl.noticeCatalogPrice'], /international price/i, 'and the product-page number as the international one');
-assert.match(MESSAGES.id['intl.noticeDomesticOnly'], /harga Indonesia/i);
+// --- 3. It names the price that will actually be charged -----------------------------------------------
+//
+// INVERTED on 2026-09-25. This used to reconcile TWO numbers: the product page said Rp 2.630.000 and the
+// cart said Rp 750.000, and the notice existed so the buyer could tell which one they would be charged.
+// There is only one number now — the cart totals the international price — so a notice still explaining
+// that the cart is Indonesian would be describing a shop that no longer exists.
+//
+// The requirement that survives, and the one that mattered all along: the notice names the price the
+// buyer will be charged, and does not leave them guessing.
+assert.match(MESSAGES.en['intl.noticeCatalogPrice'], /international price/i,
+  'the notice must still name the international price as the one charged');
 assert.match(MESSAGES.id['intl.noticeCatalogPrice'], /harga internasional/i);
+assert.doesNotMatch(MESSAGES.en['intl.noticeDomesticOnly'], /Indonesia only|Indonesian prices/i,
+  'the notice still tells an international buyer this checkout is domestic-only — it is not any more');
+assert.doesNotMatch(MESSAGES.id['intl.noticeDomesticOnly'], /Indonesia saja|harga Indonesia/i);
+// And it says what replaced the courier step, because that is the question the buyer now has.
+assert.match(MESSAGES.en['intl.noticeDomesticOnly'], /country/i,
+  'the notice must tell an international buyer to choose their destination country');
+assert.match(MESSAGES.id['intl.noticeDomesticOnly'], /negara/i);
 
 // --- 3b. Where that international number comes from is not the same answer everywhere -------------------
 // In the cart it is printed on each product's page. On the BESPOKE request there is no product page and

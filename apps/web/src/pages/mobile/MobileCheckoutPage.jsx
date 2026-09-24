@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import InternationalDeliveryFields from '@/components/storefront/InternationalDeliveryFields.jsx';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
@@ -109,6 +110,7 @@ const MobileCheckoutPage = () => {
     canSubmitCheckout, blockedItems, setCustomerName, setContact, setDeliveryAddress, setNotes, setSecurityAnswer, setSelectedShipping,
     setSelectedPaymentMethod, chooseShippingCourier, updateCustomerCode, updateDestinationSearch, useCustomerLastAddress,
     useCustomerNewAddress, autoCalculateShipping, loadShippingRates, lookupCustomer, verifyCustomerSecurity, submitOrder,
+    deliveryCountry, setDeliveryCountry, destination, isInternational,
   } = checkout;
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   const visibleShippingOptions = selectedCourier ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier) : [];
@@ -116,17 +118,26 @@ const MobileCheckoutPage = () => {
     { label: t('mcheckout.stepName'), complete: Boolean(customerName.trim()) },
     { label: t('mcheckout.stepPhone'), complete: validPhoneContact },
     { label: t('mcheckout.stepAddress'), complete: Boolean(deliveryAddress.trim()) },
-    { label: t('mcheckout.stepArea'), complete: Boolean(selectedDestination) },
-    // Two requirements, not one. Folding them together told a buyer who had already chosen JNE that they
-    // still needed to choose a courier, which reads as the app ignoring them.
-    { label: t('mcheckout.stepCourier'), complete: Boolean(selectedCourier) },
-    { label: t('checkout.shipping'), complete: Boolean(selectedShipping) },
+    // The two shops ask for different things here. A checklist telling a buyer in Berlin to choose a
+    // courier names a control that is not on their screen — and the courier list they would be shown is
+    // Indonesian domestic couriers, which is why the English shop had no checkout at all until now.
+    ...(isInternational
+      ? [{ label: t('checkout.fieldCountry'), complete: Boolean(destination) }]
+      : [
+        { label: t('mcheckout.stepArea'), complete: Boolean(selectedDestination) },
+        // Two requirements, not one. Folding them together told a buyer who had already chosen JNE that
+        // they still needed to choose a courier, which reads as the app ignoring them.
+        { label: t('mcheckout.stepCourier'), complete: Boolean(selectedCourier) },
+        { label: t('checkout.shipping'), complete: Boolean(selectedShipping) },
+      ]),
     // Mirrors canSubmitCheckout: lines whose product is gone or sold out block the order (audit round 9).
     { label: t('mcheckout.removeUnavailable'), complete: !blockedItems.length },
   ];
   const contactComplete = Boolean(customerName.trim() && validPhoneContact);
   const addressComplete = Boolean(contactComplete && deliveryAddress.trim());
-  const shippingComplete = Boolean(addressComplete && selectedDestination && selectedCourier && selectedShipping);
+  const shippingComplete = Boolean(addressComplete && (isInternational
+    ? destination
+    : (selectedDestination && selectedCourier && selectedShipping)));
   const paymentComplete = Boolean(shippingComplete && selectedPaymentMethod);
   const checkoutSteps = [
     { label: t('mcheckout.contact'), complete: contactComplete },
@@ -265,10 +276,18 @@ const MobileCheckoutPage = () => {
         </CheckoutSection>
         <CheckoutSection
           step="3"
-          title={t('checkout.pickCourier')}
-          description={t('mcheckout.stepShippingBody')}
+          title={isInternational ? t('checkout.country') : t('checkout.pickCourier')}
+          description={isInternational ? t('checkout.pickCountry') : t('mcheckout.stepShippingBody')}
           complete={shippingComplete}
         >
+            {isInternational ? (
+              <InternationalDeliveryFields
+                value={deliveryCountry}
+                onChange={setDeliveryCountry}
+                destination={destination}
+              />
+            ) : (
+            <>
             <label className={`mobile-commerce-courier-select ${selectedCourier ? 'is-selected' : ''}`}>
               <span className="min-w-0">
                 <span className="block text-[10px] font-bold uppercase">
@@ -384,6 +403,8 @@ const MobileCheckoutPage = () => {
               </p>
             ) : null}
             {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}
+            </>
+            )}
         </CheckoutSection>
         <CheckoutSection
           step="4"

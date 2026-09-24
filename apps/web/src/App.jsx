@@ -463,17 +463,11 @@ const ROUTER_BASENAME = routerBasename();
  * cart or a stale link did, and the language switch in the header is the way back for anyone who is
  * actually shipping inside Indonesia.
  */
-/**
- * The cart and the checkout used to be domestic-only, and for a year they had to be: shipping was priced
- * by RajaOngkir, which answers a foreign city with an empty list and HTTP 200, and the cart totalled the
- * Indonesian price under a page quoting the international one.
- *
- * Both of those are now answered. The checkout asks for a destination COUNTRY instead of a courier, the
- * cart totals the same international price the product page shows, and the order endpoint recomputes
- * that price server-side from the country. So the gate is gone — kept as a named component rather than
- * deleted, because what replaced it is a set of rules and this is where a reader comes looking for them.
- */
-const StorefrontPurchase = ({ children }) => children;
+// The cart and the checkout used to be wrapped in DomesticOnly, which sent an international visitor back
+// to the catalogue. Both reasons for that are answered — the checkout asks for a destination country
+// instead of a courier, the cart totals the international price, and the order endpoint recomputes that
+// price server-side from the country — so the wrapper is gone rather than emptied: a pass-through
+// component hides the real page from every guard that resolves a route to what it renders.
 
 function AppRoutes() {
   return (
@@ -499,8 +493,8 @@ function AppRoutes() {
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/journal" element={<PublicJournalPage />} />
-        <Route path="/cart" element={<StorefrontPurchase><CartPage /></StorefrontPurchase>} />
-        <Route path="/checkout" element={<StorefrontPurchase><CheckoutPage /></StorefrontPurchase>} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment" element={<PaymentPage />} />
         {/* The greeting card in every parcel points here. */}
         <Route path="/welcome" element={<WelcomePage />} />
@@ -535,8 +529,8 @@ function AppRoutes() {
 
         <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
 
-        <Route path="/mobile/cart" element={<StorefrontPurchase><MobileCartPage /></StorefrontPurchase>} />
-        <Route path="/mobile/checkout" element={<StorefrontPurchase><MobileCheckoutPage /></StorefrontPurchase>} />
+        <Route path="/mobile/cart" element={<MobileCartPage />} />
+        <Route path="/mobile/checkout" element={<MobileCheckoutPage />} />
 
         <Route path="/mobile/payment" element={<PaymentPage />} />
 

@@ -21,6 +21,7 @@ import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import { formatUsdPrice } from '@/utils/usdPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { toast } from 'sonner';
@@ -38,7 +39,7 @@ import { toast } from 'sonner';
  */
 const ImmersiveProductPage = ({ product, story, mobile = false }) => {
   const { addItem } = useCart();
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
@@ -115,6 +116,8 @@ const ImmersiveProductPage = ({ product, story, mobile = false }) => {
   // Region-gated, exactly as the ordinary product page resolves it: null unless this visitor is
   // being quoted internationally.
   const exportPrice = useOverseasPrice(product, selectedVariant);
+  // The number on the buy button is the number charged: dollars where the buyer pays in dollars.
+  const buyPriceLabel = exportPrice ? (formatUsdPrice(exportPrice) || formatRupiah(exportPrice)) : selectedPriceLabel;
 
   const handleAddToCart = () => {
     if (soldOut) {
@@ -331,17 +334,16 @@ const ImmersiveProductPage = ({ product, story, mobile = false }) => {
               Indonesia and simply prefers reading English. */}
           {exportPrice ? <InternationalPrice price={exportPrice} /> : null}
 
-          {isInternational ? null : (
-            <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
-              {soldOut ? (
-                <>{t('pdp.soldOut')}</>
-              ) : lastAddedSlug === product.slug ? (
-                <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
-              ) : (
-                <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: selectedPriceLabel })}</>
-              )}
-            </button>
-          )}
+          {/* Offered in both shops since 2026-09-25, at the price the buyer is actually charged. */}
+          <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
+            {soldOut ? (
+              <>{t('pdp.soldOut')}</>
+            ) : lastAddedSlug === product.slug ? (
+              <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
+            ) : (
+              <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: buyPriceLabel })}</>
+            )}
+          </button>
           <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel} className="mt-3" />
           <ShareProductButton product={product} className="mt-3" />
           <SwitchToIndonesiaHint className="mt-3" />
