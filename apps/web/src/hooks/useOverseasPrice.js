@@ -29,7 +29,20 @@ export const useExportPrice = (product, variant = null) => {
   const shippingRegion = useShippingRegion();
 
   if (!product?.slug) return { price: null, overseasVisitor, shippingRegion };
-  const linePrice = Number(variant?.priceNumber ?? product?.priceNumber ?? 0);
+  // The RETAIL price, never the one this visitor happens to be entitled to.
+  //
+  // applyTierPrices rewrites priceNumber to the member price for a signed-in member and keeps the
+  // original as retailPriceNumber. Reading priceNumber here multiplied the member discount into the
+  // international price: a signed-in buyer in Singapore was quoted US$45 where an anonymous one saw
+  // US$50, and the same bottle cost less abroad the moment someone logged in. Dekito's decision,
+  // 2026-09-24 — the member discount is a domestic loyalty price and does not travel.
+  const linePrice = Number(
+    variant?.retailPriceNumber
+    ?? variant?.priceNumber
+    ?? product?.retailPriceNumber
+    ?? product?.priceNumber
+    ?? 0,
+  );
   const price = internationalPriceFor({
     tierPrices: tierPricesForLine(index, product.slug, variant?.id || ''),
     linePrice,
