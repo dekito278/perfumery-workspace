@@ -106,8 +106,15 @@ for (const region of SHIPPING_RATE_REGIONS) {
 // number it had. With a published price in the repo, billing the cost is billing the wrong number.
 const page = read('pages', 'ExportShippingCalculatorPage.jsx');
 assert.match(page, /quoteInternationalShippingPrice\(/, 'the Studio calculator must quote from the card');
-assert.match(page, /shippingCharged = typedShipping \|\| priceCardIdr/,
-  'the charged amount must prefer the published price over the carrier cost');
+// Pinning the exact expression made this fail the moment the rule legitimately grew a third branch, so
+// it reads the PRECEDENCE instead: a typed figure wins, then the shop's promise, then the published
+// price, and the carrier cost is the last resort it used to be the first.
+const chargedLine = (page.match(/const shippingCharged = .*/) || [''])[0];
+assert.ok(chargedLine, 'the page must compute one shipping figure');
+assert.ok(chargedLine.indexOf('typedShipping') === 0 + 'const shippingCharged = '.length - 0,
+  `a hand-typed figure must win: ${chargedLine}`);
+assert.ok(chargedLine.indexOf('priceCardIdr') < chargedLine.indexOf('quote?.total'),
+  `the published price must come before the carrier cost: ${chargedLine}`);
 assert.match(page, /USD_PER_RUPIAH_RATE/, 'the rupiah figure must name the rate it was converted at');
 
 // One figure, two places. Caught on the screen before this shipped: the WhatsApp summary was still built
@@ -118,11 +125,27 @@ assert.match(page, /shipping: shippingCharged > 0 \? \{ total: shippingCharged/,
 assert.doesNotMatch(page, /shipping: quote,/,
   'the summary may not be built from the carrier cost while the order bills the published price');
 
+// --- 6b. Where the shop says shipping is included, the order must not add it ---------------------------
+// Every product page tells an international buyer "Shipping is included", and this screen is where that
+// buyer's order is written down. Billing the rate card on top of a price that already carries the
+// shipping charges them twice for the same parcel. Decision, 2026-09-24: not charged yet.
+assert.match(page, /shippingIncludedFor\(countryCode\)/,
+  'the calculator must ask the shop\'s own rule whether the price already carries the shipping');
+assert.match(page, /shippingInPrice \? 0 :/,
+  'and must charge nothing where it does');
+
+// --- 6c. The message must not name the wrong basis -----------------------------------------------------
 // And the message must name where that figure came from, instead of the carrier it stopped using.
 const quoteBuilder = read('utils', 'exportQuote.js');
 assert.doesNotMatch(quoteBuilder, /Ongkir \(LTU Express/,
   'the quote message may not hardcode a carrier the shop no longer bills through');
 assert.match(quoteBuilder, /shipping\.label/, 'it must name the basis the caller actually used');
+
+// Zero shipping is an answer, not a blank: "Ongkir: Rp 0" reads like a mistake to the person receiving
+// the quote, and invites the question the sentence exists to prevent.
+assert.match(quoteBuilder, /shippingTotal > 0/, 'a zero total must take a different sentence');
+const zeroQuote = quoteBuilder.match(/Ongkir: \$\{shipping\.label\}/);
+assert.ok(zeroQuote, 'and that sentence must say what is true instead of printing Rp 0');
 
 // --- 7. The card's conditions travel with the numbers -------------------------------------------------
 const data = read('data', 'internationalShippingRates.js');
