@@ -84,6 +84,19 @@ const cron = stripComments(readFileSync(join(srcRoot, '..', 'api', 'orders', 'ex
 assert.match(cron, /if \(order\.payment_response\?\.shippingQuotePending\) return false;/,
   'and neither must the cron that actually cancels them');
 
+// --- 4b. And the storefront checkout sets it from the DESTINATION, server-side -------------------------
+// The Studio calculator sets the flag by hand, because Dekito is the one deciding. A buyer checking out
+// on /en decides nothing: the endpoint reads the country they chose and works it out, and the account
+// and the dollar figure are written there too — a browser that could name its own bank account is a
+// browser that can be edited.
+const endpoint = stripComments(readFileSync(join(srcRoot, '..', 'api', 'orders', 'create.js'), 'utf8'));
+assert.match(endpoint, /\.\.\.\(destination\.shippingQuoted \? \{ shippingQuotePending: true \} : \{\}\)/,
+  'the endpoint must flag an order whose freight it cannot price');
+assert.match(endpoint, /bankName: INTERNATIONAL_TRANSFER_PAYMENT\.bankName/,
+  'and must write the account server-side, not accept one from the request');
+assert.doesNotMatch(endpoint, /payment_response: input\./,
+  'the endpoint must never take payment_response from the browser');
+
 // --- 5. The flag is only ever set where there is something left to quote -------------------------------
 const calculator = read('pages', 'ExportShippingCalculatorPage.jsx');
 assert.match(calculator, /const canQuoteLater = !shippingInPrice && !typedShipping;/,

@@ -16,7 +16,8 @@ import { USD_PER_RUPIAH_RATE, USD_RATE_SET_ON } from '@/utils/overseasVisitor.js
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
-import { buildCheckoutDraft, buildOrderNotes, INTERNATIONAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
+import { buildCheckoutDraft, buildOrderNotes } from '@/services/cartService.js';
+import { INTERNATIONAL_TRANSFER_PAYMENT } from '@/data/internationalAccount.js';
 import { createOrder } from '@/services/orderService.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';

@@ -16,7 +16,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, '..', 'services', 'cartService.js'), 'utf8');
 
 const runnable = 'const STUB_ENV = {};\nconst normalizeWhatsAppPhoneNumber = (v = "") => String(v).replace(/\\D/g, "");\n'
-  + source.replace(/^(?:import|export)[\s\S]*?from '[^']+';\n/gm, '').replace(/import\.meta\.env/g, 'STUB_ENV');
+  // One LINE at a time. The old pattern was `^(?:import|export)[\s\S]*?from '...';` — lazy across
+  // newlines — so the first `export ... from` appearing later in the file made it swallow everything
+  // from the preceding `export const` down to that line. Adding one re-export deleted
+  // MANUAL_TRANSFER_PAYMENT and this guard failed with "not defined" pointing at a file that was fine.
+  + source.replace(/^(?:import|export)\b[^\n]*from '[^']+';\n/gm, '').replace(/import\.meta\.env/g, 'STUB_ENV');
 const { buildCheckoutDraft, buildOrderNotes } = await import(
   `data:text/javascript;base64,${Buffer.from(runnable, 'utf8').toString('base64')}`
 );

@@ -20,6 +20,8 @@ import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { destinationFor, internationalPriceFor } from '../../src/utils/internationalDestination.js';
+import { usdPriceFor, USD_PRICE_RATE } from '../../src/utils/usdPrice.js';
+import { INTERNATIONAL_TRANSFER_PAYMENT } from '../../src/data/internationalAccount.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
@@ -446,6 +448,28 @@ export default async function handler(req, res) {
       courier_name: shippingSummary || null,
       source: isBespoke ? 'bespoke_request' : (input.source || 'storefront'),
       client_context: clientContext,
+      // Everything an international buyer needs to pay, decided HERE and not by the browser: the dollar
+      // figure frozen at the rate this order was priced with, and the account those dollars go to.
+      //
+      // shippingQuotePending is the Europe path. The freight for those destinations is worked out by
+      // hand, so the order is written without it — and the payment page then shows no account and no
+      // total, and the 24-hour reservation clock does not run, until Dekito sends the figure. An order
+      // that handed out the account before the total was final would collect the wrong amount into a
+      // foreign account, which costs more to unwind than the parcel is worth.
+      ...(destination ? {
+        payment_response: {
+          amountUsd: usdPriceFor(subtotal),
+          currency: 'USD',
+          amountIdr: subtotal,
+          usdRate: USD_PRICE_RATE,
+          destinationCountry: destination.code,
+          bankName: INTERNATIONAL_TRANSFER_PAYMENT.bankName,
+          swift: INTERNATIONAL_TRANSFER_PAYMENT.swift,
+          accountNumber: INTERNATIONAL_TRANSFER_PAYMENT.accountNumber,
+          accountName: INTERNATIONAL_TRANSFER_PAYMENT.accountName,
+          ...(destination.shippingQuoted ? { shippingQuotePending: true } : {}),
+        },
+      } : {}),
       ...(isBespoke ? { bespoke_production_status: 'review_brief' } : {}),
     };
 
