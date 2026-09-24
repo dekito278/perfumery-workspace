@@ -109,12 +109,15 @@ assert.match(page, /quoteInternationalShippingPrice\(/, 'the Studio calculator m
 // Pinning the exact expression made this fail the moment the rule legitimately grew a third branch, so
 // it reads the PRECEDENCE instead: a typed figure wins, then the shop's promise, then the published
 // price, and the carrier cost is the last resort it used to be the first.
-const chargedLine = (page.match(/const shippingCharged = .*/) || [''])[0];
+// Written as POSITION once — "typedShipping must be the first token" — and that broke the day a third
+// branch went in front of it for orders whose shipping is quoted later. Position was never the rule;
+// order of preference was.
+const chargedLine = (page.match(/const shippingCharged = [\s\S]*?;/) || [''])[0];
 assert.ok(chargedLine, 'the page must compute one shipping figure');
-assert.ok(chargedLine.indexOf('typedShipping') === 0 + 'const shippingCharged = '.length - 0,
-  `a hand-typed figure must win: ${chargedLine}`);
-assert.ok(chargedLine.indexOf('priceCardIdr') < chargedLine.indexOf('quote?.total'),
-  `the published price must come before the carrier cost: ${chargedLine}`);
+const order = ['typedShipping', 'priceCardIdr', 'quote?.total'].map((token) => chargedLine.indexOf(token));
+assert.ok(order.every((at) => at >= 0), `every source must appear: ${chargedLine.replace(/\s+/g, ' ')}`);
+assert.ok(order[0] < order[1] && order[1] < order[2],
+  `a typed figure wins, then the published price, and the carrier cost is last: ${chargedLine.replace(/\s+/g, ' ')}`);
 assert.match(page, /USD_PER_RUPIAH_RATE/, 'the rupiah figure must name the rate it was converted at');
 
 // One figure, two places. Caught on the screen before this shipped: the WhatsApp summary was still built

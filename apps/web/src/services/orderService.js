@@ -744,6 +744,10 @@ export const isOrderReservationExpired = (order = {}, now = new Date()) => {
   // Manual-transfer buyers sit at paymentStatus 'pending' until an admin approves their proof.
   // Once proof is submitted, the order is paid-awaiting-review — it must NEVER auto-cancel.
   if (order.paymentProofStatus && !['missing', 'rejected'].includes(order.paymentProofStatus)) return false;
+  // Waiting on US for a shipping figure. The clock starts when the quote is sent, not when the order is
+  // written — otherwise an international buyer loses their order to our slowness, having never been shown
+  // an amount to pay. Mirrored in api/orders/expire-reservations.js.
+  if (order.paymentResponse?.shippingQuotePending) return false;
 
   const expiresAt = getReservationExpiryDate(order);
   if (!expiresAt) return false;

@@ -64,6 +64,35 @@ export const isBlockedByBespokeProduction = (order = {}) => (
   && !isArchivedOrder(order)
 );
 
+/**
+ * The order exists, the buyer is waiting on US for a shipping figure, and nothing can be paid yet.
+ *
+ * Europe and anything else outside the regions whose shipping is already in the price get their freight
+ * quoted by hand. Dekito's decision, 2026-09-25: the order is created anyway rather than turning the
+ * buyer away, and it waits.
+ *
+ * Two things follow from that, and both matter more than the label:
+ *
+ *   1. The bank account must NOT be shown. A buyer who transfers the goods total before the shipping is
+ *      added has paid the wrong amount into a foreign account, and getting it back costs more than the
+ *      parcel.
+ *   2. The payment clock must NOT run. A reserved order cancels itself 24 hours after it is created; an
+ *      order waiting on a quote would die of OUR slowness while its buyer sat watching a page that never
+ *      asked them for anything. The clock starts when the quote is sent, because that is when the ball
+ *      moves back.
+ *
+ * The flag rides on payment_response, the free-form column the public payment lookup already returns —
+ * the same route the dollar amount and the international account details travel.
+ */
+export const isAwaitingShippingQuote = (order = {}) => {
+  if (!order || typeof order !== 'object') return false;
+  // Both spellings on purpose: the client normalises to paymentResponse, the expiry cron reads raw rows.
+  const response = order.paymentResponse || order.payment_response || {};
+  if (!response?.shippingQuotePending) return false;
+  const paymentStatus = order.paymentStatus ?? order.payment_status;
+  return ['unpaid', 'pending'].includes(paymentStatus) && !isArchivedOrder(order);
+};
+
 export const isFrontQueueOrder = (order = {}) => (
   !isArchivedOrder(order)
   && !hasShippingLabelPrinted(order)

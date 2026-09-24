@@ -72,6 +72,10 @@ const isExpiredReservation = (order, now) => {
   // Once proof is submitted, the order is paid-awaiting-review — it must NEVER auto-cancel.
   // Mirrors the client guard in orderService.isOrderReservationExpired.
   if (order.payment_proof_status && !['missing', 'rejected'].includes(order.payment_proof_status)) return false;
+  // An order whose shipping is still being quoted by hand has never been asked for money. Cancelling it
+  // on the 24-hour clock punishes the buyer for OUR delay, on the one route where shipping cannot be
+  // priced automatically. Same flag the client guard reads (orderWorkflow.isAwaitingShippingQuote).
+  if (order.payment_response?.shippingQuotePending) return false;
 
   // Deducted (stock-reserving) orders expire on payment_expires_at OR created_at+TTL, so reserved
   // stock is always freed. Non-deducted orders (bespoke / stockless / deduct-failed) have no stock to
