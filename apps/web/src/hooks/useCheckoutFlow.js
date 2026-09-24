@@ -162,16 +162,16 @@ export const useCheckoutFlow = ({
   // domestic half asks for a courier, an area and a rate — none of which exist for a parcel leaving the
   // country. Everything before the split is the same in both, because a name, a reachable phone and an
   // address are what a parcel needs wherever it goes.
-  const checkoutBasicsFilled = Boolean(
+  // Written flat, not via a named "basics" flag: checkoutFailureHonesty scans the identifiers in this
+  // expression and insists every one of them is named in the notice the buyer reads. A helper variable
+  // is a condition with no sentence behind it, which is exactly the red line that names nothing.
+  const canSubmitCheckout = Boolean(
     items.length
     && !blockedItems.length
     && customerName.trim()
     && validPhoneContact
     && deliveryAddress.trim()
     && selectedPaymentMethod
-  );
-  const canSubmitCheckout = Boolean(
-    checkoutBasicsFilled
     && (isInternational
       ? destination
       : (selectedCourier && selectedDestination && selectedShipping))
