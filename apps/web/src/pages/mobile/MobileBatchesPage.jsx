@@ -44,7 +44,7 @@ import { updateRawMaterial } from '@/services/rawMaterialsService.js';
 import { formatCurrency, formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { buildFormulaWorkbookExportConfig } from '@/utils/formulaWorkbookExport.js';
-import { clampPercentage, parseNumberInput } from '@/utils/productionCosting.js';
+import { clampPercentage, parseNumberInput, suggestedBottlePrice } from '@/utils/productionCosting.js';
 import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
 import { BATCH_STATUSES } from '@/utils/constants.js';
 import FormulaCostBlindSpotNotice from '@/components/FormulaCostBlindSpotNotice.jsx';
@@ -447,7 +447,7 @@ const MobileBatchesPage = () => {
   const remainingBatchVolume = bottleSizeValue > 0 ? Math.max(usableBatchVolume - (productBottleCount * bottleSizeValue), 0) : 0;
   const productCogsPerBottle = productBottleCount > 0 ? dilutionTotalCost / productBottleCount : 0;
   const productPriceValue = parseNumberInput(productPrice);
-  const productPriceSuggestion = Math.ceil((productCogsPerBottle * 2) / 1000) * 1000;
+  const productPriceSuggestion = suggestedBottlePrice(productCogsPerBottle);
   const productPriceNumber = productPriceValue > 0 ? productPriceValue : productPriceSuggestion;
   const productMarginPerBottle = productPriceNumber - productCogsPerBottle;
   const productMarginPercent = productPriceNumber > 0 ? (productMarginPerBottle / productPriceNumber) * 100 : 0;
