@@ -142,26 +142,32 @@ assert.doesNotMatch(MESSAGES.en['welcome.signIn'], /member|discount/i,
   'nor may the English sign-in button');
 assert.match(MESSAGES.id['welcome.lead'], /member/i, 'the Indonesian one still does, because there it is true');
 
-// And the card's code is the same shape of promise. It is redeemed in the CART, and the English shop has
-// none since #206 — so an English reader must never be told to type it at checkout. The note is gated to
-// the Indonesian shop in WelcomePage, and its English words are a different, true sentence for the day
-// somebody edits that gate.
+// And the card's code is the same shape of promise — but for a different reason now, so this rule is
+// INVERTED rather than deleted.
+//
+// It used to require the note to be HIDDEN from an international reader: the code is redeemed in a cart
+// and the English shop had none, so telling them to type it at checkout was an instruction with nowhere
+// to follow it. /en has a cart now. What makes the code domestic is no longer plumbing but a decision —
+// vouchers apply to deliveries inside Indonesia (Dekito, 2026-09-25), because a discount written for the
+// domestic price takes its cut from an international subtotal 3.5x larger.
+//
+// A card-holder abroad is better served by that sentence than by silence, so the note is shown in both
+// shops and the English words say what is true. What survives is the half that was always the point:
+// the English note must not tell them to type the code anywhere.
 {
   const welcomePage = read('pages', 'WelcomePage.jsx');
-  assert.match(welcomePage, /const \{ isInternational \} = useStorefrontRegion\(\);/,
-    'the welcome page must read the chosen shop, not guess at it');
-  assert.match(welcomePage, /\{isInternational \? null : \(/,
-    'the card-code note must be gated: the English shop has no cart to redeem it in');
-  // The gate has to be around the NOTE, not merely present in the file.
-  const gate = welcomePage.slice(welcomePage.indexOf('{isInternational ? null : ('));
-  assert.ok(gate.indexOf("t('welcome.voucherBody')") > 0 && gate.indexOf("t('welcome.voucherBody')") < 700,
-    'the gate does not actually wrap the card-code note');
+  assert.doesNotMatch(welcomePage, /\{isInternational \? null : \(/,
+    'the card-code note is hidden from the English shop again — it has a cart, and the note is the only '
+    + 'place a card-holder abroad learns the code is domestic before the checkout refuses it');
+  assert.match(welcomePage, /t\('welcome\.voucherBody'\)/, 'the note must still be rendered at all');
 
   for (const key of ['welcome.voucherEyebrow', 'welcome.voucherBody']) {
     assert.ok(MESSAGES.id[key] && MESSAGES.en[key], `${key} exists in both shops`);
   }
-  assert.doesNotMatch(MESSAGES.en['welcome.voucherBody'], /checkout|cart|type the code|enter the code/i,
-    'the English note must not send a reader to a cart that shop does not have');
+  assert.doesNotMatch(MESSAGES.en['welcome.voucherBody'], /type the code|enter the code|at checkout/i,
+    'the English note must not tell a reader to redeem a code their delivery cannot use');
+  assert.match(MESSAGES.en['welcome.voucherBody'], /inside Indonesia/i,
+    'and must say where the code does work, rather than leaving them to find out at the checkout');
   // "masuk" alone is not the rule: "Masukkan di keranjang" contains it while saying nothing about an
   // account, and a sabotage that dropped the account sentence walked past on that word.
   assert.match(MESSAGES.id['welcome.voucherBody'], /\bakun\b/i,

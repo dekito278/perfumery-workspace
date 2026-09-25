@@ -412,6 +412,14 @@ const MobileCheckoutPage = () => {
           complete={Boolean(voucher.appliedVoucher)}
           action={voucher.discountAmount ? <span className="shrink-0 text-xs font-bold text-editorial-charcoal">-{formatTotal(voucher.discountAmount)}</span> : null}
         >
+            {/* Domestic only — see CheckoutPage. The step stays visible so the numbered flow does not
+                renumber itself mid-checkout; it explains instead of asking. */}
+            {destination ? (
+              <p className="rounded-2xl bg-editorial-ivory px-3 py-2 text-[11px] font-bold leading-relaxed text-editorial-muted">
+                {t('checkout.voucherDomesticOnly')}
+              </p>
+            ) : (
+            <>
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
               <input
                 value={voucher.inputCode}
@@ -438,6 +446,8 @@ const MobileCheckoutPage = () => {
             ) : voucher.message ? (
               <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{voucher.message}</p>
             ) : null}
+            </>
+            )}
         </CheckoutSection>
         <div>
           <CheckoutSection

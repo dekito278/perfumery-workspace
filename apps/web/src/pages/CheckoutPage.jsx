@@ -303,9 +303,14 @@ const CheckoutPage = () => {
               )}
             </fieldset>
 
-            {/* Voucher */}
+            {/* Voucher — domestic only, so the box goes away once a destination abroad is chosen rather
+                than taking a code the server will refuse. Keyed on the destination, not the shop: an
+                Indonesian reading the English shop and shipping to an Indonesian address keeps theirs. */}
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">VOUCHER</legend>
+              {destination ? (
+                <p className="checkout-notice">{t('checkout.voucherDomesticOnly')}</p>
+              ) : (
               <div className="cart-voucher" style={{ marginTop: 0, paddingTop: 0, border: 'none' }}>
                 <label className="cart-voucher__label">
                   {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('checkout.voucherEnter')}
@@ -331,6 +336,7 @@ const CheckoutPage = () => {
                   </button>
                 ) : null}
               </div>
+              )}
             </fieldset>
 
             {/* Payment */}

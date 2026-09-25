@@ -352,6 +352,7 @@ export const MESSAGES = {
     'checkout.noProducts': 'Belum ada produk',
     'checkout.voucherPlaceholder': 'Kode voucher',
     'checkout.voucherApply': 'Pakai',
+    'checkout.voucherDomesticOnly': 'Voucher hanya berlaku untuk pengiriman di dalam Indonesia. Harga internasional sudah termasuk ongkir untuk sebagian besar negara.',
     'checkout.voucherEnter': 'Masukkan kode voucher',
     'checkout.googleFail': 'Gagal masuk dengan Google',
     'checkout.errName': 'Nama wajib diisi.',
@@ -1199,7 +1200,7 @@ export const MESSAGES = {
     // instruction with nowhere to follow it. Different sentence, true one: what the code is for, and what
     // an international buyer gets instead.
     'welcome.voucherEyebrow': 'THE CODE ON YOUR CARD',
-    'welcome.voucherBody': 'The code on the card belongs to orders placed inside Indonesia. From anywhere else we arrange the order with you on WhatsApp, and the price you are quoted already has the shipping in it.',
+    'welcome.voucherBody': 'The code on the card applies to deliveries inside Indonesia. Shipping abroad works differently: the international price already includes it for most countries, so there is no discount to add.',
 
     'pdp.loading': 'Loading product…',
     'pdp.notFoundTitle': 'This fragrance could not be found.',
@@ -1517,6 +1518,7 @@ export const MESSAGES = {
     'checkout.noProducts': 'Nothing selected yet',
     'checkout.voucherPlaceholder': 'Voucher code',
     'checkout.voucherApply': 'Apply',
+    'checkout.voucherDomesticOnly': 'Vouchers apply to deliveries inside Indonesia only. The international price already includes the shipping for most countries.',
     'checkout.voucherEnter': 'Enter a voucher code',
     'checkout.googleFail': 'Could not sign in with Google',
     'checkout.errName': 'Your name is required.',

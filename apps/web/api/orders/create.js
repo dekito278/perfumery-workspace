@@ -338,6 +338,18 @@ export default async function handler(req, res) {
     let voucherDiscount = 0;
     let voucherSnapshot = null;
     const voucherCode = String(input.voucherCode || '').trim().toUpperCase();
+    // Vouchers are domestic. Dekito's decision, 2026-09-25, and the same rule the member price already
+    // follows: a discount written for the Indonesian shop takes its cut from whatever subtotal it is
+    // handed, and an international subtotal is 3.5x the domestic one — so a 10% code meant as roughly
+    // Rp 36.000 off a bottle became Rp 126.000 off the same bottle going abroad, and any minimum-spend
+    // threshold was cleared by a single item. Refused here rather than only hidden in the form, because
+    // the code arrives from the browser.
+    if (voucherCode && destination) {
+      return jsonResponse(res, 422, {
+        message: `Voucher ${voucherCode} hanya berlaku untuk pengiriman di dalam Indonesia`,
+        reason: 'domestic_only',
+      });
+    }
     if (voucherCode) {
       const [voucherRow] = await sbSelect(`storefront_vouchers?code=eq.${encodeURIComponent(voucherCode)}&select=*`);
       const verdict = validateVoucher({

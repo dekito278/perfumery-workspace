@@ -151,7 +151,20 @@ export const useCheckoutFlow = ({
   // the sentence on every product page — or it is quoted by hand afterwards, which is a figure this
   // screen does not have and must not invent. The courier rate belongs to the domestic half only.
   const shippingFee = isInternational ? 0 : Number(selectedShipping?.cost || 0);
-  const discountAmount = Math.min(Number(voucherDiscount || 0), Number(summary.subtotal || 0));
+  // Vouchers are domestic. Dekito's decision, 2026-09-25, and the same rule the member price already
+  // follows: a discount written for the Indonesian shop takes its cut from whatever subtotal it meets,
+  // and an international subtotal is 3.5x the domestic one — so a 10% code meant as about Rp 36.000 off
+  // a bottle became Rp 126.000 off the same bottle going abroad.
+  //
+  // Keyed on the DESTINATION, not the shop's language: an Indonesian reading the English shop, shipping
+  // to an Indonesian address, keeps their voucher. api/orders/create.js refuses the same combination,
+  // because the code travels in the request; this is so the buyer is never quoted a total the server
+  // will not honour.
+  const voucherBlockedByDestination = Boolean(destination && voucherCode);
+  const activeVoucherCode = destination ? '' : voucherCode;
+  const discountAmount = destination
+    ? 0
+    : Math.min(Number(voucherDiscount || 0), Number(summary.subtotal || 0));
   const discountedSubtotal = Math.max(Number(summary.subtotal || 0) - discountAmount, 0);
   const totalDue = discountedSubtotal + shippingFee;
   // The LABEL, not the number. This exported the dollar figure for one commit, and the checkout promptly
@@ -571,10 +584,10 @@ export const useCheckoutFlow = ({
     setSaving(true);
     let createdOrder = null;
     try {
-      const voucherValidation = voucherCode
-        ? await applyVoucherToSubtotalAsync({ code: voucherCode, subtotal: summary.subtotal, items })
+      const voucherValidation = activeVoucherCode
+        ? await applyVoucherToSubtotalAsync({ code: activeVoucherCode, subtotal: summary.subtotal, items })
         : null;
-      if (voucherCode && !voucherValidation?.valid) {
+      if (activeVoucherCode && !voucherValidation?.valid) {
         throw new Error(voucherValidation?.message || 'Voucher tidak bisa digunakan');
       }
       const checkoutDiscountAmount = voucherValidation?.discountAmount ?? discountAmount;
@@ -589,14 +602,14 @@ export const useCheckoutFlow = ({
         paymentMethod,
         shippingSummary,
         shippingFee,
-        voucherCode,
+        voucherCode: activeVoucherCode,
         voucherDiscount: checkoutDiscountAmount,
         notes,
         items,
       });
       const voucherSnapshot = buildVoucherSnapshot({
         voucher: voucherValidation?.voucher || voucherDetails,
-        voucherCode,
+        voucherCode: activeVoucherCode,
         discountAmount: checkoutDiscountAmount,
         subtotalBeforeDiscount: summary.subtotal,
         subtotalAfterDiscount: checkoutDiscountedSubtotal,
@@ -634,7 +647,7 @@ export const useCheckoutFlow = ({
           shippingDestination: selectedDestination || null,
           shippingCourier: selectedShipping?.courierCode || '',
           shippingService: selectedShipping?.service || '',
-          voucherCode,
+          voucherCode: activeVoucherCode,
         })
         : await createOrder(orderData);
       createdOrder = order;
@@ -664,7 +677,7 @@ export const useCheckoutFlow = ({
           manualTransfer: manualPaymentResponse,
           shippingSummary,
           shippingFee,
-          voucherCode,
+          voucherCode: activeVoucherCode,
           voucherDiscount: checkoutDiscountAmount,
           voucherSnapshot,
           createdAt: new Date().toISOString(),
@@ -815,6 +828,7 @@ export const useCheckoutFlow = ({
     validPhoneContact,
     shippingFee,
     discountAmount,
+    voucherBlockedByDestination,
     discountedSubtotal,
     totalDue,
     totalDueUsdLabel,
