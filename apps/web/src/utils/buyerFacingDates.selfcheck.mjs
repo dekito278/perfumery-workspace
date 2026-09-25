@@ -64,7 +64,30 @@ assert.ok(buyerFacing.length >= 3,
 
 for (const file of buyerFacing) {
   const where = file.join('/');
-  for (const call of read(...file).match(/formatDate\([^;\n]*/g) || []) {
+  const source = read(...file);
+  // TWO correct shapes, and the fatal mistake is mixing them.
+  //
+  // Some screens use the shared formatDate from utils/formatting.js, which takes a LOCALE STRING. Others
+  // define their own `const formatDate = (value, t) =>` that resolves the locale itself and takes the
+  // TRANSLATOR. Both are fine; handing either one the other's argument is not.
+  //
+  // The first version of this guard demanded t('fmt.dateLocale') everywhere. Three screens had the local
+  // shape and were already correct, and it rewrote them into `formatDate(value, 'en-GB')` — whose body
+  // then called a string. The member account page crashed to "App failed to render: t is not a function"
+  // for anyone arriving with a customer code, and the guard held that in place for a commit.
+  const ownsIt = /^const formatDate = \(value, t\)/m.test(source);
+  if (ownsIt) {
+    assert.match(source, /Intl\.DateTimeFormat\(t\('fmt\.dateLocale'\)/,
+      `${where} defines its own formatDate but does not resolve the shop's locale inside it`);
+    for (const call of source.match(/formatDate\([^;\n]*/g) || []) {
+      if (call.startsWith('formatDate = ')) continue;
+      assert.match(call, /,\s*t\)/,
+        `${where} has a formatDate that takes the TRANSLATOR, and this call hands it something else — `
+        + `its body will try to call that value: ${call.trim().slice(0, 90)}`);
+    }
+    continue;
+  }
+  for (const call of source.match(/formatDate\([^;\n]*/g) || []) {
     assert.match(call, /fmt\.dateLocale/,
       `${where} prints a date in Indonesian to whoever is reading: ${call.trim().slice(0, 90)}`);
     // The KEY, translated — not the translator itself, which is the mistake that was already here.
