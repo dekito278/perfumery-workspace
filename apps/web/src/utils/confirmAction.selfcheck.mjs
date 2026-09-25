@@ -92,4 +92,96 @@ const unawaited = sourceFiles
 assert.deepEqual(unawaited, [],
   `confirmAction called without await — a Promise is truthy, so the guard never stops anything: ${unawaited.join(', ')}`);
 
-console.log('confirmAction selfcheck OK (no host means ask the browser, never assume yes)');
+// --- every destructive action actually ASKS ------------------------------------------------------------
+// The checks above prove the dialog works and that nobody bypasses it. None of them notice a delete that
+// simply never asks at all, and six did not:
+//
+//   - the phone's voucher screen deleted a voucher on one tap; its desktop twin asks, in those words
+//   - the desktop's product-category screen deleted a category silently; its PHONE twin asks
+//   - both site-image screens dropped an image and its file with no question
+//   - the phone's bespoke settings deleted a form option from a row's trash icon
+//
+// Twice the two surfaces disagreed, in opposite directions, which is what this codebase keeps producing:
+// a rule taught to one of a pair.
+//
+// The rule is not "every handler calls confirmAction" — that would be wrong in both directions. Asking
+// can happen one level down (useOrders().deleteOne asks inside the hook, and OrdersPage rightly does
+// not repeat it) or in a dialog component wired through onConfirm. So the chain is followed: a handler
+// is satisfied if it asks, if what it calls asks, or if it is only reachable through a confirm dialog.
+const DESTRUCTIVE = /\bawait\s+((?:delete|remove|purge|wipe)[A-Z]\w*)\(/g;
+const uiFiles = sourceFiles.filter((file) => /\/(pages|components)\//.test(file) && file.endsWith('.jsx'));
+assert.ok(uiFiles.length > 60, `expected the screens, found ${uiFiles.length} — the scan is broken`);
+
+// Functions that ask, anywhere in the tree: name -> true. Read from every module, not just the screens,
+// because the asking usually lives in the hook or service the screen calls.
+const asks = new Set();
+for (const file of sourceFiles) {
+  const text = stripComments(readFileSync(file, 'utf8'));
+  for (const match of text.matchAll(/(?:export const|const)\s+(\w+)\s*[:=]\s*(?:async\s*)?\(/g)) {
+    const start = text.indexOf('{', match.index);
+    if (start === -1) continue;
+    let depth = 1;
+    let index = start + 1;
+    while (index < text.length && depth) {
+      if (text[index] === '{') depth += 1;
+      else if (text[index] === '}') depth -= 1;
+      index += 1;
+    }
+    if (/confirmAction\(/.test(text.slice(start, index))) asks.add(match[1]);
+  }
+  for (const match of text.matchAll(/(\w+): async \([^)]*\) => \{/g)) {
+    const start = match.index + match[0].length - 1;
+    let depth = 1;
+    let index = start + 1;
+    while (index < text.length && depth) {
+      if (text[index] === '{') depth += 1;
+      else if (text[index] === '}') depth -= 1;
+      index += 1;
+    }
+    if (/confirmAction\(/.test(text.slice(start, index))) asks.add(match[1]);
+  }
+}
+assert.ok(asks.has('deleteOne'),
+  'useOrders().deleteOne is the clearest example of asking one level down; if it is no longer found, '
+  + 'this scan cannot tell a guarded delete from a silent one and would report every screen');
+
+const silent = [];
+for (const file of uiFiles) {
+  const text = stripComments(readFileSync(file, 'utf8'));
+  for (const match of text.matchAll(/const (\w+) = (?:async )?\([^)]*\) => \{/g)) {
+    const start = match.index + match[0].length - 1;
+    let depth = 1;
+    let index = start + 1;
+    while (index < text.length && depth) {
+      if (text[index] === '{') depth += 1;
+      else if (text[index] === '}') depth -= 1;
+      index += 1;
+    }
+    const body = text.slice(start, index);
+    const handler = match[1];
+    // A capitalised name is the COMPONENT, whose body contains the handler we are already checking.
+    // Reporting both said MobileDashboardPage() deletes without asking, which is true of no line in it.
+    if (/^[A-Z]/.test(handler)) continue;
+    const destructive = [...body.matchAll(DESTRUCTIVE)].map((found) => found[1]);
+    if (!destructive.length) continue;
+    if (/confirmAction\(/.test(body)) continue;
+    if (destructive.every((callee) => asks.has(callee))) continue;
+    // Reached only through a confirmation dialog: the dialog IS the question.
+    if (new RegExp(`onConfirm=\\{${handler}\\}`).test(text)) continue;
+    // Or this component IS the dialog — DeleteFormulaModal's whole body is the asking.
+    if (/Delete\w*Modal|Confirm\w*(?:Dialog|Modal)/.test(file)) continue;
+    silent.push(`${file.slice(src.length + 1)} — ${handler}() calls ${destructive.join(', ')}`);
+  }
+}
+
+// ManualReferenceMatchModal's Remove unlinks a reference profile from inside the very dialog that can
+// re-link it with two clicks. That is an undo away, not a deletion, and putting a confirm on it would be
+// friction on the modal's own core action. Named here rather than pattern-matched away, so the exception
+// is a decision on the record and not a hole.
+const ALLOWED = ['components/ManualReferenceMatchModal.jsx — handleRemove() calls removePrimaryReferenceProfile'];
+assert.deepEqual(silent.filter((entry) => !ALLOWED.includes(entry)), [],
+  'a screen destroys something without asking first. Nothing in this file notices that on its own: the '
+  + 'dialog works perfectly, it is simply never opened:\n  ' + silent.join('\n  '));
+
+console.log(`confirmAction selfcheck OK (no host means ask the browser, never assume yes; ${asks.size} `
+  + `functions ask, and no screen deletes without one of them)`);

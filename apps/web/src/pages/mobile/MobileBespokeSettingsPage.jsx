@@ -10,6 +10,7 @@ import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { uploadBespokeOptionImage } from '@/services/bespokeImageStorageService.js';
 import { deleteBespokeOption, resetBespokeSettings, saveBespokeOption } from '@/services/bespokeSettingsService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const collections = [
   { key: 'bottleSizes', title: 'Ukuran botol', helper: '30 ml, 50 ml, dan harga dasar.' },
@@ -91,6 +92,7 @@ const MobileBespokeSettingsPage = () => {
       return;
     }
 
+    if (!await confirmAction({ message: `Hapus opsi "${option.label}" dari form bespoke?`, destructive: true })) return;
     setSaving(true);
     try {
       await deleteBespokeOption(activeCollection, option.id);

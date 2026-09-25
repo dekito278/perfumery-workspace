@@ -11,6 +11,7 @@ import {
   SITE_IMAGE_SLOTS,
   uploadSiteImage,
 } from '@/services/siteImageStorageService.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const MobileImageSlotCard = ({ slot, currentUrl, onUpload, onDelete }) => {
   const fileInputRef = useRef(null);
@@ -93,6 +94,7 @@ const MobileSiteImagesPage = () => {
   };
 
   const handleDelete = async (key) => {
+    if (!await confirmAction({ message: 'Hapus gambar ini dari situs? Filenya ikut terhapus dan harus diunggah ulang.', destructive: true })) return;
     await deleteSiteImage(key);
     await refresh();
   };
