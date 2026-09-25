@@ -1,4 +1,5 @@
 import { normalizeWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
+import { INTERNATIONAL_TRANSFER_PAYMENT } from '@/data/internationalAccount.js';
 export { reconcileCartLines } from '@/utils/cartReconcile.js';
 
 export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
@@ -16,28 +17,11 @@ export const MANUAL_TRANSFER_PAYMENT = {
   descriptionKey: 'paymethod.manualBody',
 };
 
-/**
- * Where an international buyer sends dollars.
- *
- * Transcribed from the invoice Dekito already sends by hand (SOL-2026-001-B, 14 Sep 2026). A domestic
- * transfer needs an account number; an international one does not work without the bank's legal name and
- * a SWIFT code, and a buyer who has to come back and ask for them has already lost confidence.
- *
- * `ourCharges` is his own instruction and it is the real fix for a problem this repo was solving with
- * arithmetic. "OUR" tells the sending bank that the SENDER pays every fee in the chain, so the full
- * amount arrives instead of $15-25 being taken out somewhere over the Pacific. The rounding in
- * usdPrice.js is the belt; this is the braces, and it is the better of the two because it is exact.
- */
-export const INTERNATIONAL_TRANSFER_PAYMENT = {
-  id: 'manual_transfer_usd',
-  provider: 'manual_transfer_usd',
-  label: 'International transfer (USD)',
-  bankName: 'PT Bank BTPN Tbk (Jenius)',
-  swift: 'SUNIIDJA',
-  accountNumber: '90022310398',
-  accountName: 'Ade Rizki Wiranto',
-  currency: 'USD',
-};
+// The international account lives in data/internationalAccount.js, not here: the order endpoint runs in
+// plain node and cannot resolve the '@/' alias this module uses, and the account an order hands out must
+// be decided there rather than by the browser. Read it from that module directly — a re-export here
+// would also break the selfchecks that inline this file.
+
 
 export const QRIS_PAYMENT = {
   id: 'doku-qris',
@@ -73,6 +57,45 @@ export const checkoutPaymentMethods = [
     descriptionKey: 'paymethod.dokuBody',
   },
 ];
+
+/**
+ * The same payment, worded for the person reading it and pointed at the right bank.
+ *
+ * id and provider are MANUAL_TRANSFER_PAYMENT's and must stay that way: they are what makes the order
+ * land as payment_status 'pending' and go down the upload-your-receipt path, exactly like a local
+ * buyer's — which is the whole design. INTERNATIONAL_TRANSFER_PAYMENT carries its own id
+ * ('manual_transfer_usd') that nothing server-side recognises; taking the spread from it instead would
+ * write an order api/orders/create.js refuses outright.
+ *
+ * What does change is everything a human reads or transfers to: the label in both shops, and the bank
+ * the money actually goes to. A buyer in Berlin was being shown "BCA bank transfer" and then handed
+ * Jenius and a SWIFT code, and Dekito's own order notes said BCA about dollars that never went near it.
+ */
+export const INTERNATIONAL_TRANSFER_METHOD = {
+  ...MANUAL_TRANSFER_PAYMENT,
+  label: 'Transfer bank internasional (USD)',
+  labelKey: 'paymethod.international',
+  shortLabel: 'Transfer USD',
+  descriptionKey: 'paymethod.internationalBody',
+  bankName: INTERNATIONAL_TRANSFER_PAYMENT.bankName,
+  swift: INTERNATIONAL_TRANSFER_PAYMENT.swift,
+  accountNumber: INTERNATIONAL_TRANSFER_PAYMENT.accountNumber,
+  accountName: INTERNATIONAL_TRANSFER_PAYMENT.accountName,
+  currency: INTERNATIONAL_TRANSFER_PAYMENT.currency,
+};
+
+/**
+ * What this order may be paid with, given where the parcel goes.
+ *
+ * Keyed on the DESTINATION and not the shop's language: an Indonesian reading the English shop ships to
+ * an Indonesian address and still pays with DOKU. A country outside Indonesia removes it — those are
+ * Indonesian rails, and api/doku/checkout.js would overwrite the column carrying the dollar amount, the
+ * account and the "waiting for a shipping quote" flag. api/orders/create.js refuses the combination too,
+ * because this list only shapes the form and the provider arrives from the browser.
+ */
+export const checkoutPaymentMethodsFor = (destination) => (
+  destination ? [INTERNATIONAL_TRANSFER_METHOD] : checkoutPaymentMethods
+);
 
 export const checkoutPaymentOptions = [
   MANUAL_TRANSFER_PAYMENT.label,

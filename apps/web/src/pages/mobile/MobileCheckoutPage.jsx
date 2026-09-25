@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import InternationalDeliveryFields from '@/components/storefront/InternationalDeliveryFields.jsx';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
@@ -17,7 +18,6 @@ import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
-import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
@@ -105,10 +105,11 @@ const MobileCheckoutPage = () => {
   const {
     customerCode, customerName, contact, deliveryAddress, notes, saving, securityChallenge, securityAnswer, lookupLoading,
     repeatCustomer, repeatAddressMode, destinationSearch, destinationOptions, selectedDestination, shippingOptions, selectedCourier,
-    selectedShipping, shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, discountedSubtotal, totalDue, selectedPaymentMethod, isManualPayment, validPhoneContact,
+    selectedShipping, shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, discountedSubtotal, totalDue, totalDueUsdLabel, selectedPaymentMethod, availablePaymentMethods, isManualPayment, validPhoneContact,
     canSubmitCheckout, blockedItems, setCustomerName, setContact, setDeliveryAddress, setNotes, setSecurityAnswer, setSelectedShipping,
     setSelectedPaymentMethod, chooseShippingCourier, updateCustomerCode, updateDestinationSearch, useCustomerLastAddress,
     useCustomerNewAddress, autoCalculateShipping, loadShippingRates, lookupCustomer, verifyCustomerSecurity, submitOrder,
+    deliveryCountry, setDeliveryCountry, destination, isInternational,
   } = checkout;
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   const visibleShippingOptions = selectedCourier ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier) : [];
@@ -116,17 +117,26 @@ const MobileCheckoutPage = () => {
     { label: t('mcheckout.stepName'), complete: Boolean(customerName.trim()) },
     { label: t('mcheckout.stepPhone'), complete: validPhoneContact },
     { label: t('mcheckout.stepAddress'), complete: Boolean(deliveryAddress.trim()) },
-    { label: t('mcheckout.stepArea'), complete: Boolean(selectedDestination) },
-    // Two requirements, not one. Folding them together told a buyer who had already chosen JNE that they
-    // still needed to choose a courier, which reads as the app ignoring them.
-    { label: t('mcheckout.stepCourier'), complete: Boolean(selectedCourier) },
-    { label: t('checkout.shipping'), complete: Boolean(selectedShipping) },
+    // The two shops ask for different things here. A checklist telling a buyer in Berlin to choose a
+    // courier names a control that is not on their screen — and the courier list they would be shown is
+    // Indonesian domestic couriers, which is why the English shop had no checkout at all until now.
+    ...(isInternational
+      ? [{ label: t('checkout.fieldCountry'), complete: Boolean(destination) }]
+      : [
+        { label: t('mcheckout.stepArea'), complete: Boolean(selectedDestination) },
+        // Two requirements, not one. Folding them together told a buyer who had already chosen JNE that
+        // they still needed to choose a courier, which reads as the app ignoring them.
+        { label: t('mcheckout.stepCourier'), complete: Boolean(selectedCourier) },
+        { label: t('checkout.shipping'), complete: Boolean(selectedShipping) },
+      ]),
     // Mirrors canSubmitCheckout: lines whose product is gone or sold out block the order (audit round 9).
     { label: t('mcheckout.removeUnavailable'), complete: !blockedItems.length },
   ];
   const contactComplete = Boolean(customerName.trim() && validPhoneContact);
   const addressComplete = Boolean(contactComplete && deliveryAddress.trim());
-  const shippingComplete = Boolean(addressComplete && selectedDestination && selectedCourier && selectedShipping);
+  const shippingComplete = Boolean(addressComplete && (isInternational
+    ? destination
+    : (selectedDestination && selectedCourier && selectedShipping)));
   const paymentComplete = Boolean(shippingComplete && selectedPaymentMethod);
   const checkoutSteps = [
     { label: t('mcheckout.contact'), complete: contactComplete },
@@ -192,7 +202,7 @@ const MobileCheckoutPage = () => {
           <div className="text-[10px] font-bold uppercase text-amber-700">{t('mcheckout.title')}</div>
           <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">{t('mcheckout.lead')}</h1>
           <div className="mt-3 flex items-end justify-between gap-3">
-            <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">{t('mcheckout.totalDue')}</div><div className="mt-1 text-2xl font-bold text-editorial-charcoal">{formatTotal(totalDue)}</div></div>
+            <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">{t('mcheckout.totalDue')}</div><div className="mt-1 text-2xl font-bold text-editorial-charcoal">{totalDueUsdLabel || formatTotal(totalDue)}</div>{totalDueUsdLabel ? <div className="text-[11px] font-bold text-[#6b7280]">{formatTotal(totalDue)}</div> : null}</div>
             <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/cart')}>{t('mcheckout.editCart')}</Button>
           </div>
           {/* Sits under TOTAL BAYAR on purpose: this is the number the buyer is about to transfer, and a
@@ -265,10 +275,18 @@ const MobileCheckoutPage = () => {
         </CheckoutSection>
         <CheckoutSection
           step="3"
-          title={t('checkout.pickCourier')}
-          description={t('mcheckout.stepShippingBody')}
+          title={isInternational ? t('checkout.country') : t('checkout.pickCourier')}
+          description={isInternational ? t('checkout.pickCountry') : t('mcheckout.stepShippingBody')}
           complete={shippingComplete}
         >
+            {isInternational ? (
+              <InternationalDeliveryFields
+                value={deliveryCountry}
+                onChange={setDeliveryCountry}
+                destination={destination}
+              />
+            ) : (
+            <>
             <label className={`mobile-commerce-courier-select ${selectedCourier ? 'is-selected' : ''}`}>
               <span className="min-w-0">
                 <span className="block text-[10px] font-bold uppercase">
@@ -384,6 +402,8 @@ const MobileCheckoutPage = () => {
               </p>
             ) : null}
             {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}
+            </>
+            )}
         </CheckoutSection>
         <CheckoutSection
           step="4"
@@ -392,6 +412,14 @@ const MobileCheckoutPage = () => {
           complete={Boolean(voucher.appliedVoucher)}
           action={voucher.discountAmount ? <span className="shrink-0 text-xs font-bold text-editorial-charcoal">-{formatTotal(voucher.discountAmount)}</span> : null}
         >
+            {/* Domestic only — see CheckoutPage. The step stays visible so the numbered flow does not
+                renumber itself mid-checkout; it explains instead of asking. */}
+            {destination ? (
+              <p className="rounded-2xl bg-editorial-ivory px-3 py-2 text-[11px] font-bold leading-relaxed text-editorial-muted">
+                {t('checkout.voucherDomesticOnly')}
+              </p>
+            ) : (
+            <>
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
               <input
                 value={voucher.inputCode}
@@ -418,6 +446,8 @@ const MobileCheckoutPage = () => {
             ) : voucher.message ? (
               <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{voucher.message}</p>
             ) : null}
+            </>
+            )}
         </CheckoutSection>
         <div>
           <CheckoutSection
@@ -429,7 +459,7 @@ const MobileCheckoutPage = () => {
             {/* A radiogroup, not two info cards: the old buttons carried no radio and only a faint tint
                 when chosen, so nothing said a choice was being asked for (UX backlog U-6). */}
             <div role="radiogroup" aria-label={t('checkout.paymentMethod')} className="grid gap-2">
-              {checkoutPaymentMethods.map((method) => {
+              {availablePaymentMethods.map((method) => {
                 const active = selectedPaymentMethod === method.id;
                 return (
                   <button
@@ -510,7 +540,7 @@ const MobileCheckoutPage = () => {
                 <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('mcheckout.subtotalAfterVoucher')}</span><span>{formatTotal(discountedSubtotal)}</span></div>
               ) : null}
               <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('checkout.shipping')}</span><span>{shippingFee ? formatTotal(shippingFee) : '-'}</span></div>
-              <div className="mt-3 border-t border-editorial-stone/10 pt-3 flex justify-between gap-3 text-sm text-editorial-charcoal"><span>{t('mcheckout.totalDue')}</span><span>{formatTotal(totalDue)}</span></div>
+              <div className="mt-3 border-t border-editorial-stone/10 pt-3 flex justify-between gap-3 text-sm text-editorial-charcoal"><span>{t('mcheckout.totalDue')}</span><span>{totalDueUsdLabel ? `${totalDueUsdLabel} · ${formatTotal(totalDue)}` : formatTotal(totalDue)}</span></div>
             </div>
           </CheckoutSection>
         </div>

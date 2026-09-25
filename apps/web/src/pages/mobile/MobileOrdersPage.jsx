@@ -34,6 +34,7 @@ import {
   countOrdersByFilter,
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
+  internationalOrderSummary,
   isArchivedOrder,
   isFrontQueueOrder,
   isShippedOrder,
@@ -573,6 +574,18 @@ const MobileOrdersPage = () => {
                     </StatusChip>
                   ) : null}
                   {order.inventoryDeducted ? <StatusChip size="sm" tone="success">Stok reserved</StatusChip> : null}
+                  {/* The phone is where Dekito actually works, and it said nothing at all about an order
+                      that left the country: Berlin looked exactly like Bekasi. The dollar figure is the
+                      part that costs money — it is what the buyer was asked to transfer, frozen at the
+                      rate the order was priced with, and without it a Jenius deposit has nothing on this
+                      screen to be checked against. */}
+                  {internationalOrderSummary(order) ? (
+                    <StatusChip size="sm" tone="warning">
+                      {[internationalOrderSummary(order).country,
+                        internationalOrderSummary(order).amountLabel,
+                        internationalOrderSummary(order).awaitingQuote ? 'menunggu ongkir' : ''].filter(Boolean).join(' · ')}
+                    </StatusChip>
+                  ) : null}
                 </div>
               </div>
               {order.persistence === 'local' ? <div className="mt-2 w-fit rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Draft lokal</div> : null}

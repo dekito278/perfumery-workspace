@@ -96,14 +96,19 @@ assert.match(paymentPage, /const payableAmount = \(session\)/, 'one function mus
 // --- 6b. The dollars and the account they go to are written together ----------------------------------
 // A payment page that knows the amount but hands out the domestic BCA account is worse than one that
 // knows neither: the buyer sends the right number to the wrong bank.
-const cart = read('services', 'cartService.js');
-assert.match(cart, /INTERNATIONAL_TRANSFER_PAYMENT = \{/, 'the international account must live beside the domestic one');
+// It moved out of cartService and into its own data module so the ORDER ENDPOINT can read it: that
+// endpoint runs in plain node and cannot resolve the '@/' alias cartService uses, and the account an
+// order hands out must not be decided by the browser.
+const account = read('data', 'internationalAccount.js');
+assert.match(account, /INTERNATIONAL_TRANSFER_PAYMENT = \{/, 'the international account must have one home');
 for (const field of ['bankName', 'swift', 'accountNumber', 'accountName']) {
-  assert.match(cart, new RegExp(`${field}:`), `the international account is missing ${field}`);
+  assert.match(account, new RegExp(`${field}:`), `the international account is missing ${field}`);
 }
 // A SWIFT code is what makes an international transfer possible at all — an account number alone sends
 // the buyer back to ask, and a buyer who has to ask has already lost confidence.
-assert.match(cart, /swift: '[A-Z]{6}[A-Z0-9]{2,5}'/, 'the SWIFT/BIC must be a real code, not a placeholder');
+assert.match(account, /swift: '[A-Z]{6}[A-Z0-9]{2,5}'/, 'the SWIFT/BIC must be a real code, not a placeholder');
+// Import-free, or the endpoint cannot read it.
+assert.doesNotMatch(account, /^import /m, 'the account module must stay import-free for plain node');
 
 assert.match(calculator, /INTERNATIONAL_TRANSFER_PAYMENT\.swift/,
   'an order quoted in dollars must carry the account those dollars go to');

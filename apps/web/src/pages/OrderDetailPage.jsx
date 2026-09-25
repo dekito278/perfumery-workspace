@@ -37,23 +37,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
-import {
-  getOrderAuditLogs,
-  getOrderById,
-  getBespokeItem,
-  getBespokeProductionStatusLabels,
-  getOrderPaymentLogs,
-  getOrderReservationExpiresAt,
-  getOrderStatusLabels,
-  getShipmentStatusLabels,
-  isBespokeOrder,
-  PAYMENT_RESERVATION_TTL_HOURS,
-  reviewOrderPaymentProof,
-  updateOrderInternalNotes,
-  updateOrderPaymentStatus,
-  updateOrderShipment,
-  updateOrderStatus,
-} from '@/services/orderService.js';
+import { PAYMENT_RESERVATION_TTL_HOURS, getBespokeItem, getBespokeProductionStatusLabels, getOrderAuditLogs, getOrderById, getOrderPaymentLogs, getOrderReservationExpiresAt, getOrderStatusLabels, getShipmentStatusLabels, isBespokeOrder, reviewOrderPaymentProof, sendInternationalShippingQuote, updateOrderInternalNotes, updateOrderPaymentStatus, updateOrderShipment, updateOrderStatus } from '@/services/orderService.js';
 import {
   buildNotificationMessage,
   canSendEmailNotification,
@@ -71,14 +55,7 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
-import {
-  getBespokeOrderSummary,
-  getNextOrderStatusForPayment,
-  hasShippingLabelPrinted,
-  isArchivedOrder,
-  isShippedOrder,
-  paymentStatusLabels,
-} from '@/utils/orderWorkflow.js';
+import { getBespokeOrderSummary, getNextOrderStatusForPayment, hasShippingLabelPrinted, internationalOrderSummary, isArchivedOrder, isAwaitingShippingQuote, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import { formatClientContext } from '@/utils/clientContext.js';
 
 const canExportShippingLabel = (order) => Boolean(
@@ -500,6 +477,32 @@ const OrderDetailPage = () => {
     }
   };
 
+  // The door out of "menunggu ongkir". Until this existed, an order to Berlin entered that state and
+  // could never leave it by any path in the app: two places set the flag and nothing cleared it.
+  const [quoteFee, setQuoteFee] = useState('');
+  const [quoteCarrier, setQuoteCarrier] = useState('');
+  const [sendingQuote, setSendingQuote] = useState(false);
+  const sendShippingQuote = async () => {
+    setSendingQuote(true);
+    try {
+      const quoted = await sendInternationalShippingQuote(orderKey, {
+        shippingFee: Number(String(quoteFee).replace(/[^\d]/g, '')),
+        carrier: quoteCarrier,
+      });
+      const nextOrder = await refreshOrder();
+      setQuoteFee('');
+      // Writing the figure is half the job. The buyer was told at checkout that the freight follows by
+      // hand and that nothing is charged until they agree — until this line existed, the only way they
+      // could learn it had arrived was to keep reloading a page that had been telling them to wait.
+      await prepareCustomerNotification(nextOrder || quoted, 'shipping_quoted');
+      toast.success('Ongkir terkirim. Pesan untuk pembeli sudah disalin.');
+    } catch (error) {
+      toast.error(error?.message || 'Gagal mengirim ongkir');
+    } finally {
+      setSendingQuote(false);
+    }
+  };
+
   const saveShipment = async () => {
     setSavingShipment(true);
     try {
@@ -847,6 +850,54 @@ const OrderDetailPage = () => {
               <StatusChip tone={paymentProofToneByStatus[paymentProofStatus] || 'warning'}>{paymentProofStatusLabels[paymentProofStatus] || paymentProofStatus}</StatusChip>
             </div>
             <p className="mt-3 text-sm font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</p>
+            {/* This is the screen where a transfer is checked against what was asked for, and for an
+                order that left the country those are two different currencies. The buyer was asked for
+                dollars, frozen at the rate this order was priced with; the rupiah above is what that was
+                worth then, not what will land in Jenius. Without the dollar figure here there is nothing
+                on the screen for the deposit to be checked against. */}
+            {internationalOrderSummary(order) ? (
+              <div className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">
+                <div>
+                  Tujuan {internationalOrderSummary(order).country || '-'}
+                  {internationalOrderSummary(order).amountLabel ? ` · ditagih ${internationalOrderSummary(order).amountLabel}` : ''}
+                </div>
+                {internationalOrderSummary(order).bankName ? (
+                  <div className="mt-1 font-semibold">Masuk ke {internationalOrderSummary(order).bankName}</div>
+                ) : null}
+                {internationalOrderSummary(order).awaitingQuote ? (
+                  <div className="mt-1 font-semibold">Menunggu ongkir dari kamu — pembeli belum diberi total akhir</div>
+                ) : null}
+                {isAwaitingShippingQuote(order) ? (
+                  <div className="mt-3 grid gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={quoteFee}
+                      onChange={(event) => setQuoteFee(event.target.value)}
+                      placeholder="Ongkir (Rp)"
+                      className="rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm font-bold text-editorial-charcoal"
+                      aria-label="Ongkir internasional dalam rupiah"
+                    />
+                    <input
+                      type="text"
+                      value={quoteCarrier}
+                      onChange={(event) => setQuoteCarrier(event.target.value)}
+                      placeholder="Kurir (opsional)"
+                      className="rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-editorial-charcoal"
+                      aria-label="Nama kurir"
+                    />
+                    <button
+                      type="button"
+                      onClick={sendShippingQuote}
+                      disabled={sendingQuote || !String(quoteFee).replace(/[^\d]/g, '')}
+                      className="rounded-xl bg-editorial-charcoal px-3 py-2 text-sm font-bold text-editorial-ivory disabled:opacity-50"
+                    >
+                      {sendingQuote ? 'Mengirim...' : 'Kirim ongkir'}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <div className="rounded-2xl border border-editorial-charcoal/10 bg-white p-4 shadow-sm">
             <div className="text-xs font-bold uppercase text-muted-foreground">Fulfillment</div>

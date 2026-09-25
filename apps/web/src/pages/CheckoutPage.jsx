@@ -1,5 +1,6 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
+import InternationalDeliveryFields from '@/components/storefront/InternationalDeliveryFields.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
 import React, { useMemo, useState } from 'react';
@@ -16,7 +17,6 @@ import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
-import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -49,10 +49,11 @@ const CheckoutPage = () => {
     customerCode, customerName, contact, deliveryAddress, notes, saving, lookupLoading,
     securityChallenge, securityAnswer, setSecurityAnswer, verifyCustomerSecurity,
     destinationSearch, destinationOptions, selectedDestination, selectedCourier, selectedShipping, shippingOptions,
-    shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, selectedPaymentMethod,
+    shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, totalDueUsdLabel, selectedPaymentMethod, availablePaymentMethods,
     canSubmitCheckout, blockedItems, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
     updateDestinationSearch, chooseShippingCourier, autoCalculateShipping, loadShippingRates, setSelectedShipping,
     setSelectedPaymentMethod, lookupCustomer, submitOrder,
+    deliveryCountry, setDeliveryCountry, destination, isInternational,
   } = checkout;
   const visibleShippingOptions = useMemo(() => (
     selectedCourier ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier) : shippingOptions
@@ -63,9 +64,15 @@ const CheckoutPage = () => {
     !customerName.trim() ? t('checkout.fieldName') : '',
     !contact.trim() ? t('checkout.fieldContact') : (!validPhoneContact ? t('checkout.fieldValidPhone') : ''),
     !deliveryAddress.trim() ? t('checkout.fieldAddress') : '',
-    !selectedDestination ? t('checkout.fieldDestination') : '',
-    !selectedCourier ? t('checkout.fieldCourier') : '',
-    !selectedShipping ? t('checkout.fieldRate') : '',
+    // The two shops ask for different things, and a notice listing "courier" to a buyer in Berlin names
+    // a field that is not on their screen.
+    ...(isInternational
+      ? [!destination ? t('checkout.fieldCountry') : '']
+      : [
+        !selectedDestination ? t('checkout.fieldDestination') : '',
+        !selectedCourier ? t('checkout.fieldCourier') : '',
+        !selectedShipping ? t('checkout.fieldRate') : '',
+      ]),
     !selectedPaymentMethod ? t('checkout.fieldPayment') : '',
     // canSubmitCheckout also refuses lines whose product is gone or sold out; name them, otherwise the
     // notice names nothing to act on (audit round 9).
@@ -225,9 +232,19 @@ const CheckoutPage = () => {
               </label>
             </fieldset>
 
-            {/* Shipping */}
+            {/* Shipping. The international half asks where the parcel goes and stops there: there is no
+                courier list to show, because RajaOngkir only knows Indonesian addresses. */}
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">{t('checkout.deliveryLegend')}</legend>
+              {isInternational ? (
+                <InternationalDeliveryFields
+                  value={deliveryCountry}
+                  onChange={setDeliveryCountry}
+                  destination={destination}
+                  invalid={triedSubmit && !destination}
+                />
+              ) : (
+              <>
               <label className="checkout-field">
                 <span>{t('checkout.courier')}</span>
                 <div className="checkout-select-wrap">
@@ -282,11 +299,18 @@ const CheckoutPage = () => {
                 </div>
               ) : null}
               {selectedDestination ? <p className="checkout-notice is-success">{t('ship.area', { area: selectedDestination.label })}</p> : null}
+              </>
+              )}
             </fieldset>
 
-            {/* Voucher */}
+            {/* Voucher — domestic only, so the box goes away once a destination abroad is chosen rather
+                than taking a code the server will refuse. Keyed on the destination, not the shop: an
+                Indonesian reading the English shop and shipping to an Indonesian address keeps theirs. */}
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">VOUCHER</legend>
+              {destination ? (
+                <p className="checkout-notice">{t('checkout.voucherDomesticOnly')}</p>
+              ) : (
               <div className="cart-voucher" style={{ marginTop: 0, paddingTop: 0, border: 'none' }}>
                 <label className="cart-voucher__label">
                   {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('checkout.voucherEnter')}
@@ -312,6 +336,7 @@ const CheckoutPage = () => {
                   </button>
                 ) : null}
               </div>
+              )}
             </fieldset>
 
             {/* Payment */}
@@ -321,7 +346,7 @@ const CheckoutPage = () => {
                 <span>{t('checkout.paymentMethod')}</span>
                 <div className="checkout-select-wrap">
                   <select value={selectedPaymentMethod} onChange={(event) => setSelectedPaymentMethod(event.target.value)}>
-                    {checkoutPaymentMethods.map((method) => (
+                    {availablePaymentMethods.map((method) => (
                       <option key={method.id} value={method.id}>{t(method.labelKey)}</option>
                     ))}
                   </select>
@@ -385,7 +410,17 @@ const CheckoutPage = () => {
               ) : null}
               <div className="cart-totals__row" style={{ paddingTop: '12px', borderTop: `1px solid var(--editorial-border)`, marginTop: '8px' }}>
                 <span style={{ fontWeight: 700, color: 'var(--editorial-charcoal)' }}>{t('checkout.total')}</span>
-                <strong style={{ fontSize: '1.05rem' }}>{formatTotal(totalDue)}</strong>
+                {/* The currency the buyer will actually transfer in, with the rupiah it was worth
+                    underneath — the same pairing the product cards use. A total in rupiah under a page
+                    that quoted US$80 leaves the buyer guessing which of the two they owe. */}
+                <strong style={{ fontSize: '1.05rem' }}>
+                  {totalDueUsdLabel ? (
+                    <>
+                      {totalDueUsdLabel}
+                      <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted-foreground, #6b7280)' }}>{formatTotal(totalDue)}</span>
+                    </>
+                  ) : formatTotal(totalDue)}
+                </strong>
               </div>
             </div>
 

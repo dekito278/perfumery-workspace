@@ -37,7 +37,10 @@ const shim = [
   strip('data', 'rayspeedRates.js'),
   strip('utils', 'memberPriceFill.js'),
   strip('utils', 'shippingRegion.js'),
-  'export { ASIA_TIME_ZONES, isAsiaCountry, shippingRegionForTimeZone, internationalPriceFor, ASIA_MULTIPLIER, EXPORT_ZONE_BY_COUNTRY };',
+  strip('utils', 'internationalDestination.js'),
+  // strip() removes every `export` keyword so the modules can be concatenated, so the names this guard
+  // needs have to be exported explicitly here.
+  'export { ASIA_TIME_ZONES, isAsiaCountry, shippingRegionForTimeZone, internationalPriceFor, EXPORT_ZONE_BY_COUNTRY };',
 ].join('\n');
 const {
   ASIA_TIME_ZONES, isAsiaCountry, shippingRegionForTimeZone, internationalPriceFor, EXPORT_ZONE_BY_COUNTRY,

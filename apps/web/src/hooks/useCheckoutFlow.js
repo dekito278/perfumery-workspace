@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import {
   buildCheckoutDraft,
   buildOrderNotes,
+  checkoutPaymentMethodsFor,
   getCheckoutPaymentMethod,
   isDokuQrisPayment,
   isManualTransferPayment,
@@ -28,6 +29,9 @@ import {
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { hasValidWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
+import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
+import { destinationFor } from '@/utils/internationalDestination.js';
+import { formatUsdPrice } from '@/utils/usdPrice.js';
 import { clearCheckoutDraft, readCheckoutDraft, writeCheckoutDraft } from '@/utils/checkoutDraftStorage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
@@ -94,6 +98,12 @@ export const useCheckoutFlow = ({
   const [contact, setContact] = useState(savedDraft.contact || '');
   const [deliveryAddress, setDeliveryAddress] = useState(savedDraft.deliveryAddress || '');
   const [deliveryArea, setDeliveryArea] = useState(savedDraft.deliveryArea || '');
+  // An international order is addressed by COUNTRY and priced by it. There is no courier list and no
+  // area search: RajaOngkir only knows Indonesian addresses and answers a foreign city with an empty
+  // list and HTTP 200, which is the dead end the old notice existed to explain.
+  const [deliveryCountry, setDeliveryCountry] = useState(savedDraft.deliveryCountry || '');
+  const { isInternational } = useStorefrontRegion();
+  const destination = useMemo(() => destinationFor(deliveryCountry), [deliveryCountry]);
   const [notes, setNotes] = useState(savedDraft.notes || '');
   const [saving, setSaving] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState(null);
@@ -112,15 +122,60 @@ export const useCheckoutFlow = ({
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
   const [shippingNotice, setShippingNotice] = useState('');
-  const paymentMethodDetails = getCheckoutPaymentMethod(selectedPaymentMethod);
+  // DOKU is Indonesian rails: a virtual account, QRIS, a card charged in rupiah. None of it reaches a
+  // buyer abroad, and api/doku/checkout.js writes its session into payment_response — the same column an
+  // international order carries its dollar amount, its Jenius account and its "waiting for a shipping
+  // quote" flag in. Choosing it would erase all three and restart the 24-hour clock on an order that is
+  // waiting for a freight figure nobody has sent yet.
+  // Keyed on the DESTINATION and not the shop's language: an Indonesian reading the English shop ships
+  // to an Indonesian address and still pays with it. api/orders/create.js refuses the same combination,
+  // because the provider arrives from the browser.
+  const availablePaymentMethods = useMemo(() => checkoutPaymentMethodsFor(destination), [destination]);
+  useEffect(() => {
+    if (availablePaymentMethods.some((method) => method.id === selectedPaymentMethod)) return;
+    setSelectedPaymentMethod(availablePaymentMethods[0]?.id || MANUAL_TRANSFER_PAYMENT.id);
+  }, [availablePaymentMethods, selectedPaymentMethod]);
+  // An international order's details come from the list the destination narrowed, not from a lookup in
+  // the full one: the buyer picks an id, and for a parcel leaving Indonesia that id resolves to the BCA
+  // account. bankName/accountNumber/accountName here are copied into the payment session the payment
+  // page falls back to, so resolving it the old way put BCA's numbers in front of a buyer in Berlin.
+  // Declared AFTER availablePaymentMethods, which it reads: a const used above its own line is a blank
+  // page at runtime with a green build, and this file has produced that exact crash before.
+  const paymentMethodDetails = destination
+    ? availablePaymentMethods[0]
+    : getCheckoutPaymentMethod(selectedPaymentMethod);
   const paymentMethod = paymentMethodDetails.label;
   const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
   const isQrisPayment = isDokuQrisPayment(paymentMethodDetails.provider);
-  const shippingFee = Number(selectedShipping?.cost || 0);
-  const discountAmount = Math.min(Number(voucherDiscount || 0), Number(summary.subtotal || 0));
+  // Nothing is added for an international parcel. Either the price already carries the freight — that is
+  // the sentence on every product page — or it is quoted by hand afterwards, which is a figure this
+  // screen does not have and must not invent. The courier rate belongs to the domestic half only.
+  const shippingFee = isInternational ? 0 : Number(selectedShipping?.cost || 0);
+  // Vouchers are domestic. Dekito's decision, 2026-09-25, and the same rule the member price already
+  // follows: a discount written for the Indonesian shop takes its cut from whatever subtotal it meets,
+  // and an international subtotal is 3.5x the domestic one — so a 10% code meant as about Rp 36.000 off
+  // a bottle became Rp 126.000 off the same bottle going abroad.
+  //
+  // Keyed on the DESTINATION, not the shop's language: an Indonesian reading the English shop, shipping
+  // to an Indonesian address, keeps their voucher. api/orders/create.js refuses the same combination,
+  // because the code travels in the request; this is so the buyer is never quoted a total the server
+  // will not honour.
+  const voucherBlockedByDestination = Boolean(destination && voucherCode);
+  const activeVoucherCode = destination ? '' : voucherCode;
+  const discountAmount = destination
+    ? 0
+    : Math.min(Number(voucherDiscount || 0), Number(summary.subtotal || 0));
   const discountedSubtotal = Math.max(Number(summary.subtotal || 0) - discountAmount, 0);
   const totalDue = discountedSubtotal + shippingFee;
-  const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
+  // The LABEL, not the number. This exported the dollar figure for one commit, and the checkout promptly
+  // fed it back into formatUsdPrice — which takes rupiah — and printed "US$5" for a Rp 1.260.000 order.
+  // Both gates were green; it was caught by opening the page. A screen that receives a finished string
+  // cannot get the units wrong, so the conversion happens once, here, beside the rupiah it converts.
+  // Empty for a domestic order, which is how a caller knows to print rupiah instead.
+  const totalDueUsdLabel = destination ? formatUsdPrice(totalDue) : '';
+  const shippingSummary = isInternational
+    ? (destination ? `${destination.regionLabel}${destination.shippingIncluded ? ' — shipping included' : ' — shipping quoted separately'}` : '')
+    : (selectedShipping ? describeShippingRate(selectedShipping) : '');
   const shippingWeight = useMemo(() => getCheckoutShippingWeight(items), [items]);
 
   // Changing quantity changes the parcel weight, which changes the courier price. The previously quoted
@@ -145,16 +200,23 @@ export const useCheckoutFlow = ({
   //
   // Whether the button is pressable is a different question, and each surface already answers it by
   // checking `saving` where the button is.
+  // Two shops, two rules, one function. The international half asks for a destination COUNTRY where the
+  // domestic half asks for a courier, an area and a rate — none of which exist for a parcel leaving the
+  // country. Everything before the split is the same in both, because a name, a reachable phone and an
+  // address are what a parcel needs wherever it goes.
+  // Written flat, not via a named "basics" flag: checkoutFailureHonesty scans the identifiers in this
+  // expression and insists every one of them is named in the notice the buyer reads. A helper variable
+  // is a condition with no sentence behind it, which is exactly the red line that names nothing.
   const canSubmitCheckout = Boolean(
     items.length
     && !blockedItems.length
     && customerName.trim()
     && validPhoneContact
     && deliveryAddress.trim()
-    && selectedCourier
-    && selectedDestination
-    && selectedShipping
     && selectedPaymentMethod
+    && (isInternational
+      ? destination
+      : (selectedCourier && selectedDestination && selectedShipping))
   );
 
   // Prefill from the logged-in customer's saved account, without overriding a draft.
@@ -491,13 +553,28 @@ export const useCheckoutFlow = ({
       toast.error('Nomor WhatsApp/telepon wajib diisi untuk pengiriman');
       return;
     }
-    if (!selectedDestination) {
-      toast.error('Pilih area tujuan dari hasil pencarian RajaOngkir dulu');
-      return;
-    }
-    if (!selectedShipping) {
-      toast.error('Pilih ekspedisi dulu');
-      return;
+    // The same split canSubmitCheckout makes, made again here — and it has to be made again, because
+    // these two lists of conditions are what the buyer meets in sequence: the first decides whether the
+    // button complains, the second decides whether the order is actually written. They disagreed once.
+    // canSubmitCheckout learned about international destinations and this did not, so an overseas buyer
+    // filled in every field, read no complaint, pressed the button, and was told in Indonesian to pick a
+    // RajaOngkir area that is not on their screen and does not exist for a parcel leaving the country.
+    // The checkout looked finished and could not take a single order.
+    // submitOrderMirrorsCanSubmit.selfcheck.mjs fails the build if they drift apart again.
+    if (isInternational) {
+      if (!destination) {
+        toast.error('Pilih negara tujuan dulu');
+        return;
+      }
+    } else {
+      if (!selectedDestination) {
+        toast.error('Pilih area tujuan dari hasil pencarian RajaOngkir dulu');
+        return;
+      }
+      if (!selectedShipping) {
+        toast.error('Pilih ekspedisi dulu');
+        return;
+      }
     }
     if (!selectedPaymentMethod) {
       toast.error('Pilih metode pembayaran dulu');
@@ -507,10 +584,10 @@ export const useCheckoutFlow = ({
     setSaving(true);
     let createdOrder = null;
     try {
-      const voucherValidation = voucherCode
-        ? await applyVoucherToSubtotalAsync({ code: voucherCode, subtotal: summary.subtotal, items })
+      const voucherValidation = activeVoucherCode
+        ? await applyVoucherToSubtotalAsync({ code: activeVoucherCode, subtotal: summary.subtotal, items })
         : null;
-      if (voucherCode && !voucherValidation?.valid) {
+      if (activeVoucherCode && !voucherValidation?.valid) {
         throw new Error(voucherValidation?.message || 'Voucher tidak bisa digunakan');
       }
       const checkoutDiscountAmount = voucherValidation?.discountAmount ?? discountAmount;
@@ -525,14 +602,14 @@ export const useCheckoutFlow = ({
         paymentMethod,
         shippingSummary,
         shippingFee,
-        voucherCode,
+        voucherCode: activeVoucherCode,
         voucherDiscount: checkoutDiscountAmount,
         notes,
         items,
       });
       const voucherSnapshot = buildVoucherSnapshot({
         voucher: voucherValidation?.voucher || voucherDetails,
-        voucherCode,
+        voucherCode: activeVoucherCode,
         discountAmount: checkoutDiscountAmount,
         subtotalBeforeDiscount: summary.subtotal,
         subtotalAfterDiscount: checkoutDiscountedSubtotal,
@@ -545,6 +622,9 @@ export const useCheckoutFlow = ({
         contact,
         deliveryAddress,
         deliveryArea,
+        // Empty on a domestic order. It is what tells the endpoint to price internationally, so it rides
+        // on the order rather than being inferred from the shop the browser happened to be showing.
+        deliveryCountry: isInternational ? deliveryCountry : '',
         notes: buildOrderNotes({ deliveryAddress, deliveryArea, paymentMethod, shippingSummary, notes }),
         // Same courier, as a field and not only as a line inside the notes. Both order paths must agree:
         // the endpoint sets courier_name from its own server-side summary.
@@ -567,7 +647,7 @@ export const useCheckoutFlow = ({
           shippingDestination: selectedDestination || null,
           shippingCourier: selectedShipping?.courierCode || '',
           shippingService: selectedShipping?.service || '',
-          voucherCode,
+          voucherCode: activeVoucherCode,
         })
         : await createOrder(orderData);
       createdOrder = order;
@@ -597,7 +677,7 @@ export const useCheckoutFlow = ({
           manualTransfer: manualPaymentResponse,
           shippingSummary,
           shippingFee,
-          voucherCode,
+          voucherCode: activeVoucherCode,
           voucherDiscount: checkoutDiscountAmount,
           voucherSnapshot,
           createdAt: new Date().toISOString(),
@@ -738,6 +818,7 @@ export const useCheckoutFlow = ({
     selectedCourier,
     selectedShipping,
     selectedPaymentMethod,
+    availablePaymentMethods,
     paymentMethodDetails,
     shippingLoading,
     shippingError,
@@ -747,11 +828,17 @@ export const useCheckoutFlow = ({
     validPhoneContact,
     shippingFee,
     discountAmount,
+    voucherBlockedByDestination,
     discountedSubtotal,
     totalDue,
+    totalDueUsdLabel,
     shippingSummary,
     shippingWeight,
     canSubmitCheckout,
+    deliveryCountry,
+    setDeliveryCountry,
+    destination,
+    isInternational,
     blockedItems,
     setCustomerName,
     setContact,

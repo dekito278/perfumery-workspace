@@ -1,6 +1,7 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -25,8 +26,12 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Numbe
 const CartPage = () => {
   const { items, summary, updateQuantity, removeItem } = useCart();
   const { index: memberIndex } = useMemberPrices();
-  const memberSaving = memberSavingForCart(items, memberIndex);
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
+  // Never in the English shop. The member price is a domestic loyalty price, and the cart there totals
+  // the international one — so the "saving" it computed was the gap between two prices that never apply
+  // to the same buyer. It read "save Rp 937.000 · Sign in" against an international total, which is not
+  // a discount, it is a different product line.
+  const memberSaving = isInternational ? 0 : memberSavingForCart(items, memberIndex);
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const subtotal = summary.subtotal;
   const totalAfterVoucher = Math.max(subtotal - voucher.discountAmount, 0);
@@ -69,9 +74,18 @@ const CartPage = () => {
                 {t('checkout.pricesUpdated')}
               </p>
             ) : null}
-            {unavailableItems.length ? (
+            {/* Two reasons, two sentences. A bottle with no international price is not "no longer
+                available" — it is on sale in Indonesia right now, which is exactly what the buyer can
+                see on its own page. Telling them otherwise sends them looking for a bottle that is
+                sitting there. */}
+            {unavailableItems.filter((item) => !item.noInternationalPrice).length ? (
               <p className="checkout-notice is-error" role="alert">
-                {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
+                {t('cart.unavailable', { names: unavailableItems.filter((item) => !item.noInternationalPrice).map((item) => item.name).join(', ') })}
+              </p>
+            ) : null}
+            {unavailableItems.filter((item) => item.noInternationalPrice).length ? (
+              <p className="checkout-notice is-error" role="alert">
+                {t('cart.noInternationalPrice', { names: unavailableItems.filter((item) => item.noInternationalPrice).map((item) => item.name).join(', ') })}
               </p>
             ) : null}
             {!items.length ? (
@@ -216,7 +230,11 @@ const CartPage = () => {
                   <div className="catalog-card__info">
                     <span className="catalog-card__category">{item.category}</span>
                     <h3>{item.name}</h3>
-                    <span className="catalog-card__price">{item.price}</span>
+                    {/* The same component the catalog grid uses, and for the same reason: item.price is
+                        the Indonesian member price. It printed Rp 386.000 under a cart totalling
+                        Rp 1.260.000 for the same size bottle — a domestic loyalty price, which does not
+                        travel, offered to a buyer shipping to Berlin. */}
+                    <CardPrice product={item} className="catalog-card__price" memberClassName="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>
                 </Link>
               ))}

@@ -107,8 +107,10 @@ export const useProductionCostPage = () => {
     const persistedScenario = readLocalScenario(selectedFormulaId);
     if (persistedScenario) {
       const nextBulkScenarios = Array.isArray(persistedScenario.bulkScenarios) && persistedScenario.bulkScenarios.length
-        ? persistedScenario.bulkScenarios.map((scenario, index) => (
-          normalizeBulkScenario(scenario, createBulkScenario(index + 1))
+        ? persistedScenario.bulkScenarios.map((scenario) => (
+          // createBulkScenario takes nothing: a blank label is the deliberate default (see
+          // DEFAULT_BULK_SCENARIOS), and the number this used to pass was never read by anything.
+          normalizeBulkScenario(scenario, createBulkScenario())
         ))
         : createDefaultBulkScenarios();
 
@@ -412,7 +414,7 @@ export const useProductionCostPage = () => {
   const addBulkScenario = () => {
     setBulkScenarios((current) => [
       ...current,
-      createBulkScenario(current.length + 1),
+      createBulkScenario(),
     ]);
   };
 

@@ -1,8 +1,9 @@
 // Turning an export quote into a real order.
 //
-// An international sale arrives on WhatsApp, not through the checkout — the English shop has no cart,
-// and RajaOngkir cannot price a foreign address anyway. So the order has to be written down from this
-// side, and it has to carry three things the domestic checkout would get wrong:
+// Most international sales come through the checkout now. This tool is for the ones that cannot: a
+// country the shipping table does not cover, a bespoke bottle, a conversation that started on WhatsApp
+// and ended in a price. RajaOngkir still cannot quote a foreign address, so those orders are written
+// down from this side, and they carry three things the domestic checkout would get wrong:
 //
 //   1. the OVERSEAS unit price, not the Indonesian one,
 //   2. shipping that was quoted by hand (or by the LTU table on this page), not by a domestic courier,

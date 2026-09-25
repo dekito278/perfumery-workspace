@@ -55,19 +55,27 @@ const NON_ISO_NAMES = {
   XM: 'St. Maarten',
 };
 
-const displayNames = (() => {
-  try {
-    return new Intl.DisplayNames(['id'], { type: 'region' });
-  } catch {
-    return null;
+// One formatter per language, built once. The English shop asks for English names — a country picker
+// reading "Jerman" and "Inggris Raya" to a buyer in Berlin is the same leak as an Indonesian price on an
+// English button, in the one field that decides where the parcel goes.
+const displayNamesByLocale = new Map();
+const displayNamesFor = (locale) => {
+  const key = locale === 'en' ? 'en' : 'id';
+  if (!displayNamesByLocale.has(key)) {
+    try {
+      displayNamesByLocale.set(key, new Intl.DisplayNames([key], { type: 'region' }));
+    } catch {
+      displayNamesByLocale.set(key, null);
+    }
   }
-})();
+  return displayNamesByLocale.get(key);
+};
 
-export const getCountryName = (code) => {
+export const getCountryName = (code, locale = 'id') => {
   const key = String(code || '').trim().toUpperCase();
   if (NON_ISO_NAMES[key]) return NON_ISO_NAMES[key];
   try {
-    return displayNames?.of(key) || key;
+    return displayNamesFor(locale)?.of(key) || key;
   } catch {
     return key;
   }

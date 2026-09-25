@@ -20,6 +20,11 @@ const stubs = `
 const getOrderProductItems = (order = {}) => order.items || [];
 const getOrderVoucherSnapshot = (order = {}) => order.voucherSnapshot || null;
 const normalizeWhatsAppPhoneNumber = (value = '') => String(value).replace(/\\D/g, '');
+// Two more the templates now ask about, because a message has to name the amount in the currency the
+// buyer was asked for. Stubbed as "domestic, not waiting" so every assertion below keeps testing what it
+// was written to test; notificationAmount.selfcheck.mjs is where the international shapes are exercised.
+const internationalOrderSummary = () => null;
+const isAwaitingShippingQuote = () => false;
 `;
 const runnable = stubs + source.split('\n').filter((line) => !line.startsWith('import ')).join('\n');
 const { buildNotificationMessage } = await import(

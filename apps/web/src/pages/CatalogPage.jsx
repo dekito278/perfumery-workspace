@@ -25,7 +25,7 @@ import WearFilter from '@/components/storefront/WearFilter.jsx';
 
 const CatalogPage = () => {
   const fetchedProducts = useStorefrontProducts();
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   // No fallback to the bundled seed data. featuredProducts is six invented perfumes — Santal Morn,
   // Petal Smoke and so on — that this shop has never sold. When the catalogue query came back empty, a
   // customer was shown all six with prices, and clicking one landed on "Halaman tidak ditemukan". An
@@ -197,12 +197,11 @@ const CatalogPage = () => {
                       priority={index < 4}
                       label={false}
                     />
-                    {/* No shortcut into a cart the English shop does not use. The card still opens the
-                        product page, where the international price and the WhatsApp order sit together —
-                        and that is the point: this button added the bottle at the DOMESTIC price, which
-                        is how La Tulipe reached an English cart at Rp 260.000 under a page quoting
-                        Rp 1.020.000. */}
-                    {isInternational ? null : (
+                    {/* This used to be hidden from the English shop, and the reason is worth keeping:
+                        the button added the bottle at the DOMESTIC price, which is how La Tulipe reached
+                        an English cart at Rp 260.000 under a page quoting Rp 1.020.000. That cannot
+                        happen any more — useCart re-prices every line from the catalogue at the
+                        international price, so what the card hands over is a slug, not a price. */}
                     <button
                       type="button"
                       className={`catalog-card__quick-add${addedSlug === product.slug ? ' is-added' : ''}`}
@@ -218,7 +217,6 @@ const CatalogPage = () => {
                         <><Plus className="h-4 w-4" /> {t('catalog.quickAdd')}</>
                       )}
                     </button>
-                    )}
                   </div>
                   <div className="catalog-card__info">
                     <span className="catalog-card__category">{cardLabels(product).join(' · ') || 'Atelier'}</span>

@@ -93,6 +93,53 @@ export const isAwaitingShippingQuote = (order = {}) => {
   return ['unpaid', 'pending'].includes(paymentStatus) && !isArchivedOrder(order);
 };
 
+/**
+ * What Studio needs to know about an order that left the country, from the column the endpoint wrote it
+ * into. Returns null for a domestic order, so a caller can render nothing without asking twice.
+ *
+ * Studio used to say "Respons checkout tersimpan" and stop there — it knew the blob existed and told
+ * Dekito nothing that was in it. On the phone, where he actually works, it said nothing at all: an order
+ * to Berlin looked exactly like one to Bekasi. The gap that costs money is the amount. The buyer is asked
+ * to transfer US$95, frozen at the rate the order was priced with; Studio showed Rp 1.510.000, so when a
+ * dollar deposit landed in Jenius there was no figure on the screen to check it against.
+ *
+ * Both spellings, for the same reason isAwaitingShippingQuote reads both: the client normalises to
+ * paymentResponse and the server-side sweeps read raw rows.
+ */
+export const internationalOrderSummary = (order = {}) => {
+  if (!order || typeof order !== 'object') return null;
+  const response = order.paymentResponse || order.payment_response || {};
+  if (response?.currency !== 'USD') return null;
+  const amountUsd = Number(response.amountUsd) || 0;
+  return {
+    country: String(response.destinationCountry || '').toUpperCase(),
+    amountUsd,
+    amountLabel: amountUsd ? `US$${amountUsd}` : '',
+    bankName: String(response.bankName || ''),
+    awaitingQuote: Boolean(response.shippingQuotePending),
+  };
+};
+
+/**
+ * How long an order has been waiting for us, in whole days.
+ *
+ * The 24-hour reservation sweep skips an order awaiting a freight quote, which is right — cancelling it
+ * would punish the buyer for OUR delay. What that also means is that its stock is held with no time
+ * limit at all: every catalog order reserves inventory the moment it is written, and nothing ever gives
+ * this one back. In a shop that blends in small batches, one European buyer who goes quiet takes a
+ * bottle out of the catalogue permanently, and the only screen that knew said nothing about it.
+ *
+ * So the wait is shown. A queue entry reading "6 hari" is a different object than one reading "1 hari",
+ * and the difference is a bottle nobody can buy.
+ */
+export const daysAwaitingQuote = (order = {}, now = new Date()) => {
+  if (!isAwaitingShippingQuote(order)) return 0;
+  const created = new Date(order.createdAt || order.created_at || '');
+  if (!Number.isFinite(created.getTime())) return 0;
+  const days = Math.floor((now.getTime() - created.getTime()) / (24 * 60 * 60 * 1000));
+  return days > 0 ? days : 0;
+};
+
 export const isFrontQueueOrder = (order = {}) => (
   !isArchivedOrder(order)
   && !hasShippingLabelPrinted(order)

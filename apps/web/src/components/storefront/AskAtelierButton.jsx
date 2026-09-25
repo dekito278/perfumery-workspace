@@ -16,8 +16,9 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * button (same rule as OverseasInquiryButton).
  */
 // labelKey/draftKey so the same button can carry the errand of whatever sentence it answers: asking
-// about a parcel on the tracking page, arranging an order from abroad on the account page — where the
-// English shop has no checkout, and WhatsApp is not a help channel but the way to buy at all.
+// about a parcel on the tracking page, reaching a person from the account page. It used to arrange an
+// ORDER from abroad, back when the English shop had no checkout and WhatsApp was not a help channel but
+// the way to buy at all. Both shops check out now, so every errand this button carries is a question.
 const AskAtelierButton = ({ orderNumber = '', className = '', labelKey = 'track.askAtelier', draftKey = '' }) => {
   const { t } = useTranslate();
   const phoneNumber = getStorefrontWhatsAppNumber();

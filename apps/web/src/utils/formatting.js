@@ -87,12 +87,28 @@ export const formatCurrency = (value) => {
   }
 };
 
-export const formatDate = (value) => {
+/**
+ * A date, in the language of whoever is reading it.
+ *
+ * The locale is an ARGUMENT with an Indonesian default, not a lookup: this formatter has thirty-odd
+ * callers and almost all of them are Studio, which is Indonesian on purpose and must not be translated.
+ * The handful that face a buyer pass t('fmt.dateLocale') instead, so an English reader gets their own
+ * month names.
+ *
+ * It mattered most where nobody was looking: the public tracking page. Someone in Berlin following a
+ * parcel read "22 Mei 2026" on an otherwise English page — a date in a language they may not have, on
+ * the one screen whose entire job is telling them when something arrives.
+ */
+export const formatDate = (value, locale = 'id-ID') => {
   if (!value) return 'N/A';
   try {
     const date = new Date(value);
     if (isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleDateString('id-ID', {
+    // A STRING or nothing. MobileArticlesPage was already calling formatDate(value, t) — someone had
+    // tried to make this locale-aware and the extra argument was being dropped on the floor, so the call
+    // read as correct and did nothing. Turning that argument into a real one would have handed
+    // toLocaleDateString a function and blanked the page.
+    return date.toLocaleDateString(typeof locale === 'string' && locale ? locale : 'id-ID', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

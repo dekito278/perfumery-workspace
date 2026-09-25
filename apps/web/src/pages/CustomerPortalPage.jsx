@@ -7,7 +7,8 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
-import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
+import { internationalOrderSummary, isAwaitingShippingQuote, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import { orderHasShipped } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
@@ -42,7 +43,6 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
-import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import useTranslate from '@/hooks/useTranslate.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -366,7 +366,7 @@ const PaymentProofPanel = ({ order, compact = false }) => {
           ) : null}
           {order.paymentProofUploadedAt ? (
             <div className="mt-1 text-[11px] font-semibold opacity-80">
-              {t('cust.sentOn', { date: formatDate(order.paymentProofUploadedAt, t) })}
+              {t('cust.sentOn', { date: formatDate(order.paymentProofUploadedAt, t('fmt.dateLocale')) })}
             </div>
           ) : null}
           {order.paymentProofNotes ? (
@@ -430,12 +430,19 @@ const PaymentTaskPanel = ({
             </div>
             <div className="rounded-2xl bg-white/85 px-3 py-2">
               <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.totalDue')}</div>
-              <div className="mt-1 text-sm font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</div>
+              {/* The amount they were actually asked for. An overseas buyer transfers dollars frozen at
+                  the order's rate, and one still waiting on a freight quote has no total yet — the
+                  payment page refuses to name one, so this banner must not name one either. */}
+              <div className="mt-1 text-sm font-bold text-editorial-charcoal">
+                {isAwaitingShippingQuote(order)
+                  ? '—'
+                  : (internationalOrderSummary(order)?.amountLabel || formatTotal(order.subtotal))}
+              </div>
             </div>
             {dokuPayment ? (
               <div className="rounded-2xl bg-white/85 px-3 py-2">
                 <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.linkDeadline')}</div>
-                <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{expiresAt ? formatDate(expiresAt, t) : t('cust.aboutAnHour')}</div>
+                <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{expiresAt ? formatDate(expiresAt, t('fmt.dateLocale')) : t('cust.aboutAnHour')}</div>
               </div>
             ) : (
               <div className="rounded-2xl bg-white/85 px-3 py-2">
@@ -483,7 +490,7 @@ const OrderTimeline = ({ order, compact = false }) => {
     const done = activeStep >= index;
     const current = activeStep === index;
     let detail = done ? t('cust.recorded') : t('cust.waitingPrevious');
-    if (step.key === 'created') detail = formatDate(order.createdAt, t);
+    if (step.key === 'created') detail = formatDate(order.createdAt, t('fmt.dateLocale'));
     if (step.key === 'pending_payment') detail = order.paymentStatus === 'paid' ? t('cust.paymentDone') : t('cust.waitingPayment');
     if (step.key === 'paid') detail = labelFrom(paymentStatusKeys, paymentStatusLabels, order.paymentStatus, t) || '-';
     if (step.key === 'processing') detail = labelFrom(shipmentStatusKeys, shipmentStatusLabels, order.shipmentStatus, t) || labelFrom(orderStatusKeys, statusLabels, order.status, t) || '-';
@@ -495,7 +502,7 @@ const OrderTimeline = ({ order, compact = false }) => {
         ? `${order.courierName || t('cust.courier')} / ${order.trackingNumber}`
         : t(orderHasShipped(order) ? 'cust.waybillMissing' : 'cust.waybillLater');
     }
-    if (step.key === 'completed') detail = order.deliveredAt ? formatDate(order.deliveredAt, t) : t('cust.waitingDelivery');
+    if (step.key === 'completed') detail = order.deliveredAt ? formatDate(order.deliveredAt, t('fmt.dateLocale')) : t('cust.waitingDelivery');
 
     return { ...step, done, current, detail };
   });
@@ -680,13 +687,13 @@ const ShipmentPanel = ({ order, compact = false }) => {
         {order.shippedAt ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
             <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.shipDate')}</div>
-            <div className="mt-1 text-editorial-charcoal">{formatDate(order.shippedAt, t)}</div>
+            <div className="mt-1 text-editorial-charcoal">{formatDate(order.shippedAt, t('fmt.dateLocale'))}</div>
           </div>
         ) : null}
         {order.deliveredAt ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
             <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.delivered')}</div>
-            <div className="mt-1 text-editorial-charcoal">{formatDate(order.deliveredAt, t)}</div>
+            <div className="mt-1 text-editorial-charcoal">{formatDate(order.deliveredAt, t('fmt.dateLocale'))}</div>
           </div>
         ) : null}
       </div>
@@ -719,12 +726,16 @@ const SelfServiceActions = ({
   order,
   refreshing = false,
 }) => {
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const paymentPath = buildPaymentPath({ isMobileRoute, order });
-  // Reorder fills the cart and sends the buyer to it. The English shop has no cart and /en/cart
-  // redirects, so the button would quietly stock a basket nobody can open and drop the customer on the
-  // catalogue — a dead end that looks like a bug rather than a policy.
-  const canReorder = !isInternational && getOrderProductItems(order).length > 0;
+  // Reorder fills the cart and sends the buyer to it. It used to be hidden from an international
+  // customer, and the reason is kept rather than deleted: the English shop had no cart, /en/cart
+  // redirected, and the button would have stocked a basket nobody could open. Both of those stopped
+  // being true when /en got a cart and a checkout — so the gate was refusing a returning overseas buyer
+  // the one button on this page that makes them a repeat customer.
+  // The prices take care of themselves: useCart re-prices every line from the catalogue at the
+  // international price, so a basket refilled from a domestic order is not a domestic-priced basket.
+  const canReorder = getOrderProductItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
   const buttonClass = compact
     ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
@@ -770,14 +781,14 @@ const SelfServiceActions = ({
         <ExternalLink className="h-4 w-4" />
         {t('cust.publicTracking')}
       </a>
-      {/* Hidden rather than disabled in the English shop: a greyed button is still an offer, and this
-          one cannot be honoured there at all. */}
-      {isInternational ? null : (
-        <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
-          <ShoppingBag className="h-4 w-4" />
-          {t('cust.orderAgain')}
-        </button>
-      )}
+      {/* It used to be hidden in the English shop — "a greyed button is still an offer, and this one
+          cannot be honoured there at all" — which was true while /en had no cart. It has one now, so
+          the offer can be honoured and the button belongs to both shops. Still disabled, not hidden,
+          when the order has no product lines to put back. */}
+      <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
+        <ShoppingBag className="h-4 w-4" />
+        {t('cust.orderAgain')}
+      </button>
       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
         <button type="button" onClick={() => onRefreshPayment(order)} disabled={refreshing} className={`${outlineClass} disabled:opacity-60`}>
           {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -789,7 +800,7 @@ const SelfServiceActions = ({
 };
 
 const CustomerPortalPage = () => {
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
@@ -1236,17 +1247,12 @@ const CustomerPortalPage = () => {
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
                   {t('cust.oneplace')}
                 </p>
-                {/* Same reason as the desktop hero below, and this is the surface most of them are on:
-                    the English shop has no checkout, so a reader abroad who reaches their account has
-                    nowhere else to arrange an order from. The phone hero does not carry the sentence
-                    that says so, which is exactly why the button had to be put here on purpose. */}
-                {isInternational ? (
-                  <AskAtelierButton
-                    labelKey="intl.noticeCta"
-                    draftKey="intl.noticeMessage"
-                    className="mt-3 w-full"
-                  />
-                ) : null}
+                {/* This used to read "Arrange an international order on WhatsApp", because the English
+                    shop had no checkout and a reader abroad had nowhere else to order from. It has one
+                    now, so that label pointed them at the slower path this whole project replaced. The
+                    button stays — an account page with no way to reach a human is its own defect — but
+                    it asks a question instead of taking an order. */}
+                <AskAtelierButton className="mt-3 w-full" />
               </div>
             </div>
             <form onSubmit={loadPortal} className="grid gap-3 p-4">
@@ -1415,7 +1421,7 @@ const CustomerPortalPage = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <h3 className="text-base font-bold text-editorial-charcoal">{order.orderNumber}</h3>
-                            <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt, t)}</p>
+                            <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt, t('fmt.dateLocale'))}</p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
                             <StatusBadge status={order.status} />
@@ -1510,17 +1516,12 @@ const CustomerPortalPage = () => {
               <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
                 {t('cust.heroBody')}
               </p>
-              {/* The English shop has no checkout: that sentence tells a reader abroad their order is
-                  arranged on WhatsApp, so the way to arrange one belongs under it rather than in the
-                  footer. The Indonesian sentence says nothing of the kind — there is a checkout — so
-                  there is nothing here to answer. */}
-              {isInternational ? (
-                <AskAtelierButton
-                  labelKey="intl.noticeCta"
-                  draftKey="intl.noticeMessage"
-                  className="mt-4 w-full sm:w-auto"
-                />
-              ) : null}
+              {/* Same change as the phone hero above: the sentence this button answered said an order
+                  from abroad is arranged on WhatsApp. It is not — the checkout takes it — so the
+                  sentence now says what is true (member prices are domestic, international orders are
+                  priced in dollars at checkout) and the button went back to being what it always
+                  actually was: the way to reach a person. */}
+              <AskAtelierButton className="mt-4 w-full sm:w-auto" />
             </div>
 
             <form onSubmit={loadPortal} className="rounded-2xl border bg-white p-4 shadow-sm">
@@ -1686,7 +1687,7 @@ const CustomerPortalPage = () => {
                                 {isManualTransferPayment(order.paymentProvider) ? <PaymentProofBadge status={order.paymentProofStatus || 'missing'} /> : null}
                                 {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
                               </div>
-                              <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt, t)}</p>
+                              <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt, t('fmt.dateLocale'))}</p>
                             </div>
                             <div className="text-right">
                               <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.itemCount', { count: order.quantity })}</div>

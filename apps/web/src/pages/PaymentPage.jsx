@@ -601,9 +601,22 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   // The third state. Not closed — the order is alive and nothing is wrong — but there is no total yet,
   // so there is nothing to transfer and no account to show.
   const awaitingShippingQuote = isAwaitingShippingQuote(session);
+  // And the fourth: already paid. isOrderClosedForPayment deliberately does NOT cover it — there it means
+  // "dead, stock released", and two admin paths throw on that — so this screen has to ask separately.
+  // The QRIS panel has asked since it was written; this one never did, and went on showing a paid buyer
+  // the bank account, "Transfer exactly Rp 289.000" and a receipt upload form. Someone who follows their
+  // own payment link back after paying is told to pay again, and the second transfer is Dekito's to
+  // refund. Read on a real order: DKT-MUEUY0EL-LV1D1D, payment_status 'paid', proof already submitted.
+  const settled = session.paymentStatus === 'paid';
   const proofStatus = session.paymentProofStatus || 'missing';
   const hasSubmittedProof = Boolean(session.paymentProofUrl) && ['submitted', 'approved'].includes(proofStatus);
-  const needsProofUpload = !hasSubmittedProof;
+  // A closed order needs nothing uploaded. The panel above already tells this buyer the order was
+  // cancelled, the stock released, and not to transfer — and then the receipt section below it said "a
+  // receipt is REQUIRED so the order can move", with a working file picker. It cannot move: approving a
+  // receipt on a closed order is exactly what the admin path throws on. So the person this hurts is the
+  // one the panel above is speaking to — someone who already transferred, sent the proof instead of a
+  // message, and heard nothing back.
+  const needsProofUpload = !hasSubmittedProof && !closedForPayment;
   const transfer = {
     bankName: session.manualTransfer?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: session.manualTransfer?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
@@ -668,6 +681,19 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
       setUploadingProof(false);
     }
   };
+
+  // After every hook, so flipping to paid cannot change hook order — the same placement and the same
+  // reason as the QRIS panel above.
+  if (settled) {
+    return (
+      <PaymentSuccessPanel
+        compact={compact}
+        orderNumber={orderNumber}
+        customerCode={customerCode}
+        method={session.bankName || t('pay.manualTransfer')}
+      />
+    );
+  }
 
   return (
     <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
@@ -883,7 +909,9 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 {needsProofUpload ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">{t('pay.requiredTag')}</span> : null}
               </div>
               <p className="mt-1 text-sm font-semibold leading-relaxed text-editorial-charcoal">
-                {proofStatus === 'rejected'
+                {closedForPayment
+                  ? t('pay.proofClosed')
+                  : proofStatus === 'rejected'
                   ? t("pay.proofRejected")
                   : hasSubmittedProof
                   ? t("pay.proofWaiting")
@@ -908,6 +936,12 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             </div>
           </div>
 
+          {/* No upload on a closed order. The panel above has just said the order was cancelled and the
+              stock released; a file picker under it invites the one person that panel is addressing —
+              someone who already transferred — to send a receipt that the admin side refuses to approve
+              by design. They are pointed at WhatsApp instead, which is where a real transfer to a dead
+              order actually gets sorted out. */}
+          {closedForPayment ? null : (
           <div className="mt-4 grid gap-3">
             <label className="block">
               <span className="sr-only">{t("pay.uploadProof")}</span>
@@ -935,6 +969,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
               {t('pay.fileFormats')}
             </p>
           </div>
+          )}
         </div>
       </div>
     </section>

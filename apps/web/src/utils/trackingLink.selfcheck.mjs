@@ -108,4 +108,25 @@ for (const language of ['id', 'en']) {
   }
 }
 
+// --- The timeline marks a STAGE, and never claims a time -------------------------------------------------
+// The step list appends track.current to whichever step the order has reached. In Indonesian that reads
+// "Pesanan diterima (saat ini)" — this is where it stands. The English said " (now)", which on a four-
+// month-old order rendered "Order received (now)": a status marker reading as a timestamp, directly
+// above a "Placed 22 May 2026" that said otherwise. Read on a real order, DKT-MPGB5BF0.
+//
+// The rule is about what the marker CLAIMS, not its wording: it marks a position in a list, so it may
+// not be a word for the present moment.
+{
+  const page = read('pages', 'PublicTrackingPage.jsx');
+  assert.match(page, /index === completeCount - 1 \? t\('track\.current'\) : ''/,
+    'the timeline must still mark the reached step — without it a buyer cannot tell where the order is');
+  for (const locale of ['id', 'en']) {
+    const marker = MESSAGES[locale]['track.current'];
+    assert.ok(marker && marker.trim(), `track.current is missing in ${locale}`);
+    assert.doesNotMatch(marker, /^\s*\(?\s*(now|just now|sekarang|barusan)\s*\)?\s*$/i,
+      `${locale}.track.current reads as a time: "${marker.trim()}". It marks which step the order has `
+      + 'reached, and it sits above the real dates — on an old order the two contradict each other');
+  }
+}
+
 console.log('trackingLink selfcheck OK (the link on the box and in WhatsApp opens the tracking page, on a phone too)');

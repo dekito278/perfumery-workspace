@@ -10,29 +10,13 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
-import { getNextOrderStatusForPayment, hasShippingLabelPrinted, isArchivedOrder, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { daysAwaitingQuote, getNextOrderStatusForPayment, hasShippingLabelPrinted, internationalOrderSummary, isArchivedOrder, isAwaitingShippingQuote, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
-import {
-  getBespokeItem,
-  getBespokeProductionStatusLabels,
-  getOrderAuditLogs,
-  getOrderById,
-  getOrderPaymentLogs,
-  getOrderStatusLabels,
-  getShipmentStatusLabels,
-  isBespokeOrder,
-  reviewOrderPaymentProof,
-  updateOrderBespokeProductionStatus,
-  updateOrderInternalNotes,
-  updateOrderProductionLinks,
-  updateOrderShipment,
-  updateOrderPaymentStatus,
-  updateOrderStatus,
-} from '@/services/orderService.js';
+import { getBespokeItem, getBespokeProductionStatusLabels, getOrderAuditLogs, getOrderById, getOrderPaymentLogs, getOrderStatusLabels, getShipmentStatusLabels, isBespokeOrder, reviewOrderPaymentProof, sendInternationalShippingQuote, updateOrderBespokeProductionStatus, updateOrderInternalNotes, updateOrderPaymentStatus, updateOrderProductionLinks, updateOrderShipment, updateOrderStatus } from '@/services/orderService.js';
 import {
   buildNotificationMessage,
   canSendEmailNotification,
@@ -341,6 +325,31 @@ const MobileOrderDetailPage = () => {
       cancelled = true;
     };
   }, [order?.paymentProofUrl]);
+
+  // The door out of "menunggu ongkir", on the screen Dekito actually works from. Until this existed the
+  // queue on the fulfilment page linked here and there was nothing here to press.
+  const [quoteFee, setQuoteFee] = useState('');
+  const [quoteCarrier, setQuoteCarrier] = useState('');
+  const [sendingQuote, setSendingQuote] = useState(false);
+  const sendShippingQuote = async () => {
+    setSendingQuote(true);
+    try {
+      const nextOrder = await sendInternationalShippingQuote(order.id || order.orderNumber, {
+        shippingFee: Number(String(quoteFee).replace(/[^\d]/g, '')),
+        carrier: quoteCarrier,
+      });
+      setOrder(nextOrder || order);
+      setQuoteFee('');
+      // The panel below is pre-loaded with the message rather than sent for him: this screen hands over
+      // to WhatsApp, and the buyer was promised the figure within 24 hours.
+      setNotificationEvent('shipping_quoted');
+      toast.success('Ongkir terkirim. Pesan untuk pembeli siap di panel notifikasi.');
+    } catch (error) {
+      toast.error(error?.message || 'Gagal mengirim ongkir');
+    } finally {
+      setSendingQuote(false);
+    }
+  };
 
   const handleStatusChange = async (status) => {
     try {
@@ -815,6 +824,51 @@ const MobileOrderDetailPage = () => {
               {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
             </StatusChip>
             {order.trackingNumber ? <StatusChip size="sm" tone="success">Resi siap</StatusChip> : null}
+            {/* Same reason as the desktop card: the buyer was asked for dollars, this page shows rupiah,
+                and this is where the transfer gets checked. */}
+            {internationalOrderSummary(order) ? (
+              <StatusChip size="sm" tone="warning">
+                {[internationalOrderSummary(order).country,
+                  internationalOrderSummary(order).amountLabel,
+                  internationalOrderSummary(order).awaitingQuote ? 'menunggu ongkir' : ''].filter(Boolean).join(' · ')}
+              </StatusChip>
+            ) : null}
+          </div>
+          {isAwaitingShippingQuote(order) ? (
+            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+              <div className="text-[10px] font-bold uppercase text-amber-800">Kirim ongkir ke pembeli</div>
+              <p className="mt-1 text-[11px] font-semibold leading-relaxed text-amber-900">
+                Sampai angkanya kamu kirim, halaman bayar menahan nomor rekening dan hitungan 24 jamnya belum jalan.
+                {daysAwaitingQuote(order) ? ` Sudah ${daysAwaitingQuote(order)} hari, dan stoknya ditahan selama itu.` : ' Stoknya ditahan selama menunggu.'}
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={quoteFee}
+                onChange={(event) => setQuoteFee(event.target.value)}
+                placeholder="Ongkir (Rp)"
+                aria-label="Ongkir internasional dalam rupiah"
+                className="mt-2 w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm font-bold text-[#1f2937]"
+              />
+              <input
+                type="text"
+                value={quoteCarrier}
+                onChange={(event) => setQuoteCarrier(event.target.value)}
+                placeholder="Kurir (opsional)"
+                aria-label="Nama kurir"
+                className="mt-2 w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-[#1f2937]"
+              />
+              <button
+                type="button"
+                onClick={sendShippingQuote}
+                disabled={sendingQuote || !String(quoteFee).replace(/[^\d]/g, '')}
+                className="mt-2 w-full rounded-xl bg-[#1f2937] px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
+              >
+                {sendingQuote ? 'Mengirim...' : 'Kirim ongkir'}
+              </button>
+            </div>
+          ) : null}
+          <div className="hidden">
           </div>
         </section>
 

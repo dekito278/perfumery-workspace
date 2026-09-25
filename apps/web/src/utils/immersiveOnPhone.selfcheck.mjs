@@ -52,10 +52,15 @@ assert.match(immersive, /props\.mobile\s*\n?\s*\?\s*<MobileCommerceLayout>/,
 assert.match(immersive, /to=\{mobile \? '\/mobile\/catalog' : '\/catalog'\}/,
   'the back link sends a phone reader to the desktop catalogue');
 
-// --- 5. And the English shop still has no cart here ----------------------------------------------------
-// This page has its own add-to-cart, which is exactly the kind of second till that /en/bespoke turned out
-// to be hiding. It was already gated; adding a second surface must not un-gate it.
-assert.match(immersive, /\{isInternational \? null : \(/,
-  'the immersive page offers a cart in the English shop, which has none');
+// --- 5. And its add-to-cart charges the international price -------------------------------------------
+//
+// INVERTED on 2026-09-25 with the rest of them. This page has its own add-to-cart — exactly the kind of
+// second till that /en/bespoke turned out to be hiding — and it used to be gated out of the English shop
+// entirely. The English shop sells now, so the gate is gone and the risk moved: a second till printing
+// the Indonesian figure is the same bug the gate was standing in front of.
+assert.match(immersive, /price: buyPriceLabel/,
+  'the immersive add-to-cart prints a price that is not the international one');
+assert.match(immersive, /const buyPriceLabel = exportPrice \?/,
+  'and that price must be built from the export price, like the other two product pages');
 
 console.log('immersiveOnPhone selfcheck OK (one story, two surfaces, one shell each — and the English shop still cannot reach a cart through it)');

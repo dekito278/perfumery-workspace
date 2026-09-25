@@ -1,5 +1,6 @@
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { normalizeWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
+import { internationalOrderSummary, isAwaitingShippingQuote } from '@/utils/orderWorkflow.js';
 
 // Studio's own event picker. Stays Indonesian: Dekito reads it, not the buyer.
 const notificationEventLabels = {
@@ -7,6 +8,7 @@ const notificationEventLabels = {
   paid: 'Pembayaran diterima',
   payment_proof_rejected: 'Bukti transfer ditolak',
   processing: 'Order diproses',
+  shipping_quoted: 'Ongkir internasional dikirim',
   shipped: 'Order dikirim',
   completed: 'Order selesai',
 };
@@ -17,6 +19,7 @@ const notificationEventLabelsEn = {
   paid: 'Payment confirmed',
   payment_proof_rejected: 'Transfer proof could not be verified',
   processing: 'Order in production',
+  shipping_quoted: 'International shipping quoted',
   shipped: 'Order shipped',
   completed: 'Order complete',
 };
@@ -38,6 +41,33 @@ const shopOf = (order) => (order?.clientContext?.shop === 'en' ? 'en' : 'id');
 const shopPrefix = (order) => (shopOf(order) === 'en' ? '/en' : '');
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+
+/**
+ * The amount this buyer was actually asked for, in the currency they were asked for it in.
+ *
+ * Every message quoted `Total: Rp 1.260.000` — including the English ones, to a buyer who had just been
+ * told to transfer US$80 into a dollar account. The screens were taught this rule and the messages were
+ * not, which is the same half-taught shape as everything else found in this audit; the difference is
+ * that a message is the copy the buyer keeps in their phone.
+ *
+ * An order still waiting on a freight quote has no total at all. The payment page withholds one and the
+ * invoice withholds one, so a message naming one would be the only document that contradicts them.
+ */
+const totalLine = (order, { id, en, pendingId, pendingEn }) => {
+  const english = shopOf(order) === 'en';
+  if (isAwaitingShippingQuote(order)) return english ? pendingEn : pendingId;
+  const summary = internationalOrderSummary(order);
+  const label = english ? en : id;
+  if (summary?.amountLabel) return `${label}: ${summary.amountLabel} (${formatTotal(order.subtotal)})`;
+  return `${label}: ${formatTotal(order.subtotal)}`;
+};
+
+const ORDER_TOTAL = {
+  id: 'Total',
+  en: 'Total',
+  pendingId: 'Total: menunggu ongkir internasional — kami kirim angka finalnya sebelum kamu bayar.',
+  pendingEn: 'Total: waiting on international shipping — we will send the final figure before you pay.',
+};
 
 const formatItemLines = (order = {}) => {
   const items = getOrderProductItems(order);
@@ -118,7 +148,7 @@ const templatesById = {
     '',
     'Detail order:',
     formatItemLines(order),
-    `Total: ${formatTotal(order.subtotal)}`,
+    totalLine(order, ORDER_TOTAL),
     `Status pembayaran: ${order.paymentStatus || '-'}`,
     order.customerCode ? `Kode customer: ${order.customerCode}` : null,
     linkLine(order, 'Invoice', 'Lacak pesanan'),
@@ -144,7 +174,7 @@ const templatesById = {
     'Mohon upload ulang bukti transfer yang jelas lewat link berikut:',
     getManualPaymentUploadUrl(order),
     '',
-    `Total order: ${formatTotal(order.subtotal)}`,
+    totalLine(order, { ...ORDER_TOTAL, id: 'Total order' }),
     order.customerCode ? `Kode customer: ${order.customerCode}` : null,
     '',
     'Status order tetap pending sampai bukti transfer baru kami cek. Terima kasih.',
@@ -158,6 +188,22 @@ const templatesById = {
     getCustomerDashboardUrl(order),
     '',
     'Kami akan kirim update lagi setelah paket masuk proses pengiriman.',
+  ],
+  // The one message the European route depends on. The buyer was told at checkout that the freight
+  // follows by hand and that nothing is charged until they agree; this is us keeping that promise, and
+  // until it existed the only way they could learn the figure had arrived was to keep reloading a page
+  // that had been telling them to wait.
+  shipping_quoted: (order) => [
+    buildGreeting(order),
+    '',
+    `Ongkir untuk order ${order.orderNumber} sudah kami hitung.`,
+    order.courierName ? `Kurir: ${order.courierName}` : null,
+    totalLine(order, { ...ORDER_TOTAL, id: 'Total yang perlu ditransfer' }),
+    '',
+    'Nomor rekening dan cara bayarnya ada di halaman ini:',
+    getManualPaymentUploadUrl(order),
+    '',
+    'Kalau ongkirnya terlalu mahal, balas pesan ini — pesanan belum kamu bayar dan masih bisa dibatalkan.',
   ],
   shipped: (order) => [
     buildGreeting(order),
@@ -187,7 +233,7 @@ const templatesByEn = {
     '',
     'Order details:',
     formatItemLines(order),
-    `Total: ${formatTotal(order.subtotal)}`,
+    totalLine(order, ORDER_TOTAL),
     `Payment status: ${order.paymentStatus || '-'}`,
     order.customerCode ? `Customer code: ${order.customerCode}` : null,
     linkLine(order, 'Invoice', 'Track your order'),
@@ -213,7 +259,7 @@ const templatesByEn = {
     'Please upload a clearer transfer proof here:',
     getManualPaymentUploadUrl(order),
     '',
-    `Order total: ${formatTotal(order.subtotal)}`,
+    totalLine(order, { ...ORDER_TOTAL, en: 'Order total' }),
     order.customerCode ? `Customer code: ${order.customerCode}` : null,
     '',
     'The order stays pending until we have checked the new proof. Thank you.',
@@ -227,6 +273,18 @@ const templatesByEn = {
     getCustomerDashboardUrl(order),
     '',
     'We will write again when the parcel goes out.',
+  ],
+  shipping_quoted: (order) => [
+    buildGreeting(order),
+    '',
+    `We have worked out the shipping for order ${order.orderNumber}.`,
+    order.courierName ? `Carrier: ${order.courierName}` : null,
+    totalLine(order, { ...ORDER_TOTAL, en: 'Amount to transfer' }),
+    '',
+    'The account details and how to pay are on this page:',
+    getManualPaymentUploadUrl(order),
+    '',
+    'If the shipping is more than you want to pay, just reply — nothing has been charged and the order can still be cancelled.',
   ],
   shipped: (order) => [
     buildGreeting(order),

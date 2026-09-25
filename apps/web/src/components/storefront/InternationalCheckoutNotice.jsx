@@ -43,6 +43,10 @@ const InternationalCheckoutNotice = ({ className = '', quotedOnRequest = false }
       <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">
         {t(quotedOnRequest ? 'intl.quotedOnRequest' : 'intl.noticeCatalogPrice')}
       </p>
+      {/* Two different readers, two different sentences. One is going to Europe and needs to know the
+          shipping follows by hand; the other is an Indonesian reading English and needs to know they
+          have not wandered into the wrong shop. */}
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">{t('intl.noticeQuoted')}</p>
       <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">{t('intl.domesticOk')}</p>
       {whatsapp ? (
         <a

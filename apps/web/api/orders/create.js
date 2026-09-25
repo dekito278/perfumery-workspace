@@ -19,6 +19,9 @@ import { validateVoucher } from '../../src/utils/voucherValidation.js';
 import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js';
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
+import { destinationFor, internationalPriceFor } from '../../src/utils/internationalDestination.js';
+import { usdPriceFor, USD_PRICE_RATE } from '../../src/utils/usdPrice.js';
+import { INTERNATIONAL_TRANSFER_PAYMENT } from '../../src/data/internationalAccount.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
@@ -129,7 +132,7 @@ const countAccountRedemptions = async (code, authUserId) => {
 const MAX_ORDER_LINES = 50;
 const MAX_LINE_QUANTITY = 100;
 
-const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
+const priceCatalogItems = async (items = [], buyerTier = 'retail', destination = null) => {
   if (items.length > MAX_ORDER_LINES) {
     throw new Error(`Order has too many item lines (${items.length}, max ${MAX_ORDER_LINES})`);
   }
@@ -161,16 +164,33 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
     }
 
     // The buyer's tier price, from the same rule the storefront displays with — a buyer shown one price
-    // and charged another is the worst version of two implementations disagreeing. `overseas` is false:
-    // overseas sales are quoted by hand and entered in Studio, they do not come through this endpoint.
+    // and charged another is the worst version of two implementations disagreeing.
     const tierRows = await sbSelectOptional(
       `storefront_product_prices?product_id=eq.${encodeURIComponent(product.id)}&select=variant_id,tier,price_number`,
     );
-    if (tierRows.length) {
-      const index = indexTierPrices(tierRows.map((row) => ({ ...row, slug })));
+    const index = tierRows.length ? indexTierPrices(tierRows.map((row) => ({ ...row, slug }))) : null;
+    const lineTierPrices = index ? tierPricesForLine(index, slug, variant?.id || '') : {};
+
+    if (destination) {
+      // An international order is priced by WHERE THE PARCEL GOES, not by who is signed in. The member
+      // discount is a domestic loyalty price and does not travel (Dekito, 2026-09-24), so buyerTier is
+      // deliberately not consulted on this branch.
+      const international = internationalPriceFor({
+        tierPrices: lineTierPrices,
+        linePrice: unitPrice,
+        region: destination.priceRegion,
+      });
+      // Refuse rather than fall back. No international price for a line means the only number available
+      // is the Indonesian one, and charging Rp 359.000 for a bottle going to Germany is a loss the buyer
+      // would never question.
+      if (!international) {
+        throw new Error(`No international price set for ${slug} — set one before selling it abroad`);
+      }
+      unitPrice = international;
+    } else if (index) {
       unitPrice = resolveTierPrice({
         retailPrice: unitPrice,
-        tierPrices: tierPricesForLine(index, slug, variant?.id || ''),
+        tierPrices: lineTierPrices,
         tier: buyerTier,
         overseas: false,
       });
@@ -270,7 +290,15 @@ export default async function handler(req, res) {
     // 1. Item prices (authoritative, from DB)
     const buyer = await resolveBuyer(req);
     const buyerTier = buyer.tier;
-    const catalog = await priceCatalogItems(input.items || [], buyerTier);
+    // Where the parcel goes, resolved from the SAME rule the shop prices with. A country the shop does
+    // not ship to is refused here rather than quietly priced as domestic — the client picks from a list
+    // built by that rule, so anything else arriving is either a stale page or someone editing the body.
+    const destinationCountry = String(input.delivery?.country || '').trim().toUpperCase();
+    const destination = destinationCountry ? destinationFor(destinationCountry) : null;
+    if (destinationCountry && !destination) {
+      return jsonResponse(res, 422, { message: `Belum melayani pengiriman ke ${destinationCountry}` });
+    }
+    const catalog = await priceCatalogItems(input.items || [], buyerTier, destination);
     const bespoke = isBespoke ? await priceBespokeOptions(input.bespoke?.optionIds || {}) : { subtotal: 0, labels: {} };
     const itemsSubtotal = catalog.subtotal + bespoke.subtotal;
     if (itemsSubtotal <= 0) return jsonResponse(res, 422, { message: 'Order has no priced items' });
@@ -310,6 +338,18 @@ export default async function handler(req, res) {
     let voucherDiscount = 0;
     let voucherSnapshot = null;
     const voucherCode = String(input.voucherCode || '').trim().toUpperCase();
+    // Vouchers are domestic. Dekito's decision, 2026-09-25, and the same rule the member price already
+    // follows: a discount written for the Indonesian shop takes its cut from whatever subtotal it is
+    // handed, and an international subtotal is 3.5x the domestic one — so a 10% code meant as roughly
+    // Rp 36.000 off a bottle became Rp 126.000 off the same bottle going abroad, and any minimum-spend
+    // threshold was cleared by a single item. Refused here rather than only hidden in the form, because
+    // the code arrives from the browser.
+    if (voucherCode && destination) {
+      return jsonResponse(res, 422, {
+        message: `Voucher ${voucherCode} hanya berlaku untuk pengiriman di dalam Indonesia`,
+        reason: 'domestic_only',
+      });
+    }
     if (voucherCode) {
       const [voucherRow] = await sbSelect(`storefront_vouchers?code=eq.${encodeURIComponent(voucherCode)}&select=*`);
       const verdict = validateVoucher({
@@ -397,6 +437,18 @@ export default async function handler(req, res) {
       : productItems;
 
     const paymentProvider = input.paymentProvider || 'manual';
+    // DOKU is Indonesian rails — a virtual account, QRIS, a card charged in rupiah — and none of it
+    // reaches a buyer in Berlin. Worse, api/doku/checkout.js writes its session into payment_response,
+    // the same column this endpoint uses to carry the dollar figure, the Jenius account and the
+    // "waiting for a shipping quote" flag. An international order paid that way loses all three: the
+    // buyer is shown an account they cannot pay into, and the 24-hour reservation clock starts running
+    // on an order that is waiting for a freight number nobody has sent yet, so it cancels itself.
+    // Refused here and not only hidden in the form, because the provider arrives from the browser.
+    if (destination && !['manual_transfer_bca', 'manual'].includes(paymentProvider)) {
+      return jsonResponse(res, 422, {
+        message: 'Pesanan ke luar negeri dibayar lewat transfer bank internasional, bukan DOKU',
+      });
+    }
     const payload = {
       // High-entropy suffix so order numbers can't be enumerated by guessing timestamps (matches
       // orderService.createOrderNumber). The anon payment-session lookup RPC keys off this number.
@@ -420,6 +472,28 @@ export default async function handler(req, res) {
       courier_name: shippingSummary || null,
       source: isBespoke ? 'bespoke_request' : (input.source || 'storefront'),
       client_context: clientContext,
+      // Everything an international buyer needs to pay, decided HERE and not by the browser: the dollar
+      // figure frozen at the rate this order was priced with, and the account those dollars go to.
+      //
+      // shippingQuotePending is the Europe path. The freight for those destinations is worked out by
+      // hand, so the order is written without it — and the payment page then shows no account and no
+      // total, and the 24-hour reservation clock does not run, until Dekito sends the figure. An order
+      // that handed out the account before the total was final would collect the wrong amount into a
+      // foreign account, which costs more to unwind than the parcel is worth.
+      ...(destination ? {
+        payment_response: {
+          amountUsd: usdPriceFor(subtotal),
+          currency: 'USD',
+          amountIdr: subtotal,
+          usdRate: USD_PRICE_RATE,
+          destinationCountry: destination.code,
+          bankName: INTERNATIONAL_TRANSFER_PAYMENT.bankName,
+          swift: INTERNATIONAL_TRANSFER_PAYMENT.swift,
+          accountNumber: INTERNATIONAL_TRANSFER_PAYMENT.accountNumber,
+          accountName: INTERNATIONAL_TRANSFER_PAYMENT.accountName,
+          ...(destination.shippingQuoted ? { shippingQuotePending: true } : {}),
+        },
+      } : {}),
       ...(isBespoke ? { bespoke_production_status: 'review_brief' } : {}),
     };
 
