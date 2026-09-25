@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { isReadyToPack, isShippedOrder, matchesOrderFilter } from '@/utils/orderWorkflow.js';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
+import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, ShieldCheck, Sparkles, Truck, UsersRound, WandSparkles, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -24,6 +24,7 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getDisplayName, MOBILE_ACTIVITY_LIMIT, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
 import { getProductLowStock } from '@/services/productCatalogService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
+import { getOpsHealthSnapshot } from '@/services/opsHealthService.js';
 
 const hasGuidanceCoverage = (material) => (
   Boolean(
@@ -252,6 +253,14 @@ const MobileDashboardPage = () => {
     && !['unpaid', 'pending'].includes(order.paymentStatus)
     && isShippedOrder(order)
   )), [orders]);
+  // The same snapshot the desktop dashboard puts in a red banner. The phone loaded the orders already
+  // and asked none of these questions: a payment window that lapsed, a paid parcel sitting in packing
+  // with no waybill, an order that never reached the server. Three things whose whole value is being
+  // noticed, on the surface the shop is actually run from.
+  const opsHealth = useMemo(() => getOpsHealthSnapshot(orders), [orders]);
+  const opsAttention = opsHealth.expiredPaymentOrders.length
+    + opsHealth.shipmentNeedsResi.length
+    + opsHealth.localOrders.length;
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
   const recentActivity = useMemo(() => sortByUpdated([
     ...formulas.map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula diperbarui', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
@@ -356,6 +365,14 @@ const MobileDashboardPage = () => {
                 helper={`${paymentFollowUps.length} belum dibayar · ${shippedFollowUps.length} dikirim perlu dicek`}
                 tone={followUpOrders.length ? 'amber' : 'emerald'}
                 onClick={() => navigate('/mobile/studio/orders?filter=follow_up')}
+              />
+              <PriorityCard
+                icon={opsHealth.hasCriticalIssues ? WifiOff : ShieldCheck}
+                label="Kesehatan order"
+                title={opsAttention ? `${opsAttention} hal perlu dicek` : 'Alur order terlihat sehat'}
+                helper={`${opsHealth.expiredPaymentOrders.length} bayar kedaluwarsa · ${opsHealth.shipmentNeedsResi.length} tanpa resi · ${opsHealth.localOrders.length} belum tersinkron`}
+                tone={opsHealth.hasCriticalIssues ? 'rose' : (opsAttention ? 'amber' : 'emerald')}
+                onClick={() => navigate('/mobile/studio/orders')}
               />
               <PriorityCard
                 icon={AlertTriangle}

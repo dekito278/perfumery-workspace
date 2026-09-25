@@ -775,10 +775,17 @@ const DashboardPage = () => {
                   </Button>
                 </div>
               </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-4">
+              <div className="mt-5 grid gap-3 sm:grid-cols-5">
                 <div className="rounded-2xl bg-white px-4 py-3">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Local sync</div>
                   <div className="mt-1 text-2xl font-bold text-editorial-charcoal">{opsHealth.syncQueue.length}</div>
+                </div>
+                {/* Orders that only exist on this device. createLocalOrder writes them when the server
+                    write fails, and the snapshot has counted them all along — nothing displayed the
+                    number, on either dashboard. An order nobody can see is the worst of the four. */}
+                <div className="rounded-2xl bg-white px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Belum tersinkron</div>
+                  <div className={`mt-1 text-2xl font-bold ${opsHealth.localOrders.length ? 'text-rose-700' : 'text-editorial-charcoal'}`}>{opsHealth.localOrders.length}</div>
                 </div>
                 <div className="rounded-2xl bg-white px-4 py-3">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Pending DOKU</div>
