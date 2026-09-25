@@ -70,6 +70,22 @@ export const parseNumberInput = (value) => {
 
 export const clampPercentage = (value, max = 100) => Math.min(Math.max(value, 0), max);
 
+/**
+ * The price a batch screen offers when none has been typed: COGS doubled, rounded up to the nearest
+ * thousand rupiah.
+ *
+ * Written out longhand on both batch screens, identically, and neither is a place a reader would think
+ * to look for a pricing decision. It is a STARTING POINT and nothing more — the catalogue sells at many
+ * times this — so the screens that use it have to show the number and the margin it implies rather than
+ * letting it through as a silent default.
+ */
+export const SUGGESTED_PRICE_MARKUP = 2;
+export const suggestedBottlePrice = (cogsPerBottle) => {
+  const cogs = Number(cogsPerBottle);
+  if (!Number.isFinite(cogs) || cogs <= 0) return 0;
+  return Math.ceil((cogs * SUGGESTED_PRICE_MARKUP) / 1000) * 1000;
+};
+
 const createScenarioId = () => `bulk-quote-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export const createBulkScenario = () => ({
