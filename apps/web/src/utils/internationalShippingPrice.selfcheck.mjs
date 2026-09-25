@@ -118,7 +118,14 @@ const order = ['typedShipping', 'priceCardIdr', 'quote?.total'].map((token) => c
 assert.ok(order.every((at) => at >= 0), `every source must appear: ${chargedLine.replace(/\s+/g, ' ')}`);
 assert.ok(order[0] < order[1] && order[1] < order[2],
   `a typed figure wins, then the published price, and the carrier cost is last: ${chargedLine.replace(/\s+/g, ' ')}`);
-assert.match(page, /USD_PER_RUPIAH_RATE/, 'the rupiah figure must name the rate it was converted at');
+// The rate is named by whatever it ACTUALLY converted with — read off the conversion, not pinned to a
+// constant. Pinned to USD_PER_RUPIAH_RATE, this line held the screen to the rate documented as
+// indicative on the very figure the buyer is billed, and would have failed the fix rather than the bug.
+const conversion = (page.match(/priceCard\??\.usd \* (\w+)/) || [])[1];
+assert.ok(conversion, 'the page no longer converts the published shipping price to rupiah at all');
+assert.ok(page.includes(`{${conversion}.toLocaleString(`),
+  `the caption must name the rate the figure was converted at — it converts with ${conversion} and shows `
+  + 'something else, which is a number that cannot be checked against anything');
 
 // One figure, two places. Caught on the screen before this shipped: the WhatsApp summary was still built
 // from the carrier quote while the order used the card, so the message said Rp 180.000 and the order said

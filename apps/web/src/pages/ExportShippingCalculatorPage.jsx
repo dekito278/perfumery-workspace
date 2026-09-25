@@ -11,9 +11,8 @@ import { RAYSPEED_MEASURED_ON, rayspeedServes } from '@/data/rayspeedRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
 import { shippingIncludedFor, isAsiaCountry, internationalPriceFor } from '@/utils/internationalDestination.js';
-import { usdPriceFor, USD_PRICE_RATE } from '@/utils/usdPrice.js';
+import { usdPriceFor, USD_PRICE_RATE, USD_PRICE_RATE_SET_ON } from '@/utils/usdPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
-import { USD_PER_RUPIAH_RATE, USD_RATE_SET_ON } from '@/utils/overseasVisitor.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
@@ -124,7 +123,12 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // carrier cost above does not decide. The card is written for 30 ml bottles, so a cart holding other
   // sizes is counted but flagged rather than quietly quoted at a price the card never covered.
   const priceCard = quoteInternationalShippingPrice({ countryCode, bottles });
-  const priceCardIdr = priceCard?.usd ? Math.round(priceCard.usd * USD_PER_RUPIAH_RATE) : 0;
+  // The rate that DECIDES, not the one that estimates. This rupiah figure is not a caption: it becomes
+  // the order's shipping fee, it enters the subtotal, and the subtotal is converted back to dollars at
+  // USD_PRICE_RATE. Running the outbound leg through USD_PER_RUPIAH_RATE meant the freight left the card
+  // in dollars and came back a different number of dollars the moment the two rates parted — and the
+  // indicative one is documented as free to drift toward the market whenever it likes.
+  const priceCardIdr = priceCard?.usd ? Math.round(priceCard.usd * USD_PRICE_RATE) : 0;
   const offCardSizes = [...new Set(lines
     .filter((line) => line.product && Number(line.quantity) > 0 && !String(line.size || '').startsWith(String(SHIPPING_RATE_BOTTLE_SIZE_ML)))
     .map((line) => line.size))];
@@ -591,7 +595,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               <p className="mt-1 text-3xl font-bold text-editorial-charcoal">{formatShippingUsd(priceCard.usd)}</p>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">
                 {priceCard.regionLabel} · {priceCard.tierLabel} · {priceCard.bottles} botol · ≈ {formatPrice(priceCardIdr)}
-                {' '}(kurs {USD_PER_RUPIAH_RATE.toLocaleString('id-ID')}, {USD_RATE_SET_ON})
+                {' '}(kurs {USD_PRICE_RATE.toLocaleString('id-ID')}, {USD_PRICE_RATE_SET_ON})
               </p>
             </>
           ) : (
