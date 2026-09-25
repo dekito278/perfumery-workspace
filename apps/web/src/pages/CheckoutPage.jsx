@@ -276,10 +276,22 @@ const CheckoutPage = () => {
                       className={selectedShipping?.service === rate.service && selectedShipping?.cost === rate.cost ? 'is-active' : ''}
                       onClick={() => setSelectedShipping(rate)}
                     >
-                      {rate.service} / {formatTotal(rate.cost)}
+                      {rate.service} /{' '}
+                      {/* The promotion was applied to rate.cost before it got here, and the desktop
+                          showed only the result: a lower number with nothing to explain it. The phone
+                          has always struck through the original and named the promo. A buyer who
+                          cannot see that free shipping happened has been given a discount and no
+                          reason to remember it. */}
+                      {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
+                        <s style={{ opacity: 0.55, marginRight: 6 }}>{formatTotal(rate.originalCost)}</s>
+                      ) : null}
+                      {formatTotal(rate.cost)}
                     </button>
                   ))}
                 </div>
+              ) : null}
+              {selectedShipping?.promotionApplied && selectedShipping.promotionLabel ? (
+                <p className="checkout-notice is-success">{selectedShipping.promotionLabel}</p>
               ) : null}
               {selectedDestination ? <p className="checkout-notice is-success">{t('ship.area', { area: selectedDestination.label })}</p> : null}
             </fieldset>
