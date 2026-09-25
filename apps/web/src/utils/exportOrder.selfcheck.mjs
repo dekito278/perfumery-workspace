@@ -29,6 +29,9 @@ const line = (over = {}) => ({
 });
 
 const filled = {
+  // Every valid case says so explicitly, because since 2026-09-25 an undecided shipping figure is itself
+  // a refusal — see section 1b.
+  shippingSettled: true,
   customerName: 'Aiko',
   contact: '+81 90 1234 5678',
   deliveryAddress: '1-2-3 Shibuya, Tokyo 150-0002, Japan',
@@ -51,6 +54,21 @@ for (const [input, expected] of refusals) {
   assert.equal(result.orderData, null, 'a refused order still handed back data to insert');
   assert.match(result.reason, expected, `the refusal does not say what is missing: ${result.reason}`);
 }
+
+// --- 1b. And it refuses an order whose shipping nobody decided ----------------------------------------
+// Dekito sets the freight by hand, with the rate tables beside him. An empty field therefore means "not
+// decided yet", not "free": defaulting it to zero gives away Rp 670.500 on a single bottle to Los
+// Angeles without anyone choosing to. Zero is still allowed — it just has to be typed.
+const undecided = buildExportOrderData({ ...filled, shippingSettled: false, lines: [line()] });
+assert.equal(undecided.ok, false, 'an order was written with a shipping figure nobody decided');
+assert.equal(undecided.orderData, null, 'and it handed back data to insert anyway');
+assert.match(undecided.reason, /ongkir/i, `the refusal does not name the shipping: ${undecided.reason}`);
+// The default is the refusing one: a caller that forgets the flag entirely must not sail through.
+assert.equal(buildExportOrderData({ ...filled, shippingSettled: undefined, lines: [line()] }).ok, false,
+  'a caller that never mentions shipping must be refused, not defaulted to free');
+// A typed zero is a decision and is accepted.
+assert.equal(buildExportOrderData({ ...filled, lines: [line()], shippingTotal: 0 }).ok, true,
+  'a waived freight Dekito typed himself is a decision, and must be allowed');
 
 // --- 2. The buyer is charged the OVERSEAS price -------------------------------------------------------
 // The whole reason the overseas tier exists. A line at 260000 here is the Indonesian price reaching an
