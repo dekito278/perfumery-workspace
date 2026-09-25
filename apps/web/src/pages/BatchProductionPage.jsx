@@ -33,7 +33,7 @@ import {
 } from '@/services/productCatalogService.js';
 import { updateFormulaStatus } from '@/services/formulasSupabaseService.js';
 import { calculateIngredientCost, formatPrice } from '@/utils/pricingUtils.js';
-import { clampPercentage, parseNumberInput } from '@/utils/productionCosting.js';
+import { clampPercentage, parseNumberInput, suggestedBottlePrice } from '@/utils/productionCosting.js';
 import { formatQuantity } from '@/utils/formatting.js';
 import { BATCH_STATUSES } from '@/utils/constants.js';
 import FormulaCostBlindSpotNotice from '@/components/FormulaCostBlindSpotNotice.jsx';
@@ -252,8 +252,11 @@ const BatchProductionPage = () => {
   const usableMl = targetValue * Math.max(1 - (lossValue / 100), 0);
   const bottleCount = bottleValue > 0 ? Math.floor(usableMl / bottleValue) : 0;
   const cogsPerBottle = bottleCount > 0 ? dilutionCost / bottleCount : 0;
-  const suggestedPrice = Math.ceil((cogsPerBottle * 2) / 1000) * 1000;
-  const sellingPriceNumber = parseNumberInput(sellingPrice) > 0 ? parseNumberInput(sellingPrice) : suggestedPrice;
+  const suggestedPrice = suggestedBottlePrice(cogsPerBottle);
+  const typedSellingPrice = parseNumberInput(sellingPrice);
+  const sellingPriceNumber = typedSellingPrice > 0 ? typedSellingPrice : suggestedPrice;
+  const marginPerBottle = sellingPriceNumber - cogsPerBottle;
+  const marginPercent = sellingPriceNumber > 0 ? (marginPerBottle / sellingPriceNumber) * 100 : 0;
   const batchProductKey = selectedFormula ? buildBatchProductKey({
     bottleMl: bottleValue,
     concentration,
@@ -583,6 +586,13 @@ const BatchProductionPage = () => {
                   </label>
                 </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {/* The price this button is about to publish, and what it leaves. An empty Sell price
+                      field falls back to the suggestion, and until now the only trace of that was the
+                      grey placeholder inside the field — which reads as an example, not as the number
+                      the product will be created at. The phone screen has shown both of these all
+                      along. */}
+                  <MetricCard label="Sell price" value={formatPrice(sellingPriceNumber)} helper={typedSellingPrice > 0 ? 'manual price' : 'suggested price'} />
+                  <MetricCard label="Margin" value={formatPrice(marginPerBottle)} helper={`${formatQuantity(marginPercent, 1)}%`} tone={marginPerBottle >= 0 ? 'emerald' : 'amber'} />
                   <MetricCard label="Draft stock" value={`${publishedProduct?.stock ?? bottleCount} bottles`} helper={publishedProduct ? 'linked product stock' : 'calculated from usable volume'} tone="emerald" />
                   <MetricCard label="SKU" value={productSku || '-'} helper={publishedProduct ? 'already linked' : 'auto generated'} />
                 </div>

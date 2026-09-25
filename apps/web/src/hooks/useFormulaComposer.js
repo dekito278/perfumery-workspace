@@ -89,17 +89,33 @@ export const validateComposerFields = ({ name, code, formulaItems, activeFormula
     errors.ingredients = ingredientErrors.join(', ');
   }
 
-  // Key by the row's own id, not its position: inserting or removing a row shifted every index below it,
-  // so an error stayed pinned to a position that now held a different material (audit round 8).
+  Object.assign(errors, duplicateMaterialErrors(formulaItems));
+
+  return errors;
+};
+
+/**
+ * Rows that list a material already listed above them, keyed by row.
+ *
+ * Lifted out of validateComposerFields so the phone can ask the same question. It could not: the rule
+ * lived inside a validator only the two desktop composers call, so a formula saved on the phone could
+ * name the same material twice — and then refused to save on the desktop, which treats it as an error,
+ * with no way to fix the row but to delete it.
+ *
+ * Key by the row's own id, not its position: inserting or removing a row shifted every index below it,
+ * so an error stayed pinned to a position that now held a different material (audit round 8).
+ */
+export const duplicateMaterialErrors = (formulaItems = []) => {
+  const errors = {};
   const materialIds = new Set();
-  formulaItems.forEach((item, index) => {
-    if (item.item_id && materialIds.has(item.item_id)) {
+  (formulaItems || []).forEach((item, index) => {
+    if (!item?.item_id) return;
+    if (materialIds.has(item.item_id)) {
       errors[rowErrorKey(item.row_key || index)] = 'Duplicate material';
-    } else if (item.item_id) {
+    } else {
       materialIds.add(item.item_id);
     }
   });
-
   return errors;
 };
 

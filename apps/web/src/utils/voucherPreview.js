@@ -5,20 +5,11 @@ import {
   getVoucherEligibleSubtotal,
   normalizeVoucher,
 } from '@/services/voucherService.js';
+import { getExpiryTime } from '@/utils/voucherValidation.js';
 
 const toAmount = (value) => {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? Math.max(numeric, 0) : 0;
-};
-
-const getExpiryTime = (expiresAt) => {
-  const rawValue = String(expiresAt || '').trim();
-  if (!rawValue) return null;
-  const normalizedDate = /^\d{4}-\d{2}-\d{2}$/.test(rawValue)
-    ? `${rawValue}T23:59:59.999`
-    : rawValue;
-  const time = new Date(normalizedDate).getTime();
-  return Number.isFinite(time) ? time : null;
 };
 
 const productToPreviewItem = (product = {}) => {

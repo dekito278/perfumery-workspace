@@ -8,13 +8,11 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
 import {
-  USD_PER_RUPIAH_RATE,
-  approximateUsd,
   isLikelyOverseas,
   overseasPriceFor,
 } from './overseasVisitor.js';
@@ -61,12 +59,52 @@ for (const bad of [null, undefined, 'abc', -1, 0]) {
   assert.equal(overseasPriceFor({ overseas: bad }, 550000), null, `${JSON.stringify(bad)} is not a price`);
 }
 
-// --- 5. The dollar figure is an approximation and is only ever shown as one ----------------------------
-assert.equal(approximateUsd(1380000), Math.round(1380000 / USD_PER_RUPIAH_RATE));
-assert.equal(approximateUsd(1380000) % 1, 0, 'whole dollars — cents would claim precision this does not have');
-assert.equal(approximateUsd(0), null);
-assert.equal(approximateUsd(-5), null);
-assert.equal(approximateUsd('abc'), null);
+// --- 5. There is ONE dollar rate, and one module that divides by it ------------------------------------
+// This section used to run approximateUsd, the rounded "approx" conversion that lived in this file. It
+// is gone as of 2026-09-25: the storefront panels moved onto usdPriceFor when the dollar figure became
+// the actual charge, and the export quote screen — its last caller, where it was setting a freight
+// figure someone is billed — moved a day later. A second exported constant named "the dollar rate" with
+// no callers is not dormant; it is what the next screen finds first.
+//
+// So the test is no longer "the approximation behaves" but the rule that made it deletable: there is one
+// rupiah-to-dollar rate in this codebase. Found by walking the tree, because the next copy will not be
+// called approximateUsd.
+//
+// Worth keeping the reason nearby, because the two rates were not a mistake — they were a considered
+// separation that quietly stopped being one. One was documented as free to drift toward the market and
+// only ever shown with "approx" beside it; the other decided what a buyer is asked to send. That holds
+// exactly as long as the approximate one never touches a billed figure, and the export quote screen
+// crossed that line without anyone noticing, pricing freight with it — the freight the "Pakai" button
+// now types straight into the bill. The first attempt at a guard here asserted that the screens which
+// write orders and the screens which touch the indicative rate never intersect. That guard dies with
+// the constant: once nothing declares a second rate, it passes over nothing. This is what replaced it,
+// and it holds whether or not the constant exists.
+const everyModule = [];
+const walkAll = (dir) => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) walkAll(full);
+    else if (/\.(js|jsx)$/.test(entry.name) && !entry.name.includes('.selfcheck.')) everyModule.push(full);
+  }
+};
+walkAll(join(root));
+walkAll(join(root, '..', 'api'));
+
+// A rate is a number of rupiah to the dollar, declared under a name that says so. Matched on the name
+// and the shape rather than on 16500, because the next one will be 17000.
+const RATE_DECLARATION = /export const ([A-Z][A-Z_]*)\s*=\s*(\d{4,6})\b/g;
+const namesARate = (name) => /USD|RUPIAH/.test(name) && /RATE/.test(name);
+const rates = [];
+for (const file of everyModule) {
+  for (const found of stripComments(readFileSync(file, 'utf8')).matchAll(RATE_DECLARATION)) {
+    if (!namesARate(found[1])) continue;
+    rates.push(`${file.slice(root.length + 1)}:${found[1]}=${found[2]}`);
+  }
+}
+assert.deepEqual(rates, ['utils/usdPrice.js:USD_PRICE_RATE=16500'],
+  'there is more than one rupiah-to-dollar rate in this codebase. Two rates drift, and drifting is how '
+  + 'freight came to be priced at the one this file used to call approximate while the same order total '
+  + `was figured at the other: ${rates.join(', ')}`);
 
 // This rule INVERTED on 2026-09-24, the second time a rule in this file has turned over rather than been
 // deleted. It used to require the word "approx" beside every dollar figure, because the figure was a
@@ -87,8 +125,6 @@ for (const file of [
     `${file.join('/')} still hedges the dollar figure — it is the amount the buyer transfers now`);
   assert.match(source, /usdPriceFor\(/,
     `${file.join('/')} must take the dollar price from usdPrice.js, not convert it on its own`);
-  assert.doesNotMatch(source, /approximateUsd/,
-    `${file.join('/')} must not use the display approximation for a price someone pays`);
 }
 const note = read('components', 'storefront', 'OverseasPriceNote.jsx');
 // This rule has inverted twice, and what survives both inversions is the part worth checking: the panel

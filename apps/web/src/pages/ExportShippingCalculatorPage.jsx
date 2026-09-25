@@ -7,12 +7,12 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
+import { RAYSPEED_MEASURED_ON, rayspeedServes } from '@/data/rayspeedRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
 import { isAsiaCountry, internationalPriceFor } from '@/utils/shippingRegion.js';
-import { usdPriceFor, USD_PRICE_RATE } from '@/utils/usdPrice.js';
+import { usdPriceFor, USD_PRICE_RATE, USD_PRICE_RATE_SET_ON } from '@/utils/usdPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
-import { USD_PER_RUPIAH_RATE, USD_RATE_SET_ON } from '@/utils/overseasVisitor.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
@@ -23,12 +23,18 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getTierPricesFor } from '@/services/tierPricingService.js';
 import { resolveTierPrice, tierPricesForLine, OVERSEAS_TIER } from '@/utils/tierPrice.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
-import { itemWeightGram, isWeighedSize, DEFAULT_ITEM_WEIGHT_GRAM } from '@/utils/itemWeight.js';
+import { itemWeightGram, isWeighedSize, DEFAULT_ITEM_WEIGHT_GRAM, ITEM_WEIGHT_GRAM_BY_ML } from '@/utils/itemWeight.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 // One component behind both the desktop and the mobile route. The two-copy habit in this repo is where
 // five separate fixes went to one side and not the other; a page this small has no reason to repeat it.
 const FALLBACK_GRAM = Number(import.meta.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || DEFAULT_ITEM_WEIGHT_GRAM);
+// Read off the table Dekito weighed, not retyped from it. The half of this sentence about unweighed
+// sizes already came from the module while the weights beside it were typed out by hand, so the line
+// would have gone on reciting 2026-09-13's figures after the next time a bottle was put on the scales.
+const WEIGHED_SIZES = Object.entries(ITEM_WEIGHT_GRAM_BY_ML)
+  .map(([ml, gram]) => `${ml} ml ${gram} g`)
+  .join(', ');
 const COMPARE_QUANTITIES = [1, 3, 6, 12, 24];
 
 const ExportShippingCalculatorPage = ({ mobile = false }) => {
@@ -102,13 +108,13 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const destination = destinations.find((item) => item.code === countryCode);
   const bottles = lines.reduce((sum, line) => sum + Math.max(0, Math.round(Number(line.quantity) || 0)), 0);
   const safeBottles = Math.max(1, bottles);
-  // Per size: a 10 ml is 100 g and a 100 ml is 650 g. Export brackets are steep, so assuming 300 g for
-  // everything was worst exactly where it cost the most.
+  // Per size, from ITEM_WEIGHT_GRAM_BY_ML. Export brackets are steep, so one flat figure for every
+  // bottle was worst exactly where it cost the most.
   const chosenWeightGram = lines.reduce(
     (sum, line) => sum + Math.max(0, Math.round(Number(line.quantity) || 0)) * line.weightGram, 0,
   );
-  // The fallback stands in for an empty form only. Using it as a minimum would quote one 10 ml bottle at
-  // 300 g and push it into a dearer bracket than it belongs in.
+  // The fallback stands in for an empty form only. Using it as a minimum would weigh the smallest bottle
+  // at the flat figure and push it into a dearer bracket than it belongs in.
   const weightGram = chosenWeightGram > 0 ? chosenWeightGram : FALLBACK_GRAM;
   const unweighedSizes = [...new Set(lines
     .filter((line) => line.product && Number(line.quantity) > 0 && !line.weighedSize)
@@ -122,7 +128,12 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // carrier cost above does not decide. The card is written for 30 ml bottles, so a cart holding other
   // sizes is counted but flagged rather than quietly quoted at a price the card never covered.
   const priceCard = quoteInternationalShippingPrice({ countryCode, bottles });
-  const priceCardIdr = priceCard?.usd ? Math.round(priceCard.usd * USD_PER_RUPIAH_RATE) : 0;
+  // The rate that DECIDES, not the one that estimates. This rupiah figure is not a caption: the "Pakai"
+  // button below types it into the shipping field, and that field is what the order is billed. Converting
+  // it with USD_PER_RUPIAH_RATE meant the freight left the card in dollars and arrived as a different
+  // number of dollars the moment the two rates parted — and the indicative one is documented as free to
+  // drift toward the market whenever it likes.
+  const priceCardIdr = priceCard?.usd ? Math.round(priceCard.usd * USD_PRICE_RATE) : 0;
   const offCardSizes = [...new Set(lines
     .filter((line) => line.product && Number(line.quantity) > 0 && !String(line.size || '').startsWith(String(SHIPPING_RATE_BOTTLE_SIZE_ML)))
     .map((line) => line.size))];
@@ -260,8 +271,10 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           </p>
           <h1 className="text-2xl font-bold text-[#111827]">Hitung ongkir ke luar negeri</h1>
           <p className="text-sm font-medium text-[#6b7280]">
-            Tarif LTU Express, berlaku {EXPORT_RATE_EFFECTIVE}. Dipakai untuk menjawab pertanyaan pembeli
-            sebelum ordernya dibuat.
+            {rayspeedServes(countryCode)
+              ? `Tarif RaySpeed, diukur ${RAYSPEED_MEASURED_ON}.`
+              : `Tarif LTU Express, berlaku ${EXPORT_RATE_EFFECTIVE}.`}
+            {' '}Dipakai untuk menjawab pertanyaan pembeli sebelum ordernya dibuat.
           </p>
         </header>
 
@@ -312,7 +325,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               {bottles} botol — {(weightGram / 1000).toFixed(2)} kg
             </p>
             <span className="text-[11px] font-medium normal-case text-[#8b949e]">
-              Berat per ukuran: 10 ml 100 g, 30 ml 250 g, 50 ml 350 g, 100 ml 650 g.
+              Berat per ukuran: {WEIGHED_SIZES}.
               {unweighedSizes.length ? ` Ukuran ${unweighedSizes.join(', ')} belum ditimbang — dipakai ${FALLBACK_GRAM} g.` : ''}
             </span>
           </div>
@@ -563,7 +576,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               <p className="mt-1 text-3xl font-bold text-editorial-charcoal">{formatShippingUsd(priceCard.usd)}</p>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">
                 {priceCard.regionLabel} · {priceCard.tierLabel} · {priceCard.bottles} botol · ≈ {formatPrice(priceCardIdr)}
-                {' '}(kurs {USD_PER_RUPIAH_RATE.toLocaleString('id-ID')}, {USD_RATE_SET_ON})
+                {' '}(kurs {USD_PRICE_RATE.toLocaleString('id-ID')}, {USD_PRICE_RATE_SET_ON})
               </p>
               <Button type="button" variant="outline" className="mt-2 h-9 rounded-2xl bg-white text-xs" onClick={() => setManualShipping(String(priceCardIdr))}>
                 Pakai {formatPrice(priceCardIdr)}
