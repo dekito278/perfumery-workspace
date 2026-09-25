@@ -128,14 +128,29 @@ assert.match(page, /shipping: shippingCharged > 0 \? \{ total: shippingCharged/,
 assert.doesNotMatch(page, /shipping: quote,/,
   'the summary may not be built from the carrier cost while the order bills the published price');
 
-// --- 6b. Where the shop says shipping is included, the order must not add it ---------------------------
-// Every product page tells an international buyer "Shipping is included", and this screen is where that
-// buyer's order is written down. Billing the rate card on top of a price that already carries the
-// shipping charges them twice for the same parcel. Decision, 2026-09-24: not charged yet.
-assert.match(page, /shippingIncludedFor\(countryCode\)/,
-  'the calculator must ask the shop\'s own rule whether the price already carries the shipping');
-assert.match(page, /shippingInPrice \? 0 :/,
-  'and must charge nothing where it does');
+// --- 6b. Shipping is charged on every destination -----------------------------------------------------
+// The inverse of the rule that stood here from 24 to 25 September 2026. That one said the shop promised
+// the freight was in the price, so this screen must write Rp 0 for every country RaySpeed serves.
+//
+// The promise was measured on a full parcel and broke on a single bottle: RaySpeed bills a one-kilo
+// MINIMUM, so ONE 30 ml bottle to Los Angeles costs Rp 670.500 to send against a US$80 price, while FOUR
+// cost the same Rp 670.500. Dekito found it on a live American order — the shop had already shown the
+// buyer "shipping included".
+//
+// Held on the ABSENCE of the by-country escape, not on the presence of a sentence: any branch that can
+// zero the figure because of where the parcel is going brings the loss straight back.
+assert.doesNotMatch(page, /shippingIncludedFor/,
+  'no destination may be exempted from shipping — the card prices every one of them');
+// Counted, not pattern-matched: a second `? 0` anywhere in the expression is a second way for the
+// figure to reach zero, whatever it is spelled as or how it is wrapped across lines. The first version
+// of this check looked for "? 0 :" followed by a country test and walked straight past
+// `isAsiaCountry(countryCode) ? 0 : ...` because the real code breaks the line after the zero.
+const zeroBranches = chargedLine.match(/\?\s*0\b/g) || [];
+assert.equal(zeroBranches.length, 1,
+  `exactly one branch may write a zero shipping figure: ${chargedLine.replace(/\s+/g, ' ')}`);
+// And that one is the owner ticking a box, never a lookup by country.
+assert.match(chargedLine, /quoteLater\s*\?\s*0/,
+  'the only zero left is the order that is waiting for a hand-made quote');
 
 // --- 6c. The message must not name the wrong basis -----------------------------------------------------
 // And the message must name where that figure came from, instead of the carrier it stopped using.

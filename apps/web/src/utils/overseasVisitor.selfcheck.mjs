@@ -91,12 +91,20 @@ for (const file of [
     `${file.join('/')} must not use the display approximation for a price someone pays`);
 }
 const note = read('components', 'storefront', 'OverseasPriceNote.jsx');
-// This rule INVERTED on 19 Sep 2026. It used to forbid "Shipping is included", because the only carrier
-// in the code was LTU at Rp 1.188.000 a kilo to Malaysia and no sane price could swallow that. RaySpeed
-// charges Rp 90.000, the shipping is inside the price across their network, and the panel now has to
-// say so — a buyer who is braced for a second bill does not press the button.
-assert.match(note, /[Ss]hipping is included/,
-  'the panel no longer tells an overseas reader the shipping is already in the price');
+// This rule has inverted twice, and what survives both inversions is the part worth checking: the panel
+// must SAY what happens about the freight, in the same direction the order is written.
+//
+//   before 19 Sep 2026 — "not included": the only carrier in the code was LTU, Rp 1.188.000 a kilo to
+//                        Malaysia, and no sane price swallows that.
+//   19–25 Sep 2026     — "included": RaySpeed charges Rp 90.000 to Malaysia, so it went inside the price.
+//   from 25 Sep 2026   — "quoted separately": RaySpeed bills a one-kilo MINIMUM, so one 30 ml bottle to
+//                        Los Angeles costs Rp 670.500 out of a US$80 price. The promise only ever held
+//                        on a full parcel. Found on a live American order, for a single bottle.
+//
+// A silent panel is the failure in every one of those states: a buyer who is surprised by a second bill
+// after paying is the complaint this sentence exists to prevent.
+assert.match(note, /[Ss]hipping is quoted separately/,
+  'the panel must tell an overseas reader that the freight is quoted on top, before they press the button');
 assert.doesNotMatch(note, /Shipping is not\s+included|quote it by hand/i,
   'and it must not go back to promising a separate shipping bill');
 
@@ -365,16 +373,19 @@ assert.match(button, /const showExportPrice = Boolean\(exportPrice\) && !english
   'shown exactly when the English panel is not already showing it');
 assert.match(button, /t\('export\.priceLine'\)/, 'the price line is translated');
 assert.match(MESSAGES.id['export.priceLine'], /Harga untuk pengiriman ke luar negeri/, 'in Indonesian, on the Indonesian button');
-// Whether the shipping is in the price is a money statement, so it has to survive translation — and it
-// FLIPPED on 19 Sep 2026. RaySpeed charges Rp 90.000 to Malaysia against LTU's Rp 1.188.000, so the
-// shipping is now inside the price across their network and the old line ("belum termasuk ongkir") would
-// send a buyer looking for a second bill that never comes.
-assert.match(MESSAGES.id['export.notIncluded'], /ongkir sudah termasuk/);
-assert.match(MESSAGES.en['export.notIncluded'], /shipping included/i,
-  'and the English must say it too — a buyer who thinks a second bill is coming does not press the button');
+// Whether the shipping is in the price is a money statement, so it has to survive translation. It has
+// flipped twice — inside the price on 19 Sep 2026, back out on 25 Sep — and each time the half that got
+// missed was a language, not a rule. Both tables are checked, in the same direction, every time.
+//
+// Out again because RaySpeed bills a one-kilo MINIMUM: a single 30 ml bottle to Los Angeles costs
+// Rp 670.500 to send against a US$80 price, while four bottles cost the same Rp 670.500. The line is
+// charged from the published card now, on every destination.
+assert.match(MESSAGES.id['export.notIncluded'], /ongkir dikutip terpisah/);
+assert.match(MESSAGES.en['export.notIncluded'], /quoted separately/i,
+  'and the English must say it too — a buyer surprised by a second bill after paying is the complaint this line prevents');
 for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
-  assert.doesNotMatch(table['export.notIncluded'], /not included|belum termasuk/i,
-    `the ${lang} line still says the shipping is extra, which it no longer is`);
+  assert.doesNotMatch(table['export.notIncluded'], /sudah termasuk|shipping included|included to/i,
+    `the ${lang} line still says the freight is in the price, which it is not`);
 }
 
 // Every caller passes the variant. All 18 tier prices are keyed by variant, so a product-level lookup

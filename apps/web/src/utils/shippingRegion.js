@@ -8,7 +8,6 @@
 // So there are two prices, split where the carrier splits the world.
 
 import { EXPORT_ZONE_BY_COUNTRY } from '@/data/exportZones.js';
-import { rayspeedServes } from '@/data/rayspeedRates.js';
 import { overseasPriceFromRetail } from '@/utils/memberPriceFill.js';
 
 /**
@@ -75,19 +74,20 @@ export const detectShippingRegion = () => {
   }
 };
 
-/**
- * Whether the shipping is included in the price shown.
+/*
+ * There is no longer a `shippingIncludedFor`, and its absence is the rule.
  *
- * Tied to the CARRIER, not to the two rates that happen to be measured. RaySpeed's dearest measured
- * destination is the United States at Rp 670.500, and Dekito still earns more on every single bottle
- * sent there than on the same bottle sold in Jakarta — so the promise holds across their whole network,
- * and the unmeasured destinations (Singapore, Japan, Australia) are all nearer than the one that proves
- * it.
+ * It read `rayspeedServes(country)` and meant "the price already carries the freight". The arithmetic
+ * behind that only ever worked on a full parcel: RaySpeed bills a one-kilo minimum, so ONE 30 ml bottle
+ * to the United States costs Rp 670.500 to send — against a US$80 price — while four of them cost the
+ * same Rp 670.500. The promise was measured on the four-bottle case and quietly applied to the one.
  *
- * Europe is the exception, and not by choice: RaySpeed does not go there, LTU does, and LTU wants
- * Rp 2.2 million and an MSDS. Shipping there is quoted by hand, as it always was.
+ * Dekito's decision, 2026-09-25, on a live American order for a single bottle: shipping is charged, to
+ * every destination, from the published card in internationalShippingRates.js. The card is the price;
+ * rayspeedRates.js stays what it always was, the cost. Nothing in the shop may say the freight is
+ * included — asiaPrice.selfcheck holds that across the copy, and internationalShippingPrice.selfcheck
+ * holds it in the screen that writes the order.
  */
-export const shippingIncludedFor = (countryCode) => rayspeedServes(countryCode);
 
 /** The zone a country sits in, for the two callers that need to reason about the split by country. */
 export const isAsiaCountry = (countryCode) => {

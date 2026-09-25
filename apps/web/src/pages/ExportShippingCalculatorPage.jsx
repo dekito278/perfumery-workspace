@@ -9,7 +9,7 @@ import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
-import { shippingIncludedFor, isAsiaCountry, internationalPriceFor } from '@/utils/shippingRegion.js';
+import { isAsiaCountry, internationalPriceFor } from '@/utils/shippingRegion.js';
 import { usdPriceFor, USD_PRICE_RATE } from '@/utils/usdPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
 import { USD_PER_RUPIAH_RATE, USD_RATE_SET_ON } from '@/utils/overseasVisitor.js';
@@ -130,29 +130,25 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // creates from it were reading two different sources, so the message quoted the carrier cost while the
   // order billed the card price — Rp 180.000 against Rp 2.227.500 for the same six bottles to Malaysia.
   //
-  // And on most destinations the answer is ZERO. Every product page tells an international buyer
-  // "Shipping is included", and this screen is where that buyer's order gets written down — so adding
-  // shipping on top here bills them for something the shop already promised was in the price. The rule
-  // is the shop's own (shippingIncludedFor), not a second opinion invented for this page.
+  // Shipping is CHARGED, everywhere. Until 2026-09-25 this screen wrote Rp 0 for every country RaySpeed
+  // serves, because the shop promised the freight was in the price. That promise was measured on a full
+  // parcel and broke on a single bottle: RaySpeed bills a one-kilo minimum, so one 30 ml bottle to Los
+  // Angeles costs Rp 670.500 to send out of a US$80 price, while four cost the same Rp 670.500. Dekito
+  // found it on a live American order. The published card decides the figure now, on every destination.
   const typedShipping = Math.max(0, Math.round(Number(manualShipping) || 0));
-  const shippingInPrice = shippingIncludedFor(countryCode);
-  // Only offered where the price does not already carry the freight — on a destination with shipping
-  // included there is nothing left to quote, and a pending flag there would hold up an order for no
-  // reason. A typed figure also settles it: the quote has been made.
-  const canQuoteLater = !shippingInPrice && !typedShipping;
+  // A typed figure settles it: the quote has been made, so there is nothing left to follow by hand.
+  const canQuoteLater = !typedShipping;
   const quoteLater = canQuoteLater && quoteShippingLater;
   const shippingCharged = quoteLater
     ? 0
-    : (typedShipping || (shippingInPrice ? 0 : (priceCardIdr || Number(quote?.total) || 0)));
+    : (typedShipping || priceCardIdr || Number(quote?.total) || 0);
   const shippingLabel = quoteLater
     ? 'dikutip menyusul'
     : typedShipping
     ? 'dikutip manual'
-    : (shippingInPrice
-      ? 'sudah termasuk harga internasional'
-      : (priceCard?.usd
-        ? `${priceCard.regionLabel}, ${priceCard.tierLabel} — ${formatShippingUsd(priceCard.usd)}`
-        : (quote ? `${quote.carrier === 'rayspeed' ? 'RaySpeed' : `LTU Express zona ${quote.zone}`}, ${quote.chargeableKg} kg` : '')));
+    : (priceCard?.usd
+      ? `${priceCard.regionLabel}, ${priceCard.tierLabel} — ${formatShippingUsd(priceCard.usd)}`
+      : (quote ? `${quote.carrier === 'rayspeed' ? 'RaySpeed' : `LTU Express zona ${quote.zone}`}, ${quote.chargeableKg} kg` : ''));
   const summary = buildExportQuote({
     destinationName: destination?.name || '',
     lines,
@@ -485,9 +481,9 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
             />
           </label>
 
-          {/* Only when the tariff table has no answer. Without it an unlisted country — which is most of
-              the world for this courier — could be quoted by hand but never written down. */}
-          {!shippingInPrice ? (
+          {/* For anything the card cannot answer — Europe, or an order above six bottles. Without it such a
+              buyer could be quoted by hand but never written down. */}
+          {canQuoteLater ? (
             <label className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-amber-900">
               <input
                 type="checkbox"
@@ -498,17 +494,14 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               <span>
                 Ongkir dikutip menyusul. Ordernya dibuat tanpa ongkir, halaman bayarnya menahan nomor
                 rekening sampai kamu isi angkanya, dan hitungan 24 jamnya tidak jalan selama menunggu.
-                {typedShipping ? ' (Tidak berlaku — ongkirnya sudah kamu isi di bawah.)' : ''}
               </span>
             </label>
           ) : null}
 
-          {/* Available wherever shipping is actually charged. It used to hide as soon as any rate existed,
-              which took the override away exactly where it is needed most: Europe, the one region the
-              price does not cover and the one where the figure gets negotiated. */}
-          {shippingInPrice ? null : (
-            <label className="mt-3 grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
-              {priceCard?.onRequest
+          {/* Always available. It used to hide as soon as any rate existed, which took the override away
+              exactly where it is needed most: Europe, and any parcel the card was not written for. */}
+          <label className="mt-3 grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
+            {priceCard?.onRequest
                 ? 'Ongkir (isi manual — kartu tarif bilang "quoted on request")'
                 : (priceCard?.usd
                   ? 'Ongkir (isi manual — kosongkan untuk memakai kartu tarif)'
@@ -521,8 +514,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
                 className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold normal-case text-[#111827]"
                 placeholder="0"
               />
-            </label>
-          )}
+          </label>
 
           <dl className="mt-3 grid gap-1.5 rounded-2xl bg-[#fbfaf7] p-3 text-sm font-semibold text-[#111827]">
             <div className="flex justify-between gap-3"><dt className="text-[#6b7280]">Produk</dt><dd>{formatPrice(draftOrder.orderData?.productsSubtotal || 0)}</dd></div>
@@ -566,18 +558,9 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
             is how a shop quotes its own cost price. */}
         <section className="mt-4 rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] p-4">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-editorial-charcoal">
-            Kartu tarif {SHIPPING_RATES_EFFECTIVE_YEAR} · {shippingInPrice ? 'belum ditagih' : 'ditagih ke pembeli'}
+            Kartu tarif {SHIPPING_RATES_EFFECTIVE_YEAR} · ditagih ke pembeli
           </p>
-          {shippingInPrice ? (
-            <>
-              <p className="mt-1 text-3xl font-bold text-editorial-charcoal">Ongkir tidak ditagih</p>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Halaman produk menjanjikan ongkirnya sudah termasuk harga internasional untuk tujuan ini,
-                jadi ordernya ditulis tanpa ongkir.
-                {priceCard?.usd ? ` Kalau nanti mulai ditagih, kartu tarifnya ${formatShippingUsd(priceCard.usd)} (${priceCard.regionLabel}, ${priceCard.tierLabel}).` : ''}
-              </p>
-            </>
-          ) : priceCard?.usd ? (
+          {priceCard?.usd ? (
             <>
               <p className="mt-1 text-3xl font-bold text-editorial-charcoal">{formatShippingUsd(priceCard.usd)}</p>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">

@@ -86,8 +86,14 @@ assert.match(cron, /if \(order\.payment_response\?\.shippingQuotePending\) retur
 
 // --- 5. The flag is only ever set where there is something left to quote -------------------------------
 const calculator = read('pages', 'ExportShippingCalculatorPage.jsx');
-assert.match(calculator, /const canQuoteLater = !shippingInPrice && !typedShipping;/,
-  'a destination whose price already carries the freight has nothing to quote, and a typed figure IS the quote');
+// The country half of this condition went on 25 Sep 2026 with the shipping-included promise itself: the
+// freight is charged to every destination now, so every destination can also be waiting on a figure.
+// What is left is the only part that was ever a rule — a typed figure IS the quote, and an order holding
+// one is not waiting for anything.
+assert.match(calculator, /const canQuoteLater = !typedShipping;/,
+  'a typed figure IS the quote, so that order is not waiting on one');
+assert.doesNotMatch(calculator, /shippingInPrice/,
+  'and no destination is exempt from the freight any more');
 assert.match(calculator, /shippingQuotePending: true/, 'the calculator must be able to write the flag');
 assert.match(calculator, /const shippingCharged = quoteLater\s*\?\s*0/,
   'an order awaiting a quote is written with no shipping, not with a guess');
