@@ -601,6 +601,13 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   // The third state. Not closed — the order is alive and nothing is wrong — but there is no total yet,
   // so there is nothing to transfer and no account to show.
   const awaitingShippingQuote = isAwaitingShippingQuote(session);
+  // And the fourth: already paid. isOrderClosedForPayment deliberately does NOT cover it — there it means
+  // "dead, stock released", and two admin paths throw on that — so this screen has to ask separately.
+  // The QRIS panel has asked since it was written; this one never did, and went on showing a paid buyer
+  // the bank account, "Transfer exactly Rp 289.000" and a receipt upload form. Someone who follows their
+  // own payment link back after paying is told to pay again, and the second transfer is Dekito's to
+  // refund. Read on a real order: DKT-MUEUY0EL-LV1D1D, payment_status 'paid', proof already submitted.
+  const settled = session.paymentStatus === 'paid';
   const proofStatus = session.paymentProofStatus || 'missing';
   const hasSubmittedProof = Boolean(session.paymentProofUrl) && ['submitted', 'approved'].includes(proofStatus);
   const needsProofUpload = !hasSubmittedProof;
@@ -668,6 +675,19 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
       setUploadingProof(false);
     }
   };
+
+  // After every hook, so flipping to paid cannot change hook order — the same placement and the same
+  // reason as the QRIS panel above.
+  if (settled) {
+    return (
+      <PaymentSuccessPanel
+        compact={compact}
+        orderNumber={orderNumber}
+        customerCode={customerCode}
+        method={session.bankName || t('pay.manualTransfer')}
+      />
+    );
+  }
 
   return (
     <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
