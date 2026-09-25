@@ -214,6 +214,11 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
             currency: 'USD',
             amountIdr: orderData.subtotal,
             usdRate: USD_PRICE_RATE,
+            // Where the parcel is going, in the same field the checkout writes it to. Six Studio screens
+            // read it back — the order list, both detail screens, the shipping queue — and without it
+            // they printed "Tujuan -" on an order whose whole reason for existing is that it leaves the
+            // country. The one screen where it matters most is fulfilment, which picks the courier.
+            destinationCountry: countryCode,
             bankName: INTERNATIONAL_TRANSFER_PAYMENT.bankName,
             swift: INTERNATIONAL_TRANSFER_PAYMENT.swift,
             accountNumber: INTERNATIONAL_TRANSFER_PAYMENT.accountNumber,
