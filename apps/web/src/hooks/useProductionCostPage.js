@@ -107,8 +107,8 @@ export const useProductionCostPage = () => {
     const persistedScenario = readLocalScenario(selectedFormulaId);
     if (persistedScenario) {
       const nextBulkScenarios = Array.isArray(persistedScenario.bulkScenarios) && persistedScenario.bulkScenarios.length
-        ? persistedScenario.bulkScenarios.map((scenario, index) => (
-          normalizeBulkScenario(scenario, createBulkScenario(index + 1))
+        ? persistedScenario.bulkScenarios.map((scenario) => (
+          normalizeBulkScenario(scenario, createBulkScenario())
         ))
         : createDefaultBulkScenarios();
 
@@ -412,7 +412,7 @@ export const useProductionCostPage = () => {
   const addBulkScenario = () => {
     setBulkScenarios((current) => [
       ...current,
-      createBulkScenario(current.length + 1),
+      createBulkScenario(),
     ]);
   };
 
