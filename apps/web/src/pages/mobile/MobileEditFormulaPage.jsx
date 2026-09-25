@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { validateFormulaItems } from '@/utils/formulaCalculations.js';
+import { duplicateMaterialErrors } from '@/hooks/useFormulaComposer.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
@@ -245,6 +246,14 @@ const MobileEditFormulaPage = () => {
     })));
     if (itemErrors.length) {
       toast.error(itemErrors[0]);
+      return;
+    }
+    // Same question the desktop composers ask. It used to be buried inside validateComposerFields, which
+    // only they call, so the phone would save a formula naming one material twice — and the desktop then
+    // refused to save that formula at all.
+    const duplicates = Object.values(duplicateMaterialErrors(itemsWithInsights));
+    if (duplicates.length) {
+      toast.error(`${duplicates[0]} — dua baris memakai bahan yang sama`);
       return;
     }
     try {
