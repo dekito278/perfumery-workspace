@@ -566,10 +566,10 @@ const OrdersPage = () => {
                           </summary>
                           <div className="mt-3 grid gap-2 border-t border-editorial-charcoal/10 pt-3 sm:grid-cols-2">
                             {bespokeDetailRows(bespokeItem).map(([label, value]) => (
-                              <p key={label} className={`text-xs font-semibold text-muted-foreground ${label === 'Preferred aroma' ? 'sm:col-span-2' : ''}`}>
+                              <div key={label} className={`text-xs font-semibold text-muted-foreground ${label === 'Preferred aroma' ? 'sm:col-span-2' : ''}`}>
                                 <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{label}</span>
                                 <BriefText text={value} />
-                              </p>
+                              </div>
                             ))}
                           </div>
                         </details>
