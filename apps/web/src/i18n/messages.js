@@ -88,7 +88,7 @@ export const MESSAGES = {
 
     'export.heading': 'Kirim ke luar negeri',
     'export.priceLine': 'Harga untuk pengiriman ke luar negeri:',
-    'export.notIncluded': '— ongkir sudah termasuk untuk sebagian besar Asia dan Amerika.',
+    'export.notIncluded': '— ongkir dikutip terpisah sesuai negara tujuan.',
     'export.ask': 'Kirim ke luar negeri? Tanya di WhatsApp',
     // The WhatsApp draft. It leaves the page, so it is the one piece of copy a buyer keeps after they
     // close the tab — and the only one they are expected to SEND. A draft in a language the sender
@@ -744,8 +744,8 @@ export const MESSAGES = {
     "cust.trackParcel": "Lacak resi",
     "cust.orderAgain": "Pesan lagi",
     "home.byDekito": "oleh Dekito",
-    "intl.priceNote": "Ongkir sudah termasuk untuk Asia Tenggara, Asia Timur, Australia, dan Amerika.",
-    "intl.priceNoteAsia": "Harga Asia Tenggara, ongkir sudah termasuk.",
+    "intl.priceNote": "Ongkir dikutip terpisah, sesuai negara tujuan.",
+    "intl.priceNoteAsia": "Harga Asia Tenggara. Ongkir dikutip terpisah.",
     "intl.fromIndonesia": "Belanja dari Indonesia?",
     "intl.switchToId": "Lihat harga Indonesia",
     "intl.quotedOnRequest": "Harga internasional untuk botol ini dikutip lewat WhatsApp.",
@@ -1242,7 +1242,7 @@ export const MESSAGES = {
 
     'export.heading': 'Shipping outside Indonesia',
     'export.priceLine': 'International price:',
-    'export.notIncluded': '— shipping included to most of Asia and the Americas.',
+    'export.notIncluded': '— shipping is quoted separately for your country.',
     'export.ask': 'Sending abroad? Ask on WhatsApp',
     'export.waDraft': 'Hello SOLIVAGANT, I would like to ask about sending {item} to my country.{line}\nCould you let me know the final total and how long it takes to arrive?\nI understand this enquiry does not reserve a bottle.',
     'export.waDraftPrice': '\nThe international price shown on your site: {price}.',
@@ -1904,8 +1904,8 @@ export const MESSAGES = {
     "cust.trackParcel": "Track the parcel",
     "cust.orderAgain": "Order again",
     "home.byDekito": "by Dekito",
-    "intl.priceNote": "Shipping included to Southeast Asia, East Asia, Australia and the Americas.",
-    "intl.priceNoteAsia": "Southeast Asia price, shipping included.",
+    "intl.priceNote": "Shipping is quoted separately for your country.",
+    "intl.priceNoteAsia": "Southeast Asia price. Shipping is quoted separately.",
     "intl.fromIndonesia": "Shopping from Indonesia?",
     "intl.switchToId": "See Indonesian prices",
     "intl.quotedOnRequest": "The international price for this bottle is quoted on WhatsApp.",

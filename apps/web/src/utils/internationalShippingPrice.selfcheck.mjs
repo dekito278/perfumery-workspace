@@ -101,23 +101,36 @@ for (const region of SHIPPING_RATE_REGIONS) {
   }
 }
 
-// --- 6. The price card is what the Studio page charges, and the carrier rate is not -------------------
-// The calculator used to put the CARRIER COST into the order it creates, because that was the only
-// number it had. With a published price in the repo, billing the cost is billing the wrong number.
+// --- 6. The card ADVISES the Studio page; Dekito decides ----------------------------------------------
+// This has moved twice and the direction it settled in is the point. The calculator first billed the
+// CARRIER COST, because that was the only number it had. Then it billed the published CARD outright.
+// Neither was a figure Dekito had agreed to apply to every order: the card charges US$80 to Southeast
+// Asia where RaySpeed costs about Rp 90.000, and the cost is not a price at all.
+//
+// His decision, 2026-09-25: the international price is fixed at 3.5x retail, and he sets the shipping
+// himself on this screen with both tables in front of him. So the charge is the TYPED figure, and the
+// card and the carrier rate are reference — each with a button that fills the field, because a number
+// you have to retype is a number that gets retyped wrong.
 const page = read('pages', 'ExportShippingCalculatorPage.jsx');
-assert.match(page, /quoteInternationalShippingPrice\(/, 'the Studio calculator must quote from the card');
-// Pinning the exact expression made this fail the moment the rule legitimately grew a third branch, so
-// it reads the PRECEDENCE instead: a typed figure wins, then the shop's promise, then the published
-// price, and the carrier cost is the last resort it used to be the first.
-// Written as POSITION once — "typedShipping must be the first token" — and that broke the day a third
-// branch went in front of it for orders whose shipping is quoted later. Position was never the rule;
-// order of preference was.
+assert.match(page, /quoteInternationalShippingPrice\(/, 'the card must still be on the screen as the reference');
 const chargedLine = (page.match(/const shippingCharged = [\s\S]*?;/) || [''])[0];
 assert.ok(chargedLine, 'the page must compute one shipping figure');
-const order = ['typedShipping', 'priceCardIdr', 'quote?.total'].map((token) => chargedLine.indexOf(token));
-assert.ok(order.every((at) => at >= 0), `every source must appear: ${chargedLine.replace(/\s+/g, ' ')}`);
-assert.ok(order[0] < order[1] && order[1] < order[2],
-  `a typed figure wins, then the published price, and the carrier cost is last: ${chargedLine.replace(/\s+/g, ' ')}`);
+assert.match(chargedLine, /typedShipping/, 'the charge is the figure Dekito typed');
+for (const automatic of ['priceCardIdr', 'quote?.total', 'quote.total']) {
+  assert.ok(!chargedLine.includes(automatic),
+    `${automatic} may advise the figure but never become it: ${chargedLine.replace(/\s+/g, ' ')}`);
+}
+// Reference is useless unless it can be taken in one press, and the button must fill the FIELD rather
+// than the charge — otherwise it is the automatic rule again, wearing a button.
+assert.match(page, /onClick=\{\(\) => setManualShipping\(String\(priceCardIdr\)\)\}/,
+  'the card figure must be one press away from the shipping field');
+assert.match(page, /onClick=\{\(\) => setManualShipping\(String\(Math\.round\(quote\.total\)\)\)\}/,
+  'and so must the carrier cost, for the orders he passes through at cost');
+// An empty field is "not decided", never "free": that is what stops a whole freight being given away by
+// someone tabbing past it. Zero is still allowed — it just has to be typed.
+assert.match(page, /const shippingSettled = quoteLater \|\| manualShipping\.trim\(\) !== '';/,
+  'an undecided shipping figure must block the order, not default to zero');
+assert.match(page, /shippingSettled,/, 'and the order builder must be told');
 assert.match(page, /USD_PER_RUPIAH_RATE/, 'the rupiah figure must name the rate it was converted at');
 
 // One figure, two places. Caught on the screen before this shipped: the WhatsApp summary was still built
@@ -126,16 +139,31 @@ assert.match(page, /USD_PER_RUPIAH_RATE/, 'the rupiah figure must name the rate 
 assert.match(page, /shipping: shippingCharged > 0 \? \{ total: shippingCharged/,
   'the copied summary must quote the same shipping figure the order is billed');
 assert.doesNotMatch(page, /shipping: quote,/,
-  'the summary may not be built from the carrier cost while the order bills the published price');
+  'the summary may not be built from the carrier cost while the order bills what Dekito typed');
 
-// --- 6b. Where the shop says shipping is included, the order must not add it ---------------------------
-// Every product page tells an international buyer "Shipping is included", and this screen is where that
-// buyer's order is written down. Billing the rate card on top of a price that already carries the
-// shipping charges them twice for the same parcel. Decision, 2026-09-24: not charged yet.
-assert.match(page, /shippingIncludedFor\(countryCode\)/,
-  'the calculator must ask the shop\'s own rule whether the price already carries the shipping');
-assert.match(page, /shippingInPrice \? 0 :/,
-  'and must charge nothing where it does');
+// --- 6b. Shipping is charged on every destination -----------------------------------------------------
+// The inverse of the rule that stood here from 24 to 25 September 2026. That one said the shop promised
+// the freight was in the price, so this screen must write Rp 0 for every country RaySpeed serves.
+//
+// The promise was measured on a full parcel and broke on a single bottle: RaySpeed bills a one-kilo
+// MINIMUM, so ONE 30 ml bottle to Los Angeles costs Rp 670.500 to send against a US$80 price, while FOUR
+// cost the same Rp 670.500. Dekito found it on a live American order — the shop had already shown the
+// buyer "shipping included".
+//
+// Held on the ABSENCE of the by-country escape, not on the presence of a sentence: any branch that can
+// zero the figure because of where the parcel is going brings the loss straight back.
+assert.doesNotMatch(page, /shippingIncludedFor/,
+  'no destination may be exempted from shipping — the card prices every one of them');
+// Counted, not pattern-matched: a second `? 0` anywhere in the expression is a second way for the
+// figure to reach zero, whatever it is spelled as or how it is wrapped across lines. The first version
+// of this check looked for "? 0 :" followed by a country test and walked straight past
+// `isAsiaCountry(countryCode) ? 0 : ...` because the real code breaks the line after the zero.
+const zeroBranches = chargedLine.match(/\?\s*0\b/g) || [];
+assert.equal(zeroBranches.length, 1,
+  `exactly one branch may write a zero shipping figure: ${chargedLine.replace(/\s+/g, ' ')}`);
+// And that one is the owner ticking a box, never a lookup by country.
+assert.match(chargedLine, /quoteLater\s*\?\s*0/,
+  'the only zero left is the order that is waiting for a hand-made quote');
 
 // --- 6c. The message must not name the wrong basis -----------------------------------------------------
 // And the message must name where that figure came from, instead of the carrier it stopped using.

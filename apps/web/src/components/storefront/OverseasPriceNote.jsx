@@ -33,13 +33,14 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
         <span className="text-sm font-semibold text-muted-foreground">{formatRupiah(price)}</span>
       </p>
       {/* Written in English on purpose, in both shops: this panel exists for a reader who is abroad.
-          The sentence changed on 19 Sep 2026 — the shipping used to be quoted by hand because the only
-          carrier in the code was LTU at Rp 1.188.000 a kilo to Malaysia. RaySpeed charges Rp 90.000, so
-          it is inside the price now, and a buyer told to expect a second bill does not come back. */}
+          It said "Shipping is included" from 19 Sep until 25 Sep 2026, on the strength of RaySpeed's
+          Rp 90.000 kilo to Malaysia. The carrier bills a one-kilo MINIMUM, so a single 30 ml bottle to
+          Los Angeles costs Rp 670.500 to send out of a US$80 price — the promise only ever held on a
+          full parcel. Shipping is quoted from the published card now, on every destination. */}
       <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">
         {shippingRegion === 'asia'
-          ? 'Priced for Southeast Asia and separate from the Indonesian price above. Shipping is included.'
-          : 'International orders are priced separately from the Indonesian price above. Shipping is included to Southeast Asia, East Asia, Australia and the Americas — anywhere else we work it out with you on WhatsApp.'}
+          ? 'Priced for Southeast Asia and separate from the Indonesian price above. Shipping is quoted separately, once we know where the parcel is going.'
+          : 'International orders are priced separately from the Indonesian price above. Shipping is quoted separately, from our rate card, once we know where the parcel is going.'}
       </p>
       <OverseasInquiryButton
         product={product}

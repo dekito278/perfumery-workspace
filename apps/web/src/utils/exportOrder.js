@@ -26,6 +26,7 @@ const round = (value) => Math.max(0, Math.round(Number(value) || 0));
 export const buildExportOrderData = ({
   lines = [],
   shippingTotal = 0,
+  shippingSettled = false,
   destinationName = '',
   customerName = '',
   contact = '',
@@ -41,6 +42,18 @@ export const buildExportOrderData = ({
   if (!customerName.trim()) return { ok: false, reason: 'Isi nama pembelinya.', warnings: [], orderData: null };
   if (!contact.trim()) return { ok: false, reason: 'Isi kontak pembelinya — nomor WhatsApp atau email.', warnings: [], orderData: null };
   if (!deliveryAddress.trim()) return { ok: false, reason: 'Isi alamat kirimnya, lengkap dengan negara.', warnings: [], orderData: null };
+  // Shipping is DECIDED, never defaulted. Dekito sets the figure himself with the rate tables on the
+  // same screen as his reference (his decision, 2026-09-25), so an empty field means he has not decided
+  // yet — and a silent Rp 0 on an export order is the whole freight given away without anyone choosing
+  // to. The other way out is the "quoted later" box, which is a decision too.
+  if (!shippingSettled) {
+    return {
+      ok: false,
+      reason: 'Isi ongkirnya dulu — atau centang "ongkir dikutip menyusul" kalau angkanya belum ada.',
+      warnings: [],
+      orderData: null,
+    };
+  }
 
   // Lines still on the domestic price. NOT refused: Dekito is allowed to sell at whatever price he
   // agreed to. But it is the exact mistake the overseas tier exists to prevent, so it is named on the
