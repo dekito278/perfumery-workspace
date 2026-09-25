@@ -2198,7 +2198,7 @@ export const MESSAGES = {
     "pay.proofBeforeTracking": "The receipt has to be sent first. Once it uploads, you can go on to track the order.",
     "track.submit": "Track",
     "pay.refunded": "Refunded",
-    "track.current": " (now)",
+    "track.current": " (current stage)",
     "track.payment": "Payment",
     "track.shipment": "Shipment",
     "track.stepPacked": "Packed",
