@@ -87,12 +87,24 @@ export const formatCurrency = (value) => {
   }
 };
 
-export const formatDate = (value) => {
+/**
+ * A date in the reader's own language.
+ *
+ * The locale is an argument with an Indonesian default, because roughly thirty of this function's
+ * callers are Studio, which is Indonesian on purpose and must stay that way. The handful that face a
+ * buyer pass the shop's locale instead.
+ *
+ * Total against whatever it is handed. Callers elsewhere in this repo define their own
+ * formatDate(value, t) taking the TRANSLATOR, and someone reaching for the familiar shape here would
+ * otherwise hand a function to toLocaleDateString and blank the page — which is precisely what happened
+ * the last time this was repaired.
+ */
+export const formatDate = (value, locale = 'id-ID') => {
   if (!value) return 'N/A';
   try {
     const date = new Date(value);
     if (isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleDateString('id-ID', {
+    return date.toLocaleDateString(typeof locale === 'string' && locale ? locale : 'id-ID', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
