@@ -14,6 +14,7 @@ import {
   getProductBatchDetails,
   getProductFormulaId,
   getProductPublishStatus,
+  getProductRestockThreshold,
   getProductStorefrontPath,
 } from '@/services/productCatalogService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
@@ -50,12 +51,12 @@ const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview,
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
               {product.variants.slice(0, 3).map((variant) => (
-                <span key={variant.id || variant.size} className={`rounded-full px-2 py-1 text-[10px] font-bold ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-editorial-ivory text-editorial-charcoal'}`}>
+                <span key={variant.id || variant.size} className={`rounded-full px-2 py-1 text-[10px] font-bold ${variant.stock > 0 && variant.stock <= getProductRestockThreshold(product) ? 'bg-rose-50 text-rose-700' : 'bg-editorial-ivory text-editorial-charcoal'}`}>
                   {variant.size}: {variant.stock}
                 </span>
               ))}
             </div>
-            <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock}</p>
+            <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock} / min {getProductRestockThreshold(product)}</p>
             <p className="mt-1 break-all text-[10px] font-bold uppercase text-[#8b949e]">{publicPath || 'Slug belum tersedia'}</p>
             {formulaId ? (
               <button
