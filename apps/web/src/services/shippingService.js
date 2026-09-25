@@ -81,8 +81,9 @@ export const getShippingRates = async ({
 };
 
 export const getCheckoutShippingWeight = (items) => {
-  // Weight is per SIZE now, from the one table the order endpoint also reads — a 10 ml is 100 g and a
-  // 100 ml is 650 g, not 300 g each. The env value is only the fallback for a size nobody weighed.
+  // Weight is per SIZE now, from the one table the order endpoint also reads (ITEM_WEIGHT_GRAM_BY_ML),
+  // rather than one flat figure for every bottle — the smallest was over-weighed threefold and the
+  // largest under-weighed by more than half. The env value is only the fallback for an unweighed size.
   // assertPairedEnvAgrees() in tools/build.mjs fails the build if the two sides' fallback disagrees.
   const fallback = Number(import.meta.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || DEFAULT_ITEM_WEIGHT_GRAM);
   return totalItemWeightGram(items, fallback);
