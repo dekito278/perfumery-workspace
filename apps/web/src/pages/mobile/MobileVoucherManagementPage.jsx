@@ -24,6 +24,7 @@ import {
   VOUCHER_UPDATED_EVENT,
 } from '@/services/voucherService.js';
 import { buildVoucherPreview } from '@/utils/voucherPreview.js';
+import { getExpiryTime } from '@/utils/voucherValidation.js';
 import { buildVoucherAnalytics, buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
 
 const emptyDraft = {
@@ -51,10 +52,9 @@ const formatDateTime = (value) => (value
 
 const getVoucherStatus = (voucher) => {
   if (!voucher.active) return { key: 'inactive', label: 'Nonaktif', className: 'bg-stone-100 text-stone-700' };
-  const expiryValue = String(voucher.expiresAt || '').trim();
-  const expiryTime = expiryValue
-    ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(expiryValue) ? `${expiryValue}T23:59:59.999` : expiryValue).getTime()
-    : null;
+  // The same parser the checkout validates against. Read in the reader's own zone, this badge said
+  // "Aktif" on a code the checkout had already refused, for the whole of the expiry day.
+  const expiryTime = getExpiryTime(voucher.expiresAt);
   if (expiryTime && expiryTime < Date.now()) {
     return { key: 'expired', label: 'Expired', className: 'bg-rose-50 text-rose-700' };
   }

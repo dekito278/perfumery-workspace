@@ -11,5 +11,9 @@ export const shopToday = (date = new Date()) => (
   new Intl.DateTimeFormat('en-CA', { timeZone: SHOP_TIME_ZONE }).format(date)
 );
 
-// End of a date-only value, pinned to the shop's zone so every runtime agrees on the same instant.
+// Both ends of a date-only value, pinned to the shop's zone so every runtime agrees on the same instant.
+// A bare `${isoDate}T23:59:59.999` is read in whatever zone the runtime happens to be in, which is the
+// buyer's zone on every client-side check — so a promo window typed once in Jakarta started and ended at
+// a different moment for every reader.
 export const shopEndOfDay = (isoDate) => `${isoDate}T23:59:59.999${SHOP_UTC_OFFSET}`;
+export const shopStartOfDay = (isoDate) => `${isoDate}T00:00:00.000${SHOP_UTC_OFFSET}`;

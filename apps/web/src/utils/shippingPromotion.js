@@ -1,7 +1,10 @@
-// Isomorphic shipping-promotion logic — pure, ZERO browser/supabase imports so it runs in the client
+// Isomorphic shipping-promotion logic — pure, NO browser/supabase imports so it runs in the client
 // AND in a Node serverless endpoint (the authoritative order/shipping path). The cache/localStorage/
-// supabase access lives in services/shippingPromotionService.js, which re-exports these. Keep this
-// file import-free.
+// supabase access lives in services/shippingPromotionService.js, which re-exports these.
+//
+// The one import allowed here is localDay.js: relative, so node resolves it without the '@/' alias, and
+// itself import-free. It is the shop's clock, and a promo window must not be read in the reader's zone.
+import { shopEndOfDay, shopStartOfDay } from './localDay.js';
 
 export const SHIPPING_PROMOTION_PRESETS = {
   FREE_JAVA: 'free_java',
@@ -189,7 +192,7 @@ const getDateTime = (value, endOfDay = false) => {
   if (!rawValue) return null;
 
   const normalizedValue = /^\d{4}-\d{2}-\d{2}$/.test(rawValue)
-    ? `${rawValue}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}`
+    ? (endOfDay ? shopEndOfDay(rawValue) : shopStartOfDay(rawValue))
     : rawValue;
   const time = new Date(normalizedValue).getTime();
   return Number.isFinite(time) ? time : null;
