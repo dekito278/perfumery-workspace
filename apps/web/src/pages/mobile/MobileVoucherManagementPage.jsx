@@ -26,6 +26,7 @@ import {
 import { buildVoucherPreview } from '@/utils/voucherPreview.js';
 import { getExpiryTime } from '@/utils/voucherValidation.js';
 import { buildVoucherAnalytics, buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const emptyDraft = {
   id: '',
@@ -289,6 +290,8 @@ const MobileVoucherManagementPage = () => {
     if (savingVoucher) {
       return;
     }
+    // The desktop twin asks this exact question. A voucher is a code customers may already hold.
+    if (!await confirmAction({ message: `Hapus voucher ${voucher.code} permanen? Kode ini akan lepas dari analitik pemakaian dan tidak bisa dikembalikan.`, destructive: true })) return;
     setSavingVoucher(true);
     try {
       await deleteVoucher(voucher.id || voucher.code);

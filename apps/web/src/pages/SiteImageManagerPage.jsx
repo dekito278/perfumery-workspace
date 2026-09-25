@@ -108,6 +108,9 @@ const SiteImageManagerPage = () => {
   };
 
   const handleDelete = async (key) => {
+    // The slot goes back to its placeholder and the file is gone from storage; re-filling it means
+    // finding the original again. The trash icon sits beside Ganti, at the same size.
+    if (!await confirmAction({ message: 'Hapus gambar ini dari situs? Filenya ikut terhapus dan harus diunggah ulang.', destructive: true })) return;
     await deleteSiteImage(key);
     await refresh();
   };
