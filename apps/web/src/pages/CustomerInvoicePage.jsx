@@ -275,7 +275,13 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
               been worked out has no final total at all — the payment page already refuses to name one,
               and an invoice that names one anyway is the more convincing of the two documents. */}
           <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3">
-            <span className="text-sm font-bold uppercase text-editorial-charcoal">{t('inv.totalDue')}</span>
+            {/* "Total due" on a settled order is a receipt asking for money that has already arrived.
+                Read on the real invoice for DKT-MUEUY0EL-LV1D1D, which carries a PAID badge two lines
+                above this label. The invoice is the document a buyer keeps; it should describe what
+                happened, not what is owed. */}
+            <span className="text-sm font-bold uppercase text-editorial-charcoal">
+              {order.paymentStatus === 'paid' ? t('inv.totalPaid') : t('inv.totalDue')}
+            </span>
             <span className="text-xl font-bold text-editorial-charcoal">
               {isAwaitingShippingQuote(order)
                 ? '—'

@@ -114,6 +114,34 @@ for (const file of namesATotal) {
     + 'refuses to name one; this screen naming one anyway is the more convincing document');
 }
 
+// --- 2b. And a settled order is not asked for money --------------------------------------------------
+// The invoice carries a PAID badge and, two lines below it, said "TOTAL DUE". It is the document a buyer
+// keeps: it should describe what happened, not what is owed. Read on the real invoice for
+// DKT-MUEUY0EL-LV1D1D.
+//
+// The customer portal already gets this right for a different reason — its payment panel renders only
+// for an unpaid order — so the rule is asserted where it applies rather than everywhere.
+{
+  const { MESSAGES } = await import('../i18n/messages.js');
+  const invoice = read('pages', 'CustomerInvoicePage.jsx');
+  assert.match(invoice, /order\.paymentStatus === 'paid' \? t\('inv\.totalPaid'\) : t\('inv\.totalDue'\)/,
+    'the invoice labels its total the same way whether or not the money arrived');
+  for (const locale of ['id', 'en']) {
+    assert.ok(MESSAGES[locale]['inv.totalPaid'], `inv.totalPaid is missing in ${locale}`);
+    assert.notEqual(MESSAGES[locale]['inv.totalPaid'], MESSAGES[locale]['inv.totalDue'],
+      `${locale} says the same thing for money owed and money received`);
+  }
+  assert.doesNotMatch(MESSAGES.en['inv.totalPaid'], /due/i,
+    'the paid label must not still say the total is due');
+  assert.doesNotMatch(MESSAGES.id['inv.totalPaid'], /perlu dibayar|harus dibayar/i,
+    'nor the Indonesian one');
+  // The portal is right by construction; if that ever changes, this says why it was not checked here.
+  const portal = read('pages', 'CustomerPortalPage.jsx');
+  assert.match(portal, /const isPayableOrder = \(order\) => \['unpaid', 'pending'\]\.includes/,
+    "the portal's total-due banner is gated on the order being payable at all — if that gate goes, its "
+    + 'label needs the same treatment as the invoice');
+}
+
 // --- 3. The phone and the desktop name the same step the same way -------------------------------------
 // The phone's checkout tab read "Pembayaran" / "Payment" while its desktop twin read "Checkout". Same
 // step, same form, nothing paid yet — a buyer with both open sees two tabs claiming to be two different
