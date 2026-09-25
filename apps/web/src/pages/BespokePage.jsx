@@ -872,6 +872,9 @@ const BespokePage = () => {
                           >
                             {courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}
                             {' / '}
+                            {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
+                              <s style={{ opacity: 0.55, marginRight: 6 }}>{formatRupiah(rate.originalCost)}</s>
+                            ) : null}
                             {formatRupiah(rate.cost)}
                           </button>
                         );
