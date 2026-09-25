@@ -72,16 +72,13 @@ export const overseasPriceFor = (tierPrices = {}, linePrice = 0) => {
   return price;
 };
 
-// One constant, and it goes stale. It is deliberately only ever shown with the word "approx" beside it,
-// and the real number is settled in the WhatsApp conversation — so drifting a few percent misleads
-// nobody. Precision here would be a false promise: the final figure depends on shipping to a country
-// this page does not know yet.
-export const USD_PER_RUPIAH_RATE = 16500;
-export const USD_RATE_SET_ON = '2026-09-15';
-
-/** Rounded to whole dollars: cents on an approximation are a lie about how well this is known. */
-export const approximateUsd = (rupiah) => {
-  const amount = Number(rupiah) || 0;
-  if (amount <= 0) return null;
-  return Math.round(amount / USD_PER_RUPIAH_RATE);
-};
+// The approximate dollar rate lived here — a second 16500 beside the one in usdPrice.js, rounded to
+// whole dollars and always shown with the word "approx" beside it. It was right while an overseas buyer
+// paid rupiah and the dollars were only ever a hint. They pay dollars into a dollar account now, so the
+// figure IS the charge, the storefront panels were moved onto usdPriceFor on 2026-09-24, and the export
+// quote screen — its last caller, and the one place it reached a number someone is billed — was moved
+// on 2026-09-25.
+//
+// Deleted rather than left sitting: an exported constant named "the dollar rate" with no callers is not
+// dormant, it is the first thing autocomplete offers the next screen that needs one. There is one rate
+// in this codebase and it is USD_PRICE_RATE.
