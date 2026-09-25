@@ -192,7 +192,7 @@ export const MESSAGES = {
     'why.member.body': 'Harga di sini sudah di bawah marketplace. Masuk dengan Google, dan setiap harga di katalog turun lagi — potongan yang biasanya jadi biaya marketplace, jadi milikmu.',
     'why.member.cta': 'Masuk',
     'why.intl.title': 'Harga luar negeri di muka',
-    'why.intl.body': 'Setiap halaman produk menampilkan harga internasionalnya sebelum kamu bertanya. Ongkir dikutip tangan per negara.',
+    'why.intl.body': 'Setiap halaman produk menampilkan harga internasionalnya sebelum kamu bertanya. Untuk Asia Tenggara, Asia Timur, Australia, dan Amerika, ongkirnya sudah termasuk di harga itu. Selain itu kami hitung tangan dan kirim angkanya sebelum ada yang ditagih.',
     'why.intl.cta': 'Lihat koleksi',
     'why.atelier.title': 'Langsung dari perfumer',
     'why.atelier.body': 'Diracik dan dikemas di atelier oleh Dekito sendiri. Tidak lewat gudang, tidak lewat reseller.',
@@ -1351,7 +1351,7 @@ export const MESSAGES = {
     // Indonesian-order thing, so promising it here — or linking to a sign-in that does nothing for them —
     // would be the bait-and-switch the export panel exists to prevent.
     'why.intl.title': 'The international price, up front',
-    'why.intl.body': 'Every product page shows its international price before you ask. Shipping is quoted by hand for your country, because that is the only honest way to do it.',
+    'why.intl.body': 'Every product page shows its international price before you ask. For Southeast Asia, East Asia, Australia and the Americas that price already includes the shipping. Everywhere else we work the freight out by hand and send you the figure before anything is charged.',
     'why.intl.cta': 'Browse the collection',
     'why.atelier.title': 'Straight from the perfumer',
     'why.atelier.body': 'Blended and packed in the atelier by Dekito himself. No warehouse, no reseller in between.',
