@@ -23,6 +23,7 @@ import {
   KeyRound,
   Tags,
   BadgePercent,
+  Globe2,
   Truck,
   UsersRound,
 } from 'lucide-react';
@@ -90,6 +91,7 @@ const AppShell = ({ children }) => {
         { path: '/studio/product-categories', label: 'Kategori', icon: Tags },
         { path: '/studio/vouchers', label: 'Voucher', icon: BadgePercent },
         { path: '/studio/shipping', label: 'Ongkir', icon: Truck },
+        { path: '/studio/export-shipping', label: 'Ekspor', icon: Globe2 },
         { path: '/studio/orders', label: 'Order', icon: PackageCheck },
         { path: '/studio/customers', label: 'Customer', icon: UsersRound },
         { path: '/studio/shipments', label: 'Pengiriman', icon: Truck },
