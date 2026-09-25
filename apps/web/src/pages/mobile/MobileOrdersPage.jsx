@@ -27,7 +27,11 @@ import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { cn } from '@/lib/utils.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
-import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
+import {
+  getOrderProductItems,
+  getOrderShippingFee,
+  getOrderVoucherSnapshot,
+} from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
@@ -683,6 +687,8 @@ const MobileOrdersPage = () => {
                   <div className="text-[10px] font-bold uppercase text-[#6b7280]">{order.quantity} item</div>
                   <div className="text-base font-bold text-[#1f2937]">{formatTotal(order.subtotal)}</div>
                   {voucherSnapshot ? <div className="text-[11px] font-bold text-editorial-charcoal">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
+                  {/* Without this the lines above never added up to the figure beside them. */}
+                  {getOrderShippingFee(order) ? <div className="text-[11px] font-semibold text-[#6b7280]">Termasuk ongkir {formatTotal(getOrderShippingFee(order))}</div> : null}
                 </div>
                 <select value={order.status} onChange={(event) => changeOrderStatus(order, event.target.value)} className="h-10 rounded-2xl border border-[#e5e7eb] bg-white px-2 text-xs font-bold outline-none focus:border-amber-300">
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}

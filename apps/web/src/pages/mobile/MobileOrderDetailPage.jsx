@@ -45,7 +45,12 @@ import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
-import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
+import {
+  getOrderProductItems,
+  getOrderShippingFee,
+  getOrderSubtotalAfterVoucher,
+  getOrderVoucherSnapshot,
+} from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 
 const canExportShippingLabel = (order) => Boolean(
@@ -791,6 +796,13 @@ const MobileOrderDetailPage = () => {
               <h1 className="mt-1 text-2xl font-bold text-editorial-charcoal">{statusLabels[order.status] || order.status}</h1>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.quantity} item / {formatTotal(order.subtotal)}</p>
               {voucherSnapshot ? <p className="mt-1 text-xs font-bold text-editorial-charcoal">Voucher {voucherSnapshot.code}: hemat {formatTotal(voucherSnapshot.discountAmount)}</p> : null}
+              {/* The same three numbers the desktop shows. This screen had the total and nothing else,
+                  so when a customer asks why it is that much, the phone could not answer. */}
+              {getOrderShippingFee(order) ? (
+                <p className="mt-1 text-xs font-semibold text-[#6b7280]">
+                  Produk {formatTotal(getOrderSubtotalAfterVoucher(order))} + ongkir {formatTotal(getOrderShippingFee(order))}
+                </p>
+              ) : null}
             </div>
             <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
               {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}

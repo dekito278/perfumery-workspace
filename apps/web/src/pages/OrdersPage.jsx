@@ -83,17 +83,28 @@ const paymentProofToneByStatus = {
   rejected: 'danger',
 };
 
-const OrderVoucherSummary = ({ order }) => {
+// What makes up this total. It used to be a VOUCHER summary and returned null without one — so the
+// shipping line, which lives in here, was only ever shown on orders that happened to carry a code. An
+// ordinary order with freight in it showed one figure and no way to explain it, on every Studio screen.
+//
+// The question is "why is the total this number", and it is worth answering whenever the total is more
+// than the products: a voucher took something off, or freight was added, or both.
+const OrderMoneyBreakdown = ({ order }) => {
   const voucherSnapshot = getOrderVoucherSnapshot(order);
-  if (!voucherSnapshot) return null;
   const shippingFee = getOrderShippingFee(order);
+  if (!voucherSnapshot && !shippingFee) return null;
 
   return (
     <div className="mt-2 rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory px-3 py-2 text-xs font-bold text-editorial-charcoal">
       <div className="flex justify-between gap-3"><span>Subtotal produk</span><span>{formatTotal(getOrderProductsSubtotal(order))}</span></div>
-      <div className="mt-1 flex justify-between gap-3"><span>Voucher {voucherSnapshot.code}</span><span>-{formatTotal(voucherSnapshot.discountAmount)}</span></div>
-      <div className="mt-1 flex justify-between gap-3 text-muted-foreground"><span>Subtotal setelah voucher</span><span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span></div>
+      {voucherSnapshot ? (
+        <>
+          <div className="mt-1 flex justify-between gap-3"><span>Voucher {voucherSnapshot.code}</span><span>-{formatTotal(voucherSnapshot.discountAmount)}</span></div>
+          <div className="mt-1 flex justify-between gap-3 text-muted-foreground"><span>Subtotal setelah voucher</span><span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span></div>
+        </>
+      ) : null}
       {shippingFee ? <div className="mt-1 flex justify-between gap-3 text-muted-foreground"><span>Ongkir</span><span>{formatTotal(shippingFee)}</span></div> : null}
+      <div className="mt-1 flex justify-between gap-3"><span>Total</span><span>{formatTotal(order.subtotal)}</span></div>
     </div>
   );
 };
@@ -541,7 +552,7 @@ const OrdersPage = () => {
                         </div>
                         );
                       })}
-                      <OrderVoucherSummary order={order} />
+                      <OrderMoneyBreakdown order={order} />
                     </div>
                     {bespoke ? (
                       <div className="mt-3 rounded-2xl border border-editorial-charcoal/10 bg-white p-3">
