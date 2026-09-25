@@ -820,12 +820,18 @@ const OrderDetailPage = () => {
           </div>
         </section>
 
-        {voucherSnapshot ? (
+        {/* Gated on "is there anything to explain", not on "was a voucher used". The shipping line lives
+            in here, so hanging the whole section on a voucher hid the freight on every ordinary order. */}
+        {voucherSnapshot || getOrderShippingFee(order) ? (
           <section className="mb-5 rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory p-4 text-sm font-bold text-editorial-charcoal shadow-sm">
             <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Subtotal produk</span>{formatTotal(getOrderProductsSubtotal(order))}</div>
-              <div><span className="block text-[10px] uppercase text-[#6b7280]">Voucher {voucherSnapshot.code}</span>-{formatTotal(voucherSnapshot.discountAmount)}</div>
-              <div><span className="block text-[10px] uppercase text-[#6b7280]">Setelah voucher</span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</div>
+              {voucherSnapshot ? (
+                <>
+                  <div><span className="block text-[10px] uppercase text-[#6b7280]">Voucher {voucherSnapshot.code}</span>-{formatTotal(voucherSnapshot.discountAmount)}</div>
+                  <div><span className="block text-[10px] uppercase text-[#6b7280]">Setelah voucher</span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</div>
+                </>
+              ) : null}
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Ongkir / total</span>{getOrderShippingFee(order) ? `${formatTotal(getOrderShippingFee(order))} / ` : ''}{formatTotal(order.subtotal)}</div>
             </div>
           </section>
