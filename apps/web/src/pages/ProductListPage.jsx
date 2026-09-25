@@ -163,7 +163,7 @@ const ProductListPage = () => {
                         </p>
                         <div className="mt-2 flex flex-wrap gap-1">
                           {product.variants.slice(0, 4).map((variant) => (
-                            <span key={variant.id || variant.size} className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-editorial-ivory text-editorial-charcoal'}`}>
+                            <span key={variant.id || variant.size} className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${variant.stock > 0 && variant.stock <= getProductRestockThreshold(product) ? 'bg-rose-50 text-rose-700' : 'bg-editorial-ivory text-editorial-charcoal'}`}>
                               {variant.size}: {variant.stock}
                             </span>
                           ))}
