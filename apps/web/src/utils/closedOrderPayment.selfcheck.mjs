@@ -89,4 +89,37 @@ for (const language of ['id', 'en']) {
     `${language}: the closed lead must not repeat the transfer instruction`);
 }
 
+// --- 5. And stops asking for a receipt it can never accept -----------------------------------------------
+// The bank account was withheld from a closed order, correctly, and the RECEIPT section underneath went
+// on saying "a receipt is required so the order can move" with a working file picker. The order cannot
+// move: approving a receipt on a closed order is precisely what orderService throws on. So the person it
+// invited to upload was the one the notice above was speaking to — someone who had already transferred
+// to an order that was cancelled underneath them, sending proof into a dead end instead of a message.
+//
+// Read on a real order: DKT-MU9L5XW2-JNBGGD, status cancelled, payment_status expired.
+assert.match(page, /const needsProofUpload = !hasSubmittedProof && !closedForPayment;/,
+  'a closed order must not be marked as needing a receipt — that flag drives the REQUIRED tag and the '
+  + 'required attribute on the file input');
+assert.match(page, /\{closedForPayment \? null : \(\s*\n\s*<div className="mt-4 grid gap-3">/,
+  'the upload form itself must not render for a closed order; hiding only the REQUIRED tag leaves a file '
+  + 'picker under a notice saying not to pay');
+assert.match(page, /closedForPayment\s*\n?\s*\? t\('pay\.proofClosed'\)/,
+  'and the receipt section must say why, rather than going quiet — a section with a heading and no '
+  + 'sentence reads as a page that failed to load');
+for (const locale of ['id', 'en']) {
+  const message = MESSAGES[locale]['pay.proofClosed'];
+  assert.ok(message, `pay.proofClosed is missing in ${locale}`);
+  // Deliberately NOT an instruction to message us. The closed-order notice directly above already says
+  // that AND carries the button — contactPrompt.selfcheck refuses a sentence that asks without one, and
+  // repeating it here would either break that rule or put a second WhatsApp button on the same screen.
+  // This sentence has one job: say there is nothing to upload.
+  assert.doesNotMatch(message, /WhatsApp/i,
+    `${locale}.pay.proofClosed repeats the "message us" instruction away from the button that carries `
+    + 'it — the notice above this section already asks, and already offers the way');
+  assert.match(message, /ditutup|closed/i,
+    `${locale}.pay.proofClosed must say why there is nothing to send`);
+  assert.notEqual(message, MESSAGES[locale]['pay.proofRequired'],
+    `${locale} still asks a closed order for a receipt`);
+}
+
 console.log('closedOrderPayment selfcheck OK (a cancelled order stops handing out the bank account)');
