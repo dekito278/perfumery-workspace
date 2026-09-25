@@ -7,6 +7,7 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
+import { RAYSPEED_MEASURED_ON, rayspeedServes } from '@/data/rayspeedRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
 import { isAsiaCountry, internationalPriceFor } from '@/utils/shippingRegion.js';
@@ -266,8 +267,10 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           </p>
           <h1 className="text-2xl font-bold text-[#111827]">Hitung ongkir ke luar negeri</h1>
           <p className="text-sm font-medium text-[#6b7280]">
-            Tarif LTU Express, berlaku {EXPORT_RATE_EFFECTIVE}. Dipakai untuk menjawab pertanyaan pembeli
-            sebelum ordernya dibuat.
+            {rayspeedServes(countryCode)
+              ? `Tarif RaySpeed, diukur ${RAYSPEED_MEASURED_ON}.`
+              : `Tarif LTU Express, berlaku ${EXPORT_RATE_EFFECTIVE}.`}
+            {' '}Dipakai untuk menjawab pertanyaan pembeli sebelum ordernya dibuat.
           </p>
         </header>
 
