@@ -1,4 +1,9 @@
-import { getBespokeItem, isBespokeOrder } from '@/services/orderService.js';
+import {
+  getBespokeItem,
+  getOrderReservationExpiresAt,
+  isBespokeOrder,
+  PAYMENT_RESERVATION_TTL_HOURS,
+} from '@/services/orderService.js';
 
 // Single source for payment-status labels in order lists, order detail, and customer tracking.
 // Consolidated to stop 7 copies drifting — e.g. desktop showed "Expired" while mobile showed
@@ -187,3 +192,44 @@ export const getNextOrderStatusForPayment = (paymentStatus) => {
   if (['failed', 'expired'].includes(paymentStatus)) return 'cancelled';
   return 'pending_payment';
 };
+
+/**
+ * What is happening to this order's stock, in three states.
+ *
+ * The desktop worked it out twice, in an inline ternary on the order list and another on the order
+ * detail, and the two had already drifted: the list guarded the expiry before printing "sampai X", the
+ * detail did not — so an order with nothing to count from read "Stok reserved sampai N/A". The phone
+ * worked it out nowhere and said nothing at all, on either screen, which on a phone-first shop means
+ * the question "is this order still holding a bottle" had no answer where it is usually asked.
+ *
+ * Stock is the scarcest thing here. Returning the state rather than a sentence keeps each screen's own
+ * date formatting — and keeps a missing expiry away from them, because MobileOrdersPage's formatDate has
+ * no empty guard and Intl throws a RangeError on an invalid date.
+ */
+export const describeStockReservation = (order = {}) => {
+  if (order?.inventoryDeducted) {
+    return { state: 'reserved', expiresAt: getOrderReservationExpiresAt(order) || '' };
+  }
+  if (['expired', 'failed', 'refunded'].includes(order?.paymentStatus) || order?.status === 'cancelled') {
+    return { state: 'released', expiresAt: '' };
+  }
+  return { state: 'pending', expiresAt: '' };
+};
+
+/** The one wording for the three states; the caller brings its own date format. */
+export const stockReservationLabel = (reservation, formatDate = (value) => value) => {
+  if (reservation?.state === 'released') return 'Stok dilepas';
+  if (reservation?.state === 'reserved') {
+    return reservation.expiresAt ? `Stok reserved sampai ${formatDate(reservation.expiresAt)}` : 'Stok reserved';
+  }
+  return `Batas reserved ${PAYMENT_RESERVATION_TTL_HOURS} jam`;
+};
+
+/** Tailwind tone per state, so four screens do not each invent a colour for "released". */
+export const stockReservationTone = (reservation) => (
+  reservation?.state === 'reserved'
+    ? 'bg-emerald-50 text-emerald-700'
+    : reservation?.state === 'released'
+      ? 'bg-stone-100 text-stone-600'
+      : 'bg-amber-50 text-amber-800'
+);

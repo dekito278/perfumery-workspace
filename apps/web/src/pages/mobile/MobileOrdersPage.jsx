@@ -36,6 +36,7 @@ import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
   countOrdersByFilter,
+  describeStockReservation,
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
   isArchivedOrder,
@@ -43,6 +44,8 @@ import {
   isShippedOrder,
   matchesOrderFilter,
   paymentStatusLabels,
+  stockReservationLabel,
+  stockReservationTone,
 } from '@/utils/orderWorkflow.js';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 
@@ -687,6 +690,9 @@ const MobileOrdersPage = () => {
                   <div className="text-[10px] font-bold uppercase text-[#6b7280]">{order.quantity} item</div>
                   <div className="text-base font-bold text-[#1f2937]">{formatTotal(order.subtotal)}</div>
                   {voucherSnapshot ? <div className="text-[11px] font-bold text-editorial-charcoal">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
+                  <div className={`mt-1 w-fit rounded-full px-2 py-0.5 text-[10px] font-bold ${stockReservationTone(describeStockReservation(order))}`}>
+                    {stockReservationLabel(describeStockReservation(order), formatDate)}
+                  </div>
                   {/* Without this the lines above never added up to the figure beside them. */}
                   {getOrderShippingFee(order) ? <div className="text-[11px] font-semibold text-[#6b7280]">Termasuk ongkir {formatTotal(getOrderShippingFee(order))}</div> : null}
                 </div>
