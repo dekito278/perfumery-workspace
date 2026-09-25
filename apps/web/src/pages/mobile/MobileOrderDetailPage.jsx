@@ -10,7 +10,16 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
-import { getNextOrderStatusForPayment, hasShippingLabelPrinted, isArchivedOrder, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import {
+  describeStockReservation,
+  getNextOrderStatusForPayment,
+  hasShippingLabelPrinted,
+  isArchivedOrder,
+  isShippedOrder,
+  paymentStatusLabels,
+  stockReservationLabel,
+  stockReservationTone,
+} from '@/utils/orderWorkflow.js';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -827,6 +836,12 @@ const MobileOrderDetailPage = () => {
               {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
             </StatusChip>
             {order.trackingNumber ? <StatusChip size="sm" tone="success">Resi siap</StatusChip> : null}
+            {/* Is this order still holding a bottle, and until when. The desktop has said so on both of
+                its screens all along; the phone said nothing, and the phone is where the question is
+                actually asked. */}
+            <span className={`rounded-full px-3 py-1 text-[10px] font-bold ${stockReservationTone(describeStockReservation(order))}`}>
+              {stockReservationLabel(describeStockReservation(order), formatDate)}
+            </span>
           </div>
         </section>
 

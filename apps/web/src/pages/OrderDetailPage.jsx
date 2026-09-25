@@ -72,12 +72,15 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import {
+  describeStockReservation,
   getBespokeOrderSummary,
   getNextOrderStatusForPayment,
   hasShippingLabelPrinted,
   isArchivedOrder,
   isShippedOrder,
   paymentStatusLabels,
+  stockReservationLabel,
+  stockReservationTone,
 } from '@/utils/orderWorkflow.js';
 import { formatClientContext } from '@/utils/clientContext.js';
 
@@ -284,6 +287,7 @@ const OrderDetailPage = () => {
   const area = getNoteValue(noteRows, 'Area');
   const shipping = getNoteValue(noteRows, 'Shipping');
   const reservationExpiresAt = getOrderReservationExpiresAt(order);
+  const stockReservation = describeStockReservation(order);
   const hasPaymentProofPath = Boolean(order?.paymentProofUrl);
   const paymentProofStatus = order?.paymentProofStatus || 'missing';
   const paymentProofIsImage = String(order?.paymentProofContentType || '').startsWith('image/');
@@ -791,15 +795,9 @@ const OrderDetailPage = () => {
               {formatClientContext(order.clientContext) ? ` / ${formatClientContext(order.clientContext)}` : ''}
             </p>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
-              {order.inventoryDeducted ? (
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                  Stok reserved sampai {formatDate(reservationExpiresAt)}
-                </span>
-              ) : ['expired', 'failed', 'refunded'].includes(order.paymentStatus) || order.status === 'cancelled' ? (
-                <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-600">Stok dilepas</span>
-              ) : (
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">Batas reserved {PAYMENT_RESERVATION_TTL_HOURS} jam</span>
-              )}
+              <span className={`rounded-full px-3 py-1 ${stockReservationTone(stockReservation)}`}>
+                {stockReservationLabel(stockReservation, formatDate)}
+              </span>
             </div>
             <div className="mt-5 grid grid-cols-5 gap-2">
               {statusSteps.map((step, index) => {

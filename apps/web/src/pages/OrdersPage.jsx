@@ -15,7 +15,6 @@ import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import {
   getBespokeItem,
   getBespokeProductionStatusLabels,
-  getOrderReservationExpiresAt,
   getOrderStatusLabels,
   getShipmentStatusLabels,
   isBespokeOrder,
@@ -34,12 +33,15 @@ import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
   countOrdersByFilter,
+  describeStockReservation,
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
   isArchivedOrder,
   isShippedOrder,
   matchesOrderFilter,
   paymentStatusLabels,
+  stockReservationLabel,
+  stockReservationTone,
 } from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
@@ -505,7 +507,6 @@ const OrdersPage = () => {
               const bespoke = isBespokeOrder(order);
               const bespokeItem = getBespokeItem(order);
               const bespokeSummary = getBespokeOrderSummary(order);
-              const reservationExpiresAt = getOrderReservationExpiresAt(order);
               const voucherSnapshot = getOrderVoucherSnapshot(order);
               const discountedItemLines = getDiscountedVoucherCartLines(getOrderProductItems(order), voucherSnapshot || {});
 
@@ -638,13 +639,9 @@ const OrdersPage = () => {
                           Bukti ditolak
                         </span>
                       ) : null}
-                      {order.inventoryDeducted ? (
-                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                          Stok reserved{reservationExpiresAt ? ` sampai ${formatDate(reservationExpiresAt)}` : ''}
-                        </span>
-                      ) : ['expired', 'failed', 'refunded'].includes(order.paymentStatus) || order.status === 'cancelled' ? (
-                        <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-600">Stok dilepas</span>
-                      ) : null}
+                      <span className={`rounded-full px-3 py-1 ${stockReservationTone(describeStockReservation(order))}`}>
+                        {stockReservationLabel(describeStockReservation(order), formatDate)}
+                      </span>
                       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                         <button
                           type="button"
