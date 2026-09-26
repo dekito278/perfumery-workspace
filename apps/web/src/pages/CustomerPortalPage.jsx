@@ -531,26 +531,43 @@ const OrderTimeline = ({ order, compact = false }) => {
   );
 };
 
-const VoucherSummary = ({ order, compact = false }) => {
+// Named VoucherSummary, gated on `voucherSnapshot`, and returning null without one — while the freight
+// line lived inside it. So the only orders whose total could be taken apart were the ones that happened
+// to carry a voucher code. Measured with the real helpers on an ordinary order: items Rp 279.000 beside
+// a Rp 289.000 total, and the Rp 10.000 between them never named anywhere on the screen.
+//
+// Studio had the identical bug and it was fixed there (totalIsExplained.selfcheck.mjs). That guard left
+// the buyer's screens alone on the reasoning that a buyer sees shipping at checkout and on the invoice —
+// true of both, and the portal is neither.
+//
+// The panel is now named for the question it answers, and it appears whenever there is something to
+// explain: a voucher, freight, or both. An order read through a lookup that returns no items has no
+// freight to name (getOrderShippingFee refuses to call the whole total freight), so it still shows
+// nothing rather than inventing a breakdown.
+const OrderTotals = ({ order, compact = false }) => {
   const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(order);
-  if (!voucherSnapshot) return null;
-
   const shippingFee = getOrderShippingFee(order);
+  if (!voucherSnapshot && !shippingFee) return null;
+
   return (
     <div className={`mt-3 rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-editorial-charcoal`}>
       <div className="flex justify-between gap-3">
         <span>{t('cust.subtotalProducts')}</span>
         <span>{formatTotal(getOrderProductsSubtotal(order))}</span>
       </div>
-      <div className="mt-2 flex justify-between gap-3">
-        <span>{t('cust.voucherCode', { code: voucherSnapshot.code })}</span>
-        <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
-      </div>
-      <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
-        <span>{t('cust.subtotalAfterVoucher')}</span>
-        <span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span>
-      </div>
+      {voucherSnapshot ? (
+        <>
+          <div className="mt-2 flex justify-between gap-3">
+            <span>{t('cust.voucherCode', { code: voucherSnapshot.code })}</span>
+            <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
+          </div>
+          <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+            <span>{t('cust.subtotalAfterVoucher')}</span>
+            <span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span>
+          </div>
+        </>
+      ) : null}
       {shippingFee ? (
         <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
           <span>{t('cust.shipping')}</span>
@@ -597,7 +614,7 @@ const OrderItems = ({ order, compact = false }) => {
           </div>
         );
       })}
-      <VoucherSummary order={order} compact={compact} />
+      <OrderTotals order={order} compact={compact} />
     </div>
   );
 };
