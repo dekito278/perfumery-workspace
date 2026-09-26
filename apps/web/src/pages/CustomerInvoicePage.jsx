@@ -11,7 +11,7 @@ import {
   getCustomerPortalByCode,
   verifyCustomerPortalSecurity,
 } from '@/services/customerService.js';
-import { getShipmentStatusLabels } from '@/services/orderService.js';
+import { getShipmentStatusLabels, isOrderClosedForPayment } from '@/services/orderService.js';
 import { buildCourierTrackingSearchUrl, buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import {
   getOrderProductItems,
@@ -211,7 +211,11 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
           {/* A closed order has no updates to follow. The old sentence promised them anyway. */}
           {t(shipmentState === 'closed' ? 'inv.keepThisClosed' : 'inv.keepThis')}
           <div className="mt-3 flex flex-wrap gap-2">
-            {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+            {/* The delivery block above already refuses to promise a parcel for a closed order. This
+                button was the one thing on the invoice that still offered a way to pay for one: it read
+                payment_status alone, which cannot see an order cancelled while its payment status still
+                says 'unpaid'. Same question the payment page and the portal ask. */}
+            {order.paymentUrl && !isOrderClosedForPayment(order) && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
               <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
                 <CreditCard className="h-4 w-4" />
                 {t('inv.continuePay')}
