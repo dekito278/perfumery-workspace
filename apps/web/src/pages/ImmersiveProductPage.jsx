@@ -19,6 +19,7 @@ import {
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import PriceNote from '@/components/storefront/PriceNote.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -307,6 +308,14 @@ const ImmersiveProductPage = ({ product, story, mobile = false }) => {
                 about three and a half times that. */}
             {exportPrice ? null : <span>{selectedPriceLabel}</span>}
           </div>
+
+          {/* The member price, on the one page that replaces the ordinary product page entirely.
+              PublicProductDetailPage and MobileProductDetailPage both return into this component as soon
+              as a product has a story, so their PriceNote never renders for those products — and the
+              shop's one immersive story is the page the atelier invested most in. PriceNote decides for
+              itself whether there is anything to say, including staying silent for a reader being quoted
+              an export price. */}
+          <PriceNote product={product} variant={selectedVariant} className="imm-product__price-note" />
 
           {variants.length > 1 ? (
             <label className="imm-product__variant">
