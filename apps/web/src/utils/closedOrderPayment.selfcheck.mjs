@@ -21,6 +21,9 @@ import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const walkAll = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (
+  entry.isDirectory() ? walkAll(join(dir, entry.name)) : [join(dir, entry.name)]
+));
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf8'));
 
@@ -29,9 +32,32 @@ const page = read('pages', 'PaymentPage.jsx');
 // --- 1. The page asks the same question the rest of the app asks ----------------------------------------
 assert.match(page, /const closedForPayment = isOrderClosedForPayment\(session\);/,
   'the screen must read the shared helper, not re-invent which statuses count as closed');
-const service = read('services', 'orderService.js');
+// Where the helper lives, followed rather than assumed. It started in orderService, moved to a leaf
+// util when the invoice's delivery block turned out to hold a word-for-word second copy of it, and this
+// guard both READS and RUNS it — so it resolves the re-export instead of pinning a file, the mistake
+// productBadge.selfcheck.mjs made twice.
+const orderService = read('services', 'orderService.js');
+// Either spelling counts as delegation: `export { x } from '…'`, or an import followed by a bare
+// re-export — which is what this module needs, since two of its own functions call it and
+// `export … from` would not bind the name locally.
+const delegate = orderService.match(/(?:import|export) \{[^}]*\bisOrderClosedForPayment\b[^}]*\} from '@\/utils\/([\w.]+)'/);
+const service = delegate ? read('utils', delegate[1]) : orderService;
 assert.match(service, /export const isOrderClosedForPayment = \(order = \{\}\) => \(\s*order\?\.status === 'cancelled' \|\| \['expired', 'failed', 'refunded'\]\.includes\(order\?\.paymentStatus\)/,
   'and that helper still covers a cancelled order and the three dead payment statuses');
+
+// The invoice's delivery block asks the same question and must not grow a second copy of the answer.
+const shipment = read('utils', 'invoiceShipment.js');
+assert.match(shipment, /isClosedOrder = isOrderClosedForPayment/,
+  'invoiceShipment defines its own closed-order rule again — it was byte-for-byte identical once already');
+
+// And exactly one file defines it. A second copy that happens to be identical would pass every
+// assertion above while putting the rule back into two places, which is the state this came from.
+const definitions = walkAll(root)
+  .filter((file) => /\.(js|jsx)$/.test(file) && !file.endsWith('.selfcheck.mjs'))
+  .filter((file) => /export const isOrderClosedForPayment = /.test(readFileSync(file, 'utf8')))
+  .map((file) => file.slice(root.length + 1));
+assert.deepEqual(definitions, ['utils/orderClosed.js'],
+  `the closed-order rule is defined in ${definitions.length} places: ${definitions.join(', ')}`);
 
 // --- 2. Nothing that invites a transfer may render for a closed order ------------------------------------
 // The bank account, the account holder and the "transfer exactly this much" step are the three things
