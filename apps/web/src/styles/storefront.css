@@ -7045,6 +7045,23 @@ main :is(a, figure, picture, div, span):has(> img) {
   color: var(--imm-muted);
 }
 
+/* PriceNote is written for the light storefront — amber on cream. Here it sits on #1a0f14, so the
+   colours come from the immersive tokens instead. Selected structurally rather than by utility class:
+   a Tailwind class name is not a hook this stylesheet gets to rely on. */
+.imm-product__price-note {
+  justify-content: center;
+  margin: -20px 0 28px;
+  color: var(--imm-accent);
+}
+
+.imm-product__price-note > span + span {
+  opacity: 0.72;
+}
+
+.imm-product__price-note > button {
+  color: inherit;
+}
+
 .imm-product__cta {
   display: inline-flex;
   align-items: center;

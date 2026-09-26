@@ -13,7 +13,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -138,6 +138,44 @@ for (const surface of ['pages/mobile/MobileProductDetailPage.jsx']) {
 for (const pdp of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
   assert.match(read(...pdp.split('/')), /<PriceNote product=\{product\} variant=\{selectedVariant\}/, `${pdp} must hand PriceNote the chosen variant`);
 }
+
+// --- 8b. And no product page escapes by being a different page -------------------------------------------
+// The two lists above are written by hand, and one had already grown from four surfaces to six. What
+// neither could see is a page that REPLACES a product page: PublicProductDetailPage and
+// MobileProductDetailPage both `return <ImmersiveProductPage …>` as soon as a product has a story, so
+// their PriceNote never rendered for those products at all. The shop's one immersive story — the page
+// this atelier invested most in — quoted the retail price with no way to learn a member price exists.
+//
+// So the subject forms itself: every page that renders the shared product visual is a page showing a
+// product to a buyer. Three are exempt, each for what it IS rather than for its name.
+const pagesRoot = join(root, 'pages');
+const walkPages = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (
+  entry.isDirectory() ? walkPages(join(dir, entry.name)) : [join(dir, entry.name)]
+));
+const NOT_SELLING_A_PRICE = new Map([
+  ['ProductListPage.jsx', 'Studio: pricing a product to manage it, not offering one to a reader'],
+  ['MobileProductListPage.jsx', 'Studio, same'],
+  ['CartPage.jsx', 'a line already chosen; the member saving is on the checkout button, checked in section 9'],
+  ['MobileCartPage.jsx', 'same'],
+  ['CheckoutPage.jsx', 'same'],
+  ['MobileCheckoutPage.jsx', 'same'],
+]);
+const showsAProduct = walkPages(pagesRoot)
+  .filter((file) => file.endsWith('.jsx'))
+  .map((file) => [file.slice(pagesRoot.length + 1), stripComments(readFileSync(file, 'utf8'))])
+  .filter(([, source]) => /<ProductVisual/.test(source));
+assert.ok(showsAProduct.length >= 10,
+  `only ${showsAProduct.length} pages render the product visual — the scan is broken, not the code`);
+
+let sellingPages = 0;
+for (const [name, source] of showsAProduct) {
+  if (NOT_SELLING_A_PRICE.has(name.split('/').pop())) continue;
+  assert.match(source, /<CardPrice|<PriceNote/,
+    `${name} shows a product to a buyer without the member price beside its own. A visitor there never `
+    + 'learns one exists, which is the whole point of the nudge.');
+  sellingPages += 1;
+}
+assert.ok(sellingPages >= 6, `only ${sellingPages} selling pages checked — the exemptions swallowed them`);
 
 // --- 9. The cart saving on the checkout button ----------------------------------------------------------
 // A cart line's `slug` is the cartSlug (product slug + variant suffix). The index is keyed by product
