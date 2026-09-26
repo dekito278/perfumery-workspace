@@ -112,7 +112,15 @@ for (const [name, file] of [
   // forms that load `limited` perfectly well — a guard pinned to a line that merely happened to contain
   // the words it wanted.
   assert.match(source, /^ {2}limited: false,$/m, `${name} form has no default for the badge`);
-  assert.match(source, /\.\.\.product,/, `${name} form does not load the product into its editable copy`);
+  // ...and the same assertion broke a SECOND time, for the same reason, when the LOADER moved into a
+  // shared module too. Twice is a pattern: what this rule cares about is that the product reaches the
+  // editable copy, not which file the copy is built in. So it follows the delegation — if the form
+  // hands the job to a shared builder, the spread is checked there.
+  const loaderDelegate = source.match(/=\s*(toProductFormState)\s*;/)?.[1];
+  const loader = loaderDelegate ? read('utils', 'productFormState.js') : source;
+  assert.match(loader, /\.\.\.product,/,
+    `${name} form does not load the product into its editable copy`
+    + (loaderDelegate ? ` (checked in the shared ${loaderDelegate} it delegates to)` : ''));
 }
 
 // --- 7. Every surface that printed the raw category now composes both --------------------------------

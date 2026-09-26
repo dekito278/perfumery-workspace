@@ -15,12 +15,8 @@ import {
   formatRupiah,
   getProductPublishChecklist,
   getPrimaryVariant,
-  getProductRestockThreshold,
   getProductSlugConflicts,
-  getProductStockCorrections,
   getProductStorefrontPath,
-  getVisibleProductTags,
-  isProductDraft,
   normalizeProduct,
   PRODUCT_DRAFT_TAG,
   saveCustomProduct,
@@ -30,6 +26,7 @@ import WearPicker from '@/components/product/WearPicker.jsx';
 import TierPriceEditor from '@/components/product/TierPriceEditor.jsx';
 import { confirmAction } from '@/utils/confirmAction.js';
 import { snapshotProductForm } from '@/utils/productFormSnapshot.js';
+import { toProductFormState } from '@/utils/productFormState.js';
 
 export const emptyProduct = {
   name: '',
@@ -61,20 +58,8 @@ export const emptyProduct = {
   catalogVisible: true,
 };
 
-export const toEditableProduct = (product) => ({
-  ...product,
-  catalogVisible: !isProductDraft(product),
-  topNotes: product.topNotes.join(', '),
-  heartNotes: product.heartNotes.join(', '),
-  baseNotes: product.baseNotes.join(', '),
-  variants: product.variants,
-  tags: getVisibleProductTags(product).join(', '),
-  internalTags: product.tags.filter((tag) => !getVisibleProductTags(product).includes(tag)),
-  restockThreshold: getProductRestockThreshold(product),
-  stockAdjustmentNote: '',
-  stockCorrections: getProductStockCorrections(product),
-  images: product.images || (product.imageUrl ? [product.imageUrl] : []),
-});
+// One builder for both layouts — see utils/productFormState.js for what drifted and why.
+export const toEditableProduct = toProductFormState;
 
 const getTagsForVisibility = (tags, catalogVisible) => {
   const nextTags = String(tags || '')
