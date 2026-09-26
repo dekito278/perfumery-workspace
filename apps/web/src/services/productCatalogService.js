@@ -5,6 +5,7 @@ import { normalizeWear } from '@/utils/productWear.js';
 // No cycle: tierPricingService imports only the supabase client and a pure tier helper.
 import { listTierPricesForProduct, saveTierPrice } from '@/services/tierPricingService.js';
 import { planAutoTierPrices } from '@/utils/autoTierPrices.js';
+import { deleteProductImages } from '@/services/productImageStorageService.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
@@ -957,22 +958,37 @@ export const saveProductFeatured = async (productId, featured) => {
   return Boolean(featured);
 };
 
+// The files a deleted product leaves behind. Best-effort and never awaited: storage failing must not
+// turn a completed delete into a reported failure, and the row is already gone by the time this runs.
+const forgetProductImages = (urls) => {
+  if (!urls?.length) return;
+  deleteProductImages(urls).catch((cleanupError) => {
+    console.warn('Product image cleanup skipped:', cleanupError.message || cleanupError);
+  });
+};
+
 export const deleteCustomProduct = async (id) => {
   // A `custom-*` id never reached the database — it is a leftover from the old save fallback, which
   // invented one whenever a save failed. storefront_products.id is a uuid, so sending that id to
   // PostgREST answers 22P02 rather than deleting anything; evicting it locally IS the whole delete.
   // Without this branch those leftovers would become permanently undeletable now that failures throw.
   if (String(id).startsWith('custom-')) {
+    // Its images were uploaded to the bucket even though the row never existed, so they orphan too.
+    const stored = readStoredProducts().find((product) => String(product?.id) === String(id));
     removeStoredProduct(id);
     dispatchProductsUpdated();
+    forgetProductImages(stored?.image_urls || stored?.images);
     return;
   }
 
+  // The images come back from the row that is actually deleted rather than from whatever the caller was
+  // holding: this used to live in the page, so deleting a product from the PHONE left every one of its
+  // files in the bucket forever — unreachable, because the row that named them was gone.
   const { data, error } = await supabase
     .from('storefront_products')
     .delete()
     .eq('id', id)
-    .select('id');
+    .select('id, image_urls');
 
   if (error) {
     throw new Error(`Produk gagal dihapus: ${error.message}`);
@@ -986,6 +1002,9 @@ export const deleteCustomProduct = async (id) => {
 
   removeStoredProduct(id);
   dispatchProductsUpdated();
+  // Only now: the zero-row throw above is what proves the row is gone. Deleting the files first would
+  // strip the pictures off a product that RLS had refused to delete and that is still in the catalogue.
+  forgetProductImages(data[0]?.image_urls);
 };
 
 export const deductInventoryForOrder = async (order) => {

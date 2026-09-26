@@ -15,7 +15,6 @@ import {
   getProductRestockThreshold,
   getProductStorefrontPath,
 } from '@/services/productCatalogService.js';
-import { deleteProductImages } from '@/services/productImageStorageService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { confirmAction } from '@/utils/confirmAction.js';
 
@@ -60,11 +59,8 @@ const ProductListPage = () => {
   const handleDelete = async (product) => {
     if (!await confirmAction({ message: `Hapus produk "${product.name || product.id}" dari katalog? Tindakan ini tidak bisa dibatalkan.`, destructive: true })) return;
     try {
+      // deleteCustomProduct removes the orphaned images itself, from the row it actually deleted.
       await deleteCustomProduct(product.id);
-      // The product is gone, so its images are orphaned — remove them from storage (best-effort).
-      if (product.images?.length) {
-        deleteProductImages(product.images).catch((cleanupError) => console.warn('Product image cleanup skipped:', cleanupError.message || cleanupError));
-      }
       toast.success('Produk dihapus dari katalog custom');
     } catch (error) {
       toast.error(error.message || 'Gagal menghapus produk');
