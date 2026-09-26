@@ -346,7 +346,14 @@ export default async function handler(req, res) {
     if (subtotal <= 0) return jsonResponse(res, 422, { message: 'Order has no payable amount' });
 
     // 5. Customer (same upsert/dedupe the browser uses)
-    const customer = (await sbRpc('storefront_upsert_customer', {
+    //
+    // WITHOUT the order increment. This runs before the order exists, before voucher quota and before
+    // stock — and all three can still refuse. Incrementing here meant a checkout that failed on any of
+    // them left the buyer's order_count permanently one too high, which is not just a number on the
+    // customer screen: customerService counts "repeat" buyers as order_count > 1 and totals every count
+    // for the orders figure, so one failed checkout promotes a first-time buyer to a returning one
+    // (audit round 9, O-3). The increment happens below, once the order is real.
+    const customerArgs = {
       // Sanitised, not trusted: the database checks ^SOLI[0-9]{5}$, and a buyer who mistypes her own
       // code must not lose the order over an optional field (2026-09-21, SOLIO932).
       p_customer_code: asCustomerCode(input.customer?.code),
@@ -355,7 +362,10 @@ export default async function handler(req, res) {
       p_delivery_address: input.delivery?.address || null,
       p_delivery_area: input.delivery?.area || null,
       p_notes: null,
-      p_increment_order: true,
+    };
+    const customer = (await sbRpc('storefront_upsert_customer', {
+      ...customerArgs,
+      p_increment_order: false,
     }))?.[0] || null;
 
     // 6. Build the order lines + brief (bespoke uses the shared isomorphic builders + server prices/labels)
@@ -485,6 +495,15 @@ export default async function handler(req, res) {
         throw new Error(stockError.message || 'Stok tidak cukup untuk salah satu produk');
       }
     }
+
+    // NOW the order exists, its voucher quota is reserved and its stock is held. Counting it here means
+    // the tally can only ever be short, never inflated — and short by a failure that left a real order
+    // standing, which is the direction to be wrong in. Swallowed for the same reason the alert below is:
+    // a customer metric must not cost a buyer her order.
+    await sbRpc('storefront_upsert_customer', { ...customerArgs, p_increment_order: true })
+      .catch((countError) => {
+        console.warn('Order created but customer order_count not incremented:', countError?.message || countError);
+      });
 
     // Tell the owner. Awaited (serverless freezes after the response) but never fatal — sendOrderAlert
     // swallows its own failures, so a dead webhook cannot cost us a paid order.
