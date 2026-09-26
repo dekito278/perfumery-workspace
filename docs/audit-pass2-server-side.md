@@ -17,6 +17,30 @@ order INSERT are public/anon. Everything below follows from that.
 
 ---
 
+## STATUS PER 2026-09-27 — diperiksa ulang di kode, bukan dibaca dari dokumen ini
+
+Tabel di atas ditulis sebelum audit round 7 dan round 9 dikerjakan. Tiga dari lima temuannya sudah
+ditutup, dan satu lagi jauh lebih kecil daripada yang tertulis. Tiap baris di bawah punya berkas
+pembuktinya; kalau dokumen dan berkas berbeda, berkasnya yang benar.
+
+| # | Status hari ini | Bukti |
+|---|---|---|
+| 1 | **Sebagian besar tertutup.** Cabang tanpa jawaban keamanan tidak lagi memulangkan PII: nama di-mask, `contact`/alamat tidak ikut sama sekali. Yang tersisa: sebuah kode masih bisa **diuji-ada**, dan riwayat order (nomor, item, total, status bayar — tanpa kontak/alamat) masih ikut untuk kode tanpa gembok. Entropinya masih `SOLI` + 5 digit. | `20260730120000_customer_privacy_dedup_and_mask.sql:141-205`, `generate_storefront_customer_code()` di `20260508110000_storefront_customers.sql:41` |
+| 2 | **TERTUTUP.** Checkout memanggil `/api/orders/create` (service role, hitung ulang semua harga); `createOrder()` sisi klien hanya hidup kalau `VITE_AUTHORITATIVE_ORDERS='false'` — dan sejak kebijakan INSERT jadi admin-only, ia pun akan ditolak RLS. | `useCheckoutFlow.js:564`, `orderService.js:1184`, `20260921090000_admin_can_record_an_order.sql` |
+| 3 | **MASIH TERBUKA.** Halaman invoice tetap memuat seluruh portal lewat `?code=`. Butuh kolom + RPC baru, jadi SQL — bukan pekerjaan yang bisa diselesaikan dari sisi kode saja. | `CustomerInvoicePage.jsx:288,305` |
+| 4a | **TERTUTUP.** `storefront_lookup_customer` tinggal `customer_code, customer_name, delivery_area`; `storefront_account_payload(uuid)` dicabut dari anon. | `20260819120000_customer_lookup_pii_lockdown.sql` |
+| 4b | **Sebagian.** Path bukti wajib berada di folder order itu sendiri, bukti yang sudah disetujui tidak bisa ditimpa, dan yang dipulangkan tinggal yang dirender halaman bayar. Kepemilikan sengaja belum dipasang — alasannya tertulis di migrasinya (butuh jawaban keamanan di alur unggah, artinya mengubah UI pembeli). | `20260819122000_voucher_release_and_payment_proof_hardening.sql:72-140` |
+
+**Catatan bucket `orders/`:** `orders/` bukan bucket, melainkan awalan path di dalam bucket
+`storefront-payment-proofs`. Bucket itu privat, dan sejak `20260817120000` SELECT/UPDATE/DELETE-nya
+benar-benar `public.is_admin()` — dulu namanya "admin" tapi isinya cuma `authenticated`, sehingga setiap
+pelanggan yang login Google bisa membaca bukti transfer orang lain. Yang masih terbuka: INSERT tetap
+boleh anon **tanpa batasan path**, jadi berkas bisa diunggah ke path mana pun di bucket itu (tidak
+terbaca siapa pun selain admin, tapi tidak terbatas jumlahnya). Menutupnya = kebijakan storage baru, SQL.
+
+
+---
+
 ## 1. Portal enumeration — `storefront_customer_portal`
 
 **Evidence:** `20260508133000_storefront_customer_security_challenge.sql:62-75` — returns full customer +
