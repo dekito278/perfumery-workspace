@@ -11,6 +11,7 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
+  bespokeBriefRows,
   describeStockReservation,
   getNextOrderStatusForPayment,
   hasShippingLabelPrinted,
@@ -153,19 +154,6 @@ const getFulfillmentStep = (order) => {
 };
 
 
-const bespokeDetailRows = (item) => [
-  ['Nama parfum', item?.perfumeName],
-  ['Aroma', item?.preferredNotes || item?.notes],
-  ['Momen', item?.occasion],
-  ['Ukuran', item?.size],
-  ['Botol', item?.bottleType],
-  ['Cap', item?.capDesign],
-  ['Label', item?.labelDesign],
-  ['Material', item?.exoticMaterial],
-  ['Budget', item?.budget],
-  ['Reference', item?.referenceProductName],
-  ['Story', item?.story],
-].filter(([, value]) => value);
 
 const getProofTimeline = (logs = []) => logs
   .filter((log) => paymentProofAuditActions.includes(log.action))
@@ -1309,7 +1297,7 @@ const MobileOrderDetailPage = () => {
               Bespoke brief
             </div>
             <div className="grid gap-2">
-              {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+              {bespokeBriefRows(bespokeItem).map(([label, value]) => (
                 <div key={label} className="grid grid-cols-[76px_1fr] gap-2 text-xs font-semibold leading-snug">
                   <span className="text-[#6b7280]">{label}</span>
                   <BriefText text={value} className="text-[#1f2937]" />

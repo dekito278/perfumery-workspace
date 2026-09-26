@@ -32,6 +32,7 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
+  bespokeBriefRows,
   countOrdersByFilter,
   describeStockReservation,
   getBespokeOrderSummary,
@@ -111,19 +112,6 @@ const OrderMoneyBreakdown = ({ order }) => {
   );
 };
 
-const bespokeDetailRows = (item) => [
-  ['Preferred aroma', item?.preferredNotes || item?.notes],
-  ['Story', item?.story],
-  ['Occasion', item?.occasion],
-  ['Size', item?.size],
-  ['Bottle', item?.bottleType],
-  ['Cap', item?.capDesign],
-  ['Label', item?.labelDesign],
-  ['Avoided notes', item?.avoidedNotes],
-  ['Exotic material', item?.exoticMaterial],
-  ['Reference scent', item?.referenceProductName],
-  ['Budget', item?.budget],
-].filter(([, value]) => value);
 
 const OrdersPage = () => {
   const navigate = useNavigate();
@@ -577,7 +565,7 @@ const OrdersPage = () => {
                             Buka detail brief
                           </summary>
                           <div className="mt-3 grid gap-2 border-t border-editorial-charcoal/10 pt-3 sm:grid-cols-2">
-                            {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                            {bespokeBriefRows(bespokeItem).map(([label, value]) => (
                               <div key={label} className={`text-xs font-semibold text-muted-foreground ${label === 'Preferred aroma' ? 'sm:col-span-2' : ''}`}>
                                 <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{label}</span>
                                 <BriefText text={value} />
