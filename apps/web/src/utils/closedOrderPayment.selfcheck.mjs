@@ -126,6 +126,84 @@ for (const file of prints) {
 }
 assert.ok(asked >= 2, `only ${asked} stored-order payment screens checked — the derivation lost them`);
 
+// --- 5b. And every screen that offers a WAY to pay, not only the ones printing the account ------------
+// Printing the bank account was one shape of the offer. A button to /payment is the other, and the
+// invoice had it: `order.paymentUrl && ['unpaid','pending'].includes(order.paymentStatus)`, which cannot
+// see an order cancelled while its payment status still reads alive.
+//
+// This subject forms itself too: a page that loads an order through the portal lookup (the same set as
+// maskedCustomerIsExplained) and links to /payment. Studio's order screens reach the link through
+// getOrders, and the bespoke pages offer it for an order they are creating in the same submit — both are
+// outside by construction, so there is nothing to exempt and nothing to remember to grow.
+const offersAWayToPay = walk(pagesRoot).filter((file) => {
+  if (!file.endsWith('.jsx')) return false;
+  const source = stripComments(readFileSync(file, 'utf8'));
+  return /getCustomerPortalByCode|verifyCustomerPortalSecurity/.test(source) && /\?order=/.test(source);
+});
+// A floor, not a pin: a screen added tomorrow should be held to the rule below, not rejected for
+// existing. Losing one means the scan broke rather than the code improving.
+assert.ok(offersAWayToPay.length >= 2,
+  `expected at least the portal and the invoice, found ${offersAWayToPay.length} — the scan is broken`);
+
+// Checked inside the expression that DECIDES the offer, not anywhere in the file: both of these files
+// mention the helper elsewhere, so a file-wide search would pass over a reverted button. The innermost
+// expression around the URL is only the template that builds it, so walk outward until the level that
+// actually reads the order's payability, and hold that one to the rule.
+const enclosingLevels = (source, at, levels = 6) => {
+  const found = [];
+  let from = at;
+  for (let level = 0; level < levels; level += 1) {
+    let depth = 0;
+    let open = -1;
+    for (let i = from; i >= 0; i -= 1) {
+      if (source[i] === '}') depth += 1;
+      else if (source[i] === '{') {
+        if (depth === 0) { open = i; break; }
+        depth -= 1;
+      }
+    }
+    if (open === -1) break;
+    depth = 0;
+    let close = -1;
+    for (let i = open; i < source.length; i += 1) {
+      if (source[i] === '{') depth += 1;
+      else if (source[i] === '}') {
+        depth -= 1;
+        if (depth === 0) { close = i; break; }
+      }
+    }
+    if (close === -1) break;
+    found.push(source.slice(open, close + 1));
+    from = open - 1;
+  }
+  return found;
+};
+
+let gates = 0;
+for (const file of offersAWayToPay) {
+  const name = file.slice(file.lastIndexOf('/') + 1);
+  const source = stripComments(readFileSync(file, 'utf8'));
+  for (const found of source.matchAll(/\?order=/g)) {
+    // Which top-level declaration this occurrence sits in. A *Path builder composes the URL and offers
+    // nothing; the portal decides its offer in canOpenPayment and canUploadPaymentProof, which section 6
+    // executes rather than reads. Identified by the declaration, not by a window of characters.
+    const declarations = [...source.matchAll(/^const (\w+) = /gm)].filter((match) => match.index < found.index);
+    const holder = declarations.length ? declarations[declarations.length - 1][1] : '';
+    if (/^build\w*Path$/.test(holder)) continue;
+
+    const levels = enclosingLevels(source, found.index);
+    assert.ok(levels.length, `${name}: could not read the expression around the payment link in ${holder}`);
+    const deciding = levels.find((level) => /paymentStatus|paymentUrl/.test(level));
+    assert.ok(deciding,
+      `${name} renders a payment link with nothing above it reading the order's payment state at all`);
+    assert.match(deciding, /isOrderClosedForPayment|canOpenPayment|canUploadPaymentProof/,
+      `${name} offers a link to /payment without asking whether the order is closed. A buyer opening a `
+      + 'cancelled order is handed a button that takes her to a page telling her not to pay.');
+    gates += 1;
+  }
+}
+assert.ok(gates >= 1, `no payment-link gate was checked — the walk lost them`);
+
 // --- 6. The rule itself, and the portal's own predicates, RUN rather than described --------------------
 // The helper's text is asserted above; this evaluates that same text, so the states below are decided by
 // the real expression and not by a second copy of it written here.
@@ -204,4 +282,4 @@ const live = { ...swept, status: 'pending_payment', paymentStatus: 'unpaid' };
 assert.equal(portal.isPayableOrder(live), true, 'an unpaid manual order is still payable');
 assert.equal(portal.canUploadPaymentProof(live), true, 'and can still send its transfer receipt');
 
-console.log(`closedOrderPayment selfcheck OK (a cancelled order stops handing out the bank account, on ${asked} screens that load one)`);
+console.log(`closedOrderPayment selfcheck OK (a cancelled order stops handing out the bank account on ${asked} screens that load one, and ${gates} payment link gated on the same question)`);
