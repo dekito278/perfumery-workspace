@@ -26,6 +26,7 @@ import {
   getOrderStatusLabels,
   getShipmentStatusLabels,
   isBespokeOrder,
+  isOrderClosedForPayment,
 } from '@/services/orderService.js';
 import { buildCourierTrackingSearchUrl, buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
@@ -115,7 +116,14 @@ const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobi
 const CUSTOMER_CODE_LAST_STORAGE_KEY = 'dekito.storefront.customerCode.last.v1';
 const DOKU_PAYMENT_TTL_MINUTES = 60;
 const isDokuPayment = (order) => order?.paymentProvider === 'doku';
-const isPayableOrder = (order) => ['unpaid', 'pending'].includes(order?.paymentStatus);
+// A closed order is not payable however alive its payment_status still reads. The reservation sweep
+// pairs status:'cancelled' with payment_status:'expired' and Studio's cancel does the same, so the
+// status alone would usually be enough — but "usually" is what left this screen contradicting the
+// payment page. isOrderClosedForPayment is the one the payment page and the admin proof review already
+// ask; the portal asks it too now.
+const isPayableOrder = (order) => (
+  ['unpaid', 'pending'].includes(order?.paymentStatus) && !isOrderClosedForPayment(order)
+);
 const getDokuExpiryDate = (order) => {
   const explicitExpiry = order?.paymentExpiresAt ? new Date(order.paymentExpiresAt) : null;
   if (explicitExpiry && Number.isFinite(explicitExpiry.getTime())) return explicitExpiry;
@@ -137,8 +145,12 @@ const canOpenPayment = (order) => Boolean(
   && (order?.paymentUrl || isManualTransferPayment(order?.paymentProvider))
   && !isDokuPaymentExpired(order)
 );
+// This read `paymentStatus !== 'paid'`, which is true of an expired one — so an order the nightly sweep
+// had already cancelled kept offering "Upload bukti transfer" as the portal's primary black button. The
+// payment page it links to refuses the same order outright. One of the two screens had to be wrong.
 const canUploadPaymentProof = (order) => Boolean(
   isManualTransferPayment(order?.paymentProvider)
+  && !isOrderClosedForPayment(order)
   && order?.paymentStatus !== 'paid'
   && !['submitted', 'approved'].includes(order?.paymentProofStatus || 'missing')
 );
