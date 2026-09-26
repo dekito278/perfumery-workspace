@@ -70,17 +70,30 @@ const walk = (dir) => {
 };
 walk(join(src, 'pages'));
 
-// Found, not listed: a Studio order screen is one that renders an order's own total beside its status
-// controls. The public-facing screens are a different conversation — a buyer is shown shipping at
-// checkout and on the invoice — so they are matched out by their lack of the Studio status control.
+// Found, not listed — and the subject has been widened once already, which is the point of this note.
+// It used to be "a Studio order screen", matched by the presence of the Studio status control, because
+// the buyer's screens were assumed covered: a buyer sees shipping at checkout and on the invoice. True
+// of both. The customer PORTAL is neither, and it carried the identical bug — a breakdown component
+// called VoucherSummary that returned null without a voucher, with the freight line inside it. Measured
+// with the helpers above: items Rp 279.000 beside a Rp 289.000 total, the Rp 10.000 never named.
+//
+// So the subject is now the question itself: a screen that builds PRICED item lines
+// (getDiscountedVoucherCartLines is the only thing that makes them) and prints the order's own total
+// beside them. That set needs no exemptions — a packing screen listing names and sizes has no money to
+// take apart, so it is outside by construction rather than by a name someone has to remember.
 const orderScreens = screens.filter((file) => {
   const text = readFileSync(file, 'utf8');
-  return /formatTotal\(order\.subtotal\)/.test(text) && /statusLabels\[order\.status\]/.test(text);
+  return /getDiscountedVoucherCartLines\(/.test(text) && /formatTotal\(order\.subtotal\)/.test(text);
 });
-assert.ok(orderScreens.length >= 4,
-  `expected the four Studio order screens, found ${orderScreens.length} — the scan is broken, not the code`);
+// A floor, not an exact count: a screen added tomorrow should be held to the rule below, not rejected
+// for existing. Losing one, on the other hand, means the scan broke rather than the code improving.
+assert.ok(orderScreens.length >= 6,
+  `expected at least the four Studio order screens plus the invoice and the portal, found `
+  + `${orderScreens.length} — the scan is more likely broken than the code`);
 assert.ok(orderScreens.some((file) => file.includes(join('pages', 'mobile'))),
   'no phone order screen was found, and the phone was the half that showed nothing');
+assert.ok(orderScreens.some((file) => file.endsWith('CustomerPortalPage.jsx')),
+  "the buyer's own order list must be in this set — it is where the widening came from");
 
 for (const file of orderScreens) {
   const where = file.slice(src.length + 1);
@@ -117,5 +130,5 @@ for (const file of orderScreens) {
     + 'refuses to render');
 }
 
-console.log(`totalIsExplained selfcheck OK (${orderScreens.length} Studio order screens, every one naming `
+console.log(`totalIsExplained selfcheck OK (${orderScreens.length} screens printing priced lines beside a total, every one naming `
   + 'the freight inside the total it prints)');
