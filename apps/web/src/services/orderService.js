@@ -4,6 +4,7 @@ import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock }
 import { releaseVoucherUsageForOrder } from '@/services/voucherService.js';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '@/utils/bespokeOrder.js';
 import { getClientContext, sanitizeClientContext } from '@/utils/clientContext.js';
+import { isOrderClosedForPayment } from '@/utils/orderClosed.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
@@ -51,11 +52,10 @@ const INVENTORY_RESTORE_PAYMENT_STATUSES = ['failed', 'expired', 'refunded'];
 // disagree — this is no longer a comment anyone has to remember.
 export const PAYMENT_RESERVATION_TTL_HOURS = Number(import.meta.env?.VITE_PAYMENT_RESERVATION_TTL_HOURS || 24);
 
-// A cancelled/expired/failed/refunded order is closed: its stock was restored on cancel and may already
-// be resold, so no payment path may quietly revive it. Reviving one is a deliberate manual re-order.
-export const isOrderClosedForPayment = (order = {}) => (
-  order?.status === 'cancelled' || ['expired', 'failed', 'refunded'].includes(order?.paymentStatus)
-);
+// One home for "is this order closed", shared with the invoice's delivery block — see utils/orderClosed.js.
+// Imported and then re-exported rather than `export … from`: that form does not bind the name inside
+// this module, and two functions below call it.
+export { isOrderClosedForPayment };
 const ACTIVE_RESERVATION_PAYMENT_STATUSES = ['unpaid', 'pending'];
 
 export const isBespokeOrder = (order) => (

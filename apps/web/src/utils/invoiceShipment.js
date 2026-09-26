@@ -1,4 +1,5 @@
 import { orderHasShipped } from './trackingLead.js';
+import { isOrderClosedForPayment } from './orderClosed.js';
 
 /**
  * What the invoice's delivery block says — the headline and the line under it, from ONE reading of the
@@ -17,11 +18,9 @@ import { orderHasShipped } from './trackingLead.js';
  * A closed order is the state neither of them had: nothing is coming, and saying so is kinder than a
  * sentence that waits forever.
  */
-const CLOSED_PAYMENT_STATUSES = ['expired', 'failed', 'refunded'];
-
-export const isClosedOrder = (order = {}) => (
-  order?.status === 'cancelled' || CLOSED_PAYMENT_STATUSES.includes(order?.paymentStatus)
-);
+// The same question the payment screens ask, and now literally the same function: this was a
+// word-for-word second copy under a second name.
+export const isClosedOrder = isOrderClosedForPayment;
 
 /** 'closed' | 'shipped' | 'waiting' — the one reading both lines of the block are built from. */
 export const invoiceShipmentState = (order = {}) => {
