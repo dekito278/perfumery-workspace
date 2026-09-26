@@ -50,7 +50,7 @@ const canExportShippingLabel = (order) => Boolean(
     && !['cancelled'].includes(order.status)
 );
 
-const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
+const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'medium',
   timeStyle: 'short',

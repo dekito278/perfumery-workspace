@@ -16,7 +16,7 @@ import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 
-const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
+const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
 const MobileCartPage = () => {
   const navigate = useNavigate();
