@@ -64,19 +64,55 @@ assert.equal(publicErrorMessage('Kode customer tidak ditemukan', FALLBACK), 'Kod
 assert.ok(publicErrorMessage(new Error('Failed to fetch')).length > 0, 'there is always a default fallback');
 
 // --- the buyer-facing surfaces actually use it -------------------------------------------------------
-// Missing one is not a crash; it is the one page that still prints a constraint name at a stranger.
-for (const file of [
-  ['pages', 'CustomerPortalPage.jsx'], ['pages', 'CheckoutPage.jsx'], ['pages', 'BespokePage.jsx'],
-  ['pages', 'PublicTrackingPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
-  ['pages', 'mobile', 'MobileBespokePage.jsx'],
-]) {
-  const source = read(...file);
-  assert.match(source, /publicErrorMessage/, `${file.join('/')} must filter what it shows a buyer`);
-  assert.doesNotMatch(source, /toast\.error\((?:error|err)\.message/,
-    `${file.join('/')} still shows a raw error message to a buyer`);
-  assert.doesNotMatch(source, /setError\((?:error|err)\.message/,
-    `${file.join('/')} still renders a raw error message to a buyer`);
+// This used to be a hand-written list of six pages, and that is precisely how it failed: the list never
+// grew. /payment and /journal were added to the router and nobody came back here, so the page where a
+// buyer uploads her transfer receipt kept printing Supabase Storage errors at her.
+//
+// So the subject is derived from the router instead. Every route in App.jsx that is not under /studio
+// names a page a stranger can open; each of those pages must not render a caught error verbatim. A page
+// added tomorrow is covered the day it gets a route.
+const app = read('App.jsx');
+
+// Where each component comes from: plain imports and lazyRoute(() => import(...)) alike.
+const importedFrom = new Map([...app.matchAll(/(?:import\s+(\w+)\s+from|const\s+(\w+)\s*=\s*lazyRoute\(\(\)\s*=>\s*import\()\s*'@\/pages\/([^']+)'/g)]
+  .map((m) => [m[1] || m[2], m[3]]));
+assert.ok(importedFrom.size >= 30, `only ${importedFrom.size} page imports parsed from App.jsx — the parse is broken`);
+
+// `<Route path="/cart" element={<DomesticOnly><MobileCartPage …` — the page is the innermost element.
+const routed = new Map();
+for (const [, path, outer, inner] of app.matchAll(/<Route\s+path="([^"]+)"\s+element={<(\w+)(?:><(\w+))?/g)) {
+  if (/^\/(?:studio|mobile\/studio)/.test(path)) continue;
+  const component = inner || outer;
+  if (!routed.has(component)) routed.set(component, path);
 }
+assert.ok(routed.size >= 20, `only ${routed.size} public routes parsed from App.jsx — the parse is broken`);
+
+// Not buyer surfaces, each for a stated reason — never "it was failing".
+const NOT_A_BUYER_SURFACE = new Map([
+  ['LoginPage', 'studio sign-in; "Invalid login credentials" is exactly what Dekito needs to read'],
+  ['MobileLoginPage', 'studio sign-in on the phone, same reason'],
+  ['ResetPasswordPage', 'reached from a studio password-reset mail, not from the shop'],
+  ['Navigate', 'a redirect, not a page'],
+  ['RootRedirect', 'a redirect, not a page'],
+]);
+
+const RAW_DISPLAY = /(?:toast\.error|setError|setFormError|setLoadError|setStatusMessage)\(\s*(?:error|err)\.message/;
+let checked = 0;
+for (const [component, path] of routed) {
+  if (NOT_A_BUYER_SURFACE.has(component)) continue;
+  const file = importedFrom.get(component);
+  if (!file) continue; // defined inline in App.jsx (RootRedirect and friends)
+  const source = read('pages', ...file.split('/'));
+  assert.doesNotMatch(
+    source,
+    RAW_DISPLAY,
+    `${file} serves ${path} and shows a caught error verbatim. A buyer there reads our machinery `
+    + '("violates row-level security policy") instead of something she can act on — wrap it in publicErrorMessage().',
+  );
+  checked += 1;
+}
+assert.ok(checked >= 15, `only ${checked} buyer-facing pages checked — the derivation lost most of them`);
+console.log(`publicErrorMessage selfcheck OK (${checked} buyer-facing pages derived from the router, none printing raw errors)`);
 
 // Studio keeps the raw text on purpose — a constraint name is exactly what Dekito needs there.
 assert.doesNotMatch(read('pages', 'CustomersPage.jsx'), /publicErrorMessage/,
