@@ -18,19 +18,15 @@ import {
   getProductFormulaId,
   getProductPublishChecklist,
   getPrimaryVariant,
-  getProductRestockThreshold,
   getProductSlugConflicts,
-  getProductStockCorrections,
   getProductStorefrontPath,
-  getVisibleProductTags,
-  isProductDraft,
   normalizeProduct,
   PRODUCT_DRAFT_TAG,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
 import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
 import { formatQuantity } from '@/utils/formatting.js';
-import { moodForEditing } from '@/utils/productMood.js';
+import { toProductFormState } from '@/utils/productFormState.js';
 import WearPicker from '@/components/product/WearPicker.jsx';
 import TierPriceEditor from '@/components/product/TierPriceEditor.jsx';
 import { confirmAction } from '@/utils/confirmAction.js';
@@ -63,24 +59,8 @@ export const emptyProduct = {
   catalogVisible: true,
 };
 
-export const toProductForm = (product) => ({
-  ...product,
-  mood: moodForEditing(product.mood),
-  intensity: product.intensity || 'Medium',
-  catalogVisible: !isProductDraft(product),
-  topNotes: product.topNotes.join(', '),
-  heartNotes: product.heartNotes.join(', '),
-  baseNotes: product.baseNotes.join(', '),
-  variants: product.variants,
-  tags: getVisibleProductTags(product).join(', '),
-  // Carry internal tags (batch key, formula id, SKU, stock movement, threshold, correction history)
-  // separately — the visible `tags` string above strips them, and without this a mobile save would drop
-  // every internal tag. Mirrors desktop toEditableProduct.
-  internalTags: product.tags.filter((tag) => !getVisibleProductTags(product).includes(tag)),
-  restockThreshold: getProductRestockThreshold(product),
-  stockCorrections: getProductStockCorrections(product),
-  images: product.images || (product.imageUrl ? [product.imageUrl] : []),
-});
+// One builder for both layouts — see utils/productFormState.js for what drifted and why.
+export const toProductForm = toProductFormState;
 
 const getTagsForVisibility = (tags, catalogVisible) => {
   const nextTags = String(tags || '')
