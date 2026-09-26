@@ -49,7 +49,7 @@ import {
 } from '@/utils/orderWorkflow.js';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 
-const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
+const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'medium',
   timeStyle: 'short',

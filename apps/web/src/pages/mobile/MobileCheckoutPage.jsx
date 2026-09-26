@@ -21,7 +21,7 @@ import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
-const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
+const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const courierLabels = { jnt: 'JnT', ide: 'IDEXPRES', pos: 'POS', anteraja: 'ANTERAJA', jne: 'JNE' };
 
 // One progress panel, not two. This used to sit above a second strip that repeated the same idea in
