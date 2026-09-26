@@ -11,6 +11,8 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
+  PAYMENT_PROOF_AUDIT_ACTIONS,
+  PAYMENT_PROOF_AUDIT_LABELS,
   bespokeBriefRows,
   describeStockReservation,
   getNextOrderStatusForPayment,
@@ -100,13 +102,6 @@ const paymentProofToneByStatus = {
   rejected: 'danger',
 };
 const notificationEventLabels = getNotificationEventLabels();
-const paymentProofAuditLabels = {
-  payment_proof_uploaded: 'Bukti diupload',
-  payment_proof_approved: 'Bukti disetujui',
-  payment_proof_rejected: 'Bukti ditolak',
-  payment_proof_reviewed: 'Bukti direview',
-};
-const paymentProofAuditActions = Object.keys(paymentProofAuditLabels);
 
 const getActiveStep = (status) => {
   if (status === 'cancelled') return -1;
@@ -156,7 +151,7 @@ const getFulfillmentStep = (order) => {
 
 
 const getProofTimeline = (logs = []) => logs
-  .filter((log) => paymentProofAuditActions.includes(log.action))
+  .filter((log) => PAYMENT_PROOF_AUDIT_ACTIONS.includes(log.action))
   .map((log, index, proofLogs) => {
     const nextValues = log.nextValues || {};
     const previousValues = log.previousValues || {};
@@ -172,7 +167,7 @@ const getProofTimeline = (logs = []) => logs
     return {
       id: log.id,
       attempt: proofLogs.length - index,
-      label: paymentProofAuditLabels[log.action] || log.action,
+      label: PAYMENT_PROOF_AUDIT_LABELS[log.action] || log.action,
       at: log.createdAt,
       actor: log.actorName || log.actorEmail || 'System',
       status,
