@@ -1,5 +1,23 @@
 # Server-side migration DRAFTS
 
+> **STATUS 2026-09-27 — sebagian besar map ini sudah lewat.** Draf-draf ini ditulis sebelum audit round 7
+> dan round 9 dikerjakan. Yang hidup di produksi sekarang lebih ketat daripada beberapa usulan di sini,
+> jadi "jalankan draf ini" bisa berarti **memundurkan** keamanan, bukan mengeraskannya.
+>
+> | Draf | Status hari ini |
+> |---|---|
+> | `01_invoice_token.sql` | **Masih relevan.** Temuan #3 belum ditutup: invoice tetap dibuka dengan `?code=`. |
+> | `02_customer_code_entropy.sql` | **Masih relevan, dampaknya mengecil.** Kode masih `SOLI`+5 digit, tapi sejak `20260730120000` kode tanpa gembok tidak lagi memulangkan PII — sapuan hanya membuktikan sebuah kode ada dan memperlihatkan riwayat ordernya. |
+> | `03_lookup_customer_hardening.sql` | **SUDAH LEWAT, dan kini kemunduran.** Isinya sudah dilumpuhkan (seluruhnya dikomentari); alasannya ada di kepala berkasnya. |
+> | `04_payment_proof_ownership.sql` | **Sebagian sudah dikerjakan dengan cara lain.** `20260819122000` mengikat path bukti ke nomor ordernya dan melarang menimpa bukti yang sudah disetujui. Kepemilikan penuh masih terbuka — tapi draf ini menambah **overload 5 argumen**, sedangkan versi 4 argumen yang longgar tetap ada dan tetap di-grant ke anon: menjalankannya saja tidak menutup apa pun. |
+> | `05_create_order_design.md`, `06_orders_create.draft.js` | **SUDAH DIKERJAKAN.** Endpoint sungguhannya hidup di `apps/web/api/orders/create.js`. |
+> | `07_orders_anon_insert_revoke.sql` | **SUDAH DIJALANKAN.** Kebijakan INSERT sekarang admin-only (`20260921090000`). Baris `drop policy`-nya kini tidak berefek; prasyarat nomor 4 di dalamnya sudah usang — `grep createOrder(` kini memunculkan pemanggil ketiga, `ExportShippingCalculatorPage`, dan itu memang jalur admin yang disengaja. |
+>
+> Yang menjaga supaya map ini tidak berubah jadi jebakan tempel-jalankan:
+> `apps/web/src/utils/staleSqlDrafts.selfcheck.mjs` membaca setiap `.sql` dan setiap pagar ```` ```sql ````
+> di bawah `docs/`, membuang komentar, lalu membandingkan yang tersisa dengan definisi yang hidup di
+> `supabase/migrations/`. Draf yang ingin dipertahankan sebagai catatan harus dikomentari.
+
 ⚠️ **These are DRAFTS, not ready to apply.** They live here (not in `supabase/migrations/`) on purpose so
 `supabase db push` won't pick them up. For each: **read it, test on a staging project, do the paired
 frontend change, then** move it into `supabase/migrations/` with a real timestamp prefix.

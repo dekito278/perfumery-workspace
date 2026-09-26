@@ -65,7 +65,11 @@ Mundur ada di header file.
 
 ---
 
-## Langkah 3 — Cabut anon INSERT pada `storefront_orders` (yang CRITICAL)
+## Langkah 3 — Cabut anon INSERT pada `storefront_orders` (yang CRITICAL) ✅ SELESAI
+
+**Sudah dijalankan.** Kebijakan INSERT yang hidup sekarang admin-only, lewat
+`20260921090000_admin_can_record_an_order.sql` — migrasi itu ada justru karena pencabutan ini membuat
+tombol Studio → Ekspor 403 di produksi. Langkah di bawah dibiarkan sebagai riwayat.
 
 **Prasyarat: langkah 0 hijau, termasuk reorder.** Cek ulang sebelum menekan run:
 
@@ -90,10 +94,20 @@ Verifikasi, berurutan:
 - [ ] Reorder dari portal → order jadi.
 - [ ] Stok berkurang untuk order katalog; voucher tercatat sekali.
 
-Mundur (satu baris, di header file yang sama):
+Mundur — **sudah tidak berlaku, dan jangan dijalankan.** Satu baris itu (`create policy "storefront
+orders public insert" … with check (true)`) mengembalikan hak INSERT kepada anon, yaitu persis lubang
+CRITICAL yang langkah ini tutup: siapa pun bisa menyisipkan order seharga Rp 1 lalu menagihkannya lewat
+DOKU. Ia ditulis sebagai jaring pengaman saat checkout belum tentu lewat `/api/orders/create`; sekarang
+checkout sudah otoritatif, jadi jaring itu hanya tersisa sebagai jebakan tempel-jalankan.
+
 ```sql
-create policy "storefront orders public insert" on public.storefront_orders for insert with check (true);
+-- JANGAN DIJALANKAN — membuka kembali lubang CRITICAL round 9. Disimpan sebagai catatan saja.
+-- create policy "storefront orders public insert" on public.storefront_orders for insert with check (true);
 ```
+
+Kalau Studio → Ekspor yang justru tertolak (403 saat membuat order), obatnya bukan baris di atas
+melainkan `supabase/migrations/20260921090000_admin_can_record_an_order.sql`: INSERT untuk akun yang
+terdaftar di `storefront_admins`, anon tetap ditolak.
 
 ---
 
