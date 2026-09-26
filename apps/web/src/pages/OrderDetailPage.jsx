@@ -72,6 +72,8 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import {
+  PAYMENT_PROOF_AUDIT_ACTIONS,
+  PAYMENT_PROOF_AUDIT_LABELS,
   bespokeBriefRows,
   describeStockReservation,
   getBespokeOrderSummary,
@@ -166,10 +168,9 @@ const getAuditChanges = (previousValues = {}, nextValues = {}) => {
 };
 
 const importantAuditKeys = ['paymentStatus', 'status', 'shipmentStatus', 'trackingNumber', 'payment_status', 'shipment_status', 'tracking_number'];
-const paymentProofAuditActions = ['payment_proof_uploaded', 'payment_proof_approved', 'payment_proof_rejected', 'payment_proof_reviewed'];
 
 const getProofTimeline = (logs = []) => logs
-  .filter((log) => paymentProofAuditActions.includes(log.action))
+  .filter((log) => PAYMENT_PROOF_AUDIT_ACTIONS.includes(log.action))
   .map((log, index, proofLogs) => {
     const nextValues = log.nextValues || {};
     const previousValues = log.previousValues || {};
@@ -186,7 +187,7 @@ const getProofTimeline = (logs = []) => logs
       id: log.id,
       attempt: proofLogs.length - index,
       action: log.action,
-      label: auditActionLabels[log.action] || log.action,
+      label: PAYMENT_PROOF_AUDIT_LABELS[log.action] || auditActionLabels[log.action] || log.action,
       at: log.createdAt,
       actor: log.actorName || log.actorEmail || 'System',
       status,

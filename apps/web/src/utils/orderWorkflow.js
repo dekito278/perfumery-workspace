@@ -265,3 +265,24 @@ export const bespokeBriefRows = (item = {}) => [
   ['Reference', item?.referenceProductName],
   ['Story', item?.story],
 ].filter(([, value]) => value);
+
+/**
+ * The audit actions that make up a payment-proof history, and how each reads.
+ *
+ * Both order detail screens build that history, and they disagreed about where the list comes from: the
+ * phone derived it from its own label map with Object.keys, the desktop typed the four strings out. Same
+ * four today. The day a fifth proof action is recorded — and this shop adds audit actions — the derived
+ * side picks it up and the typed side silently drops it from a history that gets read when a payment is
+ * disputed.
+ *
+ * Latent, not live. Written down because a hand-typed list beside a derived one has cost this codebase
+ * real data twice this week.
+ */
+export const PAYMENT_PROOF_AUDIT_LABELS = {
+  payment_proof_uploaded: 'Bukti diupload',
+  payment_proof_approved: 'Bukti disetujui',
+  payment_proof_rejected: 'Bukti ditolak',
+  payment_proof_reviewed: 'Bukti direview',
+};
+
+export const PAYMENT_PROOF_AUDIT_ACTIONS = Object.keys(PAYMENT_PROOF_AUDIT_LABELS);
