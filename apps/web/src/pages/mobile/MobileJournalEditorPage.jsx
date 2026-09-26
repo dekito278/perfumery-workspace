@@ -29,6 +29,10 @@ const createEmptyPost = (formulaId = 'none', formulaName = '') => {
     category: hasFormula ? 'formula_accord' : 'experience',
     status: 'draft',
     related_formula_id: formulaId || 'none',
+    // Carried even though this editor has no picker for it. The save writes every column of the row,
+    // so a field the state does not hold is written as null — editing an article here used to wipe the
+    // product it was about.
+    related_product_slug: 'none',
     excerpt: '',
     content: '',
     seo_title: '',
@@ -42,6 +46,7 @@ const toEditorState = (post) => ({
   category: post.category || 'experience',
   status: post.status || 'draft',
   related_formula_id: post.related_formula_id || 'none',
+  related_product_slug: post.related_product_slug || 'none',
   excerpt: post.excerpt || '',
   content: post.content || '',
   seo_title: post.seo_title || '',
@@ -154,6 +159,7 @@ const MobileJournalEditorPage = () => {
       const payload = {
         ...formState,
         related_formula_id: formState.related_formula_id === 'none' ? null : formState.related_formula_id,
+        related_product_slug: formState.related_product_slug === 'none' ? null : formState.related_product_slug,
       };
 
       const savedPost = isEditMode
