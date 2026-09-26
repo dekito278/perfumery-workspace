@@ -233,3 +233,35 @@ export const stockReservationTone = (reservation) => (
       ? 'bg-stone-100 text-stone-600'
       : 'bg-amber-50 text-amber-800'
 );
+
+/**
+ * A bespoke brief as rows, for Studio.
+ *
+ * Written four times, once per Studio screen, and the four disagreed about two things.
+ *
+ * Language: the desktop order list labelled them in English — "Preferred aroma", "Occasion", "Bottle",
+ * "Reference scent" — while its three siblings used Indonesian. Studio is Indonesian on purpose.
+ *
+ * Content, which is the half that matters: `avoidedNotes` — the aromas the customer asked NOT to have —
+ * appeared on the desktop LIST and on no other screen. Not on either order detail page, which is where
+ * a brief is actually read before the perfume is made. It is stored on every bespoke order and it is
+ * the single most consequential line in the brief, because every other line describes what to aim for
+ * and this one describes what ruins it.
+ *
+ * The buyer-facing portal keeps its own translated version: it speaks the reader's language, Studio
+ * speaks Dekito's, and that difference is deliberate.
+ */
+export const bespokeBriefRows = (item = {}) => [
+  ['Nama parfum', item?.perfumeName],
+  ['Aroma', item?.preferredNotes || item?.scentDescription || item?.notes],
+  ['Aroma dihindari', item?.avoidedNotes],
+  ['Momen', item?.occasion],
+  ['Ukuran', item?.size],
+  ['Botol', item?.bottleType],
+  ['Cap', item?.capDesign],
+  ['Label', item?.labelDesign],
+  ['Material', item?.exoticMaterial],
+  ['Budget', item?.budget],
+  ['Reference', item?.referenceProductName],
+  ['Story', item?.story],
+].filter(([, value]) => value);

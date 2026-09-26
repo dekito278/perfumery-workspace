@@ -72,6 +72,7 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import {
+  bespokeBriefRows,
   describeStockReservation,
   getBespokeOrderSummary,
   getNextOrderStatusForPayment,
@@ -201,19 +202,6 @@ const getNoteValue = (rows, label) => (
   rows.find((row) => row.label.toLowerCase() === label.toLowerCase())?.value || ''
 );
 
-const bespokeDetailRows = (item) => [
-  ['Nama parfum', item?.perfumeName],
-  ['Aroma', item?.preferredNotes || item?.notes],
-  ['Momen', item?.occasion],
-  ['Ukuran', item?.size],
-  ['Botol', item?.bottleType],
-  ['Cap', item?.capDesign],
-  ['Label', item?.labelDesign],
-  ['Material', item?.exoticMaterial],
-  ['Budget', item?.budget],
-  ['Reference', item?.referenceProductName],
-  ['Story', item?.story],
-].filter(([, value]) => value);
 
 const getNextOperationalTask = (order, bespoke) => {
   if (!order) return { title: 'Review order', helper: 'Buka order dan cek data terbaru.' };
@@ -968,7 +956,7 @@ const OrderDetailPage = () => {
                 <details className="mt-3 rounded-2xl bg-white/70 px-4 py-3">
                   <summary className="cursor-pointer select-none text-xs font-bold text-editorial-charcoal">Buka detail brief lengkap</summary>
                   <div className="mt-3 grid gap-2 border-t border-editorial-charcoal/10 pt-3 sm:grid-cols-2">
-                    {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                    {bespokeBriefRows(bespokeItem).map(([label, value]) => (
                       <div key={label} className={`text-xs font-semibold text-muted-foreground ${label === 'Preferred aroma' ? 'sm:col-span-2' : ''}`}>
                         <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{label}</span>
                         <BriefText text={value} />

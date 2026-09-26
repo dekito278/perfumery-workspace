@@ -35,6 +35,7 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
+  bespokeBriefRows,
   countOrdersByFilter,
   describeStockReservation,
   getBespokeOrderSummary,
@@ -58,18 +59,6 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 const statusLabels = getOrderStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 
-const bespokeDetailRows = (item) => [
-  ['Aroma', item?.preferredNotes || item?.notes],
-  ['Momen', item?.occasion],
-  ['Ukuran', item?.size],
-  ['Botol', item?.bottleType],
-  ['Cap', item?.capDesign],
-  ['Label', item?.labelDesign],
-  ['Material', item?.exoticMaterial],
-  ['Budget', item?.budget],
-  ['Reference', item?.referenceProductName],
-  ['Story', item?.story],
-].filter(([, value]) => value);
 
 const nextActionByStatus = {
   pending_payment: 'Tunggu pembayaran DOKU/manual sebelum produksi.',
@@ -675,7 +664,7 @@ const MobileOrdersPage = () => {
                   <details className="mt-2">
                     <summary className="cursor-pointer select-none text-xs font-bold text-editorial-charcoal">Buka detail brief</summary>
                     <div className="mt-3 grid gap-2 border-t border-editorial-charcoal/10 pt-3">
-                      {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                      {bespokeBriefRows(bespokeItem).map(([label, value]) => (
                         <div key={label} className="grid grid-cols-[72px_1fr] gap-2 text-xs font-semibold leading-snug">
                           <span className="text-[#6b7280]">{label}</span>
                           <BriefText text={value} className="min-w-0 text-[#1f2937]" />
