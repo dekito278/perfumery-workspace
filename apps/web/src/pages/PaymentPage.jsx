@@ -16,6 +16,7 @@ import { paymentDeadlineAt } from '@/utils/paymentDeadline.js';
 import { isAwaitingShippingQuote } from '@/utils/orderWorkflow.js';
 import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
@@ -663,7 +664,10 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
       setProofFile(null);
       toast.success(t("pay.proofSent"));
     } catch (error) {
-      toast.error(error.message || t("pay.proofFailed"));
+      // The buyer just moved money. What comes back here is a Supabase Storage or RPC error —
+      // "new row violates row-level security policy" is not something she can act on, and it names
+      // our tables to a stranger. Curated sentences still pass through untouched.
+      toast.error(publicErrorMessage(error, t("pay.proofFailed")));
     } finally {
       setUploadingProof(false);
     }

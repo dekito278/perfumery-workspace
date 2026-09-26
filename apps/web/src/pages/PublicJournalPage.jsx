@@ -18,6 +18,7 @@ import { getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { formatDate } from '@/utils/formatting.js';
 import { articleExcerpt } from '@/utils/articleExcerpt.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const getExcerpt = (article) => articleExcerpt(article, 180);
 
@@ -44,7 +45,7 @@ const PublicJournalPage = () => {
         const posts = await getPublishedJournalPosts();
         if (active) setArticles(posts);
       } catch (err) {
-        if (active) setError(err.message || t("journal.loadFailed"));
+        if (active) setError(publicErrorMessage(err, t("journal.loadFailed")));
       } finally {
         if (active) setLoading(false);
       }
