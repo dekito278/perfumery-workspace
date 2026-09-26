@@ -15,7 +15,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -89,4 +89,119 @@ for (const language of ['id', 'en']) {
     `${language}: the closed lead must not repeat the transfer instruction`);
 }
 
-console.log('closedOrderPayment selfcheck OK (a cancelled order stops handing out the bank account)');
+// --- 5. Every screen that offers payment for a STORED order asks the same question ----------------------
+// The portal was the other half of this. It decided payability with its own
+// `['unpaid','pending'].includes(paymentStatus)` and offered the upload with `paymentStatus !== 'paid'`
+// — and 'expired' is not 'paid', so an order the nightly sweep had already cancelled kept the black
+// "Upload bukti transfer" button as its primary action, linking to the payment page that refuses it.
+//
+// The subject is derived rather than listed: every page that can print the bank account is a candidate,
+// and the exemptions are written as reasons, not as names.
+const pagesRoot = join(root, 'pages');
+const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (
+  entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)]
+));
+const prints = walk(pagesRoot).filter((file) => file.endsWith('.jsx') && stripComments(readFileSync(file, 'utf8')).includes('accountNumber'));
+assert.ok(prints.length >= 4, `only ${prints.length} pages mention the bank account — the scan is broken`);
+
+// Not a stored order, each for a stated reason.
+const NO_STORED_ORDER = new Map([
+  ['BespokePage.jsx', 'builds the payment payload for the order it is creating in this same submit; there is no saved order yet to be closed'],
+  ['MobileBespokePage.jsx', 'same, plus the payment-method picker, which shows the account before any order exists'],
+  ['ExportShippingCalculatorPage.jsx', 'Studio: Dekito recording an order himself, not a buyer being invited to pay'],
+]);
+
+let asked = 0;
+for (const file of prints) {
+  const name = file.slice(file.lastIndexOf('/') + 1);
+  if (NO_STORED_ORDER.has(name)) continue;
+  const source = stripComments(readFileSync(file, 'utf8'));
+  assert.match(
+    source,
+    /isOrderClosedForPayment/,
+    `${name} prints the bank account for an order it loaded, but never asks isOrderClosedForPayment. `
+    + 'A cancelled order there is still being told how to send money.',
+  );
+  asked += 1;
+}
+assert.ok(asked >= 2, `only ${asked} stored-order payment screens checked — the derivation lost them`);
+
+// --- 6. The rule itself, and the portal's own predicates, RUN rather than described --------------------
+// The helper's text is asserted above; this evaluates that same text, so the states below are decided by
+// the real expression and not by a second copy of it written here.
+const helperBody = service.match(/export const isOrderClosedForPayment = \(order = \{\}\) => \(([\s\S]*?)\n\);/);
+assert.ok(helperBody, 'could not read the helper body to run it — update this guard');
+const isOrderClosedForPayment = new Function('order', `return (${helperBody[1]});`);
+
+// What api/orders/expire-reservations.js writes, and what Studio's cancel writes: both pair these.
+assert.equal(isOrderClosedForPayment({ status: 'cancelled', paymentStatus: 'expired' }), true, 'a swept order is closed');
+// The gap that let the portal disagree: cancelled, with a payment status still reading alive.
+assert.equal(isOrderClosedForPayment({ status: 'cancelled', paymentStatus: 'unpaid' }), true, 'cancelled is closed whatever the payment status says');
+// The opposite failure would be worse: hiding the account from everyone who still has to pay.
+assert.equal(isOrderClosedForPayment({ status: 'pending_payment', paymentStatus: 'unpaid' }), false, 'an unpaid live order stays payable');
+assert.equal(isOrderClosedForPayment({ status: 'processing', paymentStatus: 'pending' }), false, 'so does one awaiting proof review');
+
+// Now the portal's own predicates, lifted from its source and executed. Asserting that the FILE mentions
+// the helper would pass while the one predicate that matters had stopped calling it.
+const portalSource = read('pages', 'CustomerPortalPage.jsx');
+const topLevelConsts = new Map();
+for (const match of portalSource.matchAll(/^const (\w+) = /gm)) {
+  const from = match.index;
+  let depth = 0;
+  let end = -1;
+  for (let i = from; i < portalSource.length; i += 1) {
+    const ch = portalSource[i];
+    if ('([{'.includes(ch)) depth += 1;
+    else if (')]}'.includes(ch)) depth -= 1;
+    else if (ch === ';' && depth === 0) { end = i + 1; break; }
+  }
+  if (end > 0) topLevelConsts.set(match[1], portalSource.slice(from, end));
+}
+assert.ok(topLevelConsts.size >= 15, `only ${topLevelConsts.size} top-level consts parsed from the portal — the parse is broken`);
+
+// Anything the portal uses to decide whether to OFFER a way to pay. Named by pattern, so a
+// canResumePayment added next month is caught the day it is written.
+const offers = [...topLevelConsts.keys()].filter((name) => /^can[A-Z]\w*Pay|^isPayable/.test(name));
+assert.deepEqual(offers.sort(), ['canOpenPayment', 'canUploadPaymentProof', 'isPayableOrder'],
+  'the portal grew (or lost) a payment-offer predicate — read it before changing this list');
+
+// Evaluate them together with their dependencies. isManualTransferPayment comes from cartService; the
+// closed helper is the one built from orderService above.
+const needed = ['DOKU_PAYMENT_TTL_MINUTES', 'isDokuPayment', 'isPayableOrder', 'getDokuExpiryDate',
+  'isDokuPaymentExpired', 'canOpenPayment', 'canUploadPaymentProof'];
+for (const name of needed) assert.ok(topLevelConsts.has(name), `${name} is gone from the portal — update this guard`);
+const evaluate = new Function('isManualTransferPayment', 'isOrderClosedForPayment',
+  `${needed.map((name) => topLevelConsts.get(name)).join('\n')}\nreturn { isPayableOrder, canOpenPayment, canUploadPaymentProof };`);
+const portal = evaluate(
+  (provider) => ['manual', 'manual_transfer_bca'].includes(provider),
+  isOrderClosedForPayment,
+);
+
+// DKT-MU9L5XW2-JNBGGD as the sweep left it, with every other field set so each predicate would
+// otherwise say yes: manual transfer, no proof yet, a payment URL on file.
+const swept = {
+  status: 'cancelled',
+  paymentStatus: 'expired',
+  paymentProvider: 'manual_transfer_bca',
+  paymentProofStatus: 'missing',
+  paymentUrl: 'https://example.test/pay',
+  createdAt: new Date().toISOString(),
+};
+// The same order as Studio's cancel button would leave it if it ever stopped expiring the payment
+// status alongside the order. That pairing is done in both writers today, so this second shape is the
+// latent half — and it is the half a predicate reading only payment_status cannot see.
+const cancelledButAlive = { ...swept, paymentStatus: 'unpaid' };
+
+for (const [label, order] of [['swept', swept], ['cancelled with a live payment status', cancelledButAlive]]) {
+  for (const [name, predicate] of Object.entries(portal)) {
+    assert.equal(predicate(order), false,
+      `${name} still says yes for an order ${label} — the portal would offer to take money for it`);
+  }
+}
+
+// And a live one still gets both offers, or this guard would have closed the shop instead of the hole.
+const live = { ...swept, status: 'pending_payment', paymentStatus: 'unpaid' };
+assert.equal(portal.isPayableOrder(live), true, 'an unpaid manual order is still payable');
+assert.equal(portal.canUploadPaymentProof(live), true, 'and can still send its transfer receipt');
+
+console.log(`closedOrderPayment selfcheck OK (a cancelled order stops handing out the bank account, on ${asked} screens that load one)`);
