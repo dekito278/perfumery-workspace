@@ -34,6 +34,7 @@ import { moodForEditing } from '@/utils/productMood.js';
 import WearPicker from '@/components/product/WearPicker.jsx';
 import TierPriceEditor from '@/components/product/TierPriceEditor.jsx';
 import { confirmAction } from '@/utils/confirmAction.js';
+import { snapshotProductForm } from '@/utils/productFormSnapshot.js';
 
 export const emptyProduct = {
   name: '',
@@ -95,27 +96,6 @@ const getTagsForVisibility = (tags, catalogVisible) => {
   return [...new Set(nextTags)];
 };
 
-const snapshotProductForm = (product) => JSON.stringify({
-  id: product.id || '',
-  name: product.name || '',
-  category: product.category || '',
-  priceNumber: Number(product.priceNumber || 0),
-  compareAtPriceNumber: Number(product.compareAtPriceNumber || 0),
-  stock: Number(product.stock || 0),
-  size: product.size || '',
-  variants: product.variants || [],
-  notes: product.notes || '',
-  topNotes: product.topNotes || '',
-  heartNotes: product.heartNotes || '',
-  baseNotes: product.baseNotes || '',
-  tags: product.tags || '',
-  description: product.description || '',
-  imageUrl: product.imageUrl || '',
-  images: product.images || [],
-  featured: Boolean(product.featured),
-  limited: Boolean(product.limited),
-  catalogVisible: Boolean(product.catalogVisible),
-});
 
 const ProductFormSection = ({ children, eyebrow, title, description, action, defaultOpen = false }) => (
   <MobileAccordion

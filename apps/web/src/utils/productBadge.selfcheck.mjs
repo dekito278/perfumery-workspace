@@ -104,7 +104,15 @@ for (const [name, file] of [
 ]) {
   const source = read(...file);
   assert.match(source, /checked=\{Boolean\(form\.limited\)\}/, `${name} form cannot set the badge`);
-  assert.match(source, /limited: Boolean\(product\.limited\)/, `${name} form does not load it from the product`);
+  // The form must LOAD it from the product, asked as the two things that make that true: a default in
+  // the empty form, and the product spread into the editable copy.
+  //
+  // This line used to match `limited: Boolean(product.limited)`, which was the unsaved-changes SNAPSHOT
+  // rather than the loader. When that snapshot moved into a shared module the assertion failed on two
+  // forms that load `limited` perfectly well — a guard pinned to a line that merely happened to contain
+  // the words it wanted.
+  assert.match(source, /^ {2}limited: false,$/m, `${name} form has no default for the badge`);
+  assert.match(source, /\.\.\.product,/, `${name} form does not load the product into its editable copy`);
 }
 
 // --- 7. Every surface that printed the raw category now composes both --------------------------------
