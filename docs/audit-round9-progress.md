@@ -8,6 +8,38 @@ batch) hanya di-spot-check; fokus round ini ada di commerce, auth, infra, dan po
 
 ---
 
+## STATUS PER 2026-09-27 — diperiksa ulang terhadap kode, bukan dibaca dari dokumen ini
+
+Dokumen ini ditulis 2026-08-31 dan tidak pernah diperbarui saat temuannya ditutup. Sebagian besar sudah
+beres, termasuk yang CRITICAL. Tiap baris di bawah diverifikasi dengan membuka kodenya hari ini —
+beberapa bahkan membawa komentar yang menyebut nomor temuannya sendiri.
+
+| # | Status | Bukti |
+|---|--------|-------|
+| O-1 · CRITICAL | **TERTUTUP** (perlu satu konfirmasi di produksi) | `20260921090000_admin_can_record_an_order.sql` menyatakan lubang anon-INSERT sudah ditutup setelah round 9, dan migrasi itu ada justru karena pencabutannya membuat tombol Studio → Ekspor 403 di produksi. Ia mengganti policy publik dengan `for insert to authenticated with check (public.is_admin())`. Header `07_orders_anon_insert_revoke.sql` masih berbunyi "outstanding" — header itu yang basi. |
+| O-1b · HIGH | **TERTUTUP** | "Pesan lagi" sekarang mengisi keranjang dan menyerahkan ke checkout normal; `createReorderPayment` tidak ada lagi. Sisa pemanggil `createOrder()`: `useCheckoutFlow` dan `createBespokeRequest` (keduanya di balik `authoritativeOrdersEnabled()`, tanpa fallback) dan Studio → Ekspor (admin, dijaga policy admin di atas). |
+| O-3 · MEDIUM | **TERTUTUP** oleh PR #291 | Penghitung order pelanggan pindah ke setelah order, voucher, dan stok berhasil. |
+| O-4 · MEDIUM | **TERTUTUP** oleh PR #292 | `notes` ≤ 8.000 dan `checkoutDraft` ≤ 20.000, ditolak (bukan dipotong), batasnya diukur dari builder sungguhan. |
+| O-6 · LOW | **TERTUTUP** | Handler menyaring lewat `isInternalErrorMessage`. |
+| O-7 · MEDIUM | **TERTUTUP** | Tulisan sisi-pembeli sudah tidak ada di `useCheckoutFlow`, dan `updateOrderRow` sekarang memanggil `assertOrderWriteApplied` — tulisan nol-baris bersuara. |
+| V-2 · MEDIUM | **TERTUTUP** | `api/orders/create.js` memanggil `storefront_record_voucher_usage` server-side, dengan fallback PGRST202 untuk versi pra-migrasi. |
+| V-3 · LOW | **TERTUTUP** | `resetVouchers` tidak ada lagi. |
+| D-1 · MEDIUM | **TERTUTUP** | `api/doku/status.js` punya pre-check keberadaan order sebelum memanggil DOKU atau menulis log; komentarnya menyebut round 9. |
+| D-2 · LOW | **TERTUTUP** | `dokuOrderGuards.js` tidak lagi melewati pengecekan saat `paid = 0`; komentarnya menyebut D-2. |
+| S-1 · MEDIUM | **TERTUTUP** | Pencocokan frasa utuh. Dijalankan hari ini: Solok/Sumatera Barat dan Kediri/Lombok Barat → `other`; Solo, Kediri, Bandung di provinsi Jawa → `java`. |
+| S-3 · LOW | **TERTUTUP** oleh PR #275 | Pratinjau promo lewat `getDateTime`, yang sekarang memakai jam toko. |
+| D-3 · LOW | **MASIH TERBUKA** | Webhook memverifikasi HMAC timing-safe tapi tidak pernah memeriksa kesegaran `Request-Timestamp`. Sengaja belum disentuh: jendela yang terlalu sempit akan MENOLAK pembayaran sungguhan, dan uji ujung-ke-ujung masih terblokir. Kerjakan bersama tes itu. |
+| O-5 · LOW | **MASIH TERBUKA** | `baseUrl` dari header `Host`. Layak dipersempit, tapi mengubah cara panggilan ongkir otoritatif mengalamati dirinya sendiri — jangan dikerjakan tanpa uji ujung-ke-ujung. |
+| V-1 · MEDIUM | **MASIH TERBUKA** | Butuh RPC/SQL: ganti SELECT publik `storefront_vouchers` dengan fungsi yang menerima satu kode dan hanya mengembalikan verdict. |
+| O-2, S-2, D-1(rate limit) | **MASIH TERBUKA** | Keputusan infrastruktur (rate limit / captcha pada endpoint publik), bukan perubahan kode aplikasi. |
+
+**Satu hal yang hanya bisa dipastikan Dekito**, karena tidak ada yang boleh menjalankan SQL dari sini:
+jalankan BLOK 2 dan BLOK 3 di `supabase/migrations/20260921090000_admin_can_record_an_order.sql`. Keduanya
+`select` murni. Blok 2 harus mengembalikan satu baris (policy insert admin); blok 3 harus mengembalikan
+**nol** baris. Nol baris di blok 3 = lubang O-1 benar-benar tertutup di produksi.
+
+---
+
 ## RINGKASAN — 5 hal paling janggal
 
 | # | Temuan | Modul | Severity |
