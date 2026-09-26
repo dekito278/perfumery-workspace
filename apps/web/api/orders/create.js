@@ -267,6 +267,29 @@ export default async function handler(req, res) {
 
     const isBespoke = input.source === 'bespoke' || Boolean(input.bespoke);
 
+    // Two client strings are copied into the order row as they arrive: the buyer's notes and the
+    // checkout draft. Nothing bounded them, so the only ceiling was Vercel's request body — megabytes of
+    // text in a row that both Studio order screens render in full (audit round 9, O-4).
+    //
+    // Refused rather than truncated. Cutting a note in half throws away the end, which on a bespoke
+    // brief is the part that matters; a buyer told her note is too long can shorten it herself.
+    //
+    // The limits come from measuring, not from taste: the longest realistic checkout draft — a
+    // twenty-line cart with long product names, a full address and a note — is 1,749 characters, and a
+    // generously written bespoke brief is 881. These are an order of magnitude above both, and they take
+    // the worst case from 4.5 MB to 28 KB.
+    const tooLong = [
+      ['notes', input.notes, 8000],
+      ['checkoutDraft', input.checkoutDraft, 20000],
+    ].find(([, value, limit]) => typeof value === 'string' && value.length > limit);
+    if (tooLong) {
+      return jsonResponse(res, 422, {
+        message: 'Catatan pesanan terlalu panjang. Persingkat sedikit, lalu coba lagi.',
+        reason: 'input_too_long',
+        field: tooLong[0],
+      });
+    }
+
     // 1. Item prices (authoritative, from DB)
     const buyer = await resolveBuyer(req);
     const buyerTier = buyer.tier;
