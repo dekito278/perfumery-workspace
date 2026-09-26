@@ -113,8 +113,15 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.customer')}</div>
+          {/* An unprotected code comes back masked from storefront_customer_portal: the name is its first
+              letter and three dots, and there is no contact at all. Printed plainly, the buyer's own
+              invoice reads "A•••" over a bare dash and looks broken. The portal already says why; this
+              document, which is the one people keep and print, said nothing. */}
           <div className="mt-1 text-base font-bold text-editorial-charcoal">{customer.customerName}</div>
-          <div className="mt-1 text-sm font-semibold text-[#6b7280]">{customer.contact}</div>
+          <div className="mt-1 text-sm font-semibold text-[#6b7280]">{customer.masked ? t('cust.hiddenForSecurity') : customer.contact}</div>
+          {customer.masked ? (
+            <p className="mt-2 text-[11px] font-semibold leading-relaxed text-amber-800">{t('inv.maskedNote')}</p>
+          ) : null}
         </div>
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.payment')}</div>
