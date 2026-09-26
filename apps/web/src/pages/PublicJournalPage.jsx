@@ -17,14 +17,9 @@ import {
 import { getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { formatDate } from '@/utils/formatting.js';
+import { articleExcerpt } from '@/utils/articleExcerpt.js';
 
-const getExcerpt = (article) => article.excerpt || String(article.content || '')
-  .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
-  .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-  .replace(/[`*_>#-]/g, '')
-  .replace(/\s+/g, ' ')
-  .trim()
-  .slice(0, 180);
+const getExcerpt = (article) => articleExcerpt(article, 180);
 
 // Tabs must use the real category labels — otherwise the filter (which compares against
 // getJournalCategoryLabel) never matches and every non-{t("journal.all")} tab shows zero articles.

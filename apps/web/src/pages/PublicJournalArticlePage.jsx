@@ -23,6 +23,7 @@ import { formatDate } from '@/utils/formatting.js';
 // window.location.origin, so an article viewed on a Vercel preview or a bare domain published a canonical,
 // og:url and JSON-LD @id pointing at that host (audit round 8).
 import { DEFAULT_SHARE_IMAGE, getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
+import { stripMarkdown } from '@/utils/articleExcerpt.js';
 
 const getReadingMinutes = (content) => {
   const wordCount = String(content || '').trim().split(/\s+/).filter(Boolean).length;
@@ -33,12 +34,7 @@ const getReadingMinutes = (content) => {
 const DEFAULT_DESCRIPTION = 'Read a Solivagant perfumery journal article.';
 
 
-const stripMarkdown = (value) => String(value || '')
-  .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
-  .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-  .replace(/[`*_>#-]/g, '')
-  .replace(/\s+/g, ' ')
-  .trim();
+
 
 const truncateMeta = (value, maxLength = 155) => {
   const normalized = stripMarkdown(value);

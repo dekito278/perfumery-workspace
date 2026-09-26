@@ -20,6 +20,7 @@ import {
   getPublishedJournalPosts,
 } from '@/services/journalPostsSupabaseService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
+import { articleExcerpt, stripMarkdown } from '@/utils/articleExcerpt.js';
 
 // Takes the translator: this is a module-level helper, so it cannot call a hook, and returning an
 // Indonesian fallback would put "Belum ada tanggal" under an English article.
@@ -33,14 +34,7 @@ const formatDate = (value, t) => {
   }).format(new Date(value));
 };
 
-const stripMarkdown = (value) => String(value || '')
-  .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
-  .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-  .replace(/[`*_>#-]/g, '')
-  .replace(/\s+/g, ' ')
-  .trim();
-
-const getPreviewText = (post) => stripMarkdown(post.excerpt || post.content || '');
+const getPreviewText = (post) => articleExcerpt(post);
 
 const getReadingMinutes = (post) => {
   const wordCount = stripMarkdown(post.content).split(/\s+/).filter(Boolean).length;
