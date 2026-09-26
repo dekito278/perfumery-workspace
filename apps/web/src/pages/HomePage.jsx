@@ -30,6 +30,7 @@ import {
   toAbsoluteUrl,
 } from '@/utils/seo.js';
 import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
+import { articleExcerpt } from '@/utils/articleExcerpt.js';
 
 // `family` is the perfumery family and stays as it is in both languages — Fresh, Gourmand, Woody, Floral
 // are the same words on an Indonesian shelf. `filter` is the real catalog category used in the link (the
@@ -42,8 +43,7 @@ const moodCategories = [
   { nameKey: 'mood.floral.name', family: 'Floral', filter: 'floral', bodyKey: 'mood.floral.body', siteImageKey: 'mood-floral' },
 ];
 
-const getArticleExcerpt = (article) =>
-  article?.excerpt || String(article?.content || '').replace(/[`*_>#-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
+const getArticleExcerpt = (article) => articleExcerpt(article, 120);
 
 const HomePage = () => {
   const fetchedProducts = useStorefrontProducts();
