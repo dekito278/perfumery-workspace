@@ -449,6 +449,19 @@ const PAIRED_ENV = [
     names: ['DEFAULT_ITEM_WEIGHT_GRAM', 'VITE_DEFAULT_ITEM_WEIGHT_GRAM'],
     consequence: 'the buyer would be quoted one ongkir at checkout and the order created with another, because api/orders/create.js reprices shipping from its own weight',
   },
+  {
+    // Same shape as the weight above, and found the same way: the server reads its own name and falls
+    // back to the client's, so setting only the VITE one keeps both halves on one project and only an
+    // explicit server override can drift. What makes this one worth the check is the consequence, not
+    // the likelihood — the two sides would not disagree by a number, they would be looking at two
+    // different databases.
+    what: 'Supabase project URL',
+    kind: 'text',
+    server: (env) => env('SUPABASE_URL') || env('VITE_SUPABASE_URL'),
+    client: (env) => env('VITE_SUPABASE_URL'),
+    names: ['SUPABASE_URL', 'VITE_SUPABASE_URL'],
+    consequence: 'the browser would read the catalogue from one project while every order, webhook and nightly sweep wrote to another, and Studio would never see the orders being placed',
+  },
 ];
 
 // The canonical origin is resolved twice, and the two chains are not the same. tools/seo-artifacts.mjs
@@ -528,6 +541,20 @@ const assertPairedEnvAgrees = async () => {
   for (const pair of PAIRED_ENV) {
     const rawServer = String(pair.server(env) ?? '').trim();
     const rawClient = String(pair.client(env) ?? '').trim();
+    // A URL pair has no fallback to default to and nothing to compare numerically: an unset pair is the
+    // app's own problem (supabaseClient throws on a missing VITE_SUPABASE_URL), while two values that
+    // disagree is this check's problem.
+    if (pair.kind === 'text') {
+      if (rawServer && rawClient && rawServer.replace(/\/$/, '') !== rawClient.replace(/\/$/, '')) {
+        console.error(
+          `[env] ${pair.what}: server "${rawServer}", browser "${rawClient}" — set ${pair.names[0]} and `
+          + `${pair.names[1]} to the same project. Left as is, ${pair.consequence}.`,
+        );
+        process.exit(1);
+      }
+      console.log(`[env] ${pair.what}: ${rawClient || rawServer ? 'one project on both sides' : 'unset here'}.`);
+      continue;
+    }
     const server = rawServer ? Number(rawServer) : pair.fallback;
     const client = rawClient ? Number(rawClient) : pair.fallback;
 
