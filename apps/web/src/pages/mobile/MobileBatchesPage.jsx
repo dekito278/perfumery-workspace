@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Calculator, ClipboardCheck, Download, Droplets, Factory, FlaskConical, History, PackageCheck, Save, ScrollText, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
+import { autoTierPriceMessage } from '@/utils/autoTierPrices.js';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
@@ -697,6 +698,10 @@ const MobileBatchesPage = () => {
       }));
       await updateFormulaStatus(selectedFormula.id, 'published_product');
       toast.success(`${productBottleCount} bottles drafted in products`);
+      // Same as the desktop batch screen and both product forms: an automatic price that failed to
+      // write is said out loud, not left for someone to notice in the catalogue.
+      const tierMessage = autoTierPriceMessage(product.autoTierPrices);
+      if (tierMessage) toast[tierMessage.level](tierMessage.text);
       setPublishConfirmOpen(false);
       navigate('/mobile/studio/products');
     } catch (error) {

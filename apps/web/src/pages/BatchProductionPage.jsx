@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Beaker, ClipboardCheck, Factory, Home, PackageCheck, Save, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
+import { autoTierPriceMessage } from '@/utils/autoTierPrices.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -440,6 +441,11 @@ const BatchProductionPage = () => {
       }));
       await updateFormulaStatus(selectedFormula.id, 'published_product');
       toast.success(`${bottleCount} bottle masuk draft product stock`);
+      // The product saved; its member and export prices may not have. Same rule as both product forms:
+      // reported, never swallowed — a batch product that reaches the catalogue at retail-only is the
+      // state the automation exists to prevent.
+      const tierMessage = autoTierPriceMessage(product.autoTierPrices);
+      if (tierMessage) toast[tierMessage.level](tierMessage.text);
       navigate('/studio/products');
     } catch (error) {
       toast.error(error.message || 'Gagal draft product stock');
