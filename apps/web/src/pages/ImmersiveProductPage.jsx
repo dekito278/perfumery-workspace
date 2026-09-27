@@ -24,7 +24,7 @@ import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { formatRupiah } from '@/services/productCatalogService.js';
+import { formatRupiah, getPrimaryVariant } from '@/services/productCatalogService.js';
 import { toast } from 'sonner';
 
 /**
@@ -106,7 +106,11 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
   // Per-variant selection so a multi-size story product isn't always charged the default variant and
   // isn't gated on the product-level total. Mirrors PublicProductDetailPage / MobileProductDetailPage.
   const variants = Array.isArray(product.variants) ? product.variants : [];
-  const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || variants[0] || null;
+  // The default is the PRIMARY variant, not whatever the row happens to list first. variants[] is stored
+  // unsorted, and the card that links here, the JSON-LD Offer and the og:price below all quote the
+  // cheapest priced one — so opening on variants[0] shows a buyer one number while telling Google
+  // another, which is the exact failure getPrimaryVariant was written for.
+  const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
   const selectedSize = selectedVariant?.size || product.size;
   const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
   const selectedPriceLabel = selectedVariant?.price || product.price;
