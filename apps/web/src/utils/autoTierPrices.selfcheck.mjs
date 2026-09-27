@@ -12,7 +12,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
@@ -172,24 +172,38 @@ assert.match(service, /previousProduct: editableProducts\.find\(\(candidate\) =>
 assert.match(service, /const applyAutoTierPrices[\s\S]{0,1600}?\} catch \(error\) \{\s*return \{ written: 0/,
   'a tier-price failure is reported, not thrown');
 
-// Four screens call saveCustomProduct — two product forms and two batch pages. The rule lives in the
-// service so it cannot hold in three of them.
-const callers = ['pages/BatchProductionPage.jsx', 'pages/mobile/MobileBatchesPage.jsx',
-  'components/product/ProductForm.jsx', 'components/product/MobileProductForm.jsx'];
+// Every screen that saves a product writes MONEY through this rule, so every one of them has to say when
+// the rule failed. The list used to be written by hand — four names — and only TWO of them, the product
+// forms, were held to reporting the outcome. Both batch screens publish a product with a retail price,
+// which writes the member and export prices just the same, and both swallowed the answer: a batch product
+// could reach the catalogue at retail-only, which is the exact state this automation exists to prevent
+// ("17 of 18 products had neither for weeks"), with nothing said.
+//
+// So the subject is derived: whoever calls saveCustomProduct( is a caller, found by walking src.
+const savers = [];
+const walk = (dir) => {
+  for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) walk(rel);
+    else if (/\.jsx?$/.test(entry.name) && !entry.name.includes('.selfcheck.')) {
+      if (/saveCustomProduct\(/.test(read(...rel.split('/')))) savers.push(rel.replace(/^\.\//, ''));
+    }
+  }
+};
+walk('.');
+// The service is where the rule LIVES, not a screen that calls it.
+const callers = savers.filter((file) => file !== 'services/productCatalogService.js');
+assert.ok(callers.length >= 4, `only ${callers.length} screens found saving a product — the walk lost them`);
+
 for (const caller of callers) {
   const source = read(...caller.split('/'));
-  assert.match(source, /saveCustomProduct\(/, `${caller} still saves through the one service`);
   assert.doesNotMatch(source, /planAutoTierPrices|AUTO_TIER_RULES/,
-    `${caller} must not carry its own copy of the rule`);
-}
-
-// Both product forms report the outcome, through the same message builder.
-for (const form of ['components/product/ProductForm.jsx', 'components/product/MobileProductForm.jsx']) {
-  const source = read(...form.split('/'));
-  assert.match(source, /const tierMessage = autoTierPriceMessage\(saved\.autoTierPrices\);/,
-    `${form} reads the outcome`);
+    `${caller} must not carry its own copy of the rule — it lives in the service so it cannot hold in three screens out of four`);
+  assert.match(source, /autoTierPriceMessage\(\w+\.autoTierPrices\)/,
+    `${caller} saves a product, which writes its member and export prices, and never reads whether that `
+    + 'write succeeded. A silent failure here is a product in the catalogue at retail only.');
   assert.match(source, /if \(tierMessage\) toast\[tierMessage\.level\]\(tierMessage\.text\);/,
-    `${form} puts it in front of the one person who can fix it`);
+    `${caller} must put the outcome in front of the one person who can fix it`);
 }
 
-console.log('autoTierPrices selfcheck OK (member at 10% and export at 3,5x follow the retail price; a hand-set price never does, and a failure is never silent)');
+console.log(`autoTierPrices selfcheck OK (member at 10% and export at 3,5x follow the retail price; a hand-set price never does, and a failure is never silent on any of the ${callers.length} screens that save a product)`);
