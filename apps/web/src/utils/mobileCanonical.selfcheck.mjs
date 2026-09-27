@@ -9,12 +9,15 @@
 // start of a path, so "Disallow: /cart" never covered /mobile/cart — nor did anything cover the mobile
 // Studio (batches, formulas, raw materials, production costing).
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { desktopCanonicalPath } from './seo.js';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const walkFiles = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (
+  entry.isDirectory() ? walkFiles(join(dir, entry.name)) : [join(dir, entry.name)]
+));
 const read = (...p) => readFileSync(join(webRoot, ...p), 'utf8');
 
 // --- the mapping ------------------------------------------------------------------------------------
@@ -61,6 +64,35 @@ assert.deepEqual(allowed,
 for (const path of allowed) {
   const probe = path.endsWith('/') ? `${path}x` : path;
   assert.ok(desktopCanonicalPath(probe), `${path} is crawlable but has no desktop twin — that is the duplicate again`);
+}
+
+// ...and a twin in the MAPPING is not a canonical on the PAGE. The list above checked four pages by
+// hand while robots.txt opened six paths, and /mobile/articles was the one in the gap: crawlable, with
+// a known desktop twin, and emitting no canonical at all. Exactly the state the three pages named in
+// this guard's header were measured in.
+//
+// So the two halves are joined: the allowed paths ARE the subject, and each has to be declared by some
+// page. Found by searching for the declaration rather than by naming files, because /mobile/dashboard
+// and /mobile/home are one page and the three tabs live in one shell.
+const pageSources = walkFiles(join(webRoot, 'src', 'pages'))
+  .filter((file) => file.endsWith('.jsx'))
+  .map((file) => readFileSync(file, 'utf8'));
+const declared = new Set();
+for (const source of pageSources) {
+  for (const [, path] of source.matchAll(/desktopCanonicalPath\('([^']+)'\)/g)) declared.add(path);
+  // The product page builds its path from the slug; record the prefix it stands for.
+  if (/desktopCanonicalPath\(`\/mobile\/products\/\$\{/.test(source)) declared.add('/mobile/products/');
+}
+assert.ok(declared.size >= 5, `only ${declared.size} mobile canonicals are declared anywhere — the scan is broken`);
+
+for (const path of allowed) {
+  // /mobile/dashboard and /mobile/home are the same screen; declaring either covers both.
+  const covered = declared.has(path)
+    || (path === '/mobile/home' && declared.has('/mobile/dashboard'))
+    || (path === '/mobile/dashboard' && declared.has('/mobile/home'));
+  assert.ok(covered,
+    `robots.txt opens ${path} to crawlers but no page declares its desktop canonical, so Google lands `
+    + 'on the duplicate with nothing saying which address is the real one');
 }
 
 console.log(`mobileCanonical selfcheck OK (${allowed.length} mobile pages crawlable, each pointing at its desktop twin)`);
