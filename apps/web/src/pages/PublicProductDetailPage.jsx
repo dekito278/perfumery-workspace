@@ -179,7 +179,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   }
 
   if (productStory) {
-    return <ImmersiveProductPage product={product} story={productStory} />;
+    return <ImmersiveProductPage product={product} story={productStory} stale={studioProducts.stale} />;
   }
 
   const siteOrigin = getSiteOrigin();

@@ -12,7 +12,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -107,4 +107,62 @@ for (const [page, variable] of [
     `${page.join('/')} shows the notice, reading the flag off its own catalogue`);
 }
 
-console.log('staleCatalog selfcheck OK (a catalogue served from this device because the server could not be reached says so, on all four buyer-facing screens)');
+// --- and no page escapes by REPLACING one of those ------------------------------------------------------
+// The four above are written by hand, and a hand-written list cannot see a page that stands in for one.
+// Both product pages `return <ImmersiveProductPage …>` as soon as a product has a story — before they
+// reach their own notice — so for the shop's immersive product the warning never rendered at all. That
+// is the page where the buyer adds to cart, reading a price that may be days old.
+//
+// So the subject is derived: a page that renders the shared product visual is a page showing a product
+// to a buyer, and the ones where the buyer ACTS on the price have to admit when it might be stale.
+const pagesRoot = join(root, 'pages');
+const walkPages = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (
+  entry.isDirectory() ? walkPages(join(dir, entry.name)) : [join(dir, entry.name)]
+));
+// Exempt for what each IS, not for its name.
+const NOT_WHERE_A_PRICE_IS_ACTED_ON = new Map([
+  ['ProductListPage.jsx', 'Studio: the catalogue is the thing being edited, and a failed fetch there already fails loudly'],
+  ['MobileProductListPage.jsx', 'Studio, same'],
+  ['CartPage.jsx', 'lines already chosen; cartPriceChange is the guard that reprices them against the live catalogue'],
+  ['MobileCartPage.jsx', 'same'],
+  ['CheckoutPage.jsx', 'same, and the order endpoint prices the order itself'],
+  ['MobileCheckoutPage.jsx', 'same'],
+  ['HomePage.jsx', 'a doorway: every card leads to the catalogue or the product page, which carry the notice'],
+  ['MobileStorefrontPage.jsx', 'same doorway'],
+]);
+const showsAProduct = walkPages(pagesRoot)
+  .filter((file) => file.endsWith('.jsx'))
+  .map((file) => [file.slice(pagesRoot.length + 1), readFileSync(file, 'utf8')])
+  .filter(([, source]) => /<ProductVisual/.test(source));
+assert.ok(showsAProduct.length >= 10,
+  `only ${showsAProduct.length} pages render the product visual — the scan is broken, not the code`);
+
+let actingSurfaces = 0;
+for (const [name, source] of showsAProduct) {
+  if (NOT_WHERE_A_PRICE_IS_ACTED_ON.has(name.split('/').pop())) continue;
+  assert.match(source, /<StaleCatalogNotice stale=\{/,
+    `${name} shows a buyer a price without admitting the catalogue may have come from their own device. `
+    + 'That is the VPN incident this guard was written for, on a page it could not see.');
+  actingSurfaces += 1;
+}
+assert.ok(actingSurfaces >= 5,
+  `only ${actingSurfaces} surfaces checked — the exemptions swallowed them`);
+
+// The notice on a stand-in page is only as alive as the flag it is handed. A page that renders one of
+// these and forgets the prop leaves a component that can never fire — silent in exactly the way this
+// guard exists to prevent, and green to every check above.
+const standIns = walkPages(pagesRoot)
+  .filter((file) => file.endsWith('.jsx'))
+  .flatMap((file) => [...readFileSync(file, 'utf8').matchAll(/<(\w*ProductPage)\b([^>]*)>/g)]
+    .filter(([, name]) => name !== 'ProductPage')
+    .map(([, name, props]) => [file.slice(pagesRoot.length + 1), name, props]));
+assert.ok(standIns.length >= 2, `only ${standIns.length} pages render a stand-in product page — the scan is broken`);
+for (const [where, name, props] of standIns) {
+  // A spread forwards it: the immersive page's own shell renders itself as `<ImmersiveProductPage
+  // {...props} />`, which passes the flag along rather than dropping it.
+  assert.match(props, /stale=\{|\{\.\.\.props\}/,
+    `${where} renders <${name}> without handing it the staleness of its own catalogue, so the notice `
+    + 'inside it can never fire');
+}
+
+console.log('staleCatalog selfcheck OK (a catalogue served from this device because the server could not be reached says so, on every screen where a buyer acts on a price)');

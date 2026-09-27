@@ -20,10 +20,20 @@ const phone = read('pages', 'mobile', 'MobileProductDetailPage.jsx');
 const immersive = read('pages', 'ImmersiveProductPage.jsx');
 
 // --- 1. Both surfaces hand off, and the phone says which shell it wants -------------------------------
-assert.match(desktop, /<ImmersiveProductPage product=\{product\} story=\{productStory\} \/>/,
-  'the desktop product page stopped showing the story');
-assert.match(phone, /<ImmersiveProductPage product=\{product\} story=\{productStory\} mobile \/>/,
-  'the phone shows the ordinary product page for a perfume that has a story');
+// Written against the PROPS the handoff has to carry, not the exact spelling of the element: pinning
+// the whole tag broke the day the stale-catalogue flag was threaded through it, on a change that did
+// not touch this rule at all. What matters is that each surface hands the story over, and that the
+// phone says which shell it wants.
+const handoff = (source) => source.match(/<ImmersiveProductPage\b([^>]*)>/)?.[1] ?? '';
+const desktopHandoff = handoff(desktop);
+const phoneHandoff = handoff(phone);
+for (const [name, props] of [['desktop', desktopHandoff], ['phone', phoneHandoff]]) {
+  assert.ok(props, `the ${name} product page stopped showing the story`);
+  assert.match(props, /product=\{product\}/, `the ${name} handoff no longer passes the product`);
+  assert.match(props, /story=\{productStory\}/, `the ${name} handoff no longer passes the story`);
+}
+assert.match(phoneHandoff, /\bmobile\b/, 'the phone must ask for the mobile shell');
+assert.doesNotMatch(desktopHandoff, /\bmobile\b/, 'the desktop must not');
 
 // --- 2. They resolve the story by the SAME rule -------------------------------------------------------
 // Not "both have a story variable": the RULE. The English shop gets a story only when an English one
