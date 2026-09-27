@@ -12,7 +12,7 @@
 // Worse than the price alone: the price came from the cheapest variant while the SIZE came from the
 // first, so a card could read "30 ml — Rp 129.000" where Rp 129.000 is the 10 ml price.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -52,10 +52,26 @@ assert.match(mapper, /compareAtPriceNumber: Number\(getPrimaryVariant\(variants\
 
 // --- the detail pages must open on that same bottle --------------------------------------------------
 // Otherwise the page can render a headline of Rp 129.000 above a button that charges Rp 310.000.
-for (const file of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
-  const source = read(...file);
+// Derived, not listed: any page that resolves a chosen variant has to fall back the same way. Two of
+// them were named here by hand, and the page that REPLACES both — ImmersiveProductPage, returned into
+// as soon as a product has a story — fell back to variants[0]. Stored rows are not sorted, so that page
+// opened on whatever size the row listed first while the card linking to it, the JSON-LD Offer and the
+// og:price all quoted the cheapest. One number on the screen, another in the markup.
+const pagesRoot = join(src, 'pages');
+const walkPages = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (
+  entry.isDirectory() ? walkPages(join(dir, entry.name)) : [join(dir, entry.name)]
+));
+const variantPickers = walkPages(pagesRoot)
+  .filter((file) => file.endsWith('.jsx'))
+  .map((file) => [file.slice(pagesRoot.length + 1), strip(readFileSync(file, 'utf8'))])
+  .filter(([, source]) => /=== selectedVariantId\)/.test(source));
+assert.ok(variantPickers.length >= 3,
+  `only ${variantPickers.length} pages resolve a chosen variant — the scan is broken, not the code`);
+
+for (const [name, source] of variantPickers) {
   assert.match(source, /=== selectedVariantId\) \|\| getPrimaryVariant\(variants\)/,
-    `${file.join('/')} must default to the variant the headline price belongs to`);
+    `${name} falls back to something other than the primary variant, so it can open on a different `
+    + 'size and price than the card that linked to it');
 }
 
 // --- and the prerender must read the column the forms now write ---------------------------------------
