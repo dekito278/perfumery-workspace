@@ -107,16 +107,57 @@ assert.doesNotMatch(hook, /useEffect\([\s\S]{0,400}onAuthStateChange/,
 
 // --- every buyer-facing surface reads the tiered catalog --------------------------------------------
 // Missing one is not a crash, it is a page quoting retail next to a page quoting member.
-for (const file of [
+//
+// The list below is the FLOOR, kept by hand because two of its entries — the catalogue and the home on
+// the phone — are reached through a tab shell rather than by their own route, so no router walk finds
+// them. Every routed buyer page that asks the catalogue anything is added to it.
+//
+// That union adds nothing today, and saying so is the point: I went looking for pages the hand-written
+// list had missed and found none. Three pages LOOK like candidates — both checkouts and the customer
+// portal — but they import useMemberPrices and useTierPrices from the same module and never read the
+// catalogue at all. What the union buys is the next routed buyer page, which joins the subject on the
+// day it gets a route instead of on the day someone remembers this file.
+const FLOOR = [
   ['hooks', 'useCart.js'], ['pages', 'CatalogPage.jsx'], ['pages', 'HomePage.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'CartPage.jsx'],
   ['pages', 'mobile', 'MobileCatalogPage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['pages', 'mobile', 'MobileProductDetailPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
-]) {
+];
+
+// A page a stranger can open, named by the router, that asks the catalogue anything.
+const app = readFileSync(join(src, 'App.jsx'), 'utf8');
+const importedFrom = new Map([...app.matchAll(/(?:import\s+(\w+)\s+from|const\s+(\w+)\s*=\s*lazyRoute\(\(\)\s*=>\s*import\()\s*'@\/pages\/([^']+)'/g)]
+  .map((m) => [m[1] || m[2], m[3]]));
+const routedBuyerPages = new Set();
+for (const [, path, outer, inner] of app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)(?:><(\w+))?/g)) {
+  if (/^\/(?:studio|mobile\/studio)/.test(path)) continue;
+  const file = importedFrom.get(inner || outer);
+  if (file) routedBuyerPages.add(file);
+}
+assert.ok(routedBuyerPages.size >= 15, `only ${routedBuyerPages.size} buyer pages parsed from the router`);
+
+// The bespoke pages ask the catalogue for ONE product by slug, and read its notes, name and slug —
+// never its price. A tier price on a reference perfume would mean nothing, so the raw catalogue is the
+// right thing for them to hold.
+const REFERENCE_ONLY = new Set(['BespokePage.jsx', 'mobile/MobileBespokePage.jsx']);
+const CALLS_A_CATALOG = /use(?:Storefront|Catalog)Products\(/;
+
+const subjects = [...FLOOR];
+for (const file of [...routedBuyerPages].sort()) {
+  if (REFERENCE_ONLY.has(file)) continue;
+  if (!CALLS_A_CATALOG.test(read('pages', ...file.split('/')))) continue;
+  const parts = ['pages', ...file.split('/')];
+  if (!subjects.some((entry) => entry.join('/') === parts.join('/'))) subjects.push(parts);
+}
+assert.ok(subjects.length >= FLOOR.length,
+  'the union came back smaller than the floor, which means the walk dropped something');
+
+for (const file of subjects) {
   const source = read(...file);
   assert.match(source, /useStorefrontProducts/, `${file.join('/')} must read the tier-priced catalog`);
-  assert.doesNotMatch(source, /useCatalogProducts/, `${file.join('/')} must not also read the raw catalog`);
+  assert.doesNotMatch(source, /useCatalogProducts\(/, `${file.join('/')} must not also read the raw catalog`);
 }
+
 // The product form is the counter-example: it edits retail, so it must never see a tiered price or the
 // owner would save a member price back over the retail one.
 for (const file of [['components', 'product', 'ProductForm.jsx'], ['components', 'product', 'MobileProductForm.jsx']]) {
