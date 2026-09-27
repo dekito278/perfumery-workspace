@@ -362,6 +362,7 @@ const generateSeoArtifacts = async () => {
   if (urls) {
     finalizeRobots(distRoot, env.siteUrl);
     console.log(`[seo] Wrote sitemap.xml with ${urls} URL(s).`);
+    assertAdvertisedRoutesExist(sitemapPaths(distRoot), 'sitemap URL');
   }
 };
 
@@ -799,10 +800,32 @@ const assertNoChunkSwarm = () => {
 // had a prerendered page with its own title and description, and was listed in llms.txt for AI crawlers —
 // while App.jsx had no route for it, so every arrival got the 404 page. The page component exists and is
 // finished; it was simply never wired up, and nothing connected the advertising to the routing.
-const assertAdvertisedRoutesExist = (staticRoutes) => {
+//
+// The four static routes are the FLOOR, not the subject. The build advertises far more than them: every
+// product page, every journal article, and an English twin of each — 46 URLs in today's sitemap against
+// the 4 this check began with. A slug in the sitemap that no route matches is a 404 handed straight to
+// Google, which is the very thing /materials was.
+const assertAdvertisedRoutesExist = (advertised, what = 'advertised static route') => {
+  if (!advertised.length) return;
   const app = fs.readFileSync(path.join(webRoot, 'src', 'App.jsx'), 'utf8');
-  const routed = new Set([...app.matchAll(/path="([^"]+)"/g)].map((m) => m[1]));
-  const missing = staticRoutes.filter((route) => !routed.has(route));
+  // The catch-all is dropped on purpose: it matches every string, so with it in the list a path nobody
+  // renders would "match" the 404 route and pass.
+  const routed = [...app.matchAll(/<Route\s+path="([^"]+)"/g)].map((m) => m[1]).filter((route) => !route.endsWith('*'));
+  if (routed.length < 40) {
+    console.error(`[routes] only ${routed.length} routes parsed from App.jsx — the parse is broken, not the routing.`);
+    process.exit(1);
+  }
+  // A parameterised route stands for many URLs, and the English shop is the same router under a
+  // basename — /en/catalog/hug-n-1 is served by <Route path="/catalog/:slug">, so the prefix comes off
+  // before the comparison rather than every twin being counted missing.
+  const matchesRoute = (candidate) => {
+    const withoutSlash = candidate.length > 1 ? candidate.replace(/\/$/, '') : candidate;
+    const bare = withoutSlash === EN_PREFIX
+      ? '/'
+      : (withoutSlash.startsWith(`${EN_PREFIX}/`) ? withoutSlash.slice(EN_PREFIX.length) : withoutSlash);
+    return routed.some((route) => new RegExp(`^${route.replace(/:[^/]+/g, '[^/]+')}$`).test(bare));
+  };
+  const missing = advertised.filter((route) => !matchesRoute(route));
   if (missing.length) {
     console.error(
       `[routes] the build advertises ${missing.join(', ')} in the sitemap, the prerendered pages and `
@@ -811,7 +834,19 @@ const assertAdvertisedRoutesExist = (staticRoutes) => {
     );
     process.exit(1);
   }
-  console.log(`[routes] ${staticRoutes.length} advertised static route(s) exist in App.jsx.`);
+  console.log(`[routes] ${advertised.length} ${what}(s) exist in App.jsx.`);
+};
+
+// What the build ACTUALLY advertised, read back off the file it just wrote rather than from a list that
+// has to be kept in step with it by hand.
+const sitemapPaths = (distRoot) => {
+  const file = path.join(distRoot, 'sitemap.xml');
+  if (!fs.existsSync(file)) return [];
+  return [...fs.readFileSync(file, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)]
+    .map((match) => {
+      try { return new URL(match[1]).pathname; } catch { return ''; }
+    })
+    .filter(Boolean);
 };
 
 // Chunks listed as deferred in vite.config.js must never be reachable from the entry by a STATIC import.
