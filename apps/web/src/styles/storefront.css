@@ -7045,6 +7045,13 @@ main :is(a, figure, picture, div, span):has(> img) {
   color: var(--imm-muted);
 }
 
+/* The stale-catalogue notice keeps its own light amber panel here on purpose: on #1a0f14 it reads as
+   what it is, a warning that interrupts. Only its spacing belongs to this page. */
+.imm-product__stale {
+  margin-bottom: 28px;
+  text-align: left;
+}
+
 /* PriceNote is written for the light storefront — amber on cream. Here it sits on #1a0f14, so the
    colours come from the immersive tokens instead. Selected structurally rather than by utility class:
    a Tailwind class name is not a hook this stylesheet gets to rely on. */

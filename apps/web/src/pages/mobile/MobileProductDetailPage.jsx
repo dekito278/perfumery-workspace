@@ -110,7 +110,7 @@ const MobileProductDetailPage = () => {
   }
 
   if (product && productStory) {
-    return <ImmersiveProductPage product={product} story={productStory} mobile />;
+    return <ImmersiveProductPage product={product} story={productStory} stale={allProducts.stale} mobile />;
   }
 
   if (!product) {

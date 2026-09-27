@@ -20,6 +20,7 @@ import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton
 import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -37,7 +38,7 @@ import { toast } from 'sonner';
  * One component, two shells, for the reason this repo keeps relearning: a second copy is a second place
  * to fix the English shop's missing cart, and only one of them would get fixed.
  */
-const ImmersiveProductPage = ({ product, story, mobile = false }) => {
+const ImmersiveProductPage = ({ product, story, mobile = false, stale = false }) => {
   const { addItem } = useCart();
   const { t, isInternational } = useTranslate();
   const { magnetic } = useMicroInteractions();
@@ -283,6 +284,12 @@ const ImmersiveProductPage = ({ product, story, mobile = false }) => {
 
         {/* ── Product detail (compact) ── */}
         <section className="imm-product" data-imm-reveal>
+          {/* A catalogue served from this device because the server could not be reached says so here
+              too. Both product pages render this notice — and both return into THIS component before
+              they reach it, so for a product with a story the warning never appeared at all. This is
+              the page where the buyer adds to cart, which is exactly where a price that may have moved
+              has to be admitted. */}
+          <StaleCatalogNotice stale={stale} className="imm-product__stale" />
           <div className="imm-product__notes">
             <div className="imm-product__note-row">
               <span className="imm-product__note-label">Top</span>
