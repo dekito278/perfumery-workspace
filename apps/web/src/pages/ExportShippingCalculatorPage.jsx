@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { RAYSPEED_MEASURED_ON, rayspeedServes } from '@/data/rayspeedRates.js';
@@ -159,7 +160,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const shippingCharged = quoteLater ? 0 : typedShipping;
   // An order may not be written on an undecided figure. Zero is a legitimate answer — Dekito can waive
   // the freight on an order he chooses to — but it has to be typed, not left behind.
-  const shippingSettled = quoteLater || manualShipping.trim() !== '';
+  const shippingSettled = quoteLater || manualShipping !== '';
   const shippingLabel = quoteLater ? 'dikutip menyusul' : 'dikutip manual';
   const summary = buildExportQuote({
     destinationName: destination?.name || '',
@@ -517,11 +518,9 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               buttons fill this field — nothing writes it on its own. */}
           <label className="mt-3 grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
             Ongkir yang ditagih ke pembeli
-              <input
-                type="number"
-                min="0"
+              <LocalizedNumberInput
                 value={manualShipping}
-                onChange={(event) => setManualShipping(event.target.value)}
+                onChange={setManualShipping}
                 className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold normal-case text-[#111827]"
                 placeholder="0"
               />
@@ -578,7 +577,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
                 {priceCard.regionLabel} · {priceCard.tierLabel} · {priceCard.bottles} botol · ≈ {formatPrice(priceCardIdr)}
                 {' '}(kurs {USD_PRICE_RATE.toLocaleString('id-ID')}, {USD_PRICE_RATE_SET_ON})
               </p>
-              <Button type="button" variant="outline" className="mt-2 h-9 rounded-2xl bg-white text-xs" onClick={() => setManualShipping(String(priceCardIdr))}>
+              <Button type="button" variant="outline" className="mt-2 h-9 rounded-2xl bg-white text-xs" onClick={() => setManualShipping(priceCardIdr)}>
                 Pakai {formatPrice(priceCardIdr)}
               </Button>
             </>
@@ -608,7 +607,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
             <p className="mt-1 text-3xl font-bold text-emerald-950">{formatPrice(quote.total)}</p>
             {/* The COST, offered as a figure to charge only because Dekito sometimes decides to pass it
                 through at cost. The card above is the price; this one is what the parcel costs us. */}
-            <Button type="button" variant="outline" className="mt-2 h-9 rounded-2xl bg-white text-xs" onClick={() => setManualShipping(String(Math.round(quote.total)))}>
+            <Button type="button" variant="outline" className="mt-2 h-9 rounded-2xl bg-white text-xs" onClick={() => setManualShipping(Math.round(quote.total))}>
               Pakai {formatPrice(quote.total)}
             </Button>
             {quote.odaFee ? (

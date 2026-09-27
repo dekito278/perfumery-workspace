@@ -122,14 +122,25 @@ for (const automatic of ['priceCardIdr', 'quote?.total', 'quote.total']) {
 }
 // Reference is useless unless it can be taken in one press, and the button must fill the FIELD rather
 // than the charge — otherwise it is the automatic rule again, wearing a button.
-assert.match(page, /onClick=\{\(\) => setManualShipping\(String\(priceCardIdr\)\)\}/,
+// What the press has to DO, not how it is spelled. Pinned to `String(priceCardIdr)` these two lines
+// failed the day the field moved to LocalizedNumberInput and stopped needing the String() — a change
+// that made the figure MORE correct, not less.
+assert.match(page, /onClick=\{\(\) => setManualShipping\((?:String\()?priceCardIdr/,
   'the card figure must be one press away from the shipping field');
-assert.match(page, /onClick=\{\(\) => setManualShipping\(String\(Math\.round\(quote\.total\)\)\)\}/,
+assert.match(page, /onClick=\{\(\) => setManualShipping\((?:String\()?Math\.round\(quote\.total\)/,
   'and so must the carrier cost, for the orders he passes through at cost');
 // An empty field is "not decided", never "free": that is what stops a whole freight being given away by
-// someone tabbing past it. Zero is still allowed — it just has to be typed.
-assert.match(page, /const shippingSettled = quoteLater \|\| manualShipping\.trim\(\) !== '';/,
-  'an undecided shipping figure must block the order, not default to zero');
+// someone tabbing past it. Zero is still allowed — it just has to be typed. RUN the rule rather than
+// pinning its text: the control now reports a number, so `.trim()` is gone and the words changed while
+// the rule did not.
+const settledSource = (page.match(/const shippingSettled = ([\s\S]*?);/) || [])[1];
+assert.ok(settledSource, 'the page must decide whether the shipping figure has been settled');
+// eslint-disable-next-line no-new-func -- the page's own expression, read from the file, run as written
+const isSettled = new Function('quoteLater', 'manualShipping', `return (${settledSource});`);
+assert.equal(!!isSettled(false, ''), false, 'an untouched field is undecided, not free');
+assert.equal(!!isSettled(false, 0), true, 'a typed zero is a decision Dekito is allowed to make');
+assert.equal(!!isSettled(false, 670500), true, 'and a typed charge settles it');
+assert.equal(!!isSettled(true, ''), true, 'quoting later settles it too — the figure follows by hand');
 assert.match(page, /shippingSettled,/, 'and the order builder must be told');
 // The rate is named by whatever it ACTUALLY converted with — read off the conversion, not pinned to a
 // constant. Pinned to USD_PER_RUPIAH_RATE, this line held the screen to the rate documented as
