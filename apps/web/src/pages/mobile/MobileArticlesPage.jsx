@@ -21,6 +21,7 @@ import {
 } from '@/services/journalPostsSupabaseService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { articleExcerpt, stripMarkdown } from '@/utils/articleExcerpt.js';
+import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
 // Takes the translator: this is a module-level helper, so it cannot call a hook, and returning an
 // Indonesian fallback would put "Belum ada tanggal" under an English article.
@@ -125,6 +126,11 @@ export const MobileArticlesContent = ({ active = true }) => {
       {active ? (
         <Helmet>
           <title>{t("journal.tabMobile")}</title>
+          {/* /mobile/articles is a second address for /journal, it is one of the six paths robots.txt
+              opens back up, and Google crawls mobile-first — so without this the crawler lands here
+              with nothing saying which of the two is the real one. The other five allowed paths have
+              carried a canonical since the mobile-canonical work; this tab was the one left out. */}
+          <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/articles'))} />
           <meta name="description" content={t("journal.metaMobile")} />
         </Helmet>
       ) : null}
