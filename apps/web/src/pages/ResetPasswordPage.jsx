@@ -84,7 +84,7 @@ const ResetPasswordPage = ({ mobile = false }) => {
   if (!initialLoading && !session?.user) {
     return (
       <div className={shellClassName}>
-        <Helmet><title>Reset Password - Solivagant</title></Helmet>
+        <Helmet><title>Reset Password - Solivagant</title><meta name="robots" content="noindex,follow" /></Helmet>
         <div className={cardClassName}>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
             <KeyRound className="h-6 w-6" />
@@ -104,7 +104,7 @@ const ResetPasswordPage = ({ mobile = false }) => {
   if (mfaChallenge) {
     return (
       <div className={shellClassName}>
-        <Helmet><title>Reset Password - Solivagant</title></Helmet>
+        <Helmet><title>Reset Password - Solivagant</title><meta name="robots" content="noindex,follow" /></Helmet>
         <div className={cardClassName}>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
             <KeyRound className="h-6 w-6" />
@@ -139,7 +139,7 @@ const ResetPasswordPage = ({ mobile = false }) => {
 
   return (
     <div className={shellClassName}>
-      <Helmet><title>Reset Password - Solivagant</title></Helmet>
+      <Helmet><title>Reset Password - Solivagant</title><meta name="robots" content="noindex,follow" /></Helmet>
       <div className={cardClassName}>
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
           <KeyRound className="h-6 w-6" />
