@@ -10,6 +10,11 @@
 
 /** Grams per bottle, by nominal size in millilitres. */
 export const ITEM_WEIGHT_GRAM_BY_ML = {
+  // The free gift vial, Dekito's figure 2026-09-29. It is here rather than beside the vial rules because
+  // this table is the one home for "what does this weigh": without the entry, a 2 ml vial falls to the
+  // 300 g default below — heavier than a 30 ml bottle — and every order carrying a gift is quoted
+  // freight for 300 g that is not in the box.
+  2: 10,
   10: 100,
   30: 250,
   50: 350,

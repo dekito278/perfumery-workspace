@@ -12,13 +12,15 @@
 // So a saved tier price is treated as "still automatic" only while it equals what this rule would have
 // produced from the PREVIOUS retail price. The moment it differs, it is a decision, and decisions win.
 //
-// Import-free apart from the two pricing formulas, so the guard runs the rules instead of reading them.
+// Free of framework imports apart from the two pricing formulas and the vial rule, so the guard runs the
+// rules instead of reading them.
 import {
   DEFAULT_MEMBER_DISCOUNT_PERCENT,
   DEFAULT_OVERSEAS_MULTIPLIER,
   memberPriceFromRetail,
   overseasPriceFromRetail,
 } from './memberPriceFill.js';
+import { isFreeVialProduct } from './freeVial.js';
 
 export const AUTO_TIER_RULES = [
   { tier: 'member', compute: (retail) => memberPriceFromRetail(retail, DEFAULT_MEMBER_DISCOUNT_PERCENT) },
@@ -61,6 +63,9 @@ export const savedTierIndex = (rows = []) => {
  *   stops trusting.
  */
 export const planAutoTierPrices = ({ product, previousProduct = null, savedRows = [] } = {}) => {
+  // A gift has no member price and no export price. The vial rows are stock, not a sale — pricing them
+  // would put "MEMBER Rp 0" beside a thing nobody pays for, and write two tier rows per aroma for it.
+  if (isFreeVialProduct(product)) return { writes: [], kept: [] };
   const nextRetail = retailByVariant(product);
   const previousRetail = previousProduct ? retailByVariant(previousProduct) : {};
   const saved = savedTierIndex(savedRows);
