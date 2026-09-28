@@ -3,6 +3,7 @@
 // tools/build.mjs. Never throws in a way that fails the build — SEO is best-effort.
 
 import fs from 'node:fs';
+import { isFreeVialProduct } from '../src/utils/freeVial.js';
 import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH } from '../src/utils/seo.js';
 import { schemaAvailability } from '../src/utils/schemaAvailability.js';
@@ -132,6 +133,10 @@ export const fetchPublicProducts = async (env) => {
   return rows
     .filter((row) => row && row.slug && row.name)
     .filter((row) => !toList(row.tags).some((tag) => tag.toLowerCase() === DRAFT_TAG))
+    // The vial rows are gift stock, readable by an anonymous browser so the cart can offer them — which
+    // also puts them in this fetch. Prerendering /catalog/<vial> and listing it in the sitemap would
+    // advertise a page selling nothing for Rp 0.
+    .filter((row) => !isFreeVialProduct({ tags: row.tags }))
     .map((row) => ({
       slug: String(row.slug),
       name: String(row.name).trim(),

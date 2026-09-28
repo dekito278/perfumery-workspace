@@ -5,6 +5,7 @@ import { normalizeWear } from '@/utils/productWear.js';
 // No cycle: tierPricingService imports only the supabase client and a pure tier helper.
 import { listTierPricesForProduct, saveTierPrice } from '@/services/tierPricingService.js';
 import { planAutoTierPrices } from '@/utils/autoTierPrices.js';
+import { isFreeVialProduct } from '@/utils/freeVial.js';
 import { deleteProductImages } from '@/services/productImageStorageService.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
@@ -87,7 +88,12 @@ export const isProductDraft = (product = {}) => (
   splitList(product.tags).some((tag) => tag.toLowerCase() === PRODUCT_DRAFT_TAG.toLowerCase())
 );
 
-export const isProductVisibleInStorefront = (product = {}) => !isProductDraft(product);
+// The vial rows carry stock for a gift, not something to sell. They have to be READABLE by an anonymous
+// browser — that is how the cart knows which aromas are still available — so they sit in the public view
+// like everything else, and are kept out of the listings here instead. One helper, eleven pages.
+export const isProductVisibleInStorefront = (product = {}) => (
+  !isProductDraft(product) && !isFreeVialProduct(product)
+);
 
 export const getProductPublishChecklist = (product = {}) => {
   const variants = normalizeProductVariants(product);
