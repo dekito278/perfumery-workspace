@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from '@/utils/freeVial.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
@@ -481,7 +482,7 @@ const MobileCheckoutPage = () => {
                     {hasLineDiscount ? (
                       <div className="text-[11px] font-bold text-[#6b7280] line-through">{formatTotal(discountedLine.originalTotal)}</div>
                     ) : null}
-                    <p className="text-xs font-bold text-editorial-charcoal">{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p>
+                    <p className="text-xs font-bold text-editorial-charcoal">{isFreeVialLine(item) ? FREE_VIAL_PRICE_LABEL : formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p>
                     {hasLineDiscount ? (
                       <div className="mt-0.5 text-[10px] font-bold text-emerald-700">-{formatTotal(discountedLine.discount)}</div>
                     ) : null}

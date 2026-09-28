@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
 import {
   FREE_VIAL_SIZE, FREE_VIAL_TAG, FREE_VIAL_WEIGHT_GRAM, FREE_VIALS_PER_ORDER,
+  FREE_VIAL_PRICE_LABEL,
   buildFreeVialCartItem, freeVialChoices, isFreeVialLine, isFreeVialProduct,
   splitFreeVialLines, weighFreeVialLines,
 } from './freeVial.js';
@@ -227,5 +228,51 @@ assert.match(picker, /if \(!vialProduct \|\| !choices\.length \|\| !lines\.lengt
 for (const key of ['cart.giftTitle', 'cart.giftBody', 'cart.giftChosen', 'cart.giftRemove']) {
   assert.match(picker, new RegExp(`'${key.replace('.', '\\.')}'`), `the picker uses ${key}`);
 }
+
+// --- 12. A gift never prints as "Rp 0", on any screen that prints a price --------------------------------
+// Measured on the running shop, 2026-09-29: the cart kept the gift out of its list correctly, and the
+// CHECKOUT summary right after it printed "Vial hadiah 2 ml — HUG N°1 · Qty 1 · Rp 0". A zero price reads
+// as a line the shop failed to price, and on a packing sheet it reads as something to charge for.
+assert.equal(FREE_VIAL_PRICE_LABEL, 'Gratis');
+assert.equal(buildFreeVialCartItem({ vialProduct: {}, choice: {} }).price, FREE_VIAL_PRICE_LABEL);
+
+// Six order screens all render `item.price || formatTotal(...)`, so the endpoint writing the word is what
+// fixes every one of them at once. The subject is derived, not listed.
+const orderScreens = [];
+const walkPages = (dir) => {
+  for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) walkPages(rel);
+    else if (entry.name.endsWith('.jsx') && /item\.price \|\| formatTotal\(/.test(read(...rel.split('/')))) orderScreens.push(rel);
+  }
+};
+walkPages('pages');
+assert.ok(orderScreens.length >= 6,
+  `only ${orderScreens.length} order screens print a line price — the scan is more likely broken than the code`);
+
+const endpointSource = readFileSync(join(root, '..', 'api', 'orders', 'create.js'), 'utf8');
+assert.match(endpointSource, /price: isVial \? FREE_VIAL_PRICE_LABEL : rupiah\(unitPrice\)/,
+  'the endpoint must write the word, which is what those screens read');
+
+// And the two checkout summaries, which compute the amount themselves instead of reading item.price.
+for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
+  assert.match(read(...page.split('/')), /isFreeVialLine\(item\) \? FREE_VIAL_PRICE_LABEL :/,
+    `${page} computes the line total itself, so it has to say the word itself`);
+}
+
+// The sheet Dekito packs from names the gift whatever he called the vial product. Without this the only
+// thing marking it is a product name he chose, which nothing here can see.
+const label = read('utils', 'shippingLabelPdf.js');
+assert.match(label, /isFreeVialLine\(item\) \? ` \(\$\{FREE_VIAL_PRICE_LABEL\}\)` : ''/,
+  'the shipping label must mark the gift line');
+
+// --- 13. An order item carries ONLY the gift tag, never the product's own -------------------------------
+// The endpoint reads storefront_products, the base table, whose tags carry the internal ones the public
+// view strips — batch ids, stock corrections, and the per-bottle COGS. Copying them onto an order item
+// would publish Dekito's costs to the buyer's portal and invoice payload. Found by writing it wrong first.
+assert.match(endpointSource, /tags: isVial \? \[FREE_VIAL_TAG\] : \[\] \}\);/,
+  'an order line may carry the gift tag and nothing else');
+assert.doesNotMatch(endpointSource, /tags: product\.tags/,
+  "the product's own tags must never reach an order item — they carry the COGS");
 
 console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);

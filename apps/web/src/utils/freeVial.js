@@ -37,6 +37,15 @@ export const FREE_VIAL_TAG = 'Vial hadiah';
 /** How many a buyer gets. One, per ORDER — not per bottle. */
 export const FREE_VIALS_PER_ORDER = 1;
 
+/**
+ * What a gift line says where every other line says a price.
+ *
+ * "Rp 0" reads as an error — a line the shop failed to price — and on a packing slip it reads as
+ * something to charge for. One word, and it is Indonesian because the shop with a cart is the Indonesian
+ * one: the English shop has no checkout, so no English order can carry a gift.
+ */
+export const FREE_VIAL_PRICE_LABEL = 'Gratis';
+
 /** The size on the label. */
 export const FREE_VIAL_SIZE = '2 ml';
 
@@ -142,7 +151,7 @@ export const buildFreeVialCartItem = ({ vialProduct = {}, choice = {} } = {}) =>
   category: vialProduct.category || '',
   tags: [FREE_VIAL_TAG],
   priceNumber: 0,
-  price: 'Gratis',
+  price: FREE_VIAL_PRICE_LABEL,
   quantity: FREE_VIALS_PER_ORDER,
   maxStock: choice.stock,
 });

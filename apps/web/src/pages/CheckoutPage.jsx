@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from '@/utils/freeVial.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
@@ -374,7 +375,7 @@ const CheckoutPage = () => {
                   <span>{t('checkout.sizeQty', { size: item.size, qty: item.quantity })}</span>
                   <CartPriceChange item={item} />
                 </div>
-                <strong className="checkout-summary-line__price">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
+                <strong className="checkout-summary-line__price">{isFreeVialLine(item) ? FREE_VIAL_PRICE_LABEL : formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
               </div>
             ))}
 
