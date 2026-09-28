@@ -5,8 +5,10 @@
 // could therefore flip a cancelled/expired order back to paid and re-deduct stock that had already been
 // restored and resold (audit round 7). Keep the rules here so the two paths cannot drift again.
 
-const TERMINAL_CANCEL_STATUSES = ['failed', 'expired', 'refunded', 'cancelled'];
-const CLOSED_PAYMENT_STATUSES = ['expired', 'failed', 'refunded'];
+import { CLOSED_PAYMENT_STATUSES } from './orderClosed.js';
+
+// A cancel VERDICT can also name the order status itself, which is why this one carries 'cancelled'.
+const TERMINAL_CANCEL_STATUSES = [...CLOSED_PAYMENT_STATUSES, 'cancelled'];
 
 export const isTerminalCancelStatus = (status) => TERMINAL_CANCEL_STATUSES.includes(status);
 

@@ -16,6 +16,7 @@ process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
+import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -42,8 +43,20 @@ const orderService = read('services', 'orderService.js');
 // `export … from` would not bind the name locally.
 const delegate = orderService.match(/(?:import|export) \{[^}]*\bisOrderClosedForPayment\b[^}]*\} from '@\/utils\/([\w.]+)'/);
 const service = delegate ? read('utils', delegate[1]) : orderService;
-assert.match(service, /export const isOrderClosedForPayment = \(order = \{\}\) => \(\s*order\?\.status === 'cancelled' \|\| \['expired', 'failed', 'refunded'\]\.includes\(order\?\.paymentStatus\)/,
-  'and that helper still covers a cancelled order and the three dead payment statuses');
+// RUN it rather than pin its text. Pinned to the literal expression, this line failed the day the three
+// statuses were lifted into a named constant so five other places could stop writing them out — a change
+// that made the rule MORE single, not less.
+assert.ok(service.includes('export const isOrderClosedForPayment'), 'the helper still lives where the re-export points');
+const { CLOSED_PAYMENT_STATUSES, isOrderClosedForPayment } = await import(`./${delegate ? delegate[1] : 'orderClosed.js'}`);
+assert.deepEqual([...CLOSED_PAYMENT_STATUSES].sort(), ['expired', 'failed', 'refunded'],
+  'the dead payment statuses are expired, failed and refunded');
+for (const paymentStatus of CLOSED_PAYMENT_STATUSES) {
+  assert.equal(isOrderClosedForPayment({ status: 'paid', paymentStatus }), true, `${paymentStatus} closes an order`);
+}
+assert.equal(isOrderClosedForPayment({ status: 'cancelled', paymentStatus: 'pending' }), true, 'so does a cancelled order');
+for (const open of ['unpaid', 'pending', 'paid']) {
+  assert.equal(isOrderClosedForPayment({ status: 'paid', paymentStatus: open }), false, `${open} leaves it open`);
+}
 
 // The invoice's delivery block asks the same question and must not grow a second copy of the answer.
 const shipment = read('utils', 'invoiceShipment.js');
@@ -231,11 +244,11 @@ for (const file of offersAWayToPay) {
 assert.ok(gates >= 1, `no payment-link gate was checked — the walk lost them`);
 
 // --- 6. The rule itself, and the portal's own predicates, RUN rather than described --------------------
-// The helper's text is asserted above; this evaluates that same text, so the states below are decided by
-// the real expression and not by a second copy of it written here.
-const helperBody = service.match(/export const isOrderClosedForPayment = \(order = \{\}\) => \(([\s\S]*?)\n\);/);
-assert.ok(helperBody, 'could not read the helper body to run it — update this guard');
-const isOrderClosedForPayment = new Function('order', `return (${helperBody[1]});`);
+// The helper is imported above; these states are decided by the real expression, never by a second copy
+// of it written here.
+// Imported and run as the module the app imports, rather than re-parsed out of the file with
+// `new Function` — which broke the moment the statuses moved into a constant the re-parsed body could
+// no longer see.
 
 // What api/orders/expire-reservations.js writes, and what Studio's cancel writes: both pair these.
 assert.equal(isOrderClosedForPayment({ status: 'cancelled', paymentStatus: 'expired' }), true, 'a swept order is closed');
@@ -307,5 +320,53 @@ for (const [label, order] of [['swept', swept], ['cancelled with a live payment 
 const live = { ...swept, status: 'pending_payment', paymentStatus: 'unpaid' };
 assert.equal(portal.isPayableOrder(live), true, 'an unpaid manual order is still payable');
 assert.equal(portal.canUploadPaymentProof(live), true, 'and can still send its transfer receipt');
+
+// --- 7. A refunded order is CLOSED everywhere, not only on the payment page ---------------------------
+// Found 29 Sep 2026 by running these rules rather than reading them. Studio's order-detail payment select
+// is built from paymentStatusLabels, so "Refund" is one change away — and picking it used to send the
+// ORDER status to 'pending_payment' (failed and expired both go to 'cancelled'), leaving a refunded order
+// sitting in the active queue, shown by none of the three payment tiles and listed by none of them. The
+// stock was restored correctly the whole time, which is what kept the disagreement invisible.
+const workflowSource = readFileSync(join(root, 'utils', 'orderWorkflow.js'), 'utf8')
+  .replace(/^import\s[\s\S]*?from\s+'[^']+';\s*$/gm, '');
+const stubs = [
+  'const PAYMENT_RESERVATION_TTL_HOURS = 24;',
+  'const getOrderReservationExpiresAt = () => "";',
+  `const CLOSED_PAYMENT_STATUSES = ${JSON.stringify(CLOSED_PAYMENT_STATUSES)};`,
+  '',
+].join('\n');
+const workflow = await import(
+  `data:text/javascript;base64,${Buffer.from(stubs + workflowSource, 'utf8').toString('base64')}`
+);
+
+for (const paymentStatus of CLOSED_PAYMENT_STATUSES) {
+  assert.equal(workflow.getNextOrderStatusForPayment(paymentStatus), 'cancelled',
+    `marking an order ${paymentStatus} must cancel it — the stock is restored either way, so any other `
+    + 'status leaves a dead order in the queue');
+  const order = { status: 'pending_payment', paymentStatus };
+  assert.equal(workflow.matchesOrderFilter(order, 'payment_problem'), true,
+    `a ${paymentStatus} order must appear under the payment-problem lens`);
+  assert.equal(workflow.describeStockReservation(order).state, 'released',
+    `a ${paymentStatus} order has already given its stock back`);
+}
+
+// Every payment status the Studio select offers falls under exactly one of the three tiles, so none can
+// go missing from all of them again. The subject is the label map the select is built from, not a list.
+const LENSES = ['payment_pending', 'payment_paid', 'payment_problem'];
+const offered = Object.keys(workflow.paymentStatusLabels);
+assert.ok(offered.length >= 6, `only ${offered.length} payment statuses offered — the parse is broken`);
+for (const paymentStatus of offered) {
+  const matched = LENSES.filter((lens) => workflow.matchesOrderFilter({ paymentStatus }, lens));
+  assert.equal(matched.length, 1,
+    `"${workflow.paymentStatusLabels[paymentStatus]}" (${paymentStatus}) is shown by ${matched.length} of the `
+    + `three payment tiles (${matched.join(', ') || 'none'}) — Studio offers it, so exactly one must own it`);
+}
+
+// And the phone counts those tiles with the same lens it filters by. A second implementation is how
+// "Masalah 0" could sit above a list that had orders in it.
+const mobileOrders = read('pages', 'mobile', 'MobileOrdersPage.jsx');
+assert.match(mobileOrders, /countOrdersByFilter\(orders, \['payment_pending', 'payment_paid', 'payment_problem'\]\)/,
+  'the phone must count the payment tiles through the shared lens');
+assert.doesNotMatch(mobileOrders, /attention: orders\.filter/, 'the hand-rolled tile count must not come back');
 
 console.log(`closedOrderPayment selfcheck OK (a cancelled order stops handing out the bank account on ${asked} screens that load one, and ${gates} payment link gated on the same question)`);
