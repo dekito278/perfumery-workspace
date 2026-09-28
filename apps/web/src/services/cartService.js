@@ -1,4 +1,5 @@
 import { normalizeWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
+import { isFreeVialLine } from '@/utils/freeVial.js';
 export { reconcileCartLines } from '@/utils/cartReconcile.js';
 
 export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
@@ -161,6 +162,20 @@ export const removeCartItem = (slug) => {
   const nextItems = readCart().filter((item) => item.slug !== slug);
   writeCart(nextItems);
   return nextItems;
+};
+
+/**
+ * Put the chosen gift in the cart, or take it out with `null`.
+ *
+ * Every vial line is dropped first, so picking a second aroma REPLACES the first rather than adding to
+ * it — one per order is the rule, and a cart that can hold two would hand the endpoint something it is
+ * going to refuse anyway.
+ */
+export const setFreeVialCartItem = (item) => {
+  const items = readCart().filter((line) => !isFreeVialLine(line));
+  const next = item ? [...items, item] : items;
+  writeCart(next);
+  return next;
 };
 
 export const clearCart = () => writeCart([]);

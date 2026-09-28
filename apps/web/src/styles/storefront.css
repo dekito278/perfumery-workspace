@@ -7669,3 +7669,68 @@ main :is(a, figure, picture, div, span):has(> img) {
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
+
+/* The free gift vial picker, in both carts. Not a cart line: no price column, no quantity stepper —
+   those belong to things that were paid for, and a "Rp 0" row with a stepper beside it invites both a
+   question and a second vial. */
+.free-vial {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-top: 1px dashed var(--editorial-stone);
+}
+
+.free-vial__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--editorial-brass);
+}
+
+.free-vial__body {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--editorial-muted);
+}
+
+.free-vial__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.free-vial__choice {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--editorial-stone);
+  border-radius: 999px;
+  background: var(--editorial-paper);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--editorial-charcoal);
+  cursor: pointer;
+}
+
+.free-vial__choice.is-chosen {
+  border-color: var(--editorial-brass);
+  background: var(--editorial-brass);
+  color: #fff;
+}
+
+.free-vial__clear {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-decoration: underline;
+  color: var(--editorial-muted);
+  cursor: pointer;
+}

@@ -14,19 +14,23 @@ import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
+import { splitFreeVialLines } from '@/utils/freeVial.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
 const MobileCartPage = () => {
   const navigate = useNavigate();
-  const { items, summary, updateQuantity, removeItem } = useCart();
+  const { items, summary, updateQuantity, removeItem, setGift } = useCart();
   const { index: memberIndex } = useMemberPrices();
   const memberSaving = memberSavingForCart(items, memberIndex);
   const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
   const products = useStorefrontProducts();
+  // The gift is not a purchase: no price, no quantity, no line of its own. The picker below owns it.
+  const { lines: boughtLines } = splitFreeVialLines(items);
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   // Lines whose product left the catalog or ran out of stock — checkout refuses them, so say so here
   // rather than at the end of the form (audit round 9).
@@ -153,7 +157,7 @@ const MobileCartPage = () => {
           </p>
         ) : null}
         <section style={{ display: 'grid', gap: 0 }}>
-          {items.map((item) => {
+          {boughtLines.map((item) => {
             const discountedLine = discountedLineMap.get(item.slug);
             const hasLineDiscount = Boolean(discountedLine?.discount);
 
@@ -193,7 +197,8 @@ const MobileCartPage = () => {
             </article>
             );
           })}
-          {!items.length ? (
+          <FreeVialPicker items={items} products={products} onPick={setGift} />
+          {!boughtLines.length ? (
             <section style={{ padding: 20, textAlign: 'center' }}>
               <div style={{ display: 'grid', placeItems: 'center', padding: '24px 0' }}>
                 <ShoppingBag style={{ width: 32, height: 32, color: 'var(--editorial-stone)', marginBottom: 12 }} />

@@ -18,12 +18,14 @@ import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
+import { splitFreeVialLines } from '@/utils/freeVial.js';
 
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
 const CartPage = () => {
-  const { items, summary, updateQuantity, removeItem } = useCart();
+  const { items, summary, updateQuantity, removeItem, setGift } = useCart();
   const { index: memberIndex } = useMemberPrices();
   const memberSaving = memberSavingForCart(items, memberIndex);
   const { t } = useTranslate();
@@ -36,6 +38,9 @@ const CartPage = () => {
   // Lines whose product left the catalog or ran out of stock — checkout refuses them, so say so here
   // rather than at the end of the form (audit round 9).
   const unavailableItems = items.filter((item) => item.unavailable || item.outOfStock);
+  // The gift is not a purchase: it has no price to show, no quantity to change and no line of its own in
+  // the list. The picker below owns it.
+  const { lines: boughtLines } = splitFreeVialLines(items);
 
   const recommendations = useMemo(() => {
     const inCart = new Set(items.map((item) => item.productSlug || item.slug));
@@ -74,7 +79,7 @@ const CartPage = () => {
                 {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
               </p>
             ) : null}
-            {!items.length ? (
+            {!boughtLines.length ? (
               <div className="cart-empty">
                 <ShoppingBag className="h-10 w-10" />
                 <h2>{t('cart.empty')}</h2>
@@ -84,7 +89,7 @@ const CartPage = () => {
                 </Link>
               </div>
             ) : (
-              items.map((item) => (
+              boughtLines.map((item) => (
                 <div key={item.slug} className="cart-line">
                   <Link to={`/catalog/${item.productSlug || item.slug}`} className="cart-line__image">
                     <ProductVisual product={item} imageFit="cover" />
@@ -110,6 +115,7 @@ const CartPage = () => {
                 </div>
               ))
             )}
+            <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />
           </div>
 
           {/* Order summary sidebar */}
