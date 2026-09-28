@@ -4,6 +4,7 @@ import {
   isBespokeOrder,
   PAYMENT_RESERVATION_TTL_HOURS,
 } from '@/services/orderService.js';
+import { CLOSED_PAYMENT_STATUSES } from '@/utils/orderClosed.js';
 
 // Single source for payment-status labels in order lists, order detail, and customer tracking.
 // Consolidated to stop 7 copies drifting — e.g. desktop showed "Expired" while mobile showed
@@ -145,7 +146,9 @@ export const matchesOrderFilter = (order = {}, filter = 'active') => {
     case 'payment_paid':
       return order.paymentStatus === 'paid';
     case 'payment_problem':
-      return ['failed', 'expired'].includes(order.paymentStatus);
+      // A refund is a payment problem. Left out of this list, a refunded order appeared under no tile
+      // at all — not Menunggu, not Dibayar, not Masalah.
+      return CLOSED_PAYMENT_STATUSES.includes(order.paymentStatus);
     default:
       // "Aktif": the queue the admin still has to act on, minus orders that are only
       // waiting on the customer to pay — those live in the payment/follow-up tab.
@@ -189,7 +192,11 @@ export const getBespokeOrderSummary = (order = {}) => {
 // status) — keep it here so the three agree (audit round 7).
 export const getNextOrderStatusForPayment = (paymentStatus) => {
   if (paymentStatus === 'paid') return 'paid';
-  if (['failed', 'expired'].includes(paymentStatus)) return 'cancelled';
+  // Refunded belongs here with failed and expired: the stock is restored either way
+  // (INVENTORY_RESTORE_PAYMENT_STATUSES), so an order that keeps a live status is a cancelled order
+  // still sitting in the queue. It used to fall through to 'pending_payment' — Studio answered a refund
+  // by asking the buyer to pay again.
+  if (CLOSED_PAYMENT_STATUSES.includes(paymentStatus)) return 'cancelled';
   return 'pending_payment';
 };
 
@@ -210,7 +217,7 @@ export const describeStockReservation = (order = {}) => {
   if (order?.inventoryDeducted) {
     return { state: 'reserved', expiresAt: getOrderReservationExpiresAt(order) || '' };
   }
-  if (['expired', 'failed', 'refunded'].includes(order?.paymentStatus) || order?.status === 'cancelled') {
+  if (CLOSED_PAYMENT_STATUSES.includes(order?.paymentStatus) || order?.status === 'cancelled') {
     return { state: 'released', expiresAt: '' };
   }
   return { state: 'pending', expiresAt: '' };

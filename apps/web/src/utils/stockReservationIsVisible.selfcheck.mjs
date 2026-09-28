@@ -23,6 +23,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Buffer } from 'node:buffer';
+import { CLOSED_PAYMENT_STATUSES } from './orderClosed.js';
 
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
 
@@ -30,10 +31,14 @@ const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
 // form too — and the two things these functions lean on are stubbed.
 const workflowSource = readFileSync(join(src, 'utils', 'orderWorkflow.js'), 'utf8')
   .replace(/^import\b[\s\S]*?from '[^']+';\n/gm, '');
+// The dead payment statuses are IMPORTED from their one home rather than restubbed here: a copy written
+// into this harness would keep agreeing with itself while the app's list changed underneath it, which is
+// the exact failure this guard is about.
 const stubs = `
 const getBespokeItem = () => null;
 const isBespokeOrder = () => false;
 const PAYMENT_RESERVATION_TTL_HOURS = 24;
+const CLOSED_PAYMENT_STATUSES = ${JSON.stringify(CLOSED_PAYMENT_STATUSES)};
 const getOrderReservationExpiresAt = (order) => order.__expiresAt || '';
 `;
 const { describeStockReservation, stockReservationLabel, stockReservationTone } = await import(

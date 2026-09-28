@@ -4,7 +4,7 @@ import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock }
 import { releaseVoucherUsageForOrder } from '@/services/voucherService.js';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '@/utils/bespokeOrder.js';
 import { getClientContext, sanitizeClientContext } from '@/utils/clientContext.js';
-import { isOrderClosedForPayment } from '@/utils/orderClosed.js';
+import { CLOSED_PAYMENT_STATUSES, isOrderClosedForPayment } from '@/utils/orderClosed.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
@@ -44,7 +44,7 @@ const localOnlyStatuses = {
 
 const BESPOKE_SOURCE = 'bespoke_request';
 const VOUCHER_DISCOUNT_ITEM_TYPE = 'voucher_discount';
-const INVENTORY_RESTORE_PAYMENT_STATUSES = ['failed', 'expired', 'refunded'];
+const INVENTORY_RESTORE_PAYMENT_STATUSES = CLOSED_PAYMENT_STATUSES;
 // The server cron reads PAYMENT_RESERVATION_TTL_HOURS; this reads VITE_PAYMENT_RESERVATION_TTL_HOURS and
 // is baked in at build time. Both actively cancel manual-transfer reservations and the studio prints this
 // value as the buyer's deadline, so a mismatch either cancels orders the cron would have kept or shows a

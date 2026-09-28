@@ -69,12 +69,6 @@ const nextActionByStatus = {
   cancelled: 'Order dibatalkan.',
 };
 
-const getPaymentSummary = (orders) => ({
-  pending: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)).length,
-  paid: orders.filter((order) => order.paymentStatus === 'paid').length,
-  attention: orders.filter((order) => ['failed', 'expired'].includes(order.paymentStatus)).length,
-});
-
 const orderFilterOptions = [
   { value: 'active', label: 'Aktif' },
   { value: 'proof_review', label: 'Bukti' },
@@ -130,7 +124,10 @@ const MobileOrdersPage = () => {
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkSaving, setBulkSaving] = useState(false);
   const products = useCatalogProducts({ editableOnly: true });
-  const paymentSummary = getPaymentSummary(orders);
+  // Counted with the same lens the tile FILTERS by, never a second copy of it. The old copy had already
+  // drifted: it called 'Masalah' ['failed','expired'] while the lens behind the tap is the closed-payment
+  // set, so a refunded order was counted by no tile and listed by none either.
+  const paymentSummary = countOrdersByFilter(orders, ['payment_pending', 'payment_paid', 'payment_problem']);
   const lowStockProducts = products.filter(getProductLowStock);
   const lowStockPreview = lowStockProducts.slice(0, 8);
   const filteredOrders = useMemo(() => orders.filter((order) => (
@@ -166,7 +163,7 @@ const MobileOrdersPage = () => {
     {
       value: 'payment_pending',
       label: 'Menunggu',
-      count: paymentSummary.pending,
+      count: paymentSummary.payment_pending,
       className: 'bg-amber-50',
       valueClassName: 'text-amber-800',
       labelClassName: 'text-amber-700',
@@ -174,7 +171,7 @@ const MobileOrdersPage = () => {
     {
       value: 'payment_paid',
       label: 'Dibayar',
-      count: paymentSummary.paid,
+      count: paymentSummary.payment_paid,
       className: 'bg-emerald-50',
       valueClassName: 'text-emerald-700',
       labelClassName: 'text-emerald-700',
@@ -182,7 +179,7 @@ const MobileOrdersPage = () => {
     {
       value: 'payment_problem',
       label: 'Masalah',
-      count: paymentSummary.attention,
+      count: paymentSummary.payment_problem,
       className: 'bg-rose-50',
       valueClassName: 'text-rose-700',
       labelClassName: 'text-rose-700',

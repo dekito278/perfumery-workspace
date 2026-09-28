@@ -10,8 +10,14 @@
 //
 // Import-free on purpose: a guard can run it without dragging supabase in, and orderService can re-export
 // it without a cycle.
+// The three dead payment statuses, named once. They were written out six times — here, in
+// dokuOrderGuards, in orderService's inventory-restore list, and three times inside orderWorkflow — and
+// on 29 Sep 2026 two of those six had lost `refunded`: marking an order Refund in Studio sent its ORDER
+// status back to 'pending_payment' and left it in the active queue, counted by no payment tile at all.
+export const CLOSED_PAYMENT_STATUSES = ['expired', 'failed', 'refunded'];
+
 export const isOrderClosedForPayment = (order = {}) => (
-  order?.status === 'cancelled' || ['expired', 'failed', 'refunded'].includes(order?.paymentStatus)
+  order?.status === 'cancelled' || CLOSED_PAYMENT_STATUSES.includes(order?.paymentStatus)
 );
 
 export default isOrderClosedForPayment;
