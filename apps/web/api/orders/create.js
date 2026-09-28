@@ -20,7 +20,7 @@ import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
-import { FREE_VIALS_PER_ORDER, isFreeVialProduct, weighFreeVialLines } from '../../src/utils/freeVial.js';
+import { FREE_VIAL_PRICE_LABEL, FREE_VIAL_TAG, FREE_VIALS_PER_ORDER, isFreeVialProduct, weighFreeVialLines } from '../../src/utils/freeVial.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
 import { isInternalErrorMessage } from '../../src/utils/publicErrorMessage.js';
@@ -196,7 +196,13 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
     subtotal += unitPrice * lineQuantity;
     // Preserve the client line's display fields (image, name, ...) but enforce the DB price AND category —
     // voucher category-restrictions read item.category, so a client-sent category must never be trusted.
-    resolved.push({ ...line, slug, name: line.name || product.name, category: product.category || line.category, quantity: lineQuantity, priceNumber: unitPrice, price: rupiah(unitPrice), size, tags: product.tags });
+    resolved.push({ ...line, slug, name: line.name || product.name, category: product.category || line.category, quantity: lineQuantity, priceNumber: unitPrice, price: isVial ? FREE_VIAL_PRICE_LABEL : rupiah(unitPrice), size,
+      // ONLY the gift tag, never the product's own. This endpoint reads storefront_products, the base
+      // table, whose tags carry the internal ones the public view strips — batch ids, stock corrections,
+      // and the per-bottle COGS. Copying them onto an order item would publish Dekito's costs to the
+      // buyer's portal and invoice payload. Set here rather than taken from the client line, so nobody
+      // can label a bottle they paid for as a gift on their own receipt.
+      tags: isVial ? [FREE_VIAL_TAG] : [] });
   }
   return { subtotal, resolved, quantity: resolved.reduce((sum, l) => sum + l.quantity, 0) };
 };

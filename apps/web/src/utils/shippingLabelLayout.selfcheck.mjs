@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
+import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from './freeVial.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const modulePath = join(here, 'shippingLabelPdf.js');
@@ -23,6 +24,10 @@ writeFileSync(shimPath, `${readFileSync(modulePath, 'utf8')
   .replace(/^export /gm, '')}\nexport { drawShippingLabel, QR_BLOCK_TOP, PAGE_HEIGHT };\n`);
 
 globalThis.jsPDF = jsPDF;
+// The real gift rule, imported rather than restubbed: a copy written into this harness would keep
+// agreeing with itself while the shop's rule moved underneath it.
+globalThis.isFreeVialLine = isFreeVialLine;
+globalThis.FREE_VIAL_PRICE_LABEL = FREE_VIAL_PRICE_LABEL;
 globalThis.QRCode = QRCode;
 globalThis.buildPublicTrackingUrl = (n) => `https://www.solivagantscent.com/track/${n}`;
 // The shipping note fields, swappable per render: the second bug in this file lives in how a LONG
