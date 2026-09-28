@@ -25,7 +25,14 @@ const steps = [
   { key: 'delivered', labelKey: 'track.stepDelivered' },
 ];
 
+// Three separate vocabularies land in this map: the ORDER status, the PAYMENT status and the SHIPMENT
+// status, each of them a Studio <select> the owner can set with one click. Anything missing here is
+// printed raw — `String(value).replace(/_/g, ' ')` — so the page the parcel's QR code points at answered
+// "completed" in English for the normal end state of every fulfilled order, and "expired", "failed",
+// "refunded" and "not ready" for the rest. publicTrackingVocabulary.selfcheck.mjs checks this map
+// against those three label maps so a status added to any of them cannot slip through again.
 const statusKeys = {
+  draft: 'track.draft',
   pending: 'track.stepQueued',
   pending_payment: 'track.awaitingPayment',
   paid: 'track.paid',
@@ -33,8 +40,13 @@ const statusKeys = {
   packing: 'track.stepPacked',
   shipped: 'track.stepShipped',
   delivered: 'track.stepDelivered',
+  completed: 'track.completed',
   cancelled: 'track.cancelled',
   unpaid: 'track.unpaid',
+  failed: 'track.failed',
+  expired: 'track.expired',
+  refunded: 'track.refunded',
+  not_ready: 'track.notReady',
   awaiting_payment: 'track.awaitingPayment',
   confirmed: 'track.confirmed',
 };
