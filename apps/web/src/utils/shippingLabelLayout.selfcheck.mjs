@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
-import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from './freeVial.js';
+import { FREE_VIAL_PRICE_LABEL, FREE_VIAL_TAG, isFreeVialLine } from './freeVial.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const modulePath = join(here, 'shippingLabelPdf.js');
@@ -222,5 +222,27 @@ assert.ok(
   assert.deepEqual(spilled, [],
     `text runs past the label's ${MARGIN_MM}mm margin:\n  ${spilled.join('\n  ')}`);
 }
+
+// --- the gift is named on the sheet Dekito packs from -------------------------------------------------
+// Rendered, not argued about. Without this the only thing marking a free vial is whatever he happened to
+// call the vial product, and nothing in this repository can see that name. A line he reads as a sale is a
+// bottle that goes into the box wrong.
+const gift = await readLabel({
+  orderNumber: 'DKT-GIFT-0001',
+  customerName: 'Pembeli Uji',
+  contact: '081234567890',
+  courierName: 'JnT Reguler / Rp 9.000',
+  updatedAt: '2026-09-29T09:00:00+07:00',
+  items: [
+    { name: 'HUG N°1', size: '30 ml', quantity: 2, priceNumber: 359000 },
+    { name: 'V2', size: 'Maskumambang', quantity: 1, priceNumber: 0, tags: [FREE_VIAL_TAG] },
+  ],
+});
+const giftText = gift.placed.map((run) => run.text).join(' | ');
+assert.ok(giftText.includes(`V2 x1 / Maskumambang (${FREE_VIAL_PRICE_LABEL})`),
+  `the free vial must be marked on the label even when the product is called something that does not `
+  + `read as a gift. Printed instead:\n  ${giftText}`);
+assert.ok(giftText.includes('HUG N°1 x2 / 30 ml') && !giftText.includes(`HUG N°1 x2 / 30 ml (${FREE_VIAL_PRICE_LABEL})`),
+  'and a bottle that was paid for is not marked as one');
 
 console.log(`shippingLabelLayout selfcheck OK (${placed.length} text runs clear of the QR block, and no divider struck through a wrapped block)`);
