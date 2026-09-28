@@ -108,4 +108,43 @@ export const freeVialChoices = (vialProduct = {}) => (
     .filter((choice) => choice.variantId && choice.label && choice.stock > 0)
 );
 
+
+/**
+ * The gift, separated from what was bought.
+ *
+ * The cart list renders bought lines: a price, a quantity stepper, a remove button. None of that is true
+ * of a gift, and a "Rp 0" row with a stepper beside it invites both a question and a second vial. So the
+ * gift comes out of the list entirely and is shown by the picker instead. Every vial line is taken out,
+ * not just the first — a cart that somehow held two must not display one of them as a purchase.
+ */
+export const splitFreeVialLines = (items = []) => {
+  const list = Array.isArray(items) ? items : [];
+  const gift = list.find(isFreeVialLine) || null;
+  return { lines: list.filter((item) => !isFreeVialLine(item)), gift };
+};
+
+/**
+ * The cart line for a chosen aroma.
+ *
+ * The name is the owner's own: the vial product's name as he wrote it, and the variant label as he wrote
+ * it. It travels to the invoice and to the packing slip, where it is the only thing saying this bottle
+ * was not paid for — so it has to read as a gift without any translation layer, and the shop that has a
+ * cart is the Indonesian one.
+ */
+export const buildFreeVialCartItem = ({ vialProduct = {}, choice = {} } = {}) => ({
+  productId: vialProduct.id,
+  // The cart keys lines by `slug`; two aromas of the same product must not collide.
+  slug: `${vialProduct.slug}-${choice.variantId}`,
+  productSlug: vialProduct.slug,
+  variantId: choice.variantId,
+  name: [String(vialProduct.name || '').trim(), choice.label].filter(Boolean).join(' — '),
+  size: choice.label,
+  category: vialProduct.category || '',
+  tags: [FREE_VIAL_TAG],
+  priceNumber: 0,
+  price: 'Gratis',
+  quantity: FREE_VIALS_PER_ORDER,
+  maxStock: choice.stock,
+});
+
 export default isFreeVialProduct;

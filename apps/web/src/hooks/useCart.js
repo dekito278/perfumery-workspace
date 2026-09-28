@@ -6,6 +6,7 @@ import {
   getCartSummary,
   reconcileCartLines,
   removeCartItem,
+  setFreeVialCartItem,
   updateCartQuantity,
 } from '@/services/cartService.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
@@ -37,6 +38,8 @@ export const useCart = () => {
     addItem: (product, quantity) => setStoredItems(addCartItem(product, quantity)),
     updateQuantity: (slug, quantity) => setStoredItems(updateCartQuantity(slug, quantity)),
     removeItem: (slug) => setStoredItems(removeCartItem(slug)),
+    // The gift replaces itself rather than stacking; `null` takes it out.
+    setGift: (item) => setStoredItems(setFreeVialCartItem(item)),
     clear: () => {
       clearCart();
       setStoredItems([]);
