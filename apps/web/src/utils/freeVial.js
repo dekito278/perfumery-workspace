@@ -62,4 +62,50 @@ export const isFreeVialProduct = (product = {}) => (
   tagList(product?.tags).some((tag) => tag.toLowerCase() === FREE_VIAL_TAG.toLowerCase())
 );
 
+
+/**
+ * Whether an ORDER/CART line is the gift rather than something bought.
+ *
+ * Identified by the product's tag, never by its price being zero — a bought line can be zero (a fully
+ * discounted order) and a vial line could one day carry a stated worth. The order endpoint therefore has
+ * to read `tags` when it resolves a line, which is one word added to a select and keeps the tag as the
+ * single source of truth for what a vial is.
+ */
+export const isFreeVialLine = (line = {}) => isFreeVialProduct({
+  tags: line?.tags ?? line?.product?.tags ?? line?.productTags,
+});
+
+/**
+ * The lines to weigh, with the gift weighed as a vial.
+ *
+ * The weight of every other line comes from its SIZE label, and for the vial that would mean trusting
+ * whatever Dekito typed into the variant — a label naming the aroma ("HUG N°1") parses to no millilitres
+ * at all and falls to the 300 g default. Nothing in this repository can see his labels, so the weight is
+ * not left to them: a line the tag says is a vial weighs a vial, whatever it is called.
+ *
+ * Used by BOTH sides — the browser that quotes the freight and the endpoint that charges it. They must
+ * agree, or a buyer is shown one courier fee and charged another.
+ */
+export const weighFreeVialLines = (lines = []) => (
+  (Array.isArray(lines) ? lines : []).map((line) => (
+    isFreeVialLine(line) ? { ...line, size: FREE_VIAL_SIZE } : line
+  ))
+);
+
+/**
+ * The aromas a buyer may pick from: every variant of the vial product with stock left.
+ *
+ * One pool, all of them — Dekito's decision, 2026-09-29. Out of stock simply stops being offered, which
+ * is the whole reason the stock is counted per aroma rather than in one lump.
+ */
+export const freeVialChoices = (vialProduct = {}) => (
+  (Array.isArray(vialProduct?.variants) ? vialProduct.variants : [])
+    .map((variant) => ({
+      variantId: String(variant?.id || ''),
+      label: String(variant?.size || variant?.name || variant?.id || '').trim(),
+      stock: Math.max(0, Math.round(Number(variant?.stock) || 0)),
+    }))
+    .filter((choice) => choice.variantId && choice.label && choice.stock > 0)
+);
+
 export default isFreeVialProduct;

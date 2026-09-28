@@ -14,8 +14,11 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
-import { FREE_VIAL_SIZE, FREE_VIAL_TAG, FREE_VIAL_WEIGHT_GRAM, FREE_VIALS_PER_ORDER, isFreeVialProduct } from './freeVial.js';
-import { DEFAULT_ITEM_WEIGHT_GRAM, isWeighedSize, itemWeightGram } from './itemWeight.js';
+import {
+  FREE_VIAL_SIZE, FREE_VIAL_TAG, FREE_VIAL_WEIGHT_GRAM, FREE_VIALS_PER_ORDER,
+  freeVialChoices, isFreeVialLine, isFreeVialProduct, weighFreeVialLines,
+} from './freeVial.js';
+import { DEFAULT_ITEM_WEIGHT_GRAM, isWeighedSize, itemWeightGram, totalItemWeightGram } from './itemWeight.js';
 import { planAutoTierPrices } from './autoTierPrices.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -118,5 +121,64 @@ assert.match(artifacts, /import \{ isFreeVialProduct \} from '\.\.\/src\/utils\/
   'the build must read the same rule rather than a copy of the tag');
 assert.match(artifacts, /\.filter\(\(row\) => !isFreeVialProduct\(\{ tags: row\.tags \}\)\)/,
   'the build must drop the vial rows before prerendering and sitemapping them');
+
+// --- 7. The gift weighs a vial, whatever its variant is called -----------------------------------------
+// Nothing here can see the labels Dekito types into the vial variants, and an aroma name parses to no
+// millilitres at all. So the weight is NOT left to the label: a line the tag says is a vial weighs a
+// vial. Measured on the rule itself rather than argued about.
+const cartWithGift = [
+  { size: '30 ml', quantity: 2 },
+  { size: 'HUG N°1', quantity: 1, tags: [FREE_VIAL_TAG] },
+];
+const naive = totalItemWeightGram(cartWithGift);
+const ruled = totalItemWeightGram(weighFreeVialLines(cartWithGift));
+assert.equal(ruled, 250 * 2 + FREE_VIAL_WEIGHT_GRAM, 'two bottles and one vial');
+assert.equal(naive - ruled, DEFAULT_ITEM_WEIGHT_GRAM - FREE_VIAL_WEIGHT_GRAM,
+  `without the rule the parcel is quoted ${naive - ruled} g that is not in the box`);
+assert.deepEqual(weighFreeVialLines([{ size: '30 ml', quantity: 1 }]), [{ size: '30 ml', quantity: 1 }],
+  'an ordinary line is left exactly as it was');
+assert.deepEqual(weighFreeVialLines(), [], 'called with nothing, no crash');
+// A bought line priced at zero — a fully discounted order — is NOT the gift. Identity comes from the
+// tag, never from the price.
+assert.equal(isFreeVialLine({ size: '30 ml', priceNumber: 0 }), false);
+assert.equal(isFreeVialLine({ tags: [FREE_VIAL_TAG] }), true);
+
+// --- 8. Both sides apply that rule, and the same one ---------------------------------------------------
+// The browser quotes the freight, the endpoint charges it. A rule applied to one of them is a rule that
+// does not hold — it is the shape of "shown one courier fee, charged another".
+const shipping = read('services', 'shippingService.js');
+assert.match(shipping, /totalItemWeightGram\(weighFreeVialLines\(items\), fallback\)/,
+  'the browser must weigh the gift as a vial before it quotes');
+const endpoint = readFileSync(join(root, '..', 'api', 'orders', 'create.js'), 'utf8');
+assert.match(endpoint, /totalItemWeightGram\(weighFreeVialLines\(weighedLines\), itemWeight\)/,
+  'and so must the endpoint that charges');
+
+// --- 9. The endpoint decides the gift from the PRODUCT, and refuses a second one -----------------------
+// All of it server-side, because all of it is worth tampering with: a client that sends its own price,
+// its own quantity, or a second vial line.
+assert.match(endpoint, /select=id,slug,name,category,price_number,variants,tags/,
+  'the resolver must read the tags, or it cannot tell a gift from a sale');
+assert.match(endpoint, /const isVial = isFreeVialProduct\(product\);/,
+  'decided from the product the endpoint just fetched, never from the line the client sent');
+assert.match(endpoint, /if \(isVial\) \{[\s\S]{0,200}?unitPrice = 0;/,
+  'the gift costs nothing whatever the variant says');
+assert.match(endpoint, /if \(freeVials >= FREE_VIALS_PER_ORDER\) \{[\s\S]{0,120}?throw new Error/,
+  'a second vial line must be refused, not quietly honoured');
+assert.match(endpoint, /const lineQuantity = isVial \? FREE_VIALS_PER_ORDER : qty;/,
+  'and one line may not carry fifty of them');
+
+// --- 10. Which aromas are offered: in stock, and that is the whole switch -------------------------------
+const choices = freeVialChoices({
+  variants: [
+    { id: 'hug-n-1', size: 'HUG N°1', stock: 4 },
+    { id: 'sudra', size: 'Sudra', stock: 0 },
+    { id: '', size: 'nameless', stock: 9 },
+    { id: 'maskumambang', size: 'Maskumambang', stock: 1 },
+  ],
+});
+assert.deepEqual(choices.map((choice) => choice.variantId), ['hug-n-1', 'maskumambang'],
+  'an aroma with no stock left simply stops being offered — that is the whole switch');
+assert.deepEqual(freeVialChoices(), [], 'and a vial product that does not exist yet offers nothing');
+assert.equal(choices.length, 2);
 
 console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);

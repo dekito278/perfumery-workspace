@@ -3,6 +3,7 @@ import {
   getShippingPromotionSettingsAsync,
 } from '@/services/shippingPromotionService.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '@/utils/itemWeight.js';
+import { weighFreeVialLines } from '@/utils/freeVial.js';
 
 export const SHIPPING_STORAGE_KEY = 'solivagant.checkout.shipping.v1';
 
@@ -86,7 +87,10 @@ export const getCheckoutShippingWeight = (items) => {
   // largest under-weighed by more than half. The env value is only the fallback for an unweighed size.
   // assertPairedEnvAgrees() in tools/build.mjs fails the build if the two sides' fallback disagrees.
   const fallback = Number(import.meta.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || DEFAULT_ITEM_WEIGHT_GRAM);
-  return totalItemWeightGram(items, fallback);
+  // The free gift weighs a vial, whatever its variant is labelled — the same rule api/orders/create.js
+  // applies before it charges. The browser quotes the freight and the endpoint bills it; a buyer shown
+  // one courier fee and charged another is the same class of bug as a price that moves at checkout.
+  return totalItemWeightGram(weighFreeVialLines(items), fallback);
 };
 
 export const describeShippingRate = (rate) => {

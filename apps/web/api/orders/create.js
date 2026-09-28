@@ -20,6 +20,7 @@ import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
+import { FREE_VIALS_PER_ORDER, isFreeVialProduct, weighFreeVialLines } from '../../src/utils/freeVial.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
 import { isInternalErrorMessage } from '../../src/utils/publicErrorMessage.js';
@@ -134,6 +135,7 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
     throw new Error(`Order has too many item lines (${items.length}, max ${MAX_ORDER_LINES})`);
   }
   let subtotal = 0;
+  let freeVials = 0;
   const resolved = [];
   for (const line of items) {
     const slug = String(line.productSlug || line.product_slug || line.slug || '').trim();
@@ -142,7 +144,7 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
       throw new Error(`Quantity out of range for ${slug || 'item'} (max ${MAX_LINE_QUANTITY})`);
     }
     if (!slug) throw new Error('Item missing productSlug');
-    const rows = await sbSelect(`storefront_products?slug=eq.${encodeURIComponent(slug)}&select=id,slug,name,category,price_number,variants`);
+    const rows = await sbSelect(`storefront_products?slug=eq.${encodeURIComponent(slug)}&select=id,slug,name,category,price_number,variants,tags`);
     const product = rows?.[0];
     if (!product) throw new Error(`Unknown product: ${slug}`);
     let unitPrice = Number(product.price_number || 0);
@@ -176,10 +178,25 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
       });
     }
 
-    subtotal += unitPrice * qty;
+    // The gift, decided from the product's own tags rather than from anything the client sent. Three
+    // things follow, and all three are server-side because all three are worth tampering with: it costs
+    // nothing whatever the variant says, there is at most ONE of it, and nobody gets a second one by
+    // sending a second line. Without the clamp a stranger could POST fifty free vials and empty the
+    // stock of a scent without paying for anything.
+    const isVial = isFreeVialProduct(product);
+    if (isVial) {
+      if (freeVials >= FREE_VIALS_PER_ORDER) {
+        throw new Error(`An order carries at most ${FREE_VIALS_PER_ORDER} free vial`);
+      }
+      freeVials += 1;
+      unitPrice = 0;
+    }
+    const lineQuantity = isVial ? FREE_VIALS_PER_ORDER : qty;
+
+    subtotal += unitPrice * lineQuantity;
     // Preserve the client line's display fields (image, name, ...) but enforce the DB price AND category —
     // voucher category-restrictions read item.category, so a client-sent category must never be trusted.
-    resolved.push({ ...line, slug, name: line.name || product.name, category: product.category || line.category, quantity: qty, priceNumber: unitPrice, price: rupiah(unitPrice), size });
+    resolved.push({ ...line, slug, name: line.name || product.name, category: product.category || line.category, quantity: lineQuantity, priceNumber: unitPrice, price: rupiah(unitPrice), size, tags: product.tags });
   }
   return { subtotal, resolved, quantity: resolved.reduce((sum, l) => sum + l.quantity, 0) };
 };
@@ -319,7 +336,10 @@ export default async function handler(req, res) {
     const weighedLines = isBespoke
       ? [...catalog.resolved, { size: bespoke.labels?.size || '', quantity: 1 }]
       : catalog.resolved;
-    const weight = totalItemWeightGram(weighedLines, itemWeight);
+    // The gift weighs a vial, whatever its variant is called. A label naming the aroma parses to no
+    // millilitres and would fall to the flat fallback, which is heavier than the bottle it rides with —
+    // freight charged for something that is not in the box, on both sides of the quote.
+    const weight = totalItemWeightGram(weighFreeVialLines(weighedLines), itemWeight);
     const { fee: shippingFee, summary: shippingSummary } = await computeShippingFee(baseUrl, {
       destinationId: input.shipping?.destinationId,
       destination: input.shipping?.destination,
