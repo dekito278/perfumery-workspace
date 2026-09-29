@@ -32,6 +32,7 @@ import {
 import { buildCourierTrackingSearchUrl, buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { addCartItem, isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
+import { splitFreeVialLines } from '@/utils/freeVial.js';
 import { setAppliedVoucherCode } from '@/services/voucherService.js';
 import { seedCheckoutDraft } from '@/hooks/useCheckoutFlow.js';
 import {
@@ -1200,7 +1201,12 @@ const CustomerPortalPage = () => {
   // other order. reconcileCartLines reprices every line against the live catalog on read, so nothing
   // here needs to carry a price.
   const handleReorder = (order) => {
-    const productItems = getOrderProductItems(order);
+    // Without the split, the old order's free vial came back as a cart line the cart no longer recognised
+    // as a gift: reconcileCartLines re-derives price, stock and category from the live catalog, but never
+    // tags, so the copy arrived untagged. The picker then offered a SECOND vial, and the endpoint refuses
+    // an order carrying two — the buyer could not check out at all, out of a cart the shop built for her.
+    // The gift is a per-order promotion anyway: she picks a fresh one, against stock that is live today.
+    const productItems = splitFreeVialLines(getOrderProductItems(order)).lines;
     if (!productItems.length) {
       toast.error(t('cust.noItemsToReorder'));
       return;
