@@ -203,4 +203,54 @@ assert.match(MESSAGES.en['region.label'], /Wilayah harga/);
 assert.match(read('components', 'storefront', 'PublicHeader.jsx'), /<RegionSwitch /, 'in the desktop header');
 assert.match(read('layouts', 'MobileCommerceLayout.jsx'), /<RegionSwitch \/>/, 'and in the mobile one');
 
+// --- The boot screen must know the English shop exists too ---------------------------------------------
+// index.html renders a per-route fallback synchronously, before React mounts — it is what every visitor
+// sees while the bundle arrives, and all they ever see if it never does. It looked routes up by their
+// literal pathname, so every /en address fell through to the "Page not found" default: 66 of them are in
+// the live sitemap, hreflang-twinned and prerendered. The visitors told the shop does not exist were the
+// overseas ones, on the slowest connections it serves.
+//
+// The shell's own resolver is RUN here rather than matched as text, so this fails on the behaviour and
+// not on the spelling.
+const shell = readFileSync(join(root, '..', 'index.html'), 'utf8');
+const resolverSource = shell.match(/var EN_PREFIX[\s\S]*?\n\t*function getBootLinks\(\)[\s\S]*?\n\t\t\t\t\}/);
+assert.ok(resolverSource, 'the boot fallback resolver could not be found in index.html — the derivation broke');
+const resolveBoot = new Function('pathname',
+  `${resolverSource[0]}; window = { location: { pathname: pathname } };`
+  + ' return { content: getFallbackContent(), links: getBootLinks() };');
+
+// EN_PREFIX in the shell is a copy — plain script cannot import the module that owns it.
+const ownedPrefix = readFileSync(join(root, '..', 'tools', 'seo-artifacts.mjs'), 'utf8')
+  .match(/export const EN_PREFIX = '([^']+)'/)[1];
+assert.match(shell, new RegExp(`var EN_PREFIX = '${ownedPrefix}';`),
+  `the shell's copy of EN_PREFIX has drifted from tools/seo-artifacts.mjs ('${ownedPrefix}')`);
+
+// Derived from the routes the shop actually advertises, so a route added later is covered by being added
+// there — the same list build.mjs checks against App.jsx before a deploy can ship a link to a 404.
+const advertised = readFileSync(join(root, '..', 'tools', 'seo-artifacts.mjs'), 'utf8')
+  .match(/STATIC_PUBLIC_ROUTES = \[([^\]]*)\]/)[1]
+  .match(/'([^']+)'/g).map((entry) => entry.replace(/'/g, ''));
+assert.ok(advertised.length >= 4, `only ${advertised.length} advertised routes parsed — the derivation broke`);
+
+const lost = [];
+for (const route of [ownedPrefix, ...advertised.map((r) => `${ownedPrefix}${r}`), `${ownedPrefix}/catalog/hug-n-1`]) {
+  const { content, links } = resolveBoot(route);
+  if (/not found/i.test(content.title)) lost.push(`${route}: "${content.title}"`);
+  // And the way out has to stay inside the shop the visitor is in. Linking an English visitor to
+  // /catalog hands them the Indonesian shop as the fix for a page that was never missing.
+  for (const link of links) {
+    assert.ok(link.href.startsWith(`${ownedPrefix}/`),
+      `the boot screen on ${route} links to ${link.href}, which leaves the English shop`);
+  }
+}
+assert.deepEqual(lost, [],
+  'the boot screen tells these English visitors their page does not exist, while the bundle is still on '
+  + `its way:\n  ${lost.join('\n  ')}`);
+
+// The must-pass half: a genuinely unknown path still says so, and the Indonesian shop still links home.
+const unknown = resolveBoot('/tidak-ada-halaman-ini');
+assert.match(unknown.content.title, /not found/i, 'a real 404 must still read as one');
+assert.equal(resolveBoot('/catalog').links[0].href, '/catalog',
+  'and an Indonesian visitor must not be sent into the English shop');
+
 console.log('storefrontRegion selfcheck OK (the visitor chooses and the choice wins; the guess is only the default, and it is a switch rather than a gate)');
