@@ -10,7 +10,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -102,5 +102,55 @@ assert.match(MESSAGES.en['cust.heroBody'], /Indonesian shop/,
 // code (SOLI...), and calling it an order code is what sent buyers holding DKT-... into a dead end.
 assert.match(MESSAGES.id['cust.heroBody'], /[Kk]ode customer lama/, 'and still points the code-holder somewhere');
 assert.match(MESSAGES.id['cust.heroBody'], /di bawah/, 'saying where the box is');
+
+// --- 6. And the BOOT screen, which a phone sees before the nav exists ----------------------------------
+// This guard's own header says the thing that regresses is "somebody putting Cek Order back", and its
+// subject was one file. index.html was the other one: the boot fallback — what a phone shows while the
+// app loads, and the ONLY thing it shows if the app never does — still linked to `Cek Order`, still
+// titled the account "Cek order", and still listed the tab bar as it stood before the rename.
+//
+// It is plain script in the shell and cannot import the message file, so its list is necessarily a copy.
+// That is what this checks: the copy has to equal what the nav actually renders.
+const shell = readFileSync(join(root, '..', 'index.html'), 'utf8');
+
+const navLabelKeys = [...mobileNav.matchAll(/labelKey: '([^']+)'/g)].map((match) => match[1]);
+assert.ok(navLabelKeys.length >= 6, `only ${navLabelKeys.length} phone tabs parsed — the derivation broke`);
+const navLabels = navLabelKeys.map((key) => {
+  assert.ok(MESSAGES.id[key], `${key} has no Indonesian label`);
+  return MESSAGES.id[key];
+});
+
+const fallbackLists = [...shell.matchAll(/items: \[('Beranda'[^\]]*)\]/g)]
+  .map((match) => [...match[1].matchAll(/'([^']+)'/g)].map((entry) => entry[1]));
+assert.ok(fallbackLists.length >= 3, `only ${fallbackLists.length} mobile boot lists found in index.html`);
+for (const list of fallbackLists) {
+  assert.deepEqual(list, navLabels,
+    'the boot screen lists the phone tabs, and it has drifted from them before — it said "Custom" for a '
+    + 'tab now called Bespoke and "Cek Order" for one now called Akun:\n'
+    + `  boot: ${list.join(', ')}\n  nav:  ${navLabels.join(', ')}`);
+}
+
+// --- 7. "Cek Order" is gone from everything a BUYER reads ----------------------------------------------
+// Derived rather than listed, because the phrase came back in a file this guard was not looking at.
+// The one survivor is an alert to DEKITO naming the Studio screen he has to open — "Cek Orders > Review
+// bukti" is an instruction to the owner, not a name for the buyer's account.
+const TELLS_THE_OWNER_WHERE_TO_LOOK = new Set(['utils/orderNotifier.js']);
+const buyerSurfaces = [];
+const walkSurfaces = (dir) => {
+  for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) { walkSurfaces(rel); continue; }
+    if (!/\.(jsx|js)$/.test(entry.name) || entry.name.includes('.selfcheck.')) continue;
+    if (TELLS_THE_OWNER_WHERE_TO_LOOK.has(rel)) continue;
+    // Comments first, every time: MobileCommerceLayout carries the note explaining WHY the tab stopped
+    // saying it, and a text search that counts that as a relapse is a guard nobody can satisfy.
+    if (/Cek Order/.test(read(...rel.split('/')))) buyerSurfaces.push(rel);
+  }
+};
+for (const dir of ['components', 'pages', 'layouts', 'hooks', 'utils', 'services', 'i18n']) walkSurfaces(dir);
+if (/Cek Order/.test(stripComments(shell))) buyerSurfaces.push('index.html');
+assert.deepEqual(buyerSurfaces, [],
+  '"Cek Order" framed the account as tracking, which is what it DOES rather than why anyone opens one — '
+  + `the reason is the price. It is back in:\n  ${buyerSurfaces.join('\n  ')}`);
 
 console.log('memberAccountEntry selfcheck OK (a door to the account on every page — framed around the price in the shop that has a checkout, and around the order in the shop that does not))');
