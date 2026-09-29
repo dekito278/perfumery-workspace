@@ -87,7 +87,25 @@ const real = await post({
 assert.notEqual(real.statusCode, 422, `a properly addressed order was refused: ${JSON.stringify(real.body)}`);
 assert.ok(ratesAsked > 0, 'and its shipping must actually be priced');
 
-// --- 4. And a bespoke request may still arrive unshipped -----------------------------------------------
+// --- 4. Calling a cart of bottles "bespoke" must not buy free freight ----------------------------------
+// The first version of this guard asked `!isBespoke`, and isBespoke is
+// `input.source === 'bespoke' || Boolean(input.bespoke)` — both come from the request. One extra word in
+// the payload skipped the check entirely and the order was created, 200, freight never priced. The test
+// is what is in the parcel: catalog.resolved is the endpoint's own lookup of the items against the
+// database, and it cannot be talked out of.
+const disguised = await post({ customerName: 'Uji', contact: '0800', items: [line], source: 'bespoke' });
+assert.equal(disguised.statusCode, 422,
+  `a cart of bottles labelled "bespoke" was accepted (${disguised.statusCode}) — it ships for free`);
+assert.equal(inserted.length, 0, 'and nothing may be written');
+
+// A brief that ALSO carries bottles is shipped too, so it is priced like any other parcel.
+const mixed = await post({
+  customerName: 'Uji', contact: '0800', items: [line], source: 'bespoke',
+  bespoke: { optionIds: { size: 'size-30' }, brief: { aroma: 'kayu' } },
+});
+assert.equal(mixed.statusCode, 422, 'a brief carrying catalogue bottles still needs a destination');
+
+// --- 5. And a bespoke request may still arrive unshipped -----------------------------------------------
 // Its freight is quoted by hand afterwards; requiring a destination here would break the one flow that
 // legitimately has none. Every bespoke order in the live database carries no courier line.
 const bespoke = await post({
@@ -99,4 +117,4 @@ const bespoke = await post({
 assert.notEqual(bespoke.statusCode, 422,
   `a bespoke request without shipping was refused: ${JSON.stringify(bespoke.body)}`);
 
-console.log('catalog-order-is-shipped selfcheck OK (a catalogue order is priced for freight or refused; a bespoke request is still quoted by hand)');
+console.log('catalog-order-is-shipped selfcheck OK (anything with bottles in it is priced for freight or refused, whatever the caller calls the order; a brief with no bottles is still quoted by hand)');
