@@ -165,4 +165,49 @@ for (const [where, name, props] of standIns) {
     + 'inside it can never fire');
 }
 
+// --- Every screen where a buyer acts on a price -------------------------------------------------------
+// This file's own closing line has always claimed that, and nothing checked it. The flag reached four
+// screens — the two catalogues and the two product pages — and stopped there. The CART did not have it,
+// which is the one that matters most: the cart reprices its lines from this very catalogue, so a stale
+// one shows a subtotal the order endpoint will not honour, and the buyer meets the real number after
+// pressing pay. The home pages, which open on prices, were silent too.
+//
+// Counted, not listed: useStorefrontProducts is the BUYER's hook by its own definition ("The catalog as
+// this visitor may buy it. Every buyer-facing surface reads this"), so its callers ARE the subject. The
+// exceptions carry a reason and are checked for staleness, or an exemption outlives the file it excused.
+const NOT_A_SCREEN = {
+  'hooks/useCart.js': 'a hook renders nothing; the pages that use it carry the notice',
+  'pages/JournalEditorPage.jsx': 'Studio: picks a related product to attach to an article, sells nothing',
+  'components/journal/JournalRelatedProduct.jsx': 'one card inside an article, not a page that can warn',
+};
+
+const buyerScreens = [];
+const silent = [];
+const walkBuyer = (dir) => {
+  for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) { walkBuyer(rel); continue; }
+    if (!/\.(jsx|js)$/.test(entry.name) || entry.name.includes('.selfcheck.')) continue;
+    if (rel === 'hooks/useStorefrontProducts.js') continue;
+    const source = read(...rel.split('/'));
+    if (!/useStorefrontProducts\s*\(/.test(source)) continue;
+    buyerScreens.push(rel);
+    if (NOT_A_SCREEN[rel]) continue;
+    if (!/<StaleCatalogNotice\b/.test(source)) silent.push(rel);
+  }
+};
+for (const dir of ['pages', 'components', 'hooks']) walkBuyer(dir);
+
+assert.ok(buyerScreens.length >= 8,
+  `only ${buyerScreens.length} buyer surfaces read the catalogue — the derivation broke`);
+assert.deepEqual(silent, [],
+  'these screens show a buyer catalogue prices and cannot tell them the catalogue came from this device '
+  + `because the server could not be reached:\n  ${silent.join('\n  ')}`);
+
+// An exemption that no longer names a caller is worse than none: it would quietly excuse a file that
+// was renamed into the gap.
+const staleExemptions = Object.keys(NOT_A_SCREEN).filter((key) => !buyerScreens.includes(key));
+assert.deepEqual(staleExemptions, [],
+  `these exemptions no longer read the catalogue — delete them:\n  ${staleExemptions.join('\n  ')}`);
+
 console.log('staleCatalog selfcheck OK (a catalogue served from this device because the server could not be reached says so, on every screen where a buyer acts on a price)');

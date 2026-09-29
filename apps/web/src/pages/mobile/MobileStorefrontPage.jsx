@@ -1,4 +1,5 @@
 import CardPrice from '@/components/storefront/CardPrice.jsx';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -76,6 +77,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
       ) : null}
 
       <main className="mobile-page m-editorial-page">
+        <StaleCatalogNotice stale={catalogProducts.stale} className="mx-4 mt-3" />
         {/* Hero — fullscreen image */}
         <section className="m-editorial-hero">
           {/* No photograph until the upload list settles: the bundled fallback is a different
