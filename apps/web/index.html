@@ -227,6 +227,9 @@
 		</div>
 		<script>
 			(function () {
+				// A copy of EN_PREFIX in tools/seo-artifacts.mjs — plain script in the shell cannot import it.
+				var EN_PREFIX = '/en';
+
 				var PUBLIC_ROUTE_FALLBACKS = {
 					'/': {
 						eyebrow: 'Artisan Perfumery Atelier',
@@ -373,6 +376,20 @@
 					return normalized || '/';
 				}
 
+				// The English shop is the same app at a second address, and every one of its routes fell through to
+				// the "Page not found" default below — 66 of them are in the live sitemap. A visitor there, on the
+				// slowest connections this shop serves, was told the page does not exist for as long as the bundle
+				// took to arrive, and forever if it never did. The desktop entries above are already written in
+				// English, so the twin only needs its prefix taken off before the lookup. The prefix is kept so the
+				// links out of the boot screen stay inside the shop the visitor is actually in.
+				function splitLocale(pathname) {
+					if (pathname === EN_PREFIX) return { prefix: EN_PREFIX, path: '/' };
+					if (pathname.indexOf(EN_PREFIX + '/') === 0) {
+						return { prefix: EN_PREFIX, path: pathname.slice(EN_PREFIX.length) };
+					}
+					return { prefix: '', path: pathname };
+				}
+
 				function getRouteGroupFallbackContent(pathname) {
 					if (pathname.indexOf('/mobile/products/') === 0) {
 						return {
@@ -420,8 +437,8 @@
 				}
 
 				function getFallbackContent() {
-					var pathname = normalizePathname(window.location.pathname);
-					return PUBLIC_ROUTE_FALLBACKS[pathname] || getRouteGroupFallbackContent(pathname) || {
+					var route = splitLocale(normalizePathname(window.location.pathname));
+					return PUBLIC_ROUTE_FALLBACKS[route.path] || getRouteGroupFallbackContent(route.path) || {
 						eyebrow: 'SOLIVAGANT',
 						title: 'Page not found.',
 						headline: 'This public atelier page could not be found.',
@@ -431,18 +448,18 @@
 				}
 
 				function getBootLinks() {
-					var pathname = normalizePathname(window.location.pathname);
-					var isMobileRoute = pathname === '/mobile' || pathname.indexOf('/mobile/') === 0;
+					var route = splitLocale(normalizePathname(window.location.pathname));
+					var isMobileRoute = route.path === '/mobile' || route.path.indexOf('/mobile/') === 0;
 					return isMobileRoute
 						? [
-							{ href: '/mobile/dashboard', label: 'Beranda' },
-							{ href: '/mobile/catalog', label: 'Belanja' },
-							{ href: '/mobile/bespoke', label: 'Bespoke' },
-							{ href: '/mobile/customer', label: 'Akun' },
+							{ href: route.prefix + '/mobile/dashboard', label: 'Beranda' },
+							{ href: route.prefix + '/mobile/catalog', label: 'Belanja' },
+							{ href: route.prefix + '/mobile/bespoke', label: 'Bespoke' },
+							{ href: route.prefix + '/mobile/customer', label: 'Akun' },
 						]
 						: [
-							{ href: '/catalog', label: 'Explore Collection' },
-							{ href: '/bespoke', label: 'Book Bespoke Consultation' },
+							{ href: route.prefix + '/catalog', label: 'Explore Collection' },
+							{ href: route.prefix + '/bespoke', label: 'Book Bespoke Consultation' },
 						];
 				}
 
