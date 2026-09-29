@@ -5,7 +5,12 @@
 // underpayment. Signs real payloads with the same HMAC the handler verifies.
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import handler from '../../api/doku/notification.js';
+
+const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 process.env.DOKU_CLIENT_ID = 'test-client';
 process.env.DOKU_SECRET_KEY = 'test-secret';
@@ -125,5 +130,55 @@ const latePaid = await post({ payload: notification('SUCCESS') });
 assert.equal(latePaid.statusCode, 200);
 assert.equal(patchesIssued().length, 0, 'cancelled order must not be revived');
 assert.equal(deductsIssued().length, 0, 'cancelled order must not re-deduct stock');
+
+// --- The two DOKU paths must read a verdict the same way -----------------------------------------------
+// dokuOrderGuards.js exists because the webhook and the unauthenticated status poll write the same order
+// row and their rules had already drifted once. Only the TERMINAL-state rules moved in. The status MAP
+// stayed behind in both files and drifted again: the poll learned REDIRECT and read `order.status` —
+// which is how DOKU says ORDER_GENERATED and ORDER_EXPIRED — while the webhook knew neither, and read
+// only `transaction.status`. An expiry that arrived as an order status was therefore acted on when the
+// browser happened to poll and ignored when DOKU pushed it, leaving the order pending and its stock
+// reserved until the daily sweep. This file's own log line already read `transaction.status ||
+// order.status`.
+const restoresIssued = () => calls.filter((c) => c.target.includes('storefront_restore_inventory_for_order'));
+
+orderRow = paidOrder({ inventory_deducted: true });
+const orderExpired = await post({
+  payload: { order: { invoice_number: 'DKT-abc-123456', amount: 500000, status: 'ORDER_EXPIRED' }, transaction: {} },
+});
+assert.equal(orderExpired.statusCode, 200);
+assert.equal(patchesIssued().length, 1, 'an expiry pushed as an ORDER status must still close the order');
+assert.match(patchesIssued()[0].body, /"payment_status":"expired"/);
+assert.equal(restoresIssued().length, 1, 'and give the reserved stock back, exactly as the poll does');
+
+// The must-pass half: a word neither path recognises still changes nothing. Ignoring what we cannot read
+// is the safe answer, and widening the vocabulary must not turn into guessing at it.
+orderRow = paidOrder();
+const gibberish = await post({
+  payload: { order: { invoice_number: 'DKT-abc-123456', amount: 500000, status: 'ORDER_SOMETHING_NEW' }, transaction: {} },
+});
+assert.equal(gibberish.statusCode, 200);
+assert.equal(patchesIssued().length, 0, 'an unreadable verdict must not write');
+assert.equal(gibberish.body.ignored, true, 'and must be logged as ignored rather than acted on');
+
+// And the vocabulary itself lives in exactly one place, so this cannot drift a third time. Counted
+// rather than listed: every file that turns a DOKU verdict into an order status must be the shared one.
+const definitions = [];
+for (const dir of ['api/doku', 'src/utils']) {
+  for (const name of readdirSync(join(webRoot, dir))) {
+    if (!name.endsWith('.js') || name.includes('.selfcheck.')) continue;
+    const source = readFileSync(join(webRoot, dir, name), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    if (/mapDokuStatus\s*=\s*\(/.test(source)) definitions.push(`${dir}/${name}`);
+  }
+}
+assert.deepEqual(definitions, ['src/utils/dokuOrderGuards.js'],
+  `the DOKU verdict vocabulary is defined ${definitions.length} times, and the copies have drifted twice `
+  + `already:\n  ${definitions.join('\n  ')}`);
+for (const endpoint of ['notification.js', 'status.js']) {
+  assert.match(readFileSync(join(webRoot, 'api', 'doku', endpoint), 'utf8'),
+    /import \{[^}]*mapDokuStatus[^}]*\} from '\.\.\/\.\.\/src\/utils\/dokuOrderGuards\.js';/,
+    `api/doku/${endpoint} must read the verdict through the shared rule, not its own copy`);
+}
 
 console.log('doku notification selfcheck OK');

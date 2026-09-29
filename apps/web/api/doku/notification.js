@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import process from 'node:process';
-import { checkDokuOrderTransition, isTerminalCancelStatus } from '../../src/utils/dokuOrderGuards.js';
+import { checkDokuOrderTransition, isTerminalCancelStatus, mapDokuStatus } from '../../src/utils/dokuOrderGuards.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 
 const NOTIFICATION_TARGET = '/api/doku/notification';
@@ -63,23 +63,6 @@ const getDokuHeaders = (request) => ({
   signature_present: Boolean(request.headers.signature),
   user_agent: request.headers['user-agent'] || '',
 });
-
-const mapDokuStatus = (status) => {
-  const normalizedStatus = String(status || '').toUpperCase();
-  if (['SUCCESS', 'PAID', 'SETTLEMENT', 'CAPTURED'].includes(normalizedStatus)) {
-    return { orderStatus: 'paid', paymentStatus: 'paid' };
-  }
-  if (['PENDING', 'PROCESSING'].includes(normalizedStatus)) {
-    return { orderStatus: 'pending_payment', paymentStatus: 'pending' };
-  }
-  if (['EXPIRED', 'TIMEOUT'].includes(normalizedStatus)) {
-    return { orderStatus: 'cancelled', paymentStatus: 'expired' };
-  }
-  if (['FAILED', 'DENIED', 'CANCELLED', 'CANCELED'].includes(normalizedStatus)) {
-    return { orderStatus: 'cancelled', paymentStatus: 'failed' };
-  }
-  return null;
-};
 
 const getSupabaseRestConfig = () => {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -340,7 +323,7 @@ export default async function handler(request, response) {
     const payload = parsedPayload;
     const invoiceNumber = payload?.order?.invoice_number;
     const transactionStatus = payload?.transaction?.status;
-    const statusPatch = mapDokuStatus(transactionStatus);
+    const statusPatch = mapDokuStatus({ transactionStatus, orderStatus: payload?.order?.status });
     currentStatusPatch = statusPatch;
 
     if (!invoiceNumber) {
@@ -364,12 +347,12 @@ export default async function handler(request, response) {
         processingStatus: 'ignored',
         httpStatus: 200,
         signatureValid: true,
-        errorMessage: `Unhandled DOKU status ${transactionStatus || '-'}`,
+        errorMessage: `Unhandled DOKU status ${transactionStatus || payload?.order?.status || '-'}`,
       });
       return jsonResponse(response, 200, {
         acknowledged: true,
         ignored: true,
-        reason: `Unhandled DOKU status ${transactionStatus || '-'}`,
+        reason: `Unhandled DOKU status ${transactionStatus || payload?.order?.status || '-'}`,
       });
     }
 

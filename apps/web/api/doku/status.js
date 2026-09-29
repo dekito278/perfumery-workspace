@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import process from 'node:process';
-import { checkDokuOrderTransition, isTerminalCancelStatus } from '../../src/utils/dokuOrderGuards.js';
+import { checkDokuOrderTransition, isTerminalCancelStatus, mapDokuStatus } from '../../src/utils/dokuOrderGuards.js';
 
 const STATUS_TARGET_PREFIX = '/orders/v1/status';
 
@@ -43,29 +43,6 @@ const createSignature = ({ clientId, requestId, timestamp, target, secretKey }) 
     .digest('base64');
 
   return `HMACSHA256=${signature}`;
-};
-
-const mapDokuStatus = ({ transactionStatus, orderStatus }) => {
-  const normalizedTransaction = String(transactionStatus || '').toUpperCase();
-  const normalizedOrder = String(orderStatus || '').toUpperCase();
-
-  if (['SUCCESS', 'PAID', 'SETTLEMENT', 'CAPTURED'].includes(normalizedTransaction)) {
-    return { orderStatus: 'paid', paymentStatus: 'paid' };
-  }
-
-  if (['PENDING', 'PROCESSING', 'REDIRECT'].includes(normalizedTransaction) || normalizedOrder === 'ORDER_GENERATED') {
-    return { orderStatus: 'pending_payment', paymentStatus: 'pending' };
-  }
-
-  if (['EXPIRED', 'TIMEOUT'].includes(normalizedTransaction) || normalizedOrder === 'ORDER_EXPIRED') {
-    return { orderStatus: 'cancelled', paymentStatus: 'expired' };
-  }
-
-  if (['FAILED', 'DENIED', 'CANCELLED', 'CANCELED'].includes(normalizedTransaction)) {
-    return { orderStatus: 'cancelled', paymentStatus: 'failed' };
-  }
-
-  return null;
 };
 
 const getSupabaseRestConfig = () => {
