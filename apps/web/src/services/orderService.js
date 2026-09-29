@@ -1630,6 +1630,12 @@ export const deleteOrder = async (orderId) => {
   if (currentOrder?.inventoryDeducted) {
     await restoreInventoryForOrder(currentOrder, 'Order deleted stock released');
   }
+  // The voucher quota is the other half of the same sentence, and the half where the loss is permanent.
+  // Cancelling gives it back and so does an expiry, but a delete removes the very row the release names —
+  // afterwards there is nothing left to point the RPC at, so a one-time code stays burned on that buyer's
+  // account for good, with no screen anywhere that can undo it. Released BEFORE the row goes.
+  // A no-op on an order that used no voucher.
+  await releaseVoucherUsageForOrder({ orderId: currentOrder?.id, orderNumber: currentOrder?.orderNumber || orderId });
 
   const query = supabase.from('storefront_orders').delete().select('order_number');
   const { data, error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
