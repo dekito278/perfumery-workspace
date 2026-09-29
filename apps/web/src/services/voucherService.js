@@ -276,19 +276,6 @@ export const deleteVoucher = async (idOrCode) => {
   return nextVouchers;
 };
 
-export const applyVoucherToSubtotal = ({ code, voucher, subtotal = 0, items = [], vouchers, now } = {}) => {
-  // Resolve vouchers from the cache here (the pure validateVoucher no longer defaults to the cache).
-  const validation = validateVoucher({ code, voucher, subtotal, items, vouchers: vouchers || getCachedVouchers(), now });
-  const orderSubtotal = toAmount(subtotal);
-
-  return {
-    ...validation,
-    subtotal: orderSubtotal,
-    discountAmount: validation.valid ? validation.discountAmount : 0,
-    subtotalAfterDiscount: validation.valid ? Math.max(orderSubtotal - validation.discountAmount, 0) : orderSubtotal,
-  };
-};
-
 /**
  * How much of this code the signed-in caller has already redeemed. ADVISORY ONLY — it exists so checkout
  * can refuse with the right message before the buyer fills the whole form. The authority is
