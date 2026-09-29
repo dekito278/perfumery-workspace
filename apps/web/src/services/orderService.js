@@ -497,7 +497,7 @@ const createOrderAuditLog = async ({
   nextValues = {},
   metadata = {},
 }) => {
-  const orderNumber = currentOrder?.orderNumber || currentOrder?.order_number || metadata.orderNumber || orderId;
+  const orderNumber = currentOrder?.orderNumber || metadata.orderNumber || orderId;
   if (!orderNumber || !action) return null;
 
   const actor = await getCurrentAdminActor();
@@ -1344,7 +1344,10 @@ export const updateOrderStatus = async (orderId, status) => {
       },
       metadata: {
         source: 'studio',
-        ...(voucherRelease && currentOrder?.voucherCode
+        // voucherSnapshot, not voucherCode: normalizeOrder has never produced a `voucherCode` field, so
+        // this condition was undefined on every order and the answer above reached the audit log exactly
+        // never — the same silence the comment was written to end.
+        ...(voucherRelease && currentOrder?.voucherSnapshot?.code
           ? { voucherRelease: voucherRelease.released ? 'released' : 'FAILED' }
           : {}),
       },

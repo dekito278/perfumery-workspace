@@ -157,4 +157,31 @@ for (const relative of BUYER_FACING) {
   }
 }
 
+// --- 3. A condition may only read a field the normalizer produces --------------------------------------
+// `currentOrder` in this file is always `await getOrderById(...)`, which returns normalizeOrder's object
+// and nothing else. Reading a field that object never carries is silently `undefined`, and in a condition
+// that means the branch simply never runs.
+//
+// It already happened, in the one place written specifically to make a silent failure visible: cancelling
+// an order logged whether the voucher quota came back, gated on `currentOrder?.voucherCode`. The
+// normalizer produces `voucherSnapshot`, never `voucherCode`, so the answer reached the audit log exactly
+// never — while the comment above it explained that a console.warn nobody reads is not good enough.
+const normalizerBody = source.match(/const normalizeOrder = \(order\) => \{[\s\S]*?\n  \};\n\};/);
+assert.ok(normalizerBody, 'normalizeOrder could not be found — the derivation broke');
+// Both spellings the object literal uses: `name: value` and the shorthand `name,`.
+const producedFields = new Set([...normalizerBody[0].matchAll(/^    ([A-Za-z_$][\w$]*)[:,]/gm)].map((m) => m[1]));
+assert.ok(producedFields.size >= 30, `only ${producedFields.size} normalized fields parsed — the derivation broke`);
+
+// Every `currentOrder` in this file comes from getOrderById, so there is no second shape to allow for.
+const bindings = [...source.matchAll(/const currentOrder = ([^;]*);/g)].map((m) => m[1].trim());
+assert.ok(bindings.length > 0 && bindings.every((value) => value.startsWith('await getOrderById(')),
+  `currentOrder is not always a normalized order any more: ${bindings.join(' | ')}`);
+
+const unknownReads = [...new Set(
+  [...source.matchAll(/currentOrder\??\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]),
+)].filter((field) => !producedFields.has(field));
+assert.deepEqual(unknownReads, [],
+  'these fields are read off a normalized order that normalizeOrder does not produce, so they are always '
+  + `undefined — in a condition, that is a branch that never runs:\n  ${unknownReads.join('\n  ')}`);
+
 console.log('orderWrites selfcheck OK');
