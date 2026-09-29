@@ -1,4 +1,5 @@
 import CardPrice from '@/components/storefront/CardPrice.jsx';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -103,6 +104,7 @@ const HomePage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <StaleCatalogNotice stale={fetchedProducts.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
 

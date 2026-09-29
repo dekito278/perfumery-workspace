@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React from 'react';
@@ -56,6 +57,7 @@ const MobileCartPage = () => {
     <MobileCommerceLayout>
       <Helmet><title>{t('cart.tab')}</title></Helmet>
       <main className="mobile-page mobile-cart-page" style={{ background: 'var(--editorial-paper)' }}>
+        <StaleCatalogNotice stale={products.stale} className="mx-4 mt-3" />
         <section style={{ padding: '20px 16px', borderBottom: '1px solid var(--editorial-stone)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 86px', gap: 12 }}>
             <div style={{ minWidth: 0 }}>

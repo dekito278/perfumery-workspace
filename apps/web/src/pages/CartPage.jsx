@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useMemo } from 'react';
@@ -57,6 +58,7 @@ const CartPage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <StaleCatalogNotice stale={catalogProducts.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
 
