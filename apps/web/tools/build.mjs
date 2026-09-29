@@ -529,6 +529,47 @@ const assertCanonicalOriginAgrees = async () => {
   }
 };
 
+// QRIS is one environment variable away from taking money the shop cannot confirm.
+//
+// api/doku/qris.js mints a real SNAP QRIS code and works. Nothing can CONFIRM one: notification.js only
+// understands the Jokul envelope and status.js polls the Jokul checkout API, so a SNAP payment never
+// marks its order paid — and the reservation sweep then cancels that order 24 hours later. A buyer pays,
+// and the order they paid for is cancelled.
+//
+// That warning has been written in two comments since audit round 7, in files nobody opens to decide an
+// env var. `VITE_QRIS_ENABLED=true` is set in a Vercel dashboard, and comments do not reach there. This
+// turns the warning into a gate: switch QRIS on before the webhook can read a SNAP notification and the
+// build refuses.
+//
+// The marker is what a SNAP branch must actually name — DOKU's own field for the invoice a SNAP
+// notification is about. A branch that handles SNAP cannot avoid reading it, and no amount of unrelated
+// editing produces it by accident.
+const assertQrisCanBeConfirmed = async () => {
+  const { loadDotEnv } = await import('./seo-artifacts.mjs');
+  const fileEnv = loadDotEnv(webRoot);
+  const enabled = String(process.env.VITE_QRIS_ENABLED ?? fileEnv.VITE_QRIS_ENABLED ?? '').trim().toLowerCase() === 'true';
+  if (!enabled) {
+    console.log('[qris] off — the SNAP payment path stays dark until its webhook branch exists.');
+    return;
+  }
+
+  const webhook = fs.readFileSync(path.join(webRoot, 'api', 'doku', 'notification.js'), 'utf8');
+  if (!/partnerReferenceNo/.test(webhook)) {
+    console.error(
+      '[qris] VITE_QRIS_ENABLED is true, but api/doku/notification.js has no SNAP branch — it still reads '
+      + 'only the Jokul envelope, and api/doku/status.js polls the Jokul checkout API. A QRIS payment '
+      + 'would never mark its order paid, and the reservation sweep would cancel that order 24 hours '
+      + 'later: the buyer pays, and the order they paid for is cancelled.\n'
+      + '  Add the branch first (verify X-SIGNATURE as HMAC-SHA512 over '
+      + '`POST:<path>:<accessToken>:<sha256hex(body)>:<X-TIMESTAMP>`, then map partnerReferenceNo + '
+      + 'latestTransactionStatus through mapDokuStatus), verify it against the DOKU sandbox, and only '
+      + 'then switch this on.',
+    );
+    process.exit(1);
+  }
+  console.log('[qris] on, and the webhook can read a SNAP notification.');
+};
+
 const assertPairedEnvAgrees = async () => {
   // Read what Vite will actually bake in, not just the shell: on Vercel the project variables arrive in
   // process.env, but locally they live in apps/web/.env, and comparing only process.env would report a
@@ -898,6 +939,7 @@ const assertDeferredChunksStayLazy = () => {
 
 await assertPairedEnvAgrees();
 await assertCanonicalOriginAgrees();
+await assertQrisCanBeConfirmed();
 await warnIfBespokeDefaultsDrifted();
 
 if (viteResult.status === 0) {
