@@ -1,27 +1,16 @@
 import React, { useState } from 'react';
 import { KeyRound, LogOut, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useSignOut } from '@/hooks/useSignOut.js';
 
 const MobileSessionActions = () => {
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const [open, setOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
 
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      await logout();
-      toast.success('Berhasil keluar');
-      navigate('/mobile/login', { replace: true });
-    } catch (error) {
-      toast.error(error.message || 'Gagal keluar');
-      setLoggingOut(false);
-    }
-  };
+  const { signOut, signingOut: loggingOut } = useSignOut('/mobile/login');
 
   return (
     <div className="mobile-session-actions">
@@ -31,7 +20,7 @@ const MobileSessionActions = () => {
             <div className="truncate text-xs font-bold text-[#1f2937]">{currentUser?.email || 'Solivagant'}</div>
             <div className="text-[10px] font-semibold text-[#6b7280]">Mobile session</div>
           </div>
-          <Button type="button" variant="outline" onClick={handleLogout} disabled={loggingOut} className="h-9 rounded-xl border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700">
+          <Button type="button" variant="outline" onClick={signOut} disabled={loggingOut} className="h-9 rounded-xl border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700">
             <LogOut className="mr-1 h-4 w-4" />
             {loggingOut ? '...' : 'Logout'}
           </Button>

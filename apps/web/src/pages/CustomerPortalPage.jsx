@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { AlertCircle, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useSignOut } from '@/hooks/useSignOut.js';
 import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
@@ -821,7 +822,9 @@ const CustomerPortalPage = () => {
   const { t, isInternational } = useTranslate();
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
+  const { currentUser, loginWithGoogle, rememberCustomerCode } = useAuth();
+  // Stays on the page: a buyer signing out mid-checkout keeps their place, and a refused sign-out says so.
+  const { signOut } = useSignOut(null);
   const { tier: priceTier } = useTierPrices();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCode = searchParams.get('code') || '';
@@ -1283,7 +1286,7 @@ const CustomerPortalPage = () => {
               {currentUser ? (
                 <div className="flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-3 py-2 text-xs font-semibold text-editorial-charcoal">
                   <span className="min-w-0 truncate">{t('cust.signedInAs', { email: currentUser.email })}</span>
-                  <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
+                  <button type="button" onClick={signOut} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
                 </div>
               ) : (
                 <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-sm font-bold" onClick={signInGoogle}>
@@ -1572,7 +1575,7 @@ const CustomerPortalPage = () => {
               {currentUser ? (
                 <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-4 py-2 text-xs font-semibold text-editorial-charcoal">
                   <span className="min-w-0 truncate">{t('cust.signedInAs', { email: currentUser.email })}</span>
-                  <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
+                  <button type="button" onClick={signOut} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
                 </div>
               ) : (
                 <Button type="button" variant="outline" className="mt-3 h-12 w-full rounded-2xl gap-2 text-sm font-bold" onClick={signInGoogle}>

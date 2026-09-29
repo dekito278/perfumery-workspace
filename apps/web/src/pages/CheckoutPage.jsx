@@ -12,6 +12,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useSignOut } from '@/hooks/useSignOut.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
@@ -30,7 +31,9 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
 const CheckoutPage = () => {
   const { t } = useTranslate();
   const { items, summary, clear } = useCart();
-  const { currentUser, loginWithGoogle, logout } = useAuth();
+  const { currentUser, loginWithGoogle } = useAuth();
+  // Stays on the page: a buyer signing out mid-checkout keeps their place, and a refused sign-out says so.
+  const { signOut } = useSignOut(null);
   // What this cart would save at member prices. 0 whenever there is nothing to say — no member prices
   // filled in, or the visitor already pays them — and 0 keeps the ordinary "data terisi otomatis" copy.
   const { index: memberIndex } = useMemberPrices();
@@ -168,7 +171,7 @@ const CheckoutPage = () => {
               {currentUser ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 14px', borderRadius: '14px', background: '#f3f1ec', fontSize: '0.8rem', fontWeight: 600, marginBottom: '12px' }}>
                   <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('checkout.signedInAuto', { email: currentUser.email })}</span>
-                  <button type="button" onClick={logout} style={{ flexShrink: 0, fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>{t('checkout.signOut')}</button>
+                  <button type="button" onClick={signOut} style={{ flexShrink: 0, fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>{t('checkout.signOut')}</button>
                 </div>
               ) : (
                 <button type="button" onClick={handleGoogleLogin} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '12px', borderRadius: '14px', border: '1px solid #d8d2c4', background: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', marginBottom: '12px' }}>

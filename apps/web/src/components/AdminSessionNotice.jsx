@@ -3,6 +3,7 @@ import { ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useSignOut } from '@/hooks/useSignOut.js';
 import supabase from '@/lib/supabaseClient.js';
 
 // is_admin() requires the JWT to be aal2. An admin session that never verified a TOTP code is still let
@@ -11,7 +12,10 @@ import supabase from '@/lib/supabaseClient.js';
 // session and say so, in one place, instead of letting every page render an honest-looking empty state.
 const AdminSessionNotice = ({ mobile = false }) => {
   const navigate = useNavigate();
-  const { isAdmin, isAuthenticated, session, logout } = useAuth();
+  const { isAdmin, isAuthenticated, session } = useAuth();
+  // At the top, above every early return: a hook called after one is a hook called conditionally.
+  const prefix = mobile ? '/mobile' : '';
+  const { signOut } = useSignOut(`${prefix}/login`);
   const [assurance, setAssurance] = useState(null);
   // The app gate (VITE_ADMIN_EMAILS) and the data gate (storefront_admins) are two lists nothing keeps in
   // sync. An account on the first but not the second passes aal2 and still reads every admin table as
@@ -50,11 +54,6 @@ const AdminSessionNotice = ({ mobile = false }) => {
   }
 
   const needsEnrollment = assurance.nextLevel !== 'aal2';
-  const prefix = mobile ? '/mobile' : '';
-  const handleLogout = async () => {
-    await logout();
-    navigate(`${prefix}/login`, { replace: true });
-  };
 
   return (
     <MobileStatePanel
@@ -67,7 +66,7 @@ const AdminSessionNotice = ({ mobile = false }) => {
         ? 'Akun ini belum punya authenticator. Order, bukti transfer, dan customer terlihat kosong sampai authenticator didaftarkan lalu login ulang.'
         : 'Sesi ini belum memasukkan kode authenticator. Order, bukti transfer, dan customer terlihat kosong sampai logout lalu login ulang dengan kode.'}
       action={needsEnrollment ? 'Daftarkan authenticator' : 'Logout & login ulang'}
-      onAction={needsEnrollment ? () => navigate(`${prefix}/authenticator`) : handleLogout}
+      onAction={needsEnrollment ? () => navigate(`${prefix}/authenticator`) : signOut}
     />
   );
 };
