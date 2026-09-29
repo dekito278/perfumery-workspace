@@ -41,7 +41,6 @@ const staticPublicPages = [
     sections: [
       ['Fragrance Collection', 'A public catalog of perfume objects with notes, concentration, size variants, price, and availability.'],
       ['Bespoke Consultation', 'Request parfum custom through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari.'],
-      ['Raw Material Archive', 'Public material stories for origin, olfactive family, sensory description, and mood.'],
       ['Journal', 'Editorial notes on scent memory, materials, atelier process, product stories, and perfumery culture.'],
     ],
     items: ['Hero', 'Perfumer story', 'Collection preview', 'Bespoke ritual'],
@@ -80,7 +79,7 @@ const staticPublicPages = [
       ['Preferensi', 'Share purpose, skin impression, projection preference, and personal references.'],
       ['Botol', 'Select 30 ml, 50 ml, or 100 ml and bottle preference.'],
       ['Ongkir', 'Provide delivery area for shipping estimate.'],
-      ['Bayar', 'Continue toward a public checkout placeholder when the request is ready.'],
+      ['Bayar', 'Confirm the request and pay by manual bank transfer or DOKU.'],
     ],
     items: ['Aroma', 'Preferensi', 'Botol', 'Ongkir', 'Bayar'],
   },
@@ -92,11 +91,13 @@ const staticPublicPages = [
     heading: 'Journal',
     headline: 'Field notes from the atelier.',
     intro: 'Editorial notes from SOLIVAGANT on scent memory, raw materials, atelier process, product stories, and the culture of wearing fragrance.',
+    // Replaced at build time by the live journal, for the same reason the catalogue above stopped
+    // enumerating: these four titles were written once and the journal has moved on — measured
+    // 30 Sep 2026, it held ONE published article and none of these was it. This stays only for a build
+    // that cannot reach Supabase, so it names no articles.
     sections: [
-      ['Fragrance as a memory object', 'How a place, gesture, or remembered person becomes the structure of a perfume brief.'],
-      ['Reading woods, musks, and green shadows', 'A material note on texture, volatility, and tactile fragrance decisions.'],
-      ['From lab note to finished bottle', 'The rhythm of weighing, resting, evaluating, refining, and finishing a small perfume batch.'],
-      ['The small etiquette of wearing scent', 'Projection, intimacy, weather, and choosing fragrance for shared rooms.'],
+      ['Scent memory', 'How a place, a gesture, or a remembered person becomes the structure of a brief.'],
+      ['Atelier process', 'Notes on materials, weighing, resting, and finishing a small perfume batch.'],
     ],
     items: ['Scent memory', 'Raw materials', 'Atelier process', 'Product stories'],
   },
@@ -161,7 +162,7 @@ const renderStaticFallback = (page) => {
 // `products` are the live rows the sitemap is built from. The catalogue snapshot lists them instead of a
 // hand-written array: that array had gone stale and was advertising four discontinued perfumes with
 // prices to every crawler and every visitor without JavaScript.
-const writeStaticPublicPages = (siteUrl, products = []) => {
+const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
   const distRoot = path.join(webRoot, 'dist');
   const indexPath = path.join(distRoot, 'index.html');
   if (!fs.existsSync(indexPath)) return;
@@ -172,11 +173,17 @@ const writeStaticPublicPages = (siteUrl, products = []) => {
     .slice(0, 12)
     .map((product) => [product.name, [product.description, product.concentration, product.priceNumber ? `Rp ${product.priceNumber.toLocaleString('id-ID')}` : ''].filter(Boolean).join('. ')]);
 
+  const journalSections = journal
+    .slice(0, 12)
+    .map((post) => [post.title, post.excerpt || post.category || '']);
+
+  // The catalogue and the journal are STOCK — they change without anyone touching this file, and a
+  // snapshot that enumerates them goes stale silently. The other two describe a flow, which does not.
+  const liveSections = { '/catalog': catalogSections, '/journal': journalSections };
+
   staticPublicPages.forEach((rawPage) => {
-    // Only the catalogue is generated; the rest are stable descriptions of the flow, not of stock.
-    const page = rawPage.route === '/catalog' && catalogSections.length
-      ? { ...rawPage, sections: catalogSections }
-      : rawPage;
+    const live = liveSections[rawPage.route];
+    const page = live && live.length ? { ...rawPage, sections: live } : rawPage;
     const routeName = page.route.replace(/^\/+/, '');
     const routeDir = path.join(distRoot, routeName);
     const routePath = path.join(routeDir, 'index.html');
@@ -338,7 +345,7 @@ const generateSeoArtifacts = async () => {
     process.exit(1);
   }
 
-  writeStaticPublicPages(env.siteUrl, products);
+  writeStaticPublicPages(env.siteUrl, products, journal);
   writeLlmsTxt(distRoot, env.siteUrl);
 
   if (env.siteUrl && (products.length || journal.length)) {
