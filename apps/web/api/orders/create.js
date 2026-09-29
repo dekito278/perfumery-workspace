@@ -333,8 +333,14 @@ export default async function handler(req, res) {
     // returned fee 0, and the order was created with the freight never charged. This endpoint is
     // unauthenticated, and the order it would leave behind looks ordinary — thirty of the thirty-three
     // orders in this shop legitimately carry no courier line, because every bespoke request is quoted by
-    // hand afterwards. A CATALOGUE order is not: it is shipped, so it has to be priced.
-    if (!isBespoke && !ship.destinationId) {
+    // hand afterwards.
+    //
+    // The test is what is IN THE PARCEL, never what the caller calls the order. `isBespoke` is
+    // `input.source === 'bespoke' || Boolean(input.bespoke)` — both come from the request, so gating this
+    // on it meant one extra word bought free freight on a cart of bottles. catalog.resolved is this
+    // endpoint's own lookup of the items against the database: bottles are being shipped, so they have to
+    // be priced. A brief with no bottles is the flow that is genuinely quoted by hand.
+    if (catalog.resolved.length && !ship.destinationId) {
       return jsonResponse(res, 422, { message: 'Shipping destination is required to price shipping' });
     }
     // This must equal what the browser quoted with, because the fee computed here is the one the order is
