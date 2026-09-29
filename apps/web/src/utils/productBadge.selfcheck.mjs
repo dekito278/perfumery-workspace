@@ -10,10 +10,10 @@
 // olibanum, musk" by its own notes — was not one of them, and neither was Aquilaria tuberosa
 // (Tuberose, oud Malinau). The two most expensive florals were invisible to a buyer looking for florals.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { cardLabels, familyLabel, isLimitedProduct } from './productBadge.js';
+import { cardLabels, familyLabel, isLimitedProduct, matchesCatalogCategory } from './productBadge.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -135,5 +135,48 @@ for (const [name, file] of [
   const source = read(...file);
   assert.match(source, /cardLabels\(product\)/, `${name} still prints the raw category`);
 }
+
+// --- The mirror: a pill named after the badge must find everything wearing it -------------------------
+// Splitting `limited` out of `category` is what let FLORAL find Maskumambang. Nobody did the other half.
+// The pills are still built from categories and matched by string equality, so tapping LIMITED found the
+// perfumes still FILED as Limited and missed every one that had been re-filed — measured on the live
+// shop the day this was written: ten wear the badge, the pill returned seven. The three it dropped were
+// Aquilaria tuberosa, Maskumambang and Sudra, the three most expensive bottles in the shop, absent from
+// exactly the filter someone hunting rare pieces would reach for.
+const refiled = { name: 'Sudra', category: 'Woody', limited: true };
+const stillFiled = { name: 'old', category: 'Limited', limited: true };
+const ordinary = { name: 'HUG', category: 'Floral', limited: false };
+
+assert.equal(matchesCatalogCategory(refiled, 'Limited'), true,
+  'a re-filed limited perfume must still answer to the LIMITED pill — that is what the badge promises');
+assert.equal(matchesCatalogCategory(refiled, 'Woody'), true,
+  'and to its family, which is the whole reason it was re-filed');
+assert.equal(matchesCatalogCategory(stillFiled, 'Limited'), true, 'one not yet re-filed still answers too');
+// The direction that matters just as much: LIMITED must not become a pill that matches everything.
+assert.equal(matchesCatalogCategory(ordinary, 'Limited'), false, 'an ordinary perfume is not limited');
+assert.equal(matchesCatalogCategory(ordinary, 'Floral'), true, 'and families still match on the category');
+assert.equal(matchesCatalogCategory(ordinary, 'All'), true, 'All matches everything');
+
+// And every screen that builds those pills must route its filter through the shared rule. Counted, not
+// listed: the screens are whichever files build the pill list out of the category.
+const pillScreens = [];
+const byHand = [];
+const walkPills = (dir) => {
+  for (const entry of readdirSync(join(here, '..', dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) { walkPills(rel); continue; }
+    if (!/\.jsx$/.test(entry.name)) continue;
+    const source = readFileSync(join(here, '..', rel), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    if (!/publicCategory \|\| \w+\.category/.test(source)) continue;
+    pillScreens.push(rel);
+    if (!/matchesCatalogCategory\s*\(/.test(source)) byHand.push(rel);
+  }
+};
+walkPills('pages');
+assert.ok(pillScreens.length >= 2, `only ${pillScreens.length} catalogue pill screen(s) found — the derivation broke`);
+assert.deepEqual(byHand, [],
+  'these screens compare the pill against the category themselves, so LIMITED finds only the perfumes '
+  + `still filed under it and misses every one re-filed into its family:\n  ${byHand.join('\n  ')}`);
 
 console.log('productBadge selfcheck OK (limited is a badge, the category is free to say the family, and today\'s screen is unchanged)');

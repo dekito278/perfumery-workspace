@@ -9,7 +9,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
-import { cardLabels } from '@/utils/productBadge.js';
+import { cardLabels, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
@@ -42,8 +42,7 @@ export const MobileCatalogContent = ({ active = true }) => {
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     return products.filter((product) => {
-      const cat = product.publicCategory || product.category || '';
-      if (activeCategory !== 'All' && cat !== activeCategory) return false;
+      if (!matchesCatalogCategory(product, activeCategory)) return false;
       if (!q) return true;
       return [product.name, product.mood, product.category, ...(product.topNotes || []), ...(product.heartNotes || []), ...(product.baseNotes || [])]
         .join(' ').toLowerCase().includes(q);
