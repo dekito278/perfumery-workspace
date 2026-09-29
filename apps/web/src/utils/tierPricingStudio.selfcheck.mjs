@@ -10,7 +10,8 @@
 // back to retail silently is correct — retail is a real price. Here it is a trap: the owner types in a
 // member price, sees no complaint, and believes it is live.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { tierPriceIsNotBelowRetail } from './memberPriceFill.js';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -105,5 +106,47 @@ for (const [file, source] of [
       + 'columns can shrink instead of pushing the row out of its card.');
   }
 }
+
+// --- Three: a screen that sets a tier price must say when it is not below retail ----------------------
+// member and reseller exist to be cheaper than walking in. One typed at or above retail charges a
+// signed-in buyer MORE than a stranger, while the storefront badge still reads "Harga member aktif".
+//
+// It was invisible on both screens for the worst possible reason: memberSaving returns 0 for exactly
+// that case, so the saving column renders EMPTY — which is also what an unfilled price looks like. The
+// export column beside it has flagged its own mirror case ("Di bawah harga retail") since it shipped;
+// the domestic direction never got the same treatment. Same shape as the export check on purpose:
+// flagged, never blocked, because the number is Dekito's to set.
+//
+// Counted, not listed: the screens are whichever files call saveTierPrice. A third one added later is
+// covered by being written, not by being added here.
+const setsTierPrices = [];
+const silent = [];
+const walkStudio = (dir) => {
+  for (const entry of readdirSync(join(src, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) { walkStudio(rel); continue; }
+    if (!/\.(jsx|js)$/.test(entry.name) || entry.name.includes('.selfcheck.')) continue;
+    const source = read(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    if (!/\bsaveTierPrice\s*\(/.test(source)) continue;
+    setsTierPrices.push(rel);
+    if (!/tierPriceIsNotBelowRetail\s*\(/.test(source)) silent.push(rel);
+  }
+};
+for (const dir of ['pages', 'components']) walkStudio(dir);
+
+assert.ok(setsTierPrices.length >= 2,
+  `only ${setsTierPrices.length} screen(s) call saveTierPrice — the derivation broke`);
+assert.deepEqual(silent, [],
+  'these screens let the owner type a member or reseller price at or above retail without a word, and '
+  + 'the saving column goes blank rather than red — the buyer who signs in then pays MORE than one who '
+  + `does not:\n  ${silent.join('\n  ')}`);
+
+// And the rule itself, run rather than described: an unset price is never flagged (that is an empty
+// field, not a mistake), a cheaper one is fine, equal and dearer are both wrong.
+assert.equal(tierPriceIsNotBelowRetail(359000, 300000), false, 'a cheaper member price is the whole point');
+assert.equal(tierPriceIsNotBelowRetail(359000, 359000), true, 'equal to retail is not a member price');
+assert.equal(tierPriceIsNotBelowRetail(359000, 400000), true, 'dearer than retail is the case that hurts');
+assert.equal(tierPriceIsNotBelowRetail(359000, ''), false, 'an empty field is not a mistake');
+assert.equal(tierPriceIsNotBelowRetail(0, 100000), false, 'no retail price to compare against');
 
 console.log('tierPricingStudio.selfcheck: ok');
