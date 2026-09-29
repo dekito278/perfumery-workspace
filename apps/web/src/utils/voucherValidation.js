@@ -3,6 +3,7 @@
 // access lives in services/voucherService.js, which re-exports these. Keep this file import-free.
 
 import { shopEndOfDay } from './localDay.js';
+import { isFreeVialLine } from './freeVial.js';
 
 export const VOUCHER_DISCOUNT_TYPES = {
   PERCENT: 'percent',
@@ -97,8 +98,21 @@ export const itemMatchesVoucher = (voucher, item) => {
     || (itemCategory && categories.includes(itemCategory));
 };
 
+/**
+ * The lines a voucher is allowed to look at.
+ *
+ * The free gift is never one of them. An unrestricted voucher matches every line, so a vial counted
+ * toward `minimumQuantity` — "one bottle and the gift we gave them" cleared a threshold Dekito set to
+ * mean "two bottles". It never moved the eligible SUBTOTAL, because a gift is priced at nothing, which
+ * is exactly why the quantity rule was the one that slipped.
+ *
+ * api/orders/create.js validates against its own server-resolved lines, whose tags it sets itself, so
+ * this cannot be steered from a browser.
+ */
 export const getVoucherEligibleItems = (voucher, items = []) => (
-  (items || []).filter((item) => itemMatchesVoucher(voucher || {}, item))
+  (items || [])
+    .filter((item) => !isFreeVialLine(item))
+    .filter((item) => itemMatchesVoucher(voucher || {}, item))
 );
 
 export const getVoucherEligibleSubtotal = (voucher, items = [], fallbackSubtotal = 0) => {

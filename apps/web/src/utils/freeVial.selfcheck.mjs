@@ -369,4 +369,29 @@ assert.match(read('hooks', 'useCheckoutFlow.js'),
   /const blockedItems = items\.filter\(\(item\) => item\.unavailable \|\| item\.outOfStock\);/,
   'checkout must still refuse to submit when a line the buyer is PAYING for cannot be fulfilled');
 
+// --- 16. A gift does not help clear a voucher threshold -------------------------------------------------
+// An unrestricted voucher matches every line, so the gift counted toward minimumQuantity: one bottle and
+// the vial the shop gave away cleared a threshold Dekito set to mean two bottles. It never moved the
+// eligible SUBTOTAL — a gift is priced at nothing — which is exactly why the quantity rule was the one
+// that slipped. The endpoint validates against its own server-resolved lines, so this is the real rule
+// on both sides rather than a client courtesy.
+const { getVoucherEligibleQuantity, getVoucherEligibleSubtotal } = await import('./voucherValidation.js');
+const oneBottleAndAGift = [
+  { slug: 'hug-n-1', category: 'Limited', quantity: 1, priceNumber: 359000 },
+  { slug: 'vial-hadiah', category: 'Vial', quantity: 1, priceNumber: 0, tags: [FREE_VIAL_TAG] },
+];
+const anyVoucher = {};
+assert.equal(getVoucherEligibleQuantity(anyVoucher, oneBottleAndAGift), 1,
+  'the gift must not count toward a voucher minimum — "buy 2" means two bottles');
+assert.equal(getVoucherEligibleSubtotal(anyVoucher, oneBottleAndAGift, 359000), 359000,
+  'and the money a voucher may discount is unchanged, because a gift was always worth nothing');
+// The must-pass half: two real bottles still clear a minimum of two.
+assert.equal(getVoucherEligibleQuantity(anyVoucher, [{ slug: 'hug-n-1', quantity: 2, priceNumber: 359000 }]), 2,
+  'two bottles still count as two — excluding the gift must not start excluding purchases');
+// And the distinction that matters: identity comes from the TAG, never from the price being zero. A
+// bottle discounted to nothing is still something the buyer chose, and it still counts. Without this
+// line, filtering on `priceNumber > 0` instead of on the tag passes every other assertion here.
+assert.equal(getVoucherEligibleQuantity(anyVoucher, [{ slug: 'hug-n-1', quantity: 1, priceNumber: 0 }]), 1,
+  'a bought line priced at zero is a purchase, not a gift — the tag is what tells them apart');
+
 console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);
