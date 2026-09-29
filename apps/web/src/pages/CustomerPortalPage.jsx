@@ -410,9 +410,11 @@ const PaymentTaskPanel = ({
   const dokuExpired = isDokuPaymentExpired(order);
   const expiresAt = getDokuExpiryDate(order);
   const transfer = {
-    bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
-    accountNumber: order.paymentResponse?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
-    accountName: order.paymentResponse?.accountName || MANUAL_TRANSFER_PAYMENT.accountName,
+    // No paymentResponse on a portal order: storefront_customer_portal selects a narrowed column list and
+    // has never sent doku_response/payment_response, so these three always came from the constant below.
+    bankName: MANUAL_TRANSFER_PAYMENT.bankName,
+    accountNumber: MANUAL_TRANSFER_PAYMENT.accountNumber,
+    accountName: MANUAL_TRANSFER_PAYMENT.accountName,
   };
 
   const title = manualPayment
@@ -1178,8 +1180,8 @@ const CustomerPortalPage = () => {
       await createDokuCheckout({
         order,
         amount: order.subtotal,
-        customerName: order.customerName,
-        contact: order.contact,
+        // Not sent: the portal order carries neither, and the masked name would be worse than nothing.
+        // api/doku/checkout.js reads the real ones off the order row with the service role.
         items: order.items || [],
         callbackPath: isMobileRoute ? '/mobile/payment' : '/payment',
       });
@@ -1234,8 +1236,10 @@ const CustomerPortalPage = () => {
     const customer = portal?.customer || {};
     seedCheckoutDraft({
       customerCode: customer.customerCode || customerCode,
-      customerName: customer.customerName && customer.customerName !== 'Customer' ? customer.customerName : order.customerName,
-      contact: customer.contact && customer.contact !== '-' ? customer.contact : order.contact,
+      // The portal customer is the only source for these: the RPC sends the name and contact ONCE, on the
+      // customer object, and never repeats them per order. `order.customerName` was undefined every time.
+      customerName: customer.customerName && customer.customerName !== 'Customer' ? customer.customerName : '',
+      contact: customer.contact && customer.contact !== '-' ? customer.contact : '',
       deliveryAddress: customer.deliveryAddress,
       deliveryArea: customer.deliveryArea,
       destinationSearch: customer.deliveryArea,
