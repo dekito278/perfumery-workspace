@@ -134,9 +134,9 @@ const PublicHeader = () => {
               a cart filled in the Indonesian shop — is an invitation to a checkout that now redirects,
               and a count that quotes domestic prices. */}
           {isInternational ? null : (
-            <Link to="/cart" className="editorial-cart-button" aria-label={t('nav.cartAria', { count: summary.quantity })}>
+            <Link to="/cart" className="editorial-cart-button" aria-label={t('nav.cartAria', { count: summary.boughtQuantity })}>
               <ShoppingBag className="h-4 w-4" />
-              {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
+              {summary.boughtQuantity > 0 ? <span className="editorial-cart-count">{summary.boughtQuantity}</span> : null}
             </Link>
           )}
         </div>

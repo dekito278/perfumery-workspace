@@ -180,10 +180,26 @@ export const setFreeVialCartItem = (item) => {
 
 export const clearCart = () => writeCart([]);
 
+/**
+ * Two counts, because two questions get asked of this cart and they have different answers.
+ *
+ * `quantity` counts everything in the parcel, the free gift included — that is what goes on the order
+ * and into the WhatsApp draft, and api/orders/create.js counts its resolved lines the same way. Three
+ * things really do go in the box.
+ *
+ * `boughtQuantity` is what the BUYER is buying, and it is the only one a badge may show. The gift is not
+ * a cart line on either cart page — it lives in the picker — so a badge reading 3 above a list of 2 is a
+ * count that disagrees with the page under it, and the first thought it provokes is "what did I add by
+ * accident".
+ */
 export const getCartSummary = (items) => {
   const quantity = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const boughtQuantity = items.reduce(
+    (sum, item) => sum + (isFreeVialLine(item) ? 0 : Number(item.quantity || 0)),
+    0,
+  );
   const subtotal = items.reduce((sum, item) => sum + Number(item.priceNumber || 0) * Number(item.quantity || 0), 0);
-  return { quantity, subtotal };
+  return { quantity, boughtQuantity, subtotal };
 };
 
 export const buildOrderNotes = ({

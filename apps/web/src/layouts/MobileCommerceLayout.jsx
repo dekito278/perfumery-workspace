@@ -121,9 +121,9 @@ const MobileCommerceLayout = ({ children }) => {
               )}
             >
               <Icon className="h-[19px] w-[19px]" />
-              {item.path === '/mobile/cart' && summary.quantity > 0 ? (
+              {item.path === '/mobile/cart' && summary.boughtQuantity > 0 ? (
                 <span className="absolute right-2 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[9px] font-black leading-none text-white">
-                  {summary.quantity > 99 ? '99+' : summary.quantity}
+                  {summary.boughtQuantity > 99 ? '99+' : summary.boughtQuantity}
                 </span>
               ) : null}
               <span className="max-w-full truncate px-0.5">{t(item.labelKey)}</span>
