@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useSignOut } from '@/hooks/useSignOut.js';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
@@ -78,7 +79,9 @@ const MobileCheckoutPage = () => {
   const { t } = useTranslate();
   const navigate = useNavigate();
   const [showManualShippingArea, setShowManualShippingArea] = useState(false);
-  const { currentUser, loginWithGoogle, logout } = useAuth();
+  const { currentUser, loginWithGoogle } = useAuth();
+  // Stays on the page: a buyer signing out mid-checkout keeps their place, and a refused sign-out says so.
+  const { signOut } = useSignOut(null);
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const { index: memberIndex } = useMemberPrices();
   const memberSaving = memberSavingForCart(items, memberIndex);
@@ -227,7 +230,7 @@ const MobileCheckoutPage = () => {
             {currentUser ? (
               <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#f3f1ec] px-3 py-2 text-xs font-semibold text-editorial-charcoal">
                 <span className="min-w-0 truncate">{t('checkout.signedInAuto', { email: currentUser.email })}</span>
-                <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">{t('checkout.signOut')}</button>
+                <button type="button" onClick={signOut} className="shrink-0 font-bold underline underline-offset-4">{t('checkout.signOut')}</button>
               </div>
             ) : (
               <Button type="button" variant="outline" className="min-h-12 w-full whitespace-normal rounded-2xl bg-white gap-2 px-3 py-2 text-xs font-bold leading-snug" onClick={handleGoogleLogin}>

@@ -29,13 +29,14 @@ import {
 } from 'lucide-react';
 import AdminSessionNotice from '@/components/AdminSessionNotice.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useSignOut } from '@/hooks/useSignOut.js';
 
 const DESKTOP_SIDEBAR_STORAGE_KEY = 'perfumer-studio.sidebar-collapsed';
 
 const AppShell = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, currentUser } = useAuth();
+  const { currentUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(true);
   const [openSections, setOpenSections] = useState({
@@ -61,10 +62,7 @@ const AppShell = ({ children }) => {
     || currentUser?.email?.split('@')[0]
     || 'Solivagant';
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const { signOut, signingOut } = useSignOut('/login');
 
   const navSections = [
     {
@@ -231,7 +229,7 @@ const AppShell = ({ children }) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleLogout}
+                onClick={signOut}
                 className={`w-full gap-2 rounded-xl ${desktopSidebarCollapsed ? 'mt-0 justify-center px-0' : 'mt-3 justify-start'}`}
                 title={desktopSidebarCollapsed ? 'Logout' : undefined}
               >
@@ -268,7 +266,7 @@ const AppShell = ({ children }) => {
                     <Button
                       variant="ghost"
                       onClick={() => {
-                        handleLogout();
+                        signOut();
                         setMobileMenuOpen(false);
                       }}
                       className="mt-auto justify-start gap-2 rounded-xl"
