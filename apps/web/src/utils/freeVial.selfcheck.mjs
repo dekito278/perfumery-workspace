@@ -247,12 +247,38 @@ const walkPages = (dir) => {
   }
 };
 walkPages('pages');
+// The two a BUYER opens, named because losing either of them from the derived set is indistinguishable
+// from the set being smaller — and those are the two where a zero price is read by someone who cannot
+// ask what it means.
+for (const opened of ['pages/CustomerInvoicePage.jsx', 'pages/CustomerPortalPage.jsx']) {
+  assert.ok(orderScreens.includes(opened),
+    `${opened} no longer prints its line price as \`item.price || formatTotal(...)\`, so the word the `
+    + 'endpoint writes does not reach it. Whatever it prints instead has to handle the gift itself.');
+}
 assert.ok(orderScreens.length >= 6,
   `only ${orderScreens.length} order screens print a line price — the scan is more likely broken than the code`);
 
 const endpointSource = readFileSync(join(root, '..', 'api', 'orders', 'create.js'), 'utf8');
 assert.match(endpointSource, /price: isVial \? FREE_VIAL_PRICE_LABEL : rupiah\(unitPrice\)/,
   'the endpoint must write the word, which is what those screens read');
+
+// And each screen's own price expression is LIFTED AND RUN, not matched. A pattern that appears in a
+// file proves the file contains it; running it proves the buyer reads "Gratis". The invoice and the
+// portal are the two a buyer opens, and neither can be reached from here without a real order — so the
+// expression is the closest thing to the page that can actually be executed.
+const giftItem = { price: FREE_VIAL_PRICE_LABEL, priceNumber: 0, quantity: 1, tags: [FREE_VIAL_TAG] };
+const boughtItem = { price: 'Rp 718.000', priceNumber: 359000, quantity: 2, tags: [] };
+const money = (value) => `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
+for (const page of orderScreens) {
+  const expression = read(...page.split('/')).match(/item\.price \|\| formatTotal\([^)]*\)/)?.[0];
+  assert.ok(expression, `${page} no longer prefers the line's own price word — re-derive this guard`);
+  const render = new Function('item', 'line', 'formatTotal', `return (${expression});`);
+  assert.equal(render(giftItem, { originalTotal: 0 }, money), FREE_VIAL_PRICE_LABEL,
+    `${page} prints "${render(giftItem, { originalTotal: 0 }, money)}" for the gift instead of `
+    + `"${FREE_VIAL_PRICE_LABEL}" — a buyer reads a zero price as a line the shop failed to price`);
+  assert.equal(render(boughtItem, { originalTotal: 718000 }, money), 'Rp 718.000',
+    `${page} must still print a real price for a line that was paid for`);
+}
 
 // And the two checkout summaries, which compute the amount themselves instead of reading item.price.
 for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
