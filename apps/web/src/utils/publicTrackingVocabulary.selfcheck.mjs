@@ -83,6 +83,45 @@ assert.deepEqual(
   + 'Add the value to statusKeys in PublicTrackingPage.jsx and its message to BOTH languages.',
 );
 
+// --- The boot screen must not offer a way in that the form does not accept ----------------------------
+// Same class as the raw statuses above, one screen earlier. index.html carries a fallback description per
+// public route — what a visitor sees while the app loads, and the ONLY thing they see if it never does.
+// The /track-order entry advertised "email or phone lookup" and an "estimated delivery"; the form takes
+// an order number or a courier tracking number, and there is no estimate anywhere on the page. Someone
+// on a slow connection was told to type something the page would not accept.
+//
+// Derived, not listed: any lookup noun the boot text names has to be a noun the form's own placeholder
+// names too. A new way in (an email lookup, say) passes the moment the form really offers one.
+const shell = readFileSync(join(root, '..', 'index.html'), 'utf8');
+const fallbacks = shell.match(/PUBLIC_ROUTE_FALLBACKS = \{([\s\S]*?)\n\t*\};/)[1];
+const entryFor = (route) => {
+  const match = fallbacks.match(new RegExp(`'${route}': \\{([\\s\\S]*?)\\n\\t*\\},`));
+  assert.ok(match, `${route} has no boot fallback — the derivation broke`);
+  return match[1];
+};
+
+const trackEntry = entryFor('/track-order');
+const formAccepts = `${MESSAGES.id['track.placeholderLong']} ${MESSAGES.en['track.placeholderLong']}`.toLowerCase();
+const LOOKUP_NOUNS = ['email', 'phone', 'telepon', 'whatsapp', 'customer code', 'kode customer'];
+for (const noun of LOOKUP_NOUNS) {
+  if (!trackEntry.toLowerCase().includes(noun)) continue;
+  assert.ok(formAccepts.includes(noun),
+    `the boot screen offers a "${noun}" lookup that the tracking form does not accept — its own field asks `
+    + `for: ${MESSAGES.id['track.placeholderLong']}`);
+}
+// And the thing it promises to show has to be something the page can show. There is no estimated
+// delivery: the timeline is the payment's state and the shipment's, nothing predicts a date.
+assert.doesNotMatch(trackEntry, /estimated delivery/i,
+  'the boot screen promises an estimated delivery date the tracking page never computes');
+
+// No route may describe itself as unfinished either. "Checkout placeholder … payment placeholder" was
+// true while the checkout was a stub and stayed in the shell for every buyer after it stopped being one.
+const unfinished = [...fallbacks.matchAll(/'([^']+)': \{[\s\S]*?description: '([^']*placeholder[^']*)'/g)]
+  .map((match) => `${match[1]}: "${match[2]}"`);
+assert.deepEqual(unfinished, [],
+  'the boot screen is the whole page when the app fails to load, and these entries tell the visitor the '
+  + `shop is a mock-up:\n  ${unfinished.join('\n  ')}`);
+
 const covered = Object.values(VOCABULARIES).flat().length;
 assert.ok(covered >= 16, `only ${covered} statuses checked — the vocabularies were lost`);
 console.log(`publicTrackingVocabulary selfcheck OK (${covered} statuses across 3 Studio vocabularies, every one of them a sentence on the parcel's own page, in both languages)`);
