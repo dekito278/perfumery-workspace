@@ -4,6 +4,7 @@ import { AlertTriangle, Save } from 'lucide-react';
 import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { listTierPricesForProduct, saveTierPrice } from '@/services/tierPricingService.js';
+import { tierPriceIsNotBelowRetail } from '@/utils/memberPriceFill.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 
 // Retail is deliberately absent: it stays on the product itself, so there is never a second copy of it
@@ -164,18 +165,27 @@ const TierPriceEditor = ({ productId = '', variants = [], compact = false }) => 
               </span>
             </div>
             <div className={`mt-2 grid gap-2 ${compact ? 'grid-cols-1' : 'sm:grid-cols-3'}`}>
-              {EDITABLE_TIERS.map((tier) => (
-                <label key={tier.key} className="grid gap-1">
-                  <span className="text-[10px] font-bold uppercase text-muted-foreground">{tier.label}</span>
-                  <LocalizedNumberInput
-                    value={draft[cellKey(row.id, tier.key)] ?? ''}
-                    onChange={(value) => setCell(row.id, tier.key, value)}
-                    disabled={disabled}
-                    placeholder="Kosong = retail"
-                    className={inputClass}
-                  />
-                </label>
-              ))}
+              {EDITABLE_TIERS.map((tier) => {
+                // Mirror of the export column's "Di bawah harga retail" on the curation screen: member
+                // and reseller exist to be CHEAPER, so one at or above retail charges a signed-in buyer
+                // more than a stranger. Flagged, not blocked — the number is Dekito's to set.
+                const notBelow = tierPriceIsNotBelowRetail(row.retail, draft[cellKey(row.id, tier.key)]);
+                return (
+                  <label key={tier.key} className="grid gap-1">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">{tier.label}</span>
+                    <LocalizedNumberInput
+                      value={draft[cellKey(row.id, tier.key)] ?? ''}
+                      onChange={(value) => setCell(row.id, tier.key, value)}
+                      disabled={disabled}
+                      placeholder="Kosong = retail"
+                      className={`${inputClass}${notBelow ? ' border-destructive text-destructive' : ''}`}
+                    />
+                    {notBelow ? (
+                      <span className="text-[11px] font-bold text-destructive">Tidak di bawah harga retail</span>
+                    ) : null}
+                  </label>
+                );
+              })}
             </div>
           </div>
         ))}

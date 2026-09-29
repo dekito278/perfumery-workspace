@@ -73,6 +73,27 @@ export const memberSaving = (retailPrice, memberPrice) => {
 };
 
 /**
+ * A domestic tier price that is NOT below retail, which is always a mistake.
+ *
+ * member and reseller exist to be cheaper than walking in; the ladder descends. Typing one at or above
+ * retail charges a signed-in buyer MORE than a stranger, while the badge on the page still says "Harga
+ * member aktif" — the worst possible version of the shop's own promise.
+ *
+ * It used to be invisible on both Studio screens: memberSaving returns 0 for exactly this case, so the
+ * saving column renders EMPTY, which is what an unfilled price looks like too. The export column right
+ * next to it has said "Di bawah harga retail" in red since it shipped. This is that warning's mirror,
+ * shared so the two screens that set this number cannot disagree about when it is wrong.
+ *
+ * Flagged, never blocked — same rule as the export one: the number is Dekito's to set.
+ */
+export const tierPriceIsNotBelowRetail = (retailPrice, tierPrice) => {
+  const retail = toPositiveNumber(retailPrice);
+  const tier = toPositiveNumber(tierPrice);
+  if (retail === null || tier === null) return false;
+  return tier >= retail;
+};
+
+/**
  * One row per product per variant. Every catalogue product has exactly one variant today, but the tier
  * table is keyed by variant, so building rows from the variants is what keeps a second variant from
  * silently sharing the first one's price.

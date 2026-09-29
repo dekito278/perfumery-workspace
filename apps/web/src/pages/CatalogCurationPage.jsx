@@ -9,15 +9,7 @@ import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { formatRupiah, saveProductFeatured } from '@/services/productCatalogService.js';
 import { listTierPriceIndex, saveTierPrice } from '@/services/tierPricingService.js';
-import {
-  DEFAULT_MEMBER_DISCOUNT_PERCENT,
-  DEFAULT_OVERSEAS_MULTIPLIER,
-  buildCurationRows,
-  collectCurationChanges,
-  memberPriceFromRetail,
-  memberSaving,
-  overseasPriceFromRetail,
-} from '@/utils/memberPriceFill.js';
+import { DEFAULT_MEMBER_DISCOUNT_PERCENT, DEFAULT_OVERSEAS_MULTIPLIER, buildCurationRows, collectCurationChanges, memberPriceFromRetail, memberSaving, overseasPriceFromRetail, tierPriceIsNotBelowRetail } from '@/utils/memberPriceFill.js';
 
 /**
  * Member prices, overseas prices and the featured flag for the whole catalogue, on one screen.
@@ -256,6 +248,10 @@ const CatalogCurationPage = () => {
                 // shop on the order that costs the most to fulfil. Flagged, not blocked: the number is
                 // Dekito's to set.
                 const overseasTooLow = Boolean(Number(overseas)) && row.retail > 0 && Number(overseas) <= row.retail;
+                // The mirror, which was missing: a member price at or above retail charges a signed-in
+                // buyer more than a stranger. memberSaving returns 0 for exactly that case, so the saving
+                // cell went blank — the same thing an unfilled price looks like.
+                const memberNotBelow = tierPriceIsNotBelowRetail(row.retail, member);
                 const touched = ['member', 'overseas'].some((field) => draft[row.key]
                   && Object.prototype.hasOwnProperty.call(draft[row.key], field)
                   && (Number(valueFor(row, field)) || null) !== ((field === 'member' ? row.savedMember : row.savedOverseas) ?? null));
@@ -271,8 +267,11 @@ const CatalogCurationPage = () => {
                         value={member}
                         onChange={(value) => setValue(row, 'member', value)}
                         placeholder="Kosong = retail"
-                        className="h-10 w-40 rounded-xl border px-3 text-right text-sm font-bold outline-none focus:border-amber-300"
+                        className={`h-10 w-40 rounded-xl border px-3 text-right text-sm font-bold outline-none focus:border-amber-300 ${memberNotBelow ? 'border-destructive text-destructive' : ''}`}
                       />
+                      {memberNotBelow ? (
+                        <div className="mt-1 text-[11px] font-bold text-destructive">Tidak di bawah harga retail</div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-right text-xs font-bold text-amber-700">
                       {saving_ ? `-${formatRupiah(saving_)}` : ''}
