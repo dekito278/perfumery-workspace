@@ -394,4 +394,35 @@ assert.equal(getVoucherEligibleQuantity(anyVoucher, [{ slug: 'hug-n-1', quantity
 assert.equal(getVoucherEligibleQuantity(anyVoucher, [{ slug: 'hug-n-1', quantity: 1, priceNumber: 0 }]), 1,
   'a bought line priced at zero is a purchase, not a gift — the tag is what tells them apart');
 
+// --- 17. "Pesan lagi" must not carry the old gift back into the cart -----------------------------------
+// The portal refills the cart from a past order and hands the buyer to the normal checkout. The order's
+// lines include the gift — api/orders/create.js writes `tags: [FREE_VIAL_TAG]` onto it — and the copy
+// that landed in the cart lost them: reconcileCartLines re-derives price, stock, category and images
+// from the live catalog on every read, but never tags. So the picker saw no gift, offered a second one,
+// and the endpoint refused the order outright ("An order carries at most 1 free vial"). The buyer could
+// not check out at all, from a cart the shop had built for her.
+const pastOrderLines = [
+  { slug: 'hug-n-1', name: 'Hug n.1', quantity: 2, priceNumber: 359000, price: 'Rp 359.000', tags: [] },
+  { slug: 'vial-hadiah', name: 'Vial hadiah', quantity: 1, priceNumber: 0, price: FREE_VIAL_PRICE_LABEL, tags: [FREE_VIAL_TAG] },
+];
+const reordered = splitFreeVialLines(pastOrderLines).lines;
+assert.deepEqual(reordered.map((line) => line.slug), ['hug-n-1'],
+  'reordering must copy back what the buyer BOUGHT — the gift is a per-order promotion, and she picks a '
+  + 'fresh one against stock that is live today');
+// The must-pass half, and the direction that matters more: a reorder that copies nothing back is a
+// broken button. Two bottles bought, two bottles returned, quantities intact.
+assert.equal(reordered[0].quantity, 2, 'and it must copy the quantity she actually ordered');
+// A gift-only order cannot exist (a gift needs a purchase), but the empty case must not throw either.
+assert.deepEqual(splitFreeVialLines([]).lines, [], 'an order with no lines reorders to no lines');
+
+// And the wiring: the portal is a component closure this guard cannot import, so the assertion is that
+// the reorder reads its lines THROUGH the split. Comments first — the note above the handler explains
+// the trap, and a text search that counts the explanation as the fix is a guard nobody can satisfy.
+const portalSource = read('pages', 'CustomerPortalPage.jsx')
+  .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+assert.match(portalSource, /const productItems = splitFreeVialLines\(getOrderProductItems\(order\)\)\.lines;/,
+  '"Pesan lagi" must take the bought lines out of the past order, not every line in it');
+assert.match(portalSource, /import \{ splitFreeVialLines \} from '@\/utils\/freeVial\.js';/,
+  'and it must be the real helper, so the rule stays in one place');
+
 console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);
