@@ -389,6 +389,22 @@ const manualChunkGroups = [
 	['png-vendor', ['/node_modules/fast-png/', '/node_modules/iobuffer/']],
 	['polyfill-vendor', ['/node_modules/core-js']],
 	['chart-vendor', ['/node_modules/recharts/', '/node_modules/d3-', '/node_modules/victory-vendor/']],
+	// recharts' own dependencies, split out for the same reason jspdf's were above — and found the same
+	// way, by instrumenting getManualChunk and counting what fell through to the catch-all. 263 lodash
+	// modules were riding on every buyer's first paint to draw charts that only exist on two Studio
+	// formula screens. Nothing in src imports lodash at all; it arrives entirely through recharts.
+	//
+	// Deliberately NOT here: prop-types, @babel/runtime, eventemitter3 and the Radix support packages
+	// (use-sidecar, react-remove-scroll, aria-hidden, react-style-singleton). Those are shared with code
+	// the storefront really does load, and deferring a chunk the entry needs makes it eager again anyway
+	// — assertDeferredChunksStayLazy in tools/build.mjs is what proves the difference rather than this
+	// comment.
+	['chart-support-vendor', [
+		'/node_modules/lodash/', '/node_modules/lodash-es/',
+		'/node_modules/react-smooth/', '/node_modules/recharts-scale/',
+		'/node_modules/react-transition-group/', '/node_modules/dom-helpers/',
+		'/node_modules/raf/', '/node_modules/performance-now/',
+	]],
 	['form-vendor', ['/node_modules/react-hook-form/', '/node_modules/@hookform/', '/node_modules/zod/']],
 	['qr-vendor', ['/node_modules/qrcode/']],
 	['ui-vendor', ['/node_modules/lucide-react/', '/node_modules/sonner/', '/node_modules/date-fns/', '/node_modules/react-helmet/']],
@@ -422,6 +438,7 @@ const deferredPreloadChunks = [
 	'zip-vendor',
 	'png-vendor',
 	'polyfill-vendor',
+	'chart-support-vendor',
 ];
 
 const shouldPreloadDependency = (dependency) =>
