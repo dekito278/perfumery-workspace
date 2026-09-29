@@ -625,10 +625,24 @@
 					}
 				});
 
+				// One timer, both answers. The boot fallback still being on screen means the app never
+				// started, so recover. It being GONE means the app did start — and that is the only
+				// moment anything knows the budget below is not being spent on a loop.
+				//
+				// Without the second branch the counter only ever went up. It lives in sessionStorage and
+				// was reset in exactly one place: the manual "Reset app cache" button. So a tab left open
+				// across three deploys — which is a normal afternoon here — spent its two attempts on two
+				// stale chunks that each recovered PERFECTLY, and met the third with a manual-recovery
+				// screen instead of the shop. The cap exists to stop a reload loop; a boot that succeeded
+				// is proof there is no loop.
 				window.setTimeout(function () {
 					var root = document.getElementById('root');
 					if (root && root.querySelector('.app-boot-fallback')) {
 						recoverFromModuleFailure('boot-timeout');
+						return;
+					}
+					if (getRecoveryAttempts() > 0) {
+						setRecoveryAttempts(0);
 					}
 				}, 14000);
 			})();
