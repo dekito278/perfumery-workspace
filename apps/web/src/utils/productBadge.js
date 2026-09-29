@@ -32,6 +32,25 @@ export const familyLabel = (product = {}) => {
   return category;
 };
 
+/**
+ * Does this perfume belong under that filter pill?
+ *
+ * The mirror of the bug at the top of this file, which nobody did. Splitting `limited` out of `category`
+ * was what let FLORAL finally find Maskumambang — and it left LIMITED unable to. The pills are built
+ * from categories, so tapping LIMITED matched the word in `category` and missed every perfume that has
+ * since been re-filed into its real family: measured on the live shop, ten wear the badge and the pill
+ * found seven. The three it dropped are Aquilaria tuberosa, Maskumambang and Sudra — the three most
+ * expensive bottles in the shop, missing from exactly the filter someone hunting rare pieces would tap.
+ *
+ * A pill named after a badge has to find everything wearing that badge. Every other pill is a family and
+ * still matches on the category, so a re-filed perfume answers to BOTH its family and LIMITED.
+ */
+export const matchesCatalogCategory = (product = {}, category = '') => {
+  if (!category || category === 'All') return true;
+  if (isLimitedCategory(category)) return isLimitedProduct(product);
+  return String(product?.publicCategory || product?.category || '') === category;
+};
+
 /** The whole label line: the family, the badge, or both once a limited perfume has been re-filed. */
 export const cardLabels = (product = {}) => [
   familyLabel(product),

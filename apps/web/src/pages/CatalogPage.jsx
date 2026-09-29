@@ -15,7 +15,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
-import { cardLabels } from '@/utils/productBadge.js';
+import { cardLabels, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -78,9 +78,7 @@ const CatalogPage = () => {
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return products.filter((product) => {
-      const cat = product.publicCategory || product.category || '';
-      const matchesCategory = activeCategory === 'All' || cat === activeCategory;
-      if (!matchesCategory) return false;
+      if (!matchesCatalogCategory(product, activeCategory)) return false;
       // matchesWear ignores facets the customer left unset, and refuses products with no tags
       // at all once a facet is set. An untagged bottle stays out rather than being guessed at.
       if (!matchesWear(product.wear, wearSelection)) return false;
