@@ -113,7 +113,7 @@ assert.deepEqual(stale, [], `ALLOWED lists functions that no longer write silent
 // deletes are the ones where a refusal is silent AND the surviving row keeps acting on customers: a
 // voucher that still discounts, a story that still shows on the product page.
 const mustThrowOnZeroRows = {
-  'voucherService.js': ['deleteVoucher', 'applyVoucherToSubtotal'],
+  'voucherService.js': ['deleteVoucher', 'getMyVoucherRedemptions'],
   'productStoryService.js': ['deleteStory', 'uploadStoryMedia'],
   'productCatalogService.js': ['saveProductWear', 'deleteCustomProduct'],
 };

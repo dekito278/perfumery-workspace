@@ -126,4 +126,31 @@ for (const form of ['pages/VoucherManagementPage.jsx', 'pages/mobile/MobileVouch
   assert.match(source, /20260915020000/, `${form} must say the field needs the migration, since a save before it silently drops`);
 }
 
+// --- Every way to apply a voucher must be able to see the account --------------------------------------
+// There were two exported ways to price a voucher. The async one looks the buyer up and hands
+// `accountId` to validateVoucher; the sync one never could, because it had no way to ask. A per-account
+// limit that the caller cannot enforce is a limit that exists only for whoever picks the longer name —
+// and the sync one had the shorter, more obvious name and zero callers left.
+//
+// Counted rather than listed: every exported function in voucherService whose name applies a voucher must
+// pass accountId into validateVoucher. A second path may be added, as long as it can still count.
+const voucherService = stripComments(readFileSync(join(root, 'services', 'voucherService.js'), 'utf8'));
+const appliers = [...voucherService.matchAll(/export const (applyVoucher\w*)\s*=/g)].map((match) => match[1]);
+assert.ok(appliers.length >= 1, 'no voucher application path found in voucherService.js — the derivation broke');
+
+const blind = appliers.filter((name) => {
+  const from = voucherService.indexOf(`export const ${name}`);
+  const rest = voucherService.slice(from + 1);
+  const nextExport = rest.indexOf('\nexport const ');
+  const body = nextExport === -1 ? rest : rest.slice(0, nextExport);
+  // The CALL, not the body: the async path declares `const accountId = …` and then hands it over, and a
+  // sabotage that stops handing it over leaves the declaration sitting there. Reading the whole body
+  // would call that a pass.
+  const call = body.match(/validateVoucher\(\{[\s\S]*?\n  \}\)|validateVoucher\(\{[^}]*\}\)/);
+  return !call || !/\baccountId\b/.test(call[0]);
+});
+assert.deepEqual(blind, [],
+  'these voucher paths call validateVoucher without an accountId, so a one-per-account code is unlimited '
+  + `for anyone who reaches the shop through them:\n  ${blind.join('\n  ')}`);
+
 console.log('voucherPerAccount selfcheck OK (a per-account code refuses anonymity; the server counts, not the browser)');
