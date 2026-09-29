@@ -269,7 +269,7 @@ const MobileCartPage = () => {
           >
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', alignItems: 'center', gap: 12, background: 'rgba(255,250,240,0.97)', borderRadius: 12, padding: '4px 4px 4px 12px' }}>
               <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--editorial-muted)' }}>{summary.quantity} item</p>
+                <p style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--editorial-muted)' }}>{summary.boughtQuantity} item</p>
                 <p style={{ fontSize: '1.1rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatTotal(voucher.subtotalAfterDiscount)}</p>
                 {voucher.discountAmount ? <p style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</p> : null}
               </div>

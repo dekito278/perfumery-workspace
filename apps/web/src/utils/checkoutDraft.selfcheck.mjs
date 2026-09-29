@@ -15,7 +15,11 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, '..', 'services', 'cartService.js'), 'utf8');
 
-const runnable = 'const STUB_ENV = {};\nconst normalizeWhatsAppPhoneNumber = (v = "") => String(v).replace(/\\D/g, "");\n'
+// The gift rule is IMPORTED into the harness, not restubbed: getCartSummary now asks which lines are the
+// free vial, and a copy written here would keep agreeing with itself while the shop's rule moved.
+const freeVialUrl = new URL('./freeVial.js', import.meta.url).href;
+const runnable = `import { isFreeVialLine } from '${freeVialUrl}';\n`
+  + 'const STUB_ENV = {};\nconst normalizeWhatsAppPhoneNumber = (v = "") => String(v).replace(/\\D/g, "");\n'
   + source.replace(/^(?:import|export)[\s\S]*?from '[^']+';\n/gm, '').replace(/import\.meta\.env/g, 'STUB_ENV');
 const { buildCheckoutDraft, buildOrderNotes } = await import(
   `data:text/javascript;base64,${Buffer.from(runnable, 'utf8').toString('base64')}`

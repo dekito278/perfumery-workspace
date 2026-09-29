@@ -301,4 +301,41 @@ assert.match(endpointSource, /tags: isVial \? \[FREE_VIAL_TAG\] : \[\] \}\);/,
 assert.doesNotMatch(endpointSource, /tags: product\.tags/,
   "the product's own tags must never reach an order item — they carry the COGS");
 
+// --- 14. The badge counts what the buyer is BUYING ------------------------------------------------------
+// Measured on the running shop while testing the picker: a cart holding two bottles and one gift showed
+// `Keranjang, 3 item`. The gift is not a line on either cart page — it lives in the picker — so the badge
+// read 3 above a list of 2, and the first thought that provokes is "what did I add by accident".
+//
+// Two counts, because two questions get asked and they have different answers: the PARCEL really does
+// hold three things, and that is what the order and the WhatsApp draft say (api/orders/create.js counts
+// its resolved lines the same way). Only what a BUYER reads had to change.
+const cartSummarySource = read('services', 'cartService.js')
+  .match(/export const getCartSummary = [\s\S]*?\n\};/)?.[0];
+assert.ok(cartSummarySource, 'could not lift getCartSummary to run it — update this guard');
+const getCartSummary = new Function('isFreeVialLine', `${cartSummarySource.replace('export ', '')}\nreturn getCartSummary;`)(isFreeVialLine);
+
+const twoBottlesAndAGift = [
+  { name: 'HUG N°1', quantity: 2, priceNumber: 359000 },
+  { name: 'Vial hadiah — Maskumambang', quantity: 1, priceNumber: 0, tags: [FREE_VIAL_TAG] },
+];
+const summary = getCartSummary(twoBottlesAndAGift);
+assert.equal(summary.boughtQuantity, 2, 'the badge counts the bottles, not the gift');
+assert.equal(summary.quantity, 3, 'and the parcel still holds three things, which is what the order says');
+assert.equal(summary.subtotal, 718000, 'a gift adds nothing to the subtotal either way');
+assert.deepEqual(getCartSummary([]), { quantity: 0, boughtQuantity: 0, subtotal: 0 }, 'an empty cart counts nothing');
+
+// Every badge and item-count a buyer reads uses the bought count; the ORDER keeps the parcel count.
+for (const screen of [
+  'components/storefront/PublicHeader.jsx',
+  'layouts/MobileCommerceLayout.jsx',
+  'pages/mobile/MobileCartPage.jsx',
+  'pages/mobile/MobileCheckoutPage.jsx',
+]) {
+  const source = read(...screen.split('/'));
+  assert.match(source, /summary\.boughtQuantity/, `${screen} shows the buyer a count, so it counts what they are buying`);
+  assert.doesNotMatch(source, /summary\.quantity/, `${screen} must not show the parcel count to a buyer`);
+}
+assert.match(read('hooks', 'useCheckoutFlow.js'), /quantity: summary\.quantity,/,
+  'the ORDER keeps the parcel count — three things go in the box, and the endpoint counts them the same way');
+
 console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);
