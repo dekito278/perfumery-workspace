@@ -12,6 +12,39 @@ const TERMINAL_CANCEL_STATUSES = [...CLOSED_PAYMENT_STATUSES, 'cancelled'];
 
 export const isTerminalCancelStatus = (status) => TERMINAL_CANCEL_STATUSES.includes(status);
 
+/**
+ * What a DOKU verdict MEANS, for both paths.
+ *
+ * This lived twice, and the two copies had already drifted. The webhook knew four transaction words per
+ * outcome; the poll knew those plus REDIRECT, and also read `order.status` — which is how DOKU says
+ * ORDER_GENERATED and ORDER_EXPIRED. So an expiry that arrived as an order status was acted on when the
+ * browser happened to poll and ignored when DOKU pushed it, leaving the order pending and its stock
+ * reserved until the daily sweep. The webhook's own log line already read `transaction.status ||
+ * order.status`: the same file knew the field existed and then decided without it.
+ *
+ * The poll's vocabulary is the one kept, because it is the wider of the two and nothing in it is
+ * invented here. Returns null for anything unrecognised — both callers log that and change nothing,
+ * which is the only safe answer to a word we cannot read.
+ */
+export const mapDokuStatus = ({ transactionStatus, orderStatus } = {}) => {
+  const transaction = String(transactionStatus || '').toUpperCase();
+  const order = String(orderStatus || '').toUpperCase();
+
+  if (['SUCCESS', 'PAID', 'SETTLEMENT', 'CAPTURED'].includes(transaction)) {
+    return { orderStatus: 'paid', paymentStatus: 'paid' };
+  }
+  if (['PENDING', 'PROCESSING', 'REDIRECT'].includes(transaction) || order === 'ORDER_GENERATED') {
+    return { orderStatus: 'pending_payment', paymentStatus: 'pending' };
+  }
+  if (['EXPIRED', 'TIMEOUT'].includes(transaction) || order === 'ORDER_EXPIRED') {
+    return { orderStatus: 'cancelled', paymentStatus: 'expired' };
+  }
+  if (['FAILED', 'DENIED', 'CANCELLED', 'CANCELED'].includes(transaction)) {
+    return { orderStatus: 'cancelled', paymentStatus: 'failed' };
+  }
+  return null;
+};
+
 // Returns null when the transition may proceed, { skip } when it must be ignored, or { error } when it
 // must fail loudly. Callers decide how to surface each.
 export const checkDokuOrderTransition = ({ currentOrder, incomingStatus, paidAmount = 0 }) => {
