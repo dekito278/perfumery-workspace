@@ -118,7 +118,7 @@ const getSupabaseRestConfig = () => {
 // order creation to the final amount due). Never trust the amount sent by the client.
 const getOrderAmountByInvoice = async (invoiceNumber) => {
   const { restUrl, headers } = getSupabaseRestConfig();
-  const url = `${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}&select=order_number,subtotal,payment_status,status`;
+  const url = `${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}&select=order_number,subtotal,payment_status,status,customer_name,contact`;
   const response = await fetch(url, { headers });
 
   if (!response.ok) {
@@ -221,8 +221,13 @@ export default async function handler(request, response) {
         payment_due_date: Number(String(process.env.DOKU_PAYMENT_DUE_DATE || 60).trim()),
       },
       customer: {
-        name: String(input.customerName || 'Solivagant Customer').trim(),
-        ...contactToCustomer(input.contact),
+        // The order row is the authority, exactly as the amount above is. The portal's "renew payment
+        // link" button passes neither: storefront_customer_portal does not repeat the buyer's name or
+        // contact per order, so both arrived undefined and DOKU was handed "Solivagant Customer" with no
+        // phone and no email at all. The masked name on the portal payload is not a substitute — this
+        // reads the real one, server-side, where it was never masked.
+        name: String(input.customerName || order.customer_name || 'Solivagant Customer').trim(),
+        ...contactToCustomer(input.contact || order.contact),
       },
       ...(notificationBaseUrl ? {
         additional_info: {

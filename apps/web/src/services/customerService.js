@@ -25,6 +25,10 @@ const normalizeCustomer = (customer = {}) => ({
   updatedAt: customer.updated_at || customer.updatedAt || customer.created_at || customer.createdAt || new Date().toISOString(),
 });
 
+// storefront_customer_portal returns a NARROWED column list, not the order row — see the migration
+// 20260930090000. Every field below must be fed by one of those columns, or the portal shows a default
+// and nobody finds out: that is how the tracking number, the shipment status and the payment-proof state
+// all went quietly blank when the privacy migration rewrote the function.
 const normalizePortalOrder = (order = {}) => ({
   orderNumber: order.order_number || order.orderNumber || '',
   status: order.status || 'pending_payment',
@@ -36,26 +40,19 @@ const normalizePortalOrder = (order = {}) => ({
   paymentReference: order.payment_reference || order.paymentReference || '',
   paymentUrl: order.payment_url || order.paymentUrl || '',
   paymentExpiresAt: order.payment_expires_at || order.paymentExpiresAt || '',
-  paymentSessionId: order.payment_session_id || order.paymentSessionId || '',
-  paymentResponse: order.doku_response || order.payment_response || order.paymentResponse || {},
   paymentProofUrl: order.payment_proof_url || order.paymentProofUrl || '',
   paymentProofFileName: order.payment_proof_file_name || order.paymentProofFileName || '',
-  paymentProofContentType: order.payment_proof_content_type || order.paymentProofContentType || '',
   paymentProofUploadedAt: order.payment_proof_uploaded_at || order.paymentProofUploadedAt || '',
   paymentProofStatus: order.payment_proof_status || order.paymentProofStatus || 'missing',
   paymentProofNotes: order.payment_proof_notes || order.paymentProofNotes || '',
   source: order.source || 'storefront',
   bespokeProductionStatus: order.bespoke_production_status || order.bespokeProductionStatus || '',
-  bespokeProductionTimeline: Array.isArray(order.bespoke_production_timeline || order.bespokeProductionTimeline)
-    ? order.bespoke_production_timeline || order.bespokeProductionTimeline
-    : [],
   shipmentStatus: order.shipment_status || order.shipmentStatus || 'not_ready',
   courierName: order.courier_name || order.courierName || '',
   trackingNumber: order.tracking_number || order.trackingNumber || '',
   trackingUrl: order.tracking_url || order.trackingUrl || '',
   shippedAt: order.shipped_at || order.shippedAt || '',
   deliveredAt: order.delivered_at || order.deliveredAt || '',
-  packingNotes: order.packing_notes || order.packingNotes || '',
   createdAt: order.created_at || order.createdAt || new Date().toISOString(),
   updatedAt: order.updated_at || order.updatedAt || order.created_at || order.createdAt || new Date().toISOString(),
 });
