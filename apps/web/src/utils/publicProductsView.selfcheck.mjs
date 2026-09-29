@@ -2,13 +2,25 @@
 // lives in SQL; the studio writes tags by a prefix list that lives in JS. If they drift, a new internal
 // prefix leaks to the public. Compare the two by reading both sources.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const js = readFileSync(join(here, '..', 'services', 'productCatalogService.js'), 'utf8');
-const sql = readFileSync(join(here, '..', '..', '..', '..', 'supabase', 'migrations', '20260907053000_storefront_products_public_view.sql'), 'utf8');
+// Which migration holds the LIVE prefix list is derived, never named. A pinned filename is how this
+// guard would fail quietly: adding a prefix is done by recreating
+// storefront_product_tag_is_internal in a NEW migration, and a guard reading the old file would keep
+// comparing the JS list against a definition the database no longer runs — passing while the leak it
+// exists to catch is open. (The customer portal lost eighteen columns exactly this way, #339.)
+const migrationsDir = join(here, '..', '..', '..', '..', 'supabase', 'migrations');
+const defining = readdirSync(migrationsDir)
+  .filter((name) => name.endsWith('.sql'))
+  .filter((name) => /create or replace function public\.storefront_product_tag_is_internal\s*\(/
+    .test(readFileSync(join(migrationsDir, name), 'utf8')))
+  .sort();
+assert.ok(defining.length, 'no migration defines storefront_product_tag_is_internal — the derivation broke');
+const sql = readFileSync(join(migrationsDir, defining[defining.length - 1]), 'utf8');
 
 // JS: every PRODUCT_*_TAG_PREFIX constant that is listed inside PRODUCT_INTERNAL_TAG_PREFIXES.
 const constants = Object.fromEntries([...js.matchAll(/export const (PRODUCT_[A-Z_]+_TAG_PREFIX) = '([^']+)';/g)].map((m) => [m[1], m[2]]));
