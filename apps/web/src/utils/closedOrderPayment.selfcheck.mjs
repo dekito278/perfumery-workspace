@@ -369,4 +369,61 @@ assert.match(mobileOrders, /countOrdersByFilter\(orders, \['payment_pending', 'p
   'the phone must count the payment tiles through the shared lens');
 assert.doesNotMatch(mobileOrders, /attention: orders\.filter/, 'the hand-rolled tile count must not come back');
 
+// --- 8. The rule reads an UNNORMALISED row too ---------------------------------------------------------
+// The client normalises to camelCase; the /api endpoints read rows raw from PostgREST and never do.
+// api/doku/checkout.js asked this question with a row it had only ever seen in snake_case.
+assert.equal(isOrderClosedForPayment({ status: 'cancelled', payment_status: 'unpaid' }), true,
+  'a raw cancelled row is closed');
+assert.equal(isOrderClosedForPayment({ status: 'paid', payment_status: 'refunded' }), true,
+  'and so is a raw refunded one');
+assert.equal(isOrderClosedForPayment({ status: 'pending_payment', payment_status: 'unpaid' }), false,
+  'a raw live row stays payable — the opposite failure would hide the account from everyone who still has to pay');
+
+// --- 9. EVERY endpoint that can open or apply a payment asks it ----------------------------------------
+// dokuOrderGuards.js says the rules live in one place "so the two paths cannot drift again", and names
+// the webhook and the status poll. There were three. api/doku/checkout.js mints a live DOKU session and
+// then writes `status: 'pending_payment'` / `payment_status: 'pending'` back with the service role — so
+// on a cancelled order it did not merely offer a dead link, it laundered the order back into an open one
+// and the transition guard, seeing nothing closed, would mark the payment paid and DEDUCT inventory that
+// was restored on cancel. Unauthenticated, on nothing but an order number.
+//
+// The subject is derived: an endpoint that PATCHes storefront_orders is one of these paths.
+const apiRoot = join(root, '..', 'api');
+const endpoints = [];
+const walkApi = (dir) => {
+  for (const entry of readdirSync(join(apiRoot, dir), { withFileTypes: true })) {
+    const rel = dir ? `${dir}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) walkApi(rel);
+    else if (entry.name.endsWith('.js')) endpoints.push(rel);
+  }
+};
+walkApi('');
+
+// Two exceptions, each for what the file IS rather than for its name.
+//   - the sweep is the thing that CLOSES orders; asking it whether an order is closed stops it working.
+//   - create.js only ever patches the order THIS request just created, and only to roll it back when the
+//     voucher record or the stock deduction fails. There is no earlier state that could be closed.
+const NOT_A_PAYMENT_PATH = new Set(['orders/expire-reservations.js', 'orders/create.js']);
+let payingPaths = 0;
+for (const endpoint of endpoints) {
+  const source = stripComments(readFileSync(join(apiRoot, endpoint), 'utf8'));
+  if (!/method: 'PATCH'[\s\S]{0,400}?storefront_orders|storefront_orders[\s\S]{0,400}?method: 'PATCH'/.test(source)) continue;
+  if (NOT_A_PAYMENT_PATH.has(endpoint)) continue;
+  payingPaths += 1;
+  assert.ok(
+    /isOrderClosedForPayment\(/.test(source) || /checkDokuOrderTransition\(/.test(source),
+    `api/${endpoint} writes an order's payment state and never asks whether that order is closed. A `
+    + 'cancelled order has had its stock restored and possibly resold; giving it a payment path revives '
+    + 'it, and the webhook then deducts inventory that is already somebody else\'s.',
+  );
+}
+assert.ok(payingPaths >= 3, `only ${payingPaths} payment-writing endpoints found — the walk lost them`);
+
+// And the one that was missing has to be able to SEE the status, not just the payment status.
+const checkout = stripComments(readFileSync(join(apiRoot, 'doku', 'checkout.js'), 'utf8'));
+assert.match(checkout, /select=order_number,subtotal,payment_status,status/,
+  'the checkout endpoint must read the order status, or it cannot tell a cancelled order from a live one');
+assert.match(checkout, /if \(isOrderClosedForPayment\(order\)\) \{/,
+  'and it must refuse a closed one before it mints a session');
+
 console.log(`closedOrderPayment selfcheck OK (a cancelled order stops handing out the bank account on ${asked} screens that load one, and ${gates} payment link gated on the same question)`);
