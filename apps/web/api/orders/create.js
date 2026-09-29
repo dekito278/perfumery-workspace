@@ -328,6 +328,15 @@ export default async function handler(req, res) {
     if ((ship.courier || ship.service || ship.destination) && !ship.destinationId) {
       return jsonResponse(res, 422, { message: 'Shipping destination is required to price shipping' });
     }
+    // The other half of that guard, which was missing: it only fires when the caller VOLUNTEERS part of a
+    // shipping intent. A caller that simply omits `shipping` skipped straight past it, computeShippingFee
+    // returned fee 0, and the order was created with the freight never charged. This endpoint is
+    // unauthenticated, and the order it would leave behind looks ordinary — thirty of the thirty-three
+    // orders in this shop legitimately carry no courier line, because every bespoke request is quoted by
+    // hand afterwards. A CATALOGUE order is not: it is shipped, so it has to be priced.
+    if (!isBespoke && !ship.destinationId) {
+      return jsonResponse(res, 422, { message: 'Shipping destination is required to price shipping' });
+    }
     // This must equal what the browser quoted with, because the fee computed here is the one the order is
     // created at. assertPairedEnvAgrees() in apps/web/tools/build.mjs refuses to build when they differ.
     // Note RAJAONGKIR_DEFAULT_WEIGHT_GRAM is NOT this: it is a total-weight fallback inside
