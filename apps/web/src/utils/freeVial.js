@@ -156,4 +156,28 @@ export const buildFreeVialCartItem = ({ vialProduct = {}, choice = {} } = {}) =>
   maxStock: choice.stock,
 });
 
+
+/**
+ * A gift the shop can no longer hand over stops being in the cart at all.
+ *
+ * reconcileCartLines marks a line `outOfStock` when its variant hit zero, or `unavailable` when its
+ * product left the catalogue. For a bought line that is exactly right: the buyer has to be told before
+ * they pay. For the GIFT it is three separate problems, all of them worse than simply not giving it:
+ *
+ *   - checkout refuses to submit at all (`blockedItems` blocks canSubmitCheckout), so a free vial
+ *     running out stops a paid order;
+ *   - both cart pages raise a red "unavailable" alert naming a line that is not in the list, because
+ *     the gift lives in the picker rather than among the bought lines;
+ *   - and if it got through, api/orders/create.js would deduct inventory for it and roll the whole
+ *     order back when that failed.
+ *
+ * So it is dropped where every consumer reads from — the cart page, the checkout, the badge and the
+ * order payload all take the same reconciled list. The aroma is already gone from the picker's choices
+ * (they are filtered on stock), so what the buyer sees is an unchosen picker, not a broken promise.
+ */
+export const dropUnfulfillableGift = (lines = []) => (
+  (Array.isArray(lines) ? lines : [])
+    .filter((line) => !(isFreeVialLine(line) && (line?.unavailable || line?.outOfStock)))
+);
+
 export default isFreeVialProduct;

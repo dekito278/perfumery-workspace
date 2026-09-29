@@ -17,7 +17,7 @@ import { dirname, join, relative } from 'node:path';
 import {
   FREE_VIAL_SIZE, FREE_VIAL_TAG, FREE_VIAL_WEIGHT_GRAM, FREE_VIALS_PER_ORDER,
   FREE_VIAL_PRICE_LABEL,
-  buildFreeVialCartItem, freeVialChoices, isFreeVialLine, isFreeVialProduct,
+  buildFreeVialCartItem, dropUnfulfillableGift, freeVialChoices, isFreeVialLine, isFreeVialProduct,
   splitFreeVialLines, weighFreeVialLines,
 } from './freeVial.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, isWeighedSize, itemWeightGram, totalItemWeightGram } from './itemWeight.js';
@@ -337,5 +337,36 @@ for (const screen of [
 }
 assert.match(read('hooks', 'useCheckoutFlow.js'), /quantity: summary\.quantity,/,
   'the ORDER keeps the parcel count — three things go in the box, and the endpoint counts them the same way');
+
+// --- 15. A gift that ran out must not stop a paid order -------------------------------------------------
+// reconcileCartLines flags a line `outOfStock` when its variant hits zero and `unavailable` when its
+// product leaves the catalogue. For a BOUGHT line that is exactly right — the buyer has to be told
+// before they pay. For the gift it was three separate problems, each worse than simply not giving it:
+// useCheckoutFlow's `blockedItems` made canSubmitCheckout false, so a free vial running out stopped a
+// paid order; both cart pages raised a red "unavailable" alert naming a line that is not in the list;
+// and had it got through, api/orders/create.js would have deducted inventory for it and rolled the whole
+// order back when that failed.
+const ranOutGift = { ...chosen, outOfStock: true };
+const ranOutBottle = { name: 'HUG N°1', quantity: 2, priceNumber: 359000, outOfStock: true };
+const goneProduct = { ...chosen, unavailable: true };
+
+assert.deepEqual(dropUnfulfillableGift([ranOutGift]), [], 'a gift whose aroma ran out leaves the cart');
+assert.deepEqual(dropUnfulfillableGift([goneProduct]), [], 'and so does one whose product left the catalogue');
+assert.deepEqual(dropUnfulfillableGift([ranOutBottle]), [ranOutBottle],
+  'a BOUGHT line that ran out is KEPT and stays flagged — the buyer has to be told before they pay, and '
+  + 'silently dropping it would be the opposite mistake');
+assert.deepEqual(dropUnfulfillableGift([chosen]), [chosen], 'a gift the shop can still hand over stays');
+assert.deepEqual(dropUnfulfillableGift(), [], 'called with nothing, no crash');
+
+// Dropped at the ONE place every consumer reads from: the cart pages, both checkouts, the badge and the
+// order payload all take the same reconciled list.
+const cartHook = read('hooks', 'useCart.js');
+assert.match(cartHook, /dropUnfulfillableGift\(reconcileCartLines\(storedItems, catalog\)\)/,
+  'useCart must drop it before anything downstream can block on it');
+
+// And the thing it would have blocked still blocks on a bought line, which is the point of that filter.
+assert.match(read('hooks', 'useCheckoutFlow.js'),
+  /const blockedItems = items\.filter\(\(item\) => item\.unavailable \|\| item\.outOfStock\);/,
+  'checkout must still refuse to submit when a line the buyer is PAYING for cannot be fulfilled');
 
 console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);
