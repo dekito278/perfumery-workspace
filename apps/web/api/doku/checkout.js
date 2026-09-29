@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import process from 'node:process';
+import { isOrderClosedForPayment } from '../../src/utils/orderClosed.js';
 
 const CHECKOUT_TARGET = '/checkout/v1/payment';
 
@@ -117,7 +118,7 @@ const getSupabaseRestConfig = () => {
 // order creation to the final amount due). Never trust the amount sent by the client.
 const getOrderAmountByInvoice = async (invoiceNumber) => {
   const { restUrl, headers } = getSupabaseRestConfig();
-  const url = `${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}&select=order_number,subtotal,payment_status`;
+  const url = `${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}&select=order_number,subtotal,payment_status,status`;
   const response = await fetch(url, { headers });
 
   if (!response.ok) {
@@ -167,6 +168,18 @@ export default async function handler(request, response) {
     }
     if (order.payment_status === 'paid') {
       return jsonResponse(response, 409, { message: 'Order is already paid' });
+    }
+    // A CLOSED order may not be handed a way to pay — the same question the payment page, the webhook and
+    // the status poll all ask, asked here for the first time. This endpoint mints a live DOKU session AND
+    // writes `status: 'pending_payment'` / `payment_status: 'pending'` back with the service role, so on a
+    // cancelled order it does not merely offer a dead link: it launders the order back into an open one.
+    // The transition guard then sees nothing closed, marks the payment paid, and DEDUCTS inventory that
+    // was restored on cancel and may already have been sold to somebody else. That is the audit round 7
+    // resurrection, through the one path dokuOrderGuards.js does not name.
+    if (isOrderClosedForPayment(order)) {
+      return jsonResponse(response, 409, {
+        message: `Order ${orderNumber} sudah ditutup — stoknya sudah dilepas. Buat order baru, jangan bayar yang ini.`,
+      });
     }
 
     const amount = Math.round(Number(order.subtotal || 0));

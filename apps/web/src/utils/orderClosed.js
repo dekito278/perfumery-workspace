@@ -16,8 +16,12 @@
 // status back to 'pending_payment' and left it in the active queue, counted by no payment tile at all.
 export const CLOSED_PAYMENT_STATUSES = ['expired', 'failed', 'refunded'];
 
+// Both spellings on purpose. The client normalises to camelCase, but the three /api endpoints that write
+// this row read it raw from PostgREST and never normalise — and one of them, api/doku/checkout.js, was
+// asking the question with a row it had only ever seen in snake_case.
 export const isOrderClosedForPayment = (order = {}) => (
-  order?.status === 'cancelled' || CLOSED_PAYMENT_STATUSES.includes(order?.paymentStatus)
+  (order?.status ?? order?.order_status) === 'cancelled'
+  || CLOSED_PAYMENT_STATUSES.includes(order?.paymentStatus ?? order?.payment_status)
 );
 
 export default isOrderClosedForPayment;
