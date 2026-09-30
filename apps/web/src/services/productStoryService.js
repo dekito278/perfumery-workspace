@@ -189,8 +189,3 @@ export const sweepUnreferencedStoryMedia = async (productSlug, referencedUrls = 
   }
 };
 
-export const deleteStoryMedia = async (productSlug, category) => {
-  const extensions = ['jpg', 'png', 'webp', 'mp3', 'm4a', 'ogg', 'mp4', 'webm'];
-  const paths = extensions.map((ext) => `${productSlug}/${category}.${ext}`);
-  await supabase.storage.from(BUCKET).remove(paths);
-};
