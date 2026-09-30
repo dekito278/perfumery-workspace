@@ -4,6 +4,15 @@ export { reconcileCartLines } from '@/utils/cartReconcile.js';
 
 export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
 
+/**
+ * Fired when a buyer puts something in the basket — not when the cart merely changes.
+ *
+ * Its own event rather than the existing `dekito:cart-updated`, which also fires on quantity edits,
+ * removals and the gift being chosen. The gift prompt must answer only the first of those, and a
+ * listener that had to tell them apart would be a second place holding the same rule.
+ */
+export const CART_ITEM_ADDED_EVENT = 'dekito:cart-item-added';
+
 export const MANUAL_TRANSFER_PAYMENT = {
   id: 'manual_transfer_bca',
   provider: 'manual_transfer_bca',

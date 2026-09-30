@@ -158,6 +158,30 @@ export const buildFreeVialCartItem = ({ vialProduct = {}, choice = {} } = {}) =>
 
 
 /**
+ * May the gift PROMPT open right now?
+ *
+ * Dekito's decision, 30 Sep 2026, reversing the 29 Sep one: the aromas are offered at add-to-cart rather
+ * than only on the cart page. The version dropped in September is this one, and why it was dropped is
+ * worth keeping: add-to-cart is the highest-friction moment in the shop. So the answer here is "no"
+ * wherever asking would cost more than the gift is worth.
+ *
+ *   - once an aroma is chosen, never again. The rule is one vial per ORDER, not per bottle; asking on
+ *     the second bottle would be asking about a gift the buyer already has, and turns a thank-you into a
+ *     toll on every tap.
+ *   - never in the English shop, which has no cart to add to.
+ *   - never when there is nothing to offer: no vial product, or every aroma out of stock.
+ *
+ * A pure rule rather than a condition inside the component, so it can be RUN — the component is the one
+ * part of this a guard cannot mount.
+ */
+export const shouldOfferFreeVial = ({ opened = false, isInternational = false, vialProduct = null, gift = null } = {}) => (
+  Boolean(opened)
+  && !isInternational
+  && !gift
+  && freeVialChoices(vialProduct).length > 0
+);
+
+/**
  * A gift the shop can no longer hand over stops being in the cart at all.
  *
  * reconcileCartLines marks a line `outOfStock` when its variant hit zero, or `unavailable` when its

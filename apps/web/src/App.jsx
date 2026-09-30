@@ -5,6 +5,7 @@ import { routerBasename } from '@/utils/storefrontRegion.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
+import FreeVialPrompt from '@/components/storefront/FreeVialPrompt.jsx';
 import ConfirmHost from '@/components/ConfirmHost.jsx';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ScrollRevealEffects from '@/components/ScrollRevealEffects.jsx';
@@ -475,6 +476,7 @@ function AppRoutes() {
       <ScrollToTop />
       <ScrollRevealEffects />
       <MobileBrowserRedirect />
+      <FreeVialPrompt />
       <Suspense fallback={<RouteFallback />}>
       <MobileRouteTransition>
       <Routes>

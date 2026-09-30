@@ -7734,3 +7734,66 @@ main :is(a, figure, picture, div, span):has(> img) {
   color: var(--editorial-muted);
   cursor: pointer;
 }
+
+/* The gift prompt that opens on add-to-cart. A sheet, not a centred box: it rises from the bottom on a
+   phone, where this shop is mostly read, and the aroma buttons stay inside the thumb's reach. Its inner
+   pieces reuse .free-vial__head / __body / __choices / __choice, so the panel on the cart page and this
+   prompt cannot drift apart visually either. */
+.free-vial-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.free-vial-prompt__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(18, 17, 16, 0.45);
+  cursor: pointer;
+}
+
+.free-vial-prompt__sheet {
+  position: relative;
+  width: min(560px, 100%);
+  display: grid;
+  gap: 10px;
+  padding: 20px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  background: var(--editorial-ivory, #fbfaf7);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -18px 48px rgba(18, 17, 16, 0.22);
+  animation: free-vial-prompt-rise 220ms ease-out;
+}
+
+@media (min-width: 640px) {
+  .free-vial-prompt { align-items: center; }
+  .free-vial-prompt__sheet { border-radius: 24px; }
+}
+
+.free-vial-prompt__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(18, 17, 16, 0.12);
+  background: #fff;
+  color: var(--editorial-charcoal, #1b1a16);
+}
+
+@keyframes free-vial-prompt-rise {
+  from { transform: translateY(14px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Respect the same preference the rest of the shop does. */
+@media (prefers-reduced-motion: reduce) {
+  .free-vial-prompt__sheet { animation: none; }
+}
