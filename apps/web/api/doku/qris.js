@@ -21,6 +21,7 @@
 //   DOKU_PAYMENT_DUE_DATE  minutes until the QR expires (reused; default 60).
 
 import { Buffer } from 'node:buffer';
+import { isOrderClosedForPayment } from '../../src/utils/orderClosed.js';
 import crypto from 'node:crypto';
 import process from 'node:process';
 
@@ -78,11 +79,13 @@ const getSupabaseRest = () => {
 // Authoritative amount from the order (never trust the client).
 const getOrderAmountByInvoice = async (invoiceNumber) => {
   const { restUrl, headers } = getSupabaseRest();
-  const r = await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}&select=order_number,subtotal,payment_status`, { headers });
+  // `status` as well as `payment_status`: a cancelled order can still read payment_status 'unpaid', so
+  // without it this endpoint cannot tell a live order from one whose stock has already been given back.
+  const r = await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}&select=order_number,subtotal,payment_status,status`, { headers });
   if (!r.ok) throw new Error(`Failed to read order ${invoiceNumber}: ${await r.text()}`);
   const [order] = await r.json();
   if (!order) throw new Error(`Order ${invoiceNumber} not found`);
-  return { amount: Math.round(Number(order.subtotal || 0)), paymentStatus: order.payment_status };
+  return { amount: Math.round(Number(order.subtotal || 0)), paymentStatus: order.payment_status, order };
 };
 
 // --- SNAP auth ------------------------------------------------------------------------------------
@@ -133,9 +136,17 @@ export default async function handler(req, res) {
     const orderNumber = String(input.orderNumber || input.invoiceNumber || '').trim();
     if (!orderNumber) return jsonResponse(res, 422, { message: 'orderNumber is required' });
 
-    const { amount, paymentStatus } = await getOrderAmountByInvoice(orderNumber);
-    // Mirror checkout.js:168 — never mint a payable QR for an order that is already paid.
+    const { amount, paymentStatus, order } = await getOrderAmountByInvoice(orderNumber);
+    // Mirror checkout.js — never mint a payable QR for an order that is already paid.
     if (paymentStatus === 'paid') return jsonResponse(res, 409, { message: 'Order is already paid' });
+    // …and never for one that is CLOSED. checkout.js grew this second half in #322 and this file kept
+    // pointing at the line number of the first. A cancelled or expired order has had its stock restored
+    // and possibly resold; a QR minted for it takes money for something that no longer exists.
+    if (isOrderClosedForPayment(order)) {
+      return jsonResponse(res, 409, {
+        message: 'Order ini sudah dibatalkan atau kedaluwarsa. Buat order baru untuk membayar.',
+      });
+    }
     if (amount <= 0) return jsonResponse(res, 422, { message: 'Order has no payable amount' });
 
     const clientKey = String(process.env.DOKU_SNAP_CLIENT_KEY || process.env.DOKU_CLIENT_ID || '').trim();

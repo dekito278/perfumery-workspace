@@ -426,4 +426,34 @@ assert.match(checkout, /select=order_number,subtotal,payment_status,status/,
 assert.match(checkout, /if \(isOrderClosedForPayment\(order\)\) \{/,
   'and it must refuse a closed one before it mints a session');
 
+// --- Minting a way to pay counts too, even when nothing is written ------------------------------------
+// The walk above asks which endpoints WRITE an order's payment state. This file's own rule is wider:
+// "a closed order may not be given a way to pay". api/doku/qris.js gives one — it mints a payable QR —
+// and writes nothing at all, so the walk never looked at it. It checked only `payment_status === 'paid'`
+// and did not even SELECT `status`, with a comment promising it mirrored checkout.js:168 — the line
+// number of the half that existed before #322 added the other.
+//
+// Counted, not listed: the subject is every endpoint that turns an order's subtotal into an amount to
+// charge. Two today. A third is covered by being written.
+const chargers = [];
+const blind = [];
+for (const endpoint of endpoints) {
+  const source = stripComments(readFileSync(join(apiRoot, endpoint), 'utf8'));
+  if (!/storefront_orders/.test(source)) continue;
+  if (!/order\??\.subtotal|subtotal \|\| 0/.test(source)) continue;
+  chargers.push(endpoint);
+  if (!/isOrderClosedForPayment\(/.test(source)) blind.push(endpoint);
+}
+assert.ok(chargers.length >= 2,
+  `only ${chargers.length} endpoint(s) charge an order's subtotal — the derivation broke, not the code`);
+assert.deepEqual(blind, [],
+  'these endpoints turn an order\'s own subtotal into an amount to pay and never ask whether that order '
+  + `is closed — a cancelled order's stock is already back on the shelf:\n  ${blind.join('\n  ')}`);
+
+// Reading the status is what makes the question answerable at all.
+for (const endpoint of chargers) {
+  assert.match(readFileSync(join(apiRoot, endpoint), 'utf8'), /select=[^`'"]*payment_status,status/,
+    `api/${endpoint} asks whether the order is closed without selecting its status — the answer is always no`);
+}
+
 console.log(`closedOrderPayment selfcheck OK (a cancelled order stops handing out the bank account on ${asked} screens that load one, and ${gates} payment link gated on the same question)`);
