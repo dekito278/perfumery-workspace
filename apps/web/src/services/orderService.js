@@ -1526,6 +1526,28 @@ const markOrderInventoryRestored = async (orderId, currentEvents = [], restoreEv
   });
 };
 
+// Which order statuses a PAYMENT write may replace, per status it wants to write.
+//
+// Allowlists, the way ORDER_STATUSES_BEFORE_PRODUCTION is one: a status added later is protected by
+// default, and a status this map does not name is not written at all rather than written blindly.
+//
+// The order's own status is a SIDE EFFECT here — the admin marked a payment, not a fulfilment step —
+// and four screens carry a bulk "tandai lunas" that maps this over a whole selection. On the shipments
+// screen that selection is shipped orders by definition, so select-all on the "Dikirim" tab and mark
+// paid rewrote `shipped` to `paid` on every one of them, quietly emptying the shipped queue. Measured on
+// the live shop: 11 shipped and 7 completed orders, 22 of 33 already paid, so re-marking any of them
+// paid was a no-op for the payment and a demotion for the order.
+//
+// `cancelled` is the exception and needs no list: a refund or an expiry closes an order wherever it had
+// got to, which is the one direction that must always be allowed.
+const ORDER_STATUS_REPLACEABLE_BY_PAYMENT = {
+  cancelled: null,
+  paid: ['pending_payment', 'paid'],
+  // Correcting a payment on an order that has already shipped leaves it shipped: it HAS shipped, and
+  // saying otherwise in the queue is the same lie in the other direction.
+  pending_payment: ['pending_payment', 'paid'],
+};
+
 export const updateOrderPaymentStatus = async (orderId, {
   paymentStatus,
   paymentProvider = 'doku',
@@ -1548,6 +1570,10 @@ export const updateOrderPaymentStatus = async (orderId, {
     throw new Error(`Order ${currentOrder?.orderNumber || orderId} sudah ${currentOrder?.status === 'cancelled' ? 'dibatalkan' : currentOrder?.paymentStatus}. Stoknya sudah dilepas — buat order baru, jangan tandai paid.`);
   }
 
+  const replaceable = ORDER_STATUS_REPLACEABLE_BY_PAYMENT[status];
+  const writesStatus = Boolean(status)
+    && (replaceable === null || (replaceable || []).includes(currentOrder?.status));
+
   const patch = {
     payment_status: paymentStatus,
     payment_provider: paymentProvider,
@@ -1559,7 +1585,7 @@ export const updateOrderPaymentStatus = async (orderId, {
       payment_response: paymentResponse,
       doku_response: paymentResponse,
     } : {}),
-    ...(status ? { status } : {}),
+    ...(writesStatus ? { status } : {}),
   };
   const paymentAudit = {
     action: 'payment_status_updated',
@@ -1575,7 +1601,9 @@ export const updateOrderPaymentStatus = async (orderId, {
       paymentSessionId: currentOrder?.paymentSessionId || '',
     },
     nextValues: {
-      status: status || currentOrder?.status || '',
+      // What the row will actually say, not what the caller asked for: a status this write declined to
+      // move must not appear in the record as though it had moved.
+      status: (writesStatus ? status : currentOrder?.status) || '',
       paymentStatus,
       paymentProvider,
       paymentReference: paymentReference ?? currentOrder?.paymentReference ?? '',
@@ -1616,7 +1644,7 @@ export const updateOrderPaymentStatus = async (orderId, {
   if (audit) {
     await createOrderAuditLog(paymentAudit);
   }
-  if (status === 'cancelled') {
+  if (writesStatus && status === 'cancelled') {
     await createOrderAuditLog({
       action: 'order_cancelled',
       currentOrder,
