@@ -9,7 +9,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
-import { cardLabels, matchesCatalogCategory } from '@/utils/productBadge.js';
+import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
@@ -40,10 +40,7 @@ export const MobileCatalogContent = ({ active = true }) => {
     return getPublicFragranceCatalog(visible);
   }, [catalogProducts]);
 
-  const categories = useMemo(() => [
-    'All',
-    ...Array.from(new Set(products.map((p) => p.publicCategory || p.category).filter(Boolean))),
-  ], [products]);
+  const categories = useMemo(() => catalogCategoryPills(products), [products]);
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();

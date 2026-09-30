@@ -15,7 +15,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
-import { cardLabels, matchesCatalogCategory } from '@/utils/productBadge.js';
+import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -70,10 +70,7 @@ const CatalogPage = () => {
     return getPublicFragranceCatalog(visible);
   }, [allProducts]);
 
-  const catalogCategories = useMemo(() => [
-    'All',
-    ...Array.from(new Set(products.map((p) => p.publicCategory || p.category).filter(Boolean))),
-  ], [products]);
+  const catalogCategories = useMemo(() => catalogCategoryPills(products), [products]);
 
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
