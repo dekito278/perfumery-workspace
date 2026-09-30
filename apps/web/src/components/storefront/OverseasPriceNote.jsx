@@ -29,8 +29,10 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
         <Globe className="h-3.5 w-3.5" /> Shipping outside Indonesia
       </p>
       <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="text-lg font-bold text-editorial-charcoal">US${usd}</span>
-        <span className="text-sm font-semibold text-muted-foreground">{formatRupiah(price)}</span>
+        {/* The dollar alone — see the note at the top of InternationalPrice.jsx. The Indonesian price
+            this panel says it is "separate from" is still on the page above it, which is the only
+            rupiah figure a reader here should be comparing against. */}
+        <span className="text-lg font-bold text-editorial-charcoal">{usd ? `US$${usd}` : formatRupiah(price)}</span>
       </p>
       {/* Written in English on purpose, in both shops: this panel exists for a reader who is abroad.
           It said "Shipping is included" from 19 Sep until 25 Sep 2026, on the strength of RaySpeed's
@@ -46,7 +48,6 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
         product={product}
         variant={variant}
         size={variant?.size || product.size || ''}
-        price={formatRupiah(price)}
         english
         compact
         className="mt-3"

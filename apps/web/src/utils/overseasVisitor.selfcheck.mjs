@@ -322,8 +322,17 @@ assert.doesNotMatch(button, /SOLIVAGANT,/, 'no draft is written in the component
 // The draft quotes the price the PAGE is offering for an overseas shipment. Both callers pass a
 // region-gated price — null for an Indonesian reader — so the draft fell back to the domestic label and
 // contradicted the export-price line printed directly above the button.
-assert.match(button, /const quoted = exportPrice \? formatRupiah\(exportPrice\) : price;/,
-  'the export price is ungated right here; the draft must prefer it over whatever the caller passed');
+// Held as the RULE, not as the spelling it had. The quoted figure is now in DOLLARS — the currency the
+// buyer is actually asked to send — so pinning the old rupiah expression made a correct change read as a
+// regression. What must stay true is that the component's OWN export price wins over the caller's prop.
+{
+  const quoted = button.match(/const quoted = [^\n]*/);
+  assert.ok(quoted, 'the draft no longer resolves a quoted price at all');
+  assert.match(quoted[0], /exportPrice|quotedUsd/,
+    'the export price is ungated right here; the draft must prefer it over whatever the caller passed');
+  assert.ok(quoted[0].lastIndexOf('price') > quoted[0].indexOf('exportPrice') || /quotedUsd/.test(quoted[0]),
+    'the caller\'s prop must remain the LAST resort, not the first choice');
+}
 // The draft itself moved into overseasEnquiry.js so the two sticky bars could stop sending a generic
 // message that named no perfume. The rule did not move: the number resolved above is the number that
 // reaches WhatsApp, and an unknown price prints no line at all rather than an empty one.

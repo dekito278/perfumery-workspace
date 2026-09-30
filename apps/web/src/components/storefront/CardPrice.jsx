@@ -24,12 +24,9 @@ const CardPrice = ({ product, className = '', memberClassName = '' }) => {
 
   if (exportPrice) {
     const usd = usdPriceFor(exportPrice);
-    return (
-      <>
-        <span className={className}>{usd ? `US$${usd}` : formatRupiah(exportPrice)}</span>
-        {usd ? <span className={memberClassName}>{formatRupiah(exportPrice)}</span> : null}
-      </>
-    );
+    // The dollar alone — see the note at the top of InternationalPrice.jsx. Rupiah only stands in when
+    // there is no dollar to show at all.
+    return <span className={className}>{usd ? `US$${usd}` : formatRupiah(exportPrice)}</span>;
   }
 
   return (
