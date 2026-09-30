@@ -1,3 +1,4 @@
+import { isStockOrderItem } from '@/utils/orderTotals.js';
 import { featuredProducts } from '@/data/storefront.js';
 import supabase from '@/lib/supabaseClient.js';
 import { beginMobileFetchMonitor } from '@/utils/mobileRenderMonitoring.js';
@@ -446,7 +447,8 @@ const findVariantForOrderItem = (product = {}, item = {}) => {
   )) || variants[0] || null;
 };
 
-const isStockOrderItem = (item = {}) => !['bespoke_request', 'voucher_discount'].includes(item.type);
+// One list, in utils/orderTotals.js. It used to be spelled out here too, and a duplicate of a rule is
+// a rule that holds in one place.
 
 const createInventoryRestoreEvent = (event = {}) => ({
   ...event,

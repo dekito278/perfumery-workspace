@@ -1,3 +1,4 @@
+import { BESPOKE_REQUEST_ITEM_TYPE, VOUCHER_DISCOUNT_ITEM_TYPE } from '@/utils/orderTotals.js';
 import supabase from '@/lib/supabaseClient.js';
 import { saveCustomer } from '@/services/customerService.js';
 import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock } from '@/services/productCatalogService.js';
@@ -42,8 +43,9 @@ const localOnlyStatuses = {
   preparing: 'processing',
 };
 
-const BESPOKE_SOURCE = 'bespoke_request';
-const VOUCHER_DISCOUNT_ITEM_TYPE = 'voucher_discount';
+// Both names come from utils/orderTotals.js, which is where the one list of shop-written line types
+// lives. They were spelled out again here, and a rule spelled twice is a rule that holds once.
+const BESPOKE_SOURCE = BESPOKE_REQUEST_ITEM_TYPE;
 const INVENTORY_RESTORE_PAYMENT_STATUSES = CLOSED_PAYMENT_STATUSES;
 // The server cron reads PAYMENT_RESERVATION_TTL_HOURS; this reads VITE_PAYMENT_RESERVATION_TTL_HOURS and
 // is baked in at build time. Both actively cancel manual-transfer reservations and the studio prints this
@@ -1247,7 +1249,7 @@ export const createCatalogOrderViaEndpoint = (orderData, refs = {}) => postAutho
   source: orderData.source || 'storefront',
   customer: { name: orderData.customerName || '', code: orderData.customerCode || '', contact: orderData.contact || '' },
   delivery: { address: orderData.deliveryAddress || '', area: orderData.deliveryArea || '' },
-  items: (orderData.items || []).filter((item) => item.type !== 'voucher_discount'),
+  items: (orderData.items || []).filter((item) => item.type !== VOUCHER_DISCOUNT_ITEM_TYPE),
   notes: orderData.notes || '',
   checkoutDraft: orderData.checkoutDraft || '',
   shipping: {
