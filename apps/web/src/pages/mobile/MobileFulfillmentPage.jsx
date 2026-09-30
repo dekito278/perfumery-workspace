@@ -27,6 +27,7 @@ import {
   isArchivedOrder,
   isBlockedByBespokeProduction,
   isReadyToPack,
+  matchesOrderFilter,
   isShippedOrder,
   paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
@@ -124,11 +125,17 @@ const MobileFulfillmentPage = () => {
   const paidOrders = useMemo(() => orders.filter(isPaid), [orders]);
   const readyOrders = useMemo(() => paidOrders.filter(isFulfillmentReady), [paidOrders]);
   const packingOrders = useMemo(() => readyOrders.filter((order) => order.shipmentStatus === 'packing'), [readyOrders]);
-  const shippedOrders = useMemo(() => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)), [orders]);
-  const followUpOrders = useMemo(() => orders.filter((order) => (
-    ['unpaid', 'pending'].includes(order.paymentStatus)
-    || (order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status))
-  )), [orders]);
+  // Both of these are matchesOrderFilter's job, and its header says so: the rule "used to be written out
+  // three times — the desktop list, the desktop tab counts, and the mobile list", and the `follow_up`
+  // case exists in that file FOR THIS SCREEN, which then went on spelling it out itself.
+  //
+  // They had already drifted. There are two ways an order says it has shipped — `status` and
+  // `shipmentStatus` — and the shared rule accepts either while this screen only read the second.
+  // Measured on the live shop: one real order sits at status 'shipped' with shipmentStatus 'not_ready'
+  // (marked shipped from the status control, which does not touch the shipment row), so the Dikirim tab
+  // here counted 10 where every other screen counted 11, and follow-up lost the same order.
+  const shippedOrders = useMemo(() => orders.filter((order) => matchesOrderFilter(order, 'shipped')), [orders]);
+  const followUpOrders = useMemo(() => orders.filter((order) => matchesOrderFilter(order, 'follow_up')), [orders]);
   const blockedPaidOrders = useMemo(() => paidOrders.filter(isBlockedByBespokeProduction), [paidOrders]);
   const displayedOrders = useMemo(() => {
     if (queueFilter === 'packing') return readyOrders.filter((order) => order.shipmentStatus === 'packing');
