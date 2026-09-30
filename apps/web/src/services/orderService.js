@@ -1432,6 +1432,12 @@ export const updateOrderShipment = async (orderId, shipmentData = {}) => {
   return getOrderById(orderId);
 };
 
+// The order statuses this side effect is allowed to replace: the ones that come BEFORE production.
+//
+// An ALLOWLIST, deliberately, rather than a list of the finished ones — a status added later is then
+// protected by default instead of being demoted by a rule nobody remembered to extend.
+const ORDER_STATUSES_BEFORE_PRODUCTION = ['pending_payment', 'paid', 'processing'];
+
 export const updateOrderBespokeProductionStatus = async (orderId, productionStatus) => {
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   const bespokeProductionTimeline = appendBespokeProductionTimeline(
@@ -1439,10 +1445,22 @@ export const updateOrderBespokeProductionStatus = async (orderId, productionStat
     productionStatus,
     'Bespoke production updated from Studio',
   );
+  // Reaching production moves the ORDER to processing — forwards only. What Dekito touched is the
+  // bespoke workflow dropdown; the order's own status is a side effect of it, and a side effect must
+  // never undo a decision further along than itself. Unguarded, setting the workflow back to "Produksi"
+  // on an order already shipped or completed took it out of the finished queue and back into the active
+  // one, and the audit entry below said only that the workflow field had changed.
+  //
+  // Measured on the live shop: eleven of the seventeen bespoke orders are already shipped or completed,
+  // and all seventeen still sit at review_brief — so the first time this dropdown is used in anger is
+  // exactly when it would be used on orders that have already shipped.
+  const advancesOrderStatus = productionStatus === 'production'
+    && ORDER_STATUSES_BEFORE_PRODUCTION.includes(currentOrder?.status)
+    && currentOrder?.status !== 'processing';
   const patch = {
     bespoke_production_status: productionStatus,
     bespoke_production_timeline: bespokeProductionTimeline,
-    ...(productionStatus === 'production' ? { status: 'processing' } : {}),
+    ...(advancesOrderStatus ? { status: 'processing' } : {}),
   };
 
   await updateOrderRow(orderId, patch);
@@ -1450,8 +1468,17 @@ export const updateOrderBespokeProductionStatus = async (orderId, productionStat
     action: 'bespoke_production_updated',
     currentOrder,
     orderId,
-    previousValues: { bespokeProductionStatus: currentOrder?.bespokeProductionStatus || '' },
-    nextValues: { bespokeProductionStatus: productionStatus },
+    // The status goes in the record whenever this write moves it. Every other path that writes the order
+    // status names it on both sides of its audit entry; this one wrote the column and reported only the
+    // workflow field, so the move had no trace anywhere.
+    previousValues: {
+      bespokeProductionStatus: currentOrder?.bespokeProductionStatus || '',
+      ...(advancesOrderStatus ? { status: currentOrder?.status || '' } : {}),
+    },
+    nextValues: {
+      bespokeProductionStatus: productionStatus,
+      ...(advancesOrderStatus ? { status: 'processing' } : {}),
+    },
     metadata: { source: 'studio' },
   });
   return getOrderById(orderId);
