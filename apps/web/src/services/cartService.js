@@ -1,5 +1,5 @@
 import { normalizeWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
-import { isFreeVialLine } from '@/utils/freeVial.js';
+import { dropOrphanedGift, isFreeVialLine } from '@/utils/freeVial.js';
 export { reconcileCartLines } from '@/utils/cartReconcile.js';
 
 export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
@@ -104,12 +104,15 @@ export const isDokuQrisPayment = (provider) => provider === QRIS_PAYMENT.provide
 
 export const getStorefrontWhatsAppNumber = () => normalizeWhatsAppPhoneNumber(import.meta.env.VITE_STOREFRONT_WHATSAPP_NUMBER || '');
 
+// Every writer below builds its next cart from this, so a rule applied here holds for all of them: the
+// orphaned gift can neither be created nor survive, and a browser already holding one is healed by the
+// next read rather than having to be found and cleaned.
 const readCart = () => {
   if (typeof window === 'undefined') return [];
 
   try {
     const value = window.localStorage.getItem(CART_STORAGE_KEY);
-    return value ? JSON.parse(value) : [];
+    return dropOrphanedGift(value ? JSON.parse(value) : []);
   } catch (error) {
     return [];
   }
