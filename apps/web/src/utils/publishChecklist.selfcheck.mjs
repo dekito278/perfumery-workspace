@@ -14,6 +14,7 @@
 // and disables the button on its own. An atelier selling limited runs is sold out often; that is a normal
 // state here, not an unfinished product.
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import { FREE_VIAL_TAG, isFreeVialProduct } from './freeVial.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -90,5 +91,79 @@ assert.equal(isFreeVialProduct({ tags: [] }), false, 'and neither is an untagged
 assert.match(row('price'), /required: true/,
   'price must still block for everything that is not a gift — a perfume with no price has no business '
   + 'being in the catalogue');
+
+// --- and the whole list, RUN against a real vial ------------------------------------------------------
+// Row-by-row text matching only ever protects the rows somebody thought to name. What has to be true is
+// simpler and covers the rows nobody has written yet: a correctly filled gift row must come out READY.
+//
+// That is the assertion the price exemption needed and did not have. The image row had exactly the same
+// shape — a gift-stock row has no product photo to take — and it was found only when the vial was
+// finally created and the next save was refused.
+//
+// productCatalogService speaks '@/...' and reaches Supabase, so the checklist and the eight pure helpers
+// it stands on are LIFTED and RUN.
+const liftFrom = (source, pattern, what) => {
+  const found = source.match(pattern);
+  assert.ok(found, `could not lift ${what} out of productCatalogService — update this guard, not the app`);
+  return found[0];
+};
+const raw = readFileSync(join(here, '..', 'services', 'productCatalogService.js'), 'utf8');
+const { getProductPublishChecklist } = await import(`data:text/javascript;base64,${Buffer.from([
+  "import { isFreeVialProduct } from 'file://" + join(here, 'freeVial.js') + "';",
+  liftFrom(raw, /const toSlug = [\s\S]*?\n\s*\|\| 'product';/, 'toSlug'),
+  liftFrom(raw, /const parseRupiah = [\s\S]*?\n\};/, 'parseRupiah'),
+  liftFrom(raw, /const splitList = [\s\S]*?\n\};/, 'splitList'),
+  liftFrom(raw, /export const createProductVariant = [\s\S]*?\n\}\);/, 'createProductVariant'),
+  liftFrom(raw, /const normalizeVariant = [\s\S]*?\n\};/, 'normalizeVariant'),
+  liftFrom(raw, /export const normalizeProductVariants = [\s\S]*?\n\};/, 'normalizeProductVariants'),
+  liftFrom(raw, /export const normalizeProductImages = [\s\S]*?\n\};/, 'normalizeProductImages'),
+  liftFrom(raw, /export const getProductPriceRange = [\s\S]*?\n\};/, 'getProductPriceRange'),
+  liftFrom(raw, /export const getProductStockTotal = [^\n]*/, 'getProductStockTotal'),
+  liftFrom(raw, /export const getProductPublishChecklist = [\s\S]*?\n\};/, 'the checklist itself'),
+].join('\n'), 'utf8').toString('base64')}`);
+
+// A vial exactly as the migration creates it: tagged, no image, every variant priced 0.
+const vialRow = {
+  name: 'Vial hadiah',
+  slug: 'vial-hadiah',
+  category: 'Vial',
+  notes: 'Vial 2 ml hadiah, satu per order, dipilih pembeli di keranjang.',
+  tags: [FREE_VIAL_TAG],
+  variants: [
+    { id: 'hug-n-1', size: 'HUG N°1', priceNumber: 0, stock: 20 },
+    { id: 'sudra', size: 'Sudra', priceNumber: 0, stock: 20 },
+  ],
+};
+const vial = getProductPublishChecklist(vialRow);
+assert.deepEqual(vial.blocking.map((item) => item.key), [],
+  'a correctly filled gift row must be publishable as it stands — every blocker it cannot satisfy has to '
+  + `exempt it, and these still do not: ${vial.blocking.map((item) => item.key).join(', ')}`);
+assert.equal(vial.ready, true);
+// An aroma that has run out is still a valid row — stock is inventory, and the picker simply stops
+// offering that one.
+assert.equal(getProductPublishChecklist({
+  ...vialRow,
+  variants: vialRow.variants.map((variant) => ({ ...variant, stock: 0 })),
+}).ready, true, 'a vial with every aroma sold out must still be editable');
+
+// The direction that keeps all of it honest: an ordinary perfume is held to the whole list.
+const perfume = {
+  name: 'HUG N°1', slug: 'hug-n-1', category: 'Floral', notes: 'White floral, musk',
+  tags: ['Limited'], images: ['https://example.test/hug.jpg'],
+  variants: [{ id: '30-ml', size: '30 ml', priceNumber: 359000, stock: 4 }],
+};
+assert.equal(getProductPublishChecklist(perfume).ready, true, 'a complete perfume publishes');
+for (const [what, broken] of [
+  ['image', { ...perfume, images: [] }],
+  ['price', { ...perfume, variants: [{ ...perfume.variants[0], priceNumber: 0 }] }],
+  ['name', { ...perfume, name: '' }],
+  ['summary', { ...perfume, notes: '' }],
+  ['category', { ...perfume, category: '' }],
+]) {
+  const result = getProductPublishChecklist(broken);
+  assert.equal(result.ready, false, `a perfume with no ${what} must not publish`);
+  assert.ok(result.blocking.some((item) => item.key === what),
+    `the blocker for a perfume with no ${what} must be the '${what}' row, not something else`);
+}
 
 console.log('publishChecklist selfcheck OK (stock warns, product data blocks, and a sold-out perfume can still be edited)');
