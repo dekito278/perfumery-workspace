@@ -1626,14 +1626,30 @@ export const updateOrderPaymentStatus = async (orderId, {
 
 export const deleteOrder = async (orderId) => {
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
-  // Hard-delete strands any stock still reserved for this order; give it back first.
+  // Hard-delete strands any stock still reserved for this order; give it back first. The restore RPC is
+  // addressed by order, so it cannot wait until after the row is gone.
+  //
+  // And the flag has to come down with it, exactly as the cancel and the payment-expiry paths do — every
+  // other path in this file that hands stock back pairs the restore with markOrderInventoryRestored, and
+  // that function's own comment says why: a flag left true lets a second cancel restore the same units
+  // again. This path skipped it on the reasoning that the row is about to disappear. It is not, whenever
+  // the delete below is refused — and the comment at that very line says how that arrives: 200 with zero
+  // rows, no error. The order then survived claiming to hold stock this function had already returned.
   if (currentOrder?.inventoryDeducted) {
-    await restoreInventoryForOrder(currentOrder, 'Order deleted stock released');
+    const restoreEvents = await restoreInventoryForOrder(currentOrder, 'Order deleted stock released');
+    if (restoreEvents.length) {
+      await markOrderInventoryRestored(orderId, currentOrder.inventoryEvents, restoreEvents);
+    }
   }
-  // The voucher quota is the other half of the same sentence, and the half where the loss is permanent.
-  // Cancelling gives it back and so does an expiry, but a delete removes the very row the release names —
-  // afterwards there is nothing left to point the RPC at, so a one-time code stays burned on that buyer's
-  // account for good, with no screen anywhere that can undo it. Released BEFORE the row goes.
+  // The voucher quota is the other half of the same sentence, and the half where the loss is permanent:
+  // cancelling gives it back and so does an expiry, but nothing gives it back after a delete — there is no
+  // screen left that names this order. So it is released BEFORE the row goes, and stays that way.
+  //
+  // Not because the record would be destroyed with it. It would not: the RPC reads
+  // storefront_voucher_usage_records, which carries order_id/order_number as plain columns with NO foreign
+  // key to storefront_orders and no cascade, so it outlives the order and p_order_number would still find
+  // it. The reason is the weaker one, which is the one that holds: releasing first depends on nothing
+  // surviving, and this is a path with no second chance.
   // A no-op on an order that used no voucher.
   await releaseVoucherUsageForOrder({ orderId: currentOrder?.id, orderNumber: currentOrder?.orderNumber || orderId });
 
