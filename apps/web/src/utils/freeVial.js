@@ -158,6 +158,29 @@ export const buildFreeVialCartItem = ({ vialProduct = {}, choice = {} } = {}) =>
 
 
 /**
+ * A gift with nothing to accompany is not a gift.
+ *
+ * The cart can end up holding only the vial: pick an aroma, then take the bottles out again. Nothing in
+ * the shop shows that line afterwards — the picker hides itself when nothing is bought, both cart pages
+ * render their empty state, and the badge counts bought items only — so it cannot be seen and cannot be
+ * removed, and it survives every later visit. Observed on a real browser while testing the prompt.
+ *
+ * The cost is not the stray row. It is that shouldOfferFreeVial then reads "an aroma is already chosen",
+ * so the prompt never opens again: the next time that buyer adds a bottle they silently receive an aroma
+ * they picked weeks ago, and are never offered the choice. The order endpoint would refuse the cart
+ * outright (nothing priced, 422), so the line can never become an order — it just quietly takes the
+ * feature away from that browser, permanently.
+ *
+ * Applied where the cart is READ, which is the one place both halves of the problem meet: no writer can
+ * create the state, and a browser already holding one is healed the moment anything reads the cart.
+ */
+export const dropOrphanedGift = (lines = []) => {
+  const list = Array.isArray(lines) ? lines : [];
+  if (list.some((line) => !isFreeVialLine(line))) return list;
+  return list.filter((line) => !isFreeVialLine(line));
+};
+
+/**
  * May the gift PROMPT open right now?
  *
  * Dekito's decision, 30 Sep 2026, reversing the 29 Sep one: the aromas are offered at add-to-cart rather
