@@ -420,7 +420,10 @@ assert.deepEqual(splitFreeVialLines([]).lines, [], 'an order with no lines reord
 // the trap, and a text search that counts the explanation as the fix is a guard nobody can satisfy.
 const portalSource = read('pages', 'CustomerPortalPage.jsx')
   .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
-assert.match(portalSource, /const productItems = splitFreeVialLines\(getOrderProductItems\(order\)\)\.lines;/,
+// Held as the RULE, not as the spelling it had: the inner list has since become getReorderableItems,
+// which drops the bespoke brief as well — a line that is priced like a product and cannot go in a cart.
+// What must stay true is that whatever list the reorder reads, it reads it THROUGH the split.
+assert.match(portalSource, /const productItems = splitFreeVialLines\(\w+\(order\)\)\.lines;/,
   '"Pesan lagi" must take the bought lines out of the past order, not every line in it');
 assert.match(portalSource, /import \{ splitFreeVialLines \} from '@\/utils\/freeVial\.js';/,
   'and it must be the real helper, so the rule stays in one place');

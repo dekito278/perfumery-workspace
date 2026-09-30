@@ -37,6 +37,7 @@ import { setAppliedVoucherCode } from '@/services/voucherService.js';
 import { seedCheckoutDraft } from '@/hooks/useCheckoutFlow.js';
 import {
   getOrderProductItems,
+  getReorderableItems,
   getOrderProductsSubtotal,
   getOrderShippingFee,
   getOrderSubtotalAfterVoucher,
@@ -757,7 +758,10 @@ const SelfServiceActions = ({
   // Reorder fills the cart and sends the buyer to it. The English shop has no cart and /en/cart
   // redirects, so the button would quietly stock a basket nobody can open and drop the customer on the
   // catalogue — a dead end that looks like a bug rather than a policy.
-  const canReorder = !isInternational && getOrderProductItems(order).length > 0;
+  // The same list the reorder actually uses, or the button offers itself and then fails. A bespoke
+  // brief is priced and displayed like a product but cannot be put in a cart — it is re-ordered by
+  // writing a new brief.
+  const canReorder = !isInternational && getReorderableItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
   const buttonClass = compact
     ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
@@ -1208,7 +1212,7 @@ const CustomerPortalPage = () => {
     // tags, so the copy arrived untagged. The picker then offered a SECOND vial, and the endpoint refuses
     // an order carrying two — the buyer could not check out at all, out of a cart the shop built for her.
     // The gift is a per-order promotion anyway: she picks a fresh one, against stock that is live today.
-    const productItems = splitFreeVialLines(getOrderProductItems(order)).lines;
+    const productItems = splitFreeVialLines(getReorderableItems(order)).lines;
     if (!productItems.length) {
       toast.error(t('cust.noItemsToReorder'));
       return;
