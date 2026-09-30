@@ -243,7 +243,7 @@ const MobileProductDetailPage = () => {
             </div>
           ) : null}
 
-          <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={formatRupiah(exportPrice || selectedPrice)} compact className="mt-4" />
+          <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={formatRupiah(selectedPrice)} compact className="mt-4" />
           <ShareProductButton product={product} compact className="mt-3" />
           <SwitchToIndonesiaHint className="mt-3" />
 

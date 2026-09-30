@@ -24,7 +24,7 @@ import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { formatRupiah, getPrimaryVariant } from '@/services/productCatalogService.js';
+import { getPrimaryVariant } from '@/services/productCatalogService.js';
 import { toast } from 'sonner';
 
 /**
@@ -362,7 +362,7 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
               )}
             </button>
           )}
-          <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel} className="mt-3" />
+          <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
           <ShareProductButton product={product} className="mt-3" />
           <SwitchToIndonesiaHint className="mt-3" />
         </section>

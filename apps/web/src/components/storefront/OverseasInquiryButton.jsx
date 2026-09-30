@@ -2,6 +2,7 @@ import React from 'react';
 import { Globe } from 'lucide-react';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
+import { usdPriceFor } from '@/utils/usdPrice.js';
 import { useExportPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
@@ -48,7 +49,10 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // had not offered for that shipment. The export price is right here, ungated, for exactly this.
   // In the English shop there is no cart at all, so this button is not a question asked beside a
   // purchase — it IS the purchase. Same builder as both sticky bars, so the three cannot drift.
-  const quoted = exportPrice ? formatRupiah(exportPrice) : price;
+  // In dollars, for the same reason the panel shows dollars: this draft is the buyer's own words back to
+  // Dekito, and a rupiah figure in it is a number he then has to explain before he can quote a parcel.
+  const quotedUsd = usdPriceFor(exportPrice);
+  const quoted = quotedUsd ? `US$${quotedUsd}` : (exportPrice ? formatRupiah(exportPrice) : price);
   const message = buildOverseasDraft({
     t, isInternational: overseasVisitor, name: product.name, size, price: quoted,
   });
@@ -75,7 +79,8 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
     <div>
       <p className="mb-2 mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
         {t('export.priceLine')}{' '}
-        <strong className="font-bold text-editorial-charcoal">{formatRupiah(exportPrice)}</strong>
+        {/* The dollar, like everywhere else this buyer looks — see the note in InternationalPrice.jsx. */}
+        <strong className="font-bold text-editorial-charcoal">{quoted}</strong>
         {' '}{t('export.notIncluded')}
       </p>
       {link}

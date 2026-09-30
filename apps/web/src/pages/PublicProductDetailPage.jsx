@@ -324,7 +324,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                   )}
                 </button>
               )}
-              <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel} className="mt-3" />
+              <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
               <ShareProductButton product={product} className="mt-3" />
               <SwitchToIndonesiaHint className="mt-3" />
             </div>
