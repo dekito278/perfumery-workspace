@@ -1082,9 +1082,13 @@ export const getAllOrderAuditLogs = async ({ limit = 200 } = {}) => {
   }
 };
 
+// No `active` here. It was a FOURTH definition of the word — "anything not completed or cancelled" —
+// living beside the three that utils/orderWorkflow.js was written to unify, and whose own header says a
+// list and its count can no longer disagree about the same tab. It could, from here: measured on this
+// shop, 20 against the order list's 1. Deleted rather than corrected, so the next screen that wants the
+// number has to take it from matchesOrderFilter like everyone else.
 export const getOrderSummary = (orders) => ({
   total: orders.length,
-  active: orders.filter((order) => !['completed', 'cancelled'].includes(order.status)).length,
   completed: orders.filter((order) => order.status === 'completed').length,
   revenue: orders
     .filter((order) => order.status !== 'cancelled')
