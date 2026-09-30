@@ -51,6 +51,34 @@ export const matchesCatalogCategory = (product = {}, category = '') => {
   return String(product?.publicCategory || product?.category || '') === category;
 };
 
+/**
+ * The pills above the catalogue grid.
+ *
+ * Every pill but one is a family and comes straight from the products' own category, in the order the
+ * catalogue hands them over — which is what this has always done, and what it still does.
+ *
+ * LIMITED cannot come from there, and that is the unfinished half of splitting `limited` out of
+ * `category`. Re-filing a limited perfume into its real family is precisely what the split was for; the
+ * pill list is built from categories, so each re-filing moves one perfume out of the only thing keeping
+ * that pill on screen. Measured on the live shop: ten perfumes wear the badge and seven are still filed
+ * under it. Re-file those seven — the stated plan — and the pill vanishes, taking with it the matcher
+ * written so it would find all ten, which would then be unreachable.
+ *
+ * So the badge's pill is kept alive by the badge: present while anything wears it, absent when nothing
+ * does. Appended rather than inserted, and only when the category list does not already carry it, so
+ * today's screen is unchanged down to the order of the pills.
+ */
+export const catalogCategoryPills = (products = []) => {
+  const list = Array.isArray(products) ? products : [];
+  const pills = ['All'];
+  for (const product of list) {
+    const category = String(product?.publicCategory || product?.category || '').trim();
+    if (category && !pills.includes(category)) pills.push(category);
+  }
+  if (!pills.some(isLimitedCategory) && list.some(isLimitedProduct)) pills.push('Limited');
+  return pills;
+};
+
 /** The whole label line: the family, the badge, or both once a limited perfume has been re-filed. */
 export const cardLabels = (product = {}) => [
   familyLabel(product),

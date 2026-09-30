@@ -33,9 +33,27 @@ assert.match(infer, /if \(explicit\) return explicit;/, 'the explicit category i
 
 // Both catalogue pages must build their pills from the same field, and the card must print a value that
 // can appear as a pill.
+//
+// Held as the RULE, for the second time in this file and for the same reason the card label below is:
+// the two pages used to spell the expression out themselves and this asserted that spelling, so moving
+// it into one shared builder — which is the fix for the LIMITED pill vanishing as perfumes are re-filed
+// — read as a regression. What has to be true is that the pills come from the field the card prints,
+// wherever that sentence now lives.
 for (const page of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.jsx']) {
   const text = strip(readFileSync(join(src, page), 'utf8'));
-  assert.match(text, /publicCategory \|\| p(roduct)?\.category/, `${page}: the pill list changed shape`);
+  assert.match(text, /catalogCategoryPills\(/,
+    `${page}: the pill list is built by hand again instead of by the one shared builder`);
+}
+{
+  // Sliced to the builder's own body: matchesCatalogCategory in the same file reads the same two fields,
+  // so a whole-file search for them stayed green with the builder reading neither.
+  const badge = strip(readFileSync(join(src, 'utils', 'productBadge.js'), 'utf8'));
+  const builder = badge.slice(badge.indexOf('export const catalogCategoryPills'));
+  const body = builder.slice(0, builder.indexOf('\n};') + 1);
+  assert.ok(body.length > 40 && body.length < builder.length, 'could not isolate catalogCategoryPills — update this guard');
+  assert.match(body, /publicCategory \|\| product\?\.category/,
+    'catalogCategoryPills stopped building the pills from publicCategory || category, so the pills and '
+    + 'the card labels now speak different languages');
 }
 
 const desktop = strip(readFileSync(join(src, 'pages', 'CatalogPage.jsx'), 'utf8'));

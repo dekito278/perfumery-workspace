@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { cardLabels, familyLabel, isLimitedProduct, matchesCatalogCategory } from './productBadge.js';
+import { cardLabels, catalogCategoryPills, familyLabel, isLimitedProduct, matchesCatalogCategory } from './productBadge.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -157,8 +157,59 @@ assert.equal(matchesCatalogCategory(ordinary, 'Limited'), false, 'an ordinary pe
 assert.equal(matchesCatalogCategory(ordinary, 'Floral'), true, 'and families still match on the category');
 assert.equal(matchesCatalogCategory(ordinary, 'All'), true, 'All matches everything');
 
-// And every screen that builds those pills must route its filter through the shared rule. Counted, not
-// listed: the screens are whichever files build the pill list out of the category.
+// --- The pill LIST is the other half, and it is built from the category too ---------------------------
+// The matcher above finds all ten. It can only be reached through a pill, and the pills come from the
+// products' categories — so every perfume re-filed out of 'Limited' removes one of the seven still
+// holding that pill on screen. Re-file the last and the pill goes, and with it the only way to reach a
+// matcher written for exactly this.
+//
+// Today's screen must not move, though: while anything is still filed under it, the pill comes from the
+// category exactly as before, in the same position.
+const asFiled = [
+  { slug: 'a', category: 'Limited', limited: true },
+  { slug: 'b', category: 'Floral', limited: false },
+  { slug: 'c', category: 'Woody', limited: true },
+  { slug: 'd', category: 'Floral', limited: false },
+];
+const byCategoryAlone = ['All', ...new Set(asFiled.map((p) => p.publicCategory || p.category).filter(Boolean))];
+assert.deepEqual(catalogCategoryPills(asFiled), byCategoryAlone,
+  'while a perfume is still filed under Limited the pills must be exactly what the category alone gave, '
+  + 'in the same order — this change is not allowed to move the shop that exists today');
+
+// The day the last one is re-filed, which is the stated plan.
+const allRefiled = asFiled.map((product) => (
+  product.category === 'Limited' ? { ...product, category: 'Woody' } : product
+));
+// Pinned exactly, position included: the families keep the order the catalogue gave them and the badge's
+// pill goes last. Asserting only that it is present somewhere let it be spliced in among the families,
+// which reorders the pills of every shop that has one still filed under Limited.
+assert.deepEqual(catalogCategoryPills(allRefiled), ['All', 'Woody', 'Floral', 'Limited'],
+  'with every limited perfume re-filed into its family the LIMITED pill must still be offered — ten '
+  + 'perfumes wear the badge and the matcher finds all ten, but only if a pill can reach it — and it '
+  + 'goes after the families, never among them');
+
+// The direction that matters just as much: it must not become a pill that is always there.
+const noneLimited = asFiled.map((product) => ({ ...product, category: 'Floral', limited: false }));
+assert.deepEqual(catalogCategoryPills(noneLimited), ['All', 'Floral'],
+  'with nothing wearing the badge there must be no LIMITED pill — an empty filter is worse than none');
+assert.deepEqual(catalogCategoryPills([]), ['All'], 'and an unloaded catalogue offers only All');
+
+// The pills prefer publicCategory over category, so the matcher has to read it too — a product whose
+// inferred public category differs from its own would otherwise be offered a pill it does not answer to,
+// which is an empty shop behind a pill the shop itself put there. Equal on every live product today,
+// which is exactly why nothing was catching it.
+const inferredElsewhere = [{ slug: 'e', category: 'Woody', publicCategory: 'Amber', limited: false }];
+
+// Derived cross-check binding the list to the matcher: no pill may lead to an empty shop.
+for (const fixture of [asFiled, allRefiled, noneLimited, inferredElsewhere]) {
+  for (const pill of catalogCategoryPills(fixture)) {
+    assert.ok(fixture.some((product) => matchesCatalogCategory(product, pill)),
+      `the pill "${pill}" is offered but matches no product in the catalogue it was built from`);
+  }
+}
+
+// And every screen that filters through the shared rule must build its pills through the shared list.
+// Counted, not listed: the screens are whichever files filter with matchesCatalogCategory.
 const pillScreens = [];
 const byHand = [];
 const walkPills = (dir) => {
@@ -168,16 +219,16 @@ const walkPills = (dir) => {
     if (!/\.jsx$/.test(entry.name)) continue;
     const source = readFileSync(join(here, '..', rel), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-    if (!/publicCategory \|\| \w+\.category/.test(source)) continue;
+    if (!/matchesCatalogCategory\s*\(/.test(source)) continue;
     pillScreens.push(rel);
-    if (!/matchesCatalogCategory\s*\(/.test(source)) byHand.push(rel);
+    if (!/catalogCategoryPills\s*\(/.test(source) || /publicCategory \|\| \w+\.category/.test(source)) byHand.push(rel);
   }
 };
 walkPills('pages');
 assert.ok(pillScreens.length >= 2, `only ${pillScreens.length} catalogue pill screen(s) found — the derivation broke`);
 assert.deepEqual(byHand, [],
-  'these screens compare the pill against the category themselves, so LIMITED finds only the perfumes '
-  + `still filed under it and misses every one re-filed into its family:\n  ${byHand.join('\n  ')}`);
+  'these screens build the pill list out of the category themselves, so the LIMITED pill disappears the '
+  + `day the last perfume is re-filed into its family:\n  ${byHand.join('\n  ')}`);
 
 // --- Neither catalogue may start on a category it has not checked -------------------------------------
 // The pills are one half of choosing a category; the URL is the other. The desktop page starts at 'All'
