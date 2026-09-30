@@ -14,6 +14,7 @@
 // and disables the button on its own. An atelier selling limited runs is sold out often; that is a normal
 // state here, not an unfinished product.
 import assert from 'node:assert/strict';
+import { FREE_VIAL_TAG, isFreeVialProduct } from './freeVial.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -62,5 +63,32 @@ for (const [name, file] of [
   assert.match(source, /if \(form\.catalogVisible && !publishChecklist\.ready\)/,
     `${name} no longer checks the publish checklist before saving a visible product`);
 }
+
+// --- …except a gift, which has no price to give ------------------------------------------------------
+// The free-vial product is priced 0 on every variant — that is what it IS, and api/orders/create.js sets
+// a vial line to zero whatever the variant says, so any other number here could never be charged.
+//
+// 'price' blocks publishing, and the forms refuse every catalogue-visible save while the checklist is
+// unready (asserted just above). The picker finds the vial by reading the PUBLIC catalogue, so the
+// product must be catalogue-visible. Those three facts together meant the one product the whole feature
+// needs could not be created in the Studio at all: the gift feature shipped complete, guarded, and
+// unusable, and stayed that way while I waited fifteen loop ticks for a product the app was refusing.
+//
+// The same shape as the stock lesson above — a rule that calls a normal, correct state an unfinished
+// product does not protect anyone, it freezes the record.
+assert.match(row('price'), /ok: isGift \|\| priceNumber > 0/,
+  'the price blocker no longer exempts a gift, so the free-vial product cannot be published and the '
+  + 'whole feature is unreachable');
+assert.match(checklist, /const isGift = isFreeVialProduct\(product\);/,
+  'the checklist must decide "is this a gift" from the product tag, the one place that rule lives');
+
+// The predicate itself, run rather than described: the tag is what makes a gift, not the price.
+assert.equal(isFreeVialProduct({ tags: [FREE_VIAL_TAG] }), true, 'the gift tag marks a gift');
+assert.equal(isFreeVialProduct({ tags: ['Floral'] }), false, 'an ordinary perfume is not a gift');
+assert.equal(isFreeVialProduct({ tags: [] }), false, 'and neither is an untagged one');
+// The direction that keeps the exemption honest: a real perfume still needs a real price.
+assert.match(row('price'), /required: true/,
+  'price must still block for everything that is not a gift — a perfume with no price has no business '
+  + 'being in the catalogue');
 
 console.log('publishChecklist selfcheck OK (stock warns, product data blocks, and a sold-out perfume can still be edited)');
