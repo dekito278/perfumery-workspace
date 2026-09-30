@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  CART_ITEM_ADDED_EVENT,
   addCartItem,
   clearCart,
   getCartItems,
@@ -42,7 +43,13 @@ export const useCart = () => {
   return {
     items,
     summary,
-    addItem: (product, quantity) => setStoredItems(addCartItem(product, quantity)),
+    // Announced here rather than inside addCartItem: the customer portal's "Pesan lagi" calls that
+    // writer directly, in a loop, and then navigates — a gift prompt popping up mid-reorder would be
+    // asking about a basket the buyer is already being carried away from.
+    addItem: (product, quantity) => {
+      setStoredItems(addCartItem(product, quantity));
+      window.dispatchEvent(new CustomEvent(CART_ITEM_ADDED_EVENT));
+    },
     updateQuantity: (slug, quantity) => setStoredItems(updateCartQuantity(slug, quantity)),
     removeItem: (slug) => setStoredItems(removeCartItem(slug)),
     // The gift replaces itself rather than stacking; `null` takes it out.

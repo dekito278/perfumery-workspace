@@ -175,10 +175,32 @@ for (const [where, name, props] of standIns) {
 // Counted, not listed: useStorefrontProducts is the BUYER's hook by its own definition ("The catalog as
 // this visitor may buy it. Every buyer-facing surface reads this"), so its callers ARE the subject. The
 // exceptions carry a reason and are checked for staleness, or an exemption outlives the file it excused.
+// Each exception now carries the CONDITION that makes its reason true, not just the sentence — the
+// comment above always promised they were checked for staleness and they were not, so an exemption could
+// outlive the thing it excused. The rule this guard is really about is PRICES: a buyer shown a number
+// from a catalogue that came off this device has to be told.
+const showsAPrice = (source) => /CardPrice|InternationalPrice|OverseasPriceNote|formatRupiah\s*\(/.test(source);
 const NOT_A_SCREEN = {
-  'hooks/useCart.js': 'a hook renders nothing; the pages that use it carry the notice',
-  'pages/JournalEditorPage.jsx': 'Studio: picks a related product to attach to an article, sells nothing',
-  'components/journal/JournalRelatedProduct.jsx': 'one card inside an article, not a page that can warn',
+  'hooks/useCart.js': {
+    why: 'a hook renders nothing; the pages that use it carry the notice',
+    stillTrue: (source) => !/<[A-Z]\w*/.test(source),
+  },
+  'pages/JournalEditorPage.jsx': {
+    why: 'Studio: picks a related product to attach to an article, sells nothing',
+    stillTrue: (source) => !showsAPrice(source),
+  },
+  'components/journal/JournalRelatedProduct.jsx': {
+    // This one DOES print a price, and its excuse was never about prices: it is a card embedded in an
+    // article, with no page of its own to put a banner on. So the condition is the one its reason
+    // actually names — it stops being true the day this grows into a page.
+    why: 'one card inside an article, not a page that can warn',
+    stillTrue: (source) => !/<main\b/.test(source),
+  },
+  'components/storefront/FreeVialPrompt.jsx': {
+    why: 'offers aroma NAMES for a gift and quotes no number at all; a stale list can only offer an '
+      + 'aroma that is gone, which reconcileCartLines drops and the order endpoint refuses',
+    stillTrue: (source) => !showsAPrice(source),
+  },
 };
 
 const buyerScreens = [];
@@ -192,7 +214,12 @@ const walkBuyer = (dir) => {
     const source = read(...rel.split('/'));
     if (!/useStorefrontProducts\s*\(/.test(source)) continue;
     buyerScreens.push(rel);
-    if (NOT_A_SCREEN[rel]) continue;
+    if (NOT_A_SCREEN[rel]) {
+      assert.ok(NOT_A_SCREEN[rel].stillTrue(source),
+        `${rel} is excused from the stale-catalogue notice because "${NOT_A_SCREEN[rel].why}" — and that `
+        + 'is no longer true, so either restore it or render the notice');
+      continue;
+    }
     if (!/<StaleCatalogNotice\b/.test(source)) silent.push(rel);
   }
 };

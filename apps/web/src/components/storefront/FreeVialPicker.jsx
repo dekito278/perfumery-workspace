@@ -1,8 +1,8 @@
 import React from 'react';
 import { Gift } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import FreeVialChoices from '@/components/storefront/FreeVialChoices.jsx';
 import {
-  buildFreeVialCartItem,
   freeVialChoices,
   isFreeVialProduct,
   splitFreeVialLines,
@@ -35,22 +35,7 @@ const FreeVialPicker = ({ items = [], products = [], onPick }) => {
         <strong>{t('cart.giftTitle')}</strong>
       </p>
       <p className="free-vial__body">{gift ? t('cart.giftChosen', { name: gift.size }) : t('cart.giftBody')}</p>
-      <div className="free-vial__choices" role="group" aria-label={t('cart.giftTitle')}>
-        {choices.map((choice) => {
-          const chosen = gift?.variantId === choice.variantId;
-          return (
-            <button
-              key={choice.variantId}
-              type="button"
-              className={`free-vial__choice${chosen ? ' is-chosen' : ''}`}
-              aria-pressed={chosen}
-              onClick={() => onPick(chosen ? null : buildFreeVialCartItem({ vialProduct, choice }))}
-            >
-              {choice.label}
-            </button>
-          );
-        })}
-      </div>
+      <FreeVialChoices vialProduct={vialProduct} gift={gift} onPick={onPick} />
       {gift ? (
         <button type="button" className="free-vial__clear" onClick={() => onPick(null)}>
           {t('cart.giftRemove')}
