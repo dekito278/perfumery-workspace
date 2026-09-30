@@ -332,8 +332,12 @@ const BatchProductionPage = () => {
       let nextUsageRecords = [];
       if (stockDeductingStatuses.has(nextStatus) && !batch.is_stock_deducted) {
         nextUsageRecords = await deductBatchMaterialStock(batch.id);
-        // Persist the flag (not just local state) so a reload can't re-run the deduct and halve stock.
-        batch = await saveBatch({ ...batch, is_stock_deducted: true });
+        // The flag is already persisted — deduct_batch_material_stock sets it itself and refuses to run
+        // again while it is true, which is what stops a reload halving the stock. This used to re-save
+        // the batch "to persist the flag", which it could not: saveBatch's payload deliberately drops
+        // is_stock_deducted, because a save carrying a stale copy of it once cleared the flag and let the
+        // next save deduct every raw material a second time (audit round 7). One redundant write, and a
+        // comment that contradicted the one guarding the payload.
         batch = { ...batch, is_stock_deducted: true, usage_records: nextUsageRecords };
         setUsageRecords(nextUsageRecords);
       }
@@ -357,8 +361,8 @@ const BatchProductionPage = () => {
     if (savedBatch?.id && savedBatch.status === nextStatus) {
       if (stockDeductingStatuses.has(nextStatus) && !savedBatch.is_stock_deducted) {
         const nextUsageRecords = await deductBatchMaterialStock(savedBatch.id);
-        const persisted = await saveBatch({ ...savedBatch, is_stock_deducted: true });
-        const nextBatch = { ...persisted, is_stock_deducted: true, usage_records: nextUsageRecords };
+        // Same as above: the RPC owns the flag, so there is nothing here left to persist.
+        const nextBatch = { ...savedBatch, is_stock_deducted: true, usage_records: nextUsageRecords };
         setSavedBatch(nextBatch);
         setUsageRecords(nextUsageRecords);
         await refreshBatchHistory();
