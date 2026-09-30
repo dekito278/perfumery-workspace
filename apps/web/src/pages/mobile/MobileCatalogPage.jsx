@@ -20,12 +20,18 @@ export const MobileCatalogContent = ({ active = true }) => {
   const initialFamily = searchParams.get('category') || searchParams.get('family') || '';
   const catalogProducts = useStorefrontProducts({ active });
   const { t } = useTranslate();
-  // Mirror CatalogPage.jsx:35 — without this the page told the buyer "No fragrance matches" during the very
-  // first fetch, and kept saying it forever if that fetch failed (audit round 7).
+  // Mirror of the desktop catalogue's own loading guard — without this the page told the buyer "No
+  // fragrance matches" during the very first fetch, and kept saying it forever if that fetch failed
+  // (audit round 7). Named rather than cited by line: the line moved, and a frozen mirror is how the
+  // other half of this file's behaviour drifted apart from the desktop in the first place.
   const isLoading = Boolean(catalogProducts.loading) && !catalogProducts.length;
-  const [activeCategory, setActiveCategory] = useState(
-    initialFamily ? initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1) : 'All'
-  );
+  // Start at 'All', exactly as the desktop catalogue does, and let the effect below promote it only once
+  // the family turns out to be a real category. Taking the URL value directly meant an unknown
+  // ?category= / ?family= stuck: the effect only ever SETS a category it recognises, so it could never
+  // put a wrong one back — the buyer got an empty shop with no way out but tapping a pill. The four mood
+  // cards all name real categories today, so the way in is a stale link, a shared URL, or the day a
+  // category empties out (Fresh has one perfume left).
+  const [activeCategory, setActiveCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
 
