@@ -107,4 +107,43 @@ assert.equal(toPath('https://images.example.com/borrowed.jpg'), null,
 assert.match(storage, /const marker = `\/\$\{PRODUCT_IMAGES_BUCKET\}\/`/,
   'deleteProductImages no longer resolves paths this way — re-derive this guard from the new shape');
 
+// --- Story media: you cannot delete a name you were never told ----------------------------------------
+// The same litter, one bucket over, with a twist that makes it quieter still.
+//
+// Story media used to live at a fixed path — `<slug>/<category>.<ext>` — so a remover could build the
+// name from the category alone. It stopped: picking a new image replaced the file the public page was
+// still serving, before the writer had saved anything (audit round 8). Uploads became content-addressed
+// (`<slug>/<category>-<token>.<ext>`), which means the name is now UNGUESSABLE by design, and the only
+// honest way to remove anything is to list the folder first.
+//
+// deleteStoryMedia never got the message. It kept building `<slug>/<category>.<ext>`, so it addressed a
+// naming scheme nothing writes any more. Worse than dead: storage.remove() on a path that does not exist
+// resolves without error, so a caller would have been told the media was gone while it stayed live on
+// the product page. It had no callers, which is why nobody found out.
+//
+// The rule that keeps it gone is the one the content-addressing already implies: every remove() in this
+// service takes a list the bucket gave us, never a name we made up.
+const storyService = stripComments(readFileSync(join(src, 'services', 'productStoryService.js'), 'utf8'));
+const removals = [...storyService.matchAll(/storage\s*\n?\s*\.from\(BUCKET\)\s*\n?\s*\.remove\(([^)]*)\)/g)]
+  .map((match) => match[1].trim());
+assert.ok(removals.length >= 2,
+  `only ${removals.length} story-media removals found — the derivation broke, not the code`);
+
+// Each argument must be something derived from a listing, not a constructed path. The two that survive
+// are `files.map(...)` and `orphans`, and both are built from storage.list().
+const invented = removals.filter((argument) => !/^(orphans|files\.map|paths\s*=>\s*paths)/.test(argument));
+assert.deepEqual(invented, [],
+  'these story-media removals build the path themselves, and content-addressed uploads mean the name '
+  + `they build belongs to no file:\n  ${invented.join('\n  ')}`);
+// Counted, not merely present: my first attempt asserted a list() existed SOMEWHERE, and deleteStory
+// has one of its own — so removing the sweep's listing left the check green. Every removal needs its own.
+const listings = [...storyService.matchAll(/storage\.from\(BUCKET\)\.list\(/g)].length;
+assert.ok(listings >= removals.length,
+  `${removals.length} story-media removals but only ${listings} listing(s) — a removal that does not ask `
+  + 'the bucket what is in it is removing names it invented');
+
+// And the upload must keep making the name unguessable, or the old remover becomes tempting again.
+assert.match(storyService, /const path = `\$\{productSlug\}\/\$\{category\}-\$\{token\}\.\$\{ext\}`/,
+  'story media is content-addressed; a fixed path lets a save overwrite what the public page is serving');
+
 console.log(`orphanedProductImages selfcheck OK (both exits clean up, ${deleters.length} place deletes a product, path resolution runs)`);
