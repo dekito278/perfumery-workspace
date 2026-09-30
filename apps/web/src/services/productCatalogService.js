@@ -101,11 +101,23 @@ export const getProductPublishChecklist = (product = {}) => {
   const priceNumber = getProductPriceRange(variants) || parseRupiah(product.priceNumber || product.price);
   const stock = getProductStockTotal(variants) || Number(product.stock || 0);
   const slug = toSlug(product.slug || product.name);
+  const isGift = isFreeVialProduct(product);
   const items = [
     { key: 'name', label: 'Nama produk', ok: Boolean(String(product.name || '').trim()), required: true, message: 'Nama produk wajib diisi.' },
     { key: 'category', label: 'Kategori', ok: Boolean(String(product.category || '').trim()), required: true, message: 'Pilih kategori sebelum publish.' },
     { key: 'summary', label: 'Ringkasan katalog', ok: Boolean(String(product.notes || '').trim()), required: true, message: 'Ringkasan singkat wajib diisi.' },
-    { key: 'price', label: 'Harga', ok: priceNumber > 0, required: true, message: 'Harga produk harus lebih dari 0.' },
+    // A gift has no price — by definition, and by enforcement: api/orders/create.js sets a vial line to
+    // zero whatever its variant says, so a price here would be a number nobody can ever be charged.
+    //
+    // Requiring one above zero made the single product the free-vial feature needs impossible to create.
+    // The picker reads the vial out of the PUBLIC catalogue, so the product has to be catalogue-visible;
+    // both product forms refuse every catalogue-visible save while the checklist is unready; and a vial's
+    // variants are all priced 0, so the checklist was never ready. The feature shipped complete, guarded
+    // and tested, and could not be switched on at all — the Studio would not accept the row.
+    //
+    // Same reasoning the stock item carries below: a rule that describes a normal, correct state as an
+    // unfinished product does not protect anything, it just freezes the record.
+    { key: 'price', label: 'Harga', ok: isGift || priceNumber > 0, required: true, message: 'Harga produk harus lebih dari 0.' },
     // Stock is INVENTORY, not product data, so it does not block publishing — and it never blocked a
     // buyer either: the shop already shows "Stok Habis" and disables the button on its own.
     //
