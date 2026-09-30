@@ -179,4 +179,29 @@ assert.deepEqual(byHand, [],
   'these screens compare the pill against the category themselves, so LIMITED finds only the perfumes '
   + `still filed under it and misses every one re-filed into its family:\n  ${byHand.join('\n  ')}`);
 
+// --- Neither catalogue may start on a category it has not checked -------------------------------------
+// The pills are one half of choosing a category; the URL is the other. The desktop page starts at 'All'
+// and promotes to ?family= only once that family turns out to be a real category, with a comment saying
+// why: "so an unknown ?family= never yields an empty list."
+//
+// The phone took the URL value straight into useState. Its promotion effect is identical to the
+// desktop's — and identical is the problem: the effect only ever SETS a category it recognises, so it
+// could never put a wrong one BACK. An unknown ?category= stuck, matchesCatalogCategory matched nothing,
+// and the buyer got an empty shop with no way out but tapping a pill. The phone also accepts ?category=
+// as well as ?family=, so it has one more way in.
+//
+// Reachable by a stale link, a shared URL, or the day a category empties: the four mobile mood cards name
+// real categories today, and one of them (Fresh) has a single perfume behind it.
+//
+// Counted, not listed: the catalogues are the files that filter through matchesCatalogCategory.
+for (const [name, source] of pillScreens.map((rel) => [rel, readFileSync(join(here, '..', rel), 'utf8')])) {
+  assert.match(source, /const \[activeCategory, setActiveCategory\] = useState\('All'\);/,
+    `${name} seeds its active category from somewhere other than 'All'. If that value is not a real `
+    + 'category the promotion effect cannot correct it — it only sets categories it recognises — and the '
+    + 'shop reads as empty until the buyer taps a pill.');
+  // And the correction must still exist, or starting at 'All' would simply ignore the link.
+  assert.match(source, /if \((?:categories|catalogCategories)\.includes\(\w+\)\)/,
+    `${name} no longer promotes a valid family from the URL, so the mood cards stop filtering anything`);
+}
+
 console.log('productBadge selfcheck OK (limited is a badge, the category is free to say the family, and today\'s screen is unchanged)');
