@@ -131,7 +131,15 @@ export const getProductPublishChecklist = (product = {}) => {
     // Kept as a WARNING so the panel still says it out loud. An atelier selling limited runs is sold out
     // often; that is a normal state here, not an unfinished product.
     { key: 'stock', label: 'Stok', ok: stock > 0, required: false, message: 'Stok 0 — produk tampil sebagai Stok Habis.' },
-    { key: 'image', label: 'Gambar', ok: images.length > 0, required: true, message: 'Tambahkan minimal satu gambar produk.' },
+    // Same reasoning as the price above, one row down the list, and the same trap: a gift-stock row has
+    // no product photo to take. Requiring one made the vial impossible to MANAGE — the row can be
+    // created outside the Studio, but every save from either product form aborts while the checklist is
+    // unready, so its per-aroma stock could never be corrected from the screen built for exactly that.
+    //
+    // A rule that describes a normal, correct state as an unfinished product does not protect anything.
+    // Nothing renders a vial's image anywhere: isProductVisibleInStorefront keeps the row out of all
+    // eleven listings, so there is no card, no gallery and no share preview for a missing photo to spoil.
+    { key: 'image', label: 'Gambar', ok: isGift || images.length > 0, required: true, message: 'Tambahkan minimal satu gambar produk.' },
     { key: 'slug', label: 'Slug', ok: Boolean(slug), required: true, message: 'Slug akan dibuat otomatis dari nama produk.' },
     { key: 'description', label: 'Deskripsi', ok: Boolean(String(product.description || '').trim()), required: false, message: 'Deskripsi belum diisi.' },
   ];
