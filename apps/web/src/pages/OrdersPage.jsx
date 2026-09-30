@@ -403,7 +403,11 @@ const OrdersPage = () => {
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total order</span><strong>{summary.total}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Aktif</span><strong>{summary.active}</strong></div>
+            {/* The SAME count the "Aktif" chip below shows. It used to be summary.active, which counts
+                anything not completed or cancelled — measured on this shop: 20 in the hero above an
+                "Aktif 1" chip, the same word twice on one screen with two definitions. The phone hit
+                this first and switched; the two desktop screens kept the old number. */}
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Aktif</span><strong>{filterCounts.active}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Estimasi revenue</span><strong>{formatTotal(summary.revenue)}</strong></div>
           </div>
         </div>

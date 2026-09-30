@@ -197,6 +197,10 @@ const DashboardPage = () => {
     [orders]
   );
   // Same rule as the tab this card opens (?filter=proof_review), so the number and the list agree.
+  const activeOrderCount = useMemo(
+    () => orders.filter((order) => matchesOrderFilter(order, 'active')).length,
+    [orders],
+  );
   const proofReviewOrders = useMemo(
     () => orders.filter((order) => matchesOrderFilter(order, 'proof_review')),
     [orders]
@@ -562,7 +566,8 @@ const DashboardPage = () => {
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-right">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Active orders</div>
-                  <div className="text-2xl font-bold">{orderSummary.active}</div>
+                  {/* Counted the way the order list counts it, since this tile is how he gets there. */}
+                  <div className="text-2xl font-bold">{activeOrderCount}</div>
                 </div>
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

@@ -17,6 +17,7 @@ import {
   hasShippingLabelPrinted,
   isArchivedOrder,
   isFrontQueueOrder,
+  matchesOrderFilter,
   isShippedOrder,
 } from '@/utils/orderWorkflow.js';
 
@@ -106,6 +107,8 @@ const ShipmentsPage = () => {
   const selectedPrintableOrders = selectedShipmentOrders.filter(canExportShippingLabel);
   const visibleOrderKeys = filteredShipmentOrders.map((order) => order.id || order.orderNumber);
   const allVisibleSelected = visibleOrderKeys.length > 0 && visibleOrderKeys.every((key) => selectedOrderSet.has(key));
+  // "Order aktif" means what the order list means by it — one definition, in matchesOrderFilter.
+  const activeOrderCount = shipmentOrders.filter((order) => matchesOrderFilter(order, 'active')).length;
   const readyToShipCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && isFrontQueueOrder(order)).length;
   const labelResiCount = shipmentOrders.filter(hasShippingLabelPrinted).length;
   const missingResiCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && hasShippingLabelPrinted(order) && !order.trackingNumber).length;
@@ -392,7 +395,7 @@ const ShipmentsPage = () => {
             </p>
           </div>
           <div className="dashboard-hero-panel">
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Order aktif</span><strong>{summary.active}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Order aktif</span><strong>{activeOrderCount}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total order</span><strong>{summary.total}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Siap proses</span><strong>{readyToShipCount}</strong></div>
           </div>
