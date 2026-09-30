@@ -21,7 +21,7 @@ import { useCart } from '@/hooks/useCart.js';
 import useProductStory from '@/hooks/useProductStory.js';
 import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
 import { getProductStory } from '@/data/stories/index.js';
-import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
+import { buildOverseasDraft, overseasDraftKeys, quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -306,7 +306,7 @@ const MobileProductDetailPage = () => {
                   isInternational,
                   name: product.name,
                   size: selectedSize,
-                  price: overseasPrice ? formatRupiah(overseasPrice) : formatRupiah(selectedPrice),
+                  price: quotedInternationalPrice(overseasPrice, formatRupiah(selectedPrice)),
                 }), getStorefrontWhatsAppNumber())}
                 target="_blank"
                 rel="noopener noreferrer"

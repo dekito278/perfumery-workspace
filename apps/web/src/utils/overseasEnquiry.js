@@ -1,3 +1,28 @@
+import { usdPriceFor } from './usdPrice.js';
+
+/**
+ * What an export price is CALLED to an international buyer.
+ *
+ * The dollar, because that is the figure they are asked to send. The rupiah beside it is a different
+ * number for a different purpose — Dekito's own export price, which the dollar was rounded UP from at a
+ * rate held below the market — and printing the two together reads as a shop quoting one and charging
+ * another. He did that division himself on 1 Oct 2026 before a buyer got the chance.
+ *
+ * Here rather than in each caller because there are THREE: the product page's action button and both
+ * sticky bars. #362 fixed the button and left the bars, so the phone's bar — the only button most buyers
+ * ever press — went on sending him a rupiah figure he had not offered them in the currency they pay in.
+ *
+ * When there is no export price the CALLER's own label stands in — the domestic one, for an Indonesian
+ * reader asking about an overseas shipment. There is deliberately no rupiah branch for the export price
+ * itself: usdPriceFor only answers null for an amount at or below zero, and at that point there is no
+ * price to format either, so such a branch could never run. A sabotage proved it — dead code that reads
+ * like a safeguard is worse than none, because the next reader trusts it.
+ */
+export const quotedInternationalPrice = (exportPrice, fallback = '') => {
+  const usd = usdPriceFor(exportPrice);
+  return usd ? `US$${usd}` : fallback;
+};
+
 /**
  * The WhatsApp draft an overseas buyer sends, and the label on the button that opens it.
  *

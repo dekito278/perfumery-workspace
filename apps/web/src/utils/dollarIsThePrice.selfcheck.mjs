@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { USD_PRICE_RATE, USD_PRICE_STEP, usdPriceFor } from './usdPrice.js';
 import { DEFAULT_OVERSEAS_MULTIPLIER, overseasPriceFromRetail } from './memberPriceFill.js';
+import { quotedInternationalPrice } from './overseasEnquiry.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..');
@@ -64,14 +65,41 @@ assert.deepEqual(offenders, [],
   'these show an international buyer the rupiah beside the dollar, which invites exactly the division '
   + `that makes the shop look like it quotes one number and charges another:\n  ${offenders.join('\n  ')}`);
 
-// --- and the message that LEAVES the page carries the dollar too ---------------------------------------
+// --- and EVERY message that leaves the page carries the dollar -----------------------------------------
 // The draft is the buyer's own words back to Dekito; a rupiah figure in it is a number he has to explain
 // before he can quote a parcel.
-const button = strip(readFileSync(join(src, 'components', 'storefront', 'OverseasInquiryButton.jsx'), 'utf8'));
-const quoted = button.match(/const quoted = [^\n]*/);
-assert.ok(quoted, 'the enquiry draft no longer builds a quoted price — update this guard');
-assert.match(quoted[0], /US\$|quotedUsd/,
-  'the WhatsApp enquiry quotes rupiah again, so an overseas buyer sends Dekito a number he never offered '
-  + 'them in the currency they are paying in');
+//
+// This check used to look at ONE component and pin the exact expression it happened to contain. Both
+// mistakes cost something the same day. Scoped to that component it never saw the two STICKY BARS, which
+// build their own drafts — and the phone's bar is the only button most buyers ever press, so the leak
+// survived in the most-used path. Pinned to the spelling, it then failed the moment the three callers
+// were given one shared helper, calling a correct change a regression.
+//
+// So: counted, not listed, and held as the rule.
+const drafters = [];
+const spellingTheirOwn = [];
+const walkDrafters = (dir) => {
+  for (const entry of readdirSync(join(src, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) { walkDrafters(rel); continue; }
+    if (!/\.jsx?$/.test(entry.name) || entry.name.includes('.selfcheck.')) continue;
+    const source = strip(readFileSync(join(src, rel), 'utf8'));
+    if (!/buildOverseasDraft\(\{/.test(source)) continue;
+    drafters.push(rel);
+    if (!/quotedInternationalPrice\(/.test(source)) spellingTheirOwn.push(rel);
+  }
+};
+walkDrafters('components'); walkDrafters('pages');
+assert.ok(drafters.length >= 3,
+  `only ${drafters.length} enquiry draft(s) found (${drafters.join(', ')}) — the derivation broke, and the `
+  + 'sticky bars are exactly what goes missing when it does');
+assert.deepEqual(spellingTheirOwn, [],
+  'these build a WhatsApp enquiry without going through quotedInternationalPrice, so an overseas buyer '
+  + `sends Dekito a number in a currency he never quoted:\n  ${spellingTheirOwn.join('\n  ')}`);
+
+// The helper itself, RUN: the dollar when there is one, rupiah only as a stand-in.
+assert.equal(quotedInternationalPrice(1260000), 'US$80');
+assert.equal(quotedInternationalPrice(0, 'Rp 359.000'), 'Rp 359.000', 'with no export price the caller label stands in');
+assert.equal(quotedInternationalPrice(null, ''), '', 'and with nothing at all it says nothing');
 
 console.log(`dollarIsThePrice selfcheck OK (${converters.length} components, dollar alone)`);

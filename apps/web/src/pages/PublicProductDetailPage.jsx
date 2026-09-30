@@ -1,6 +1,6 @@
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
-import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
+import { buildOverseasDraft, overseasDraftKeys, quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
@@ -378,7 +378,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 isInternational,
                 name: product.name,
                 size: selectedSize,
-                price: exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel,
+                price: quotedInternationalPrice(exportPrice, selectedPriceLabel),
               }), getStorefrontWhatsAppNumber())}
               target="_blank"
               rel="noopener noreferrer"

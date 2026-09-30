@@ -1,11 +1,9 @@
 import React from 'react';
 import { Globe } from 'lucide-react';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
-import { formatRupiah } from '@/services/productCatalogService.js';
-import { usdPriceFor } from '@/utils/usdPrice.js';
 import { useExportPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
+import { buildOverseasDraft, overseasDraftKeys, quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 
 /**
  * Asking about an overseas order. Deliberately NOT a checkout: international shipping is quoted by
@@ -51,8 +49,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // purchase — it IS the purchase. Same builder as both sticky bars, so the three cannot drift.
   // In dollars, for the same reason the panel shows dollars: this draft is the buyer's own words back to
   // Dekito, and a rupiah figure in it is a number he then has to explain before he can quote a parcel.
-  const quotedUsd = usdPriceFor(exportPrice);
-  const quoted = quotedUsd ? `US$${quotedUsd}` : (exportPrice ? formatRupiah(exportPrice) : price);
+  const quoted = quotedInternationalPrice(exportPrice, price);
   const message = buildOverseasDraft({
     t, isInternational: overseasVisitor, name: product.name, size, price: quoted,
   });
