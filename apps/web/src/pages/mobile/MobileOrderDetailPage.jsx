@@ -30,6 +30,7 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import {
   getBespokeItem,
+  BESPOKE_PRODUCTION_STEPS,
   getBespokeProductionStatusLabels,
   getOrderAuditLogs,
   getOrderById,
@@ -80,7 +81,7 @@ const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
-const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
+
 const orderSections = [
   { value: 'task', label: 'Tugas' },
   { value: 'payment', label: 'Bayar' },
@@ -110,7 +111,7 @@ const getActiveStep = (status) => {
 };
 
 const getBespokeProductionStep = (status) => {
-  const index = bespokeProductionSteps.indexOf(status || 'review_brief');
+  const index = BESPOKE_PRODUCTION_STEPS.indexOf(status || 'review_brief');
   return index >= 0 ? index : 0;
 };
 
@@ -1314,7 +1315,7 @@ const MobileOrderDetailPage = () => {
               </span>
             </div>
             <div className="grid gap-2">
-              {bespokeProductionSteps.map((step, index) => {
+              {BESPOKE_PRODUCTION_STEPS.map((step, index) => {
                 const done = bespokeProductionStep >= index;
                 return (
                   <div key={step} className="flex items-center gap-2">

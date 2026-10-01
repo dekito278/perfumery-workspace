@@ -616,6 +616,18 @@ export const getOrderStatusLabels = () => orderStatusLabels;
 export const getShipmentStatusLabels = () => shipmentStatusLabels;
 export const getBespokeProductionStatusLabels = () => bespokeProductionStatusLabels;
 
+/**
+ * The bespoke workflow, in order, from the one place that defines it.
+ *
+ * It was written out again as a literal array in CustomerPortalPage and in MobileOrderDetailPage — so the
+ * buyer's progress bar and the owner's checklist each had their own idea of how many steps there are, and
+ * the portal's `grid-cols-6` had a third. All four agreed only because nobody had added a step yet; a
+ * seventh would have been dropped silently from both screens and overflowed the grid.
+ *
+ * Insertion order is the workflow order, which is what makes indexOf() a progress index.
+ */
+export const BESPOKE_PRODUCTION_STEPS = Object.keys(bespokeProductionStatusLabels);
+
 export const getLocalOrders = () => readOrders().map(normalizeOrder);
 export const getOrderSyncQueue = () => readOrderSyncQueue();
 

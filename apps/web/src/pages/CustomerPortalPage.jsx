@@ -23,6 +23,7 @@ import {
 } from '@/services/customerService.js';
 import {
   getBespokeItem,
+  BESPOKE_PRODUCTION_STEPS,
   getBespokeProductionStatusLabels,
   getOrderStatusLabels,
   getShipmentStatusLabels,
@@ -96,6 +97,9 @@ const paymentProofStatusKeys = {
   approved: 'cust.proofApproved',
   rejected: 'cust.proofRejected',
 };
+const stepGridColumns = { 4: 'grid-cols-4', 5: 'grid-cols-5', 6: 'grid-cols-6', 7: 'grid-cols-7' };
+const bespokeStepColumns = stepGridColumns[BESPOKE_PRODUCTION_STEPS.length] || 'grid-cols-6';
+
 const labelFrom = (keys, fallbacks, status, t) => (
   keys[status] ? t(keys[status]) : (fallbacks[status] || status || '')
 );
@@ -114,7 +118,7 @@ const progressSteps = [
   { key: 'shipped', labelKey: 'cust.shipped' },
   { key: 'completed', labelKey: 'cust.done' },
 ];
-const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
+
 const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
 const CUSTOMER_CODE_LAST_STORAGE_KEY = 'dekito.storefront.customerCode.last.v1';
 const DOKU_PAYMENT_TTL_MINUTES = 60;
@@ -184,7 +188,7 @@ const getActiveStep = (status) => {
 };
 
 const getBespokeProductionStep = (status) => {
-  const index = bespokeProductionSteps.indexOf(status || 'review_brief');
+  const index = BESPOKE_PRODUCTION_STEPS.indexOf(status || 'review_brief');
   return index >= 0 ? index : 0;
 };
 
@@ -664,8 +668,11 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
           {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, currentStatus, t)}
         </span>
       </div>
-      <div className={`mt-3 grid grid-cols-6 ${compact ? 'gap-1' : 'gap-2'}`}>
-        {bespokeProductionSteps.map((step, index) => {
+      {/* The column count follows the workflow instead of being typed as a 6. Tailwind cannot take a
+          computed class name, so this is the same lookup-with-a-fallback MobileCommerceLayout already uses
+          for its bottom nav. */}
+      <div className={`mt-3 grid ${bespokeStepColumns} ${compact ? 'gap-1' : 'gap-2'}`}>
+        {BESPOKE_PRODUCTION_STEPS.map((step, index) => {
           const done = activeStep >= index;
           return (
             <div key={step} className="min-w-0">
