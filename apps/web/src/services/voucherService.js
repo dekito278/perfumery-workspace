@@ -219,19 +219,12 @@ export const saveVoucher = async (input) => {
     ? supabase.from(VOUCHER_TABLE).update(payload).eq('id', voucher.id).select('*').single()
     : supabase.from(VOUCHER_TABLE).upsert(payload, { onConflict: 'code' }).select('*').single();
 
-  let { data, error } = await request;
-  // 20260915020000 is applied by hand. Until it is, usage_limit_per_account does not exist and every
-  // voucher save would fail — so drop that one field and retry, exactly as the formula lineage write does.
-  // A per-account limit set before the migration is silently not saved, which is why the Studio field
-  // says so; everything else keeps saving.
-  if (error && /usage_limit_per_account/.test(String(error.message || ''))) {
-    const fallbackPayload = { ...payload };
-    delete fallbackPayload.usage_limit_per_account;
-    const retry = voucher.id && !String(voucher.id).startsWith('voucher-')
-      ? supabase.from(VOUCHER_TABLE).update(fallbackPayload).eq('id', voucher.id).select('*').single()
-      : supabase.from(VOUCHER_TABLE).upsert(fallbackPayload, { onConflict: 'code' }).select('*').single();
-    ({ data, error } = await retry);
-  }
+  const { data, error } = await request;
+  // 20260915020000 was applied by hand, and until it was, usage_limit_per_account did not exist — so this
+  // dropped that one field and retried, saving the voucher without the limit Dekito had just typed.
+  // Measured 2026-10-02: the column exists, so the retry could only ever fire on an error that MENTIONED
+  // the column for some other reason, and then it would discard a per-account limit and report the save as
+  // successful. Gone, along with the Studio hint that told him the field needed a migration.
   if (error) {
     throw new Error(error.message || 'Gagal menyimpan voucher');
   }

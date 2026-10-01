@@ -436,7 +436,7 @@ const MobileVoucherManagementPage = () => {
                   className="mobile-form-control"
                 />
                 <span className="text-[10px] font-semibold normal-case text-[#6b7280]">
-                  Di atas 0, kode ini wajib login dan hanya bisa dipakai sebanyak itu per akun. Butuh migrasi 20260915020000.
+                  Di atas 0, kode ini wajib login dan hanya bisa dipakai sebanyak itu per akun.
                 </span>
               </label>
 

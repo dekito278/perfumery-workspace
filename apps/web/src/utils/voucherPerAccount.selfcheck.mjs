@@ -140,7 +140,21 @@ for (const form of ['pages/VoucherManagementPage.jsx', 'pages/mobile/MobileVouch
   const source = read(...form.split('/'));
   assert.match(source, /usageLimitPerAccount: Number\(draft\.usageLimitPerAccount \|\| 0\)/, `${form} must save the limit`);
   assert.match(source, /Limit per akun/, `${form} must offer the field`);
-  assert.match(source, /20260915020000/, `${form} must say the field needs the migration, since a save before it silently drops`);
+  // The hint and the save must AGREE, in whichever direction the save works. The field used to warn
+  // "Butuh migrasi 20260915020000" because saveVoucher dropped the column and retried whenever the error
+  // mentioned it — so the limit Dekito had just typed was silently not saved. Measured 2026-10-02: the
+  // column exists, the retry is gone, and the warning became a lie about a working field.
+  //
+  // A biconditional rather than a new fixed expectation: if anyone brings the shedding retry back, the
+  // warning has to come back with it, and this fails either way round. (The guard caught exactly this
+  // when the hint was removed from one of the two forms and not the other.)
+  const shedsTheColumn = /delete \w+\.usage_limit_per_account/.test(service);
+  const warnsAboutIt = /Butuh migrasi/.test(source);
+  assert.equal(warnsAboutIt, shedsTheColumn,
+    shedsTheColumn
+      ? `${form} must warn that the limit is not saved yet, because saveVoucher still drops the column`
+      : `${form} warns about a migration that is applied — saveVoucher no longer drops the column, so the `
+        + 'field saves and the warning tells him a working feature is broken');
 }
 
 // --- Every way to apply a voucher must be able to see the account --------------------------------------
