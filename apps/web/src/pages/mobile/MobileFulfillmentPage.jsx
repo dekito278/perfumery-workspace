@@ -21,7 +21,7 @@ import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
-import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
@@ -226,8 +226,12 @@ const MobileFulfillmentPage = () => {
     }
     setBulkSaving(true);
     try {
-      await Promise.all(selectedSearchedOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
-      toast.success(`${selectedSearchedOrders.length} order ditandai paid`);
+      const marked = await settleBulk(selectedSearchedOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
+      if (marked.failed) {
+        toast.error(`${marked.ok} dari ${marked.total} order ditandai paid; ${marked.failed} gagal. ${marked.reason}`.trim());
+      } else {
+        toast.success(`${marked.ok} order ditandai paid`);
+      }
     } catch (error) {
       toast.error(error.message || 'Gagal mark paid massal');
     } finally {
@@ -333,7 +337,7 @@ const MobileFulfillmentPage = () => {
         toast.error('Pilih order paid untuk print resi');
         return;
       }
-      await Promise.all(selectedPrintableOrders.map((order) => (
+      const moves = await settleBulk(selectedPrintableOrders.map((order) => (
         hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
           ? Promise.resolve()
           : updateOrderShipment(order.id || order.orderNumber, {
@@ -344,6 +348,10 @@ const MobileFulfillmentPage = () => {
       )));
       await reload();
       setQueueFilter('packing');
+      if (moves.failed) {
+        toast.error(`${printedCount} resi PDF siap, tapi ${moves.failed} order gagal dipindah ke Label/resi. ${moves.reason}`.trim());
+        return;
+      }
       toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
     } catch (error) {
       toast.error(error?.message || 'Gagal print resi PDF');

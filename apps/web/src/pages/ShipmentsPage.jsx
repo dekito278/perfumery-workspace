@@ -12,7 +12,7 @@ import { useOrders } from '@/hooks/useOrders.js';
 import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderService.js';
 import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
-import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
@@ -224,7 +224,7 @@ const ShipmentsPage = () => {
     };
     setBulkSaving(true);
     try {
-      await Promise.all(selectedShipmentOrders.map((order) => {
+      const updated = await settleBulk(selectedShipmentOrders.map((order) => {
         const key = order.id || order.orderNumber;
         const currentDraft = drafts[key] || buildShipmentDraft(order);
         return updateOrderShipment(key, {
@@ -236,7 +236,11 @@ const ShipmentsPage = () => {
         });
       }));
       await reload();
-      toast.success(`${selectedShipmentOrders.length} pengiriman diperbarui`);
+      if (updated.failed) {
+        toast.error(`${updated.ok} dari ${updated.total} pengiriman diperbarui; ${updated.failed} gagal. ${updated.reason}`.trim());
+      } else {
+        toast.success(`${updated.ok} pengiriman diperbarui`);
+      }
     } catch (error) {
       toast.error(error.message || 'Update massal pengiriman gagal');
     } finally {
@@ -298,7 +302,7 @@ const ShipmentsPage = () => {
         toast.error('Pilih order paid untuk cetak bulk resi');
         return;
       }
-      await Promise.all(selectedPrintableOrders.map((order) => {
+      const moves = await settleBulk(selectedPrintableOrders.map((order) => {
         if (hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)) return Promise.resolve();
         const key = order.id || order.orderNumber;
         const currentDraft = drafts[key] || buildShipmentDraft(order);
@@ -310,6 +314,10 @@ const ShipmentsPage = () => {
       }));
       await reload();
       setFulfillmentFilter('label_resi');
+      if (moves.failed) {
+        toast.error(`${printedCount} resi PDF siap, tapi ${moves.failed} order gagal dipindah ke Label/resi. ${moves.reason}`.trim());
+        return;
+      }
       toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
     } catch (error) {
       toast.error(error.message || 'Gagal membuat bulk resi PDF');
@@ -325,8 +333,12 @@ const ShipmentsPage = () => {
     }
     setBulkSaving(true);
     try {
-      await Promise.all(selectedShipmentOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
-      toast.success(`${selectedShipmentOrders.length} order ditandai paid`);
+      const marked = await settleBulk(selectedShipmentOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
+      if (marked.failed) {
+        toast.error(`${marked.ok} dari ${marked.total} order ditandai paid; ${marked.failed} gagal. ${marked.reason}`.trim());
+      } else {
+        toast.success(`${marked.ok} order ditandai paid`);
+      }
     } catch (error) {
       toast.error(error.message || 'Gagal mark paid massal');
     } finally {
