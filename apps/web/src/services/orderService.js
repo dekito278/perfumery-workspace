@@ -682,23 +682,7 @@ export const retryLocalOrderSync = async (orderIdOrNumber) => {
       .select('*')
       .single();
 
-    if (error) {
-      const missingDokuResponseColumn = String(error.message || '').includes('doku_response');
-      if (!missingDokuResponseColumn) throw error;
-      const retryPayload = { ...payload };
-      delete retryPayload.doku_response;
-      const { data: retryData, error: retryError } = await supabase
-        .from('storefront_orders')
-        .upsert(retryPayload, { onConflict: 'order_number' })
-        .select('*')
-        .single();
-      if (retryError) throw retryError;
-      const syncedOrder = normalizeOrder(retryData);
-      writeOrders(localOrders.filter((order) => order.orderNumber !== localOrder.orderNumber));
-      clearOrderSyncIssue(localOrder.orderNumber);
-      window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-      return { ok: true, order: syncedOrder };
-    }
+    if (error) throw error;
 
     const syncedOrder = normalizeOrder(data);
     writeOrders(localOrders.filter((order) => order.orderNumber !== localOrder.orderNumber));
@@ -1627,29 +1611,15 @@ export const updateOrderPaymentStatus = async (orderId, {
     },
   };
 
-  // Older databases may not have doku_response or the payment-session columns. Shed exactly those and
-  // retry — anything else, including a write that changed zero rows, has to surface. This function is what
-  // "tandai lunas" calls, so a swallowed failure here tells the owner money arrived when it did not.
-  const mentionsColumn = (candidate, columns) => columns.some((column) => String(candidate?.message || '').includes(column));
-
-  try {
-    await updateOrderRow(orderId, patch);
-  } catch (error) {
-    if (mentionsColumn(error, ['doku_response'])) {
-      const retryPatch = { ...patch };
-      delete retryPatch.doku_response;
-      await updateOrderRow(orderId, retryPatch);
-    } else if (mentionsColumn(error, ['payment_url', 'payment_expires_at', 'payment_session_id', 'payment_response'])) {
-      await updateOrderRow(orderId, {
-        payment_status: paymentStatus,
-        payment_provider: paymentProvider,
-        payment_reference: paymentReference,
-        ...(status ? { status } : {}),
-      });
-    } else {
-      throw error;
-    }
-  }
+  // This used to shed doku_response, or fall back to a FOUR-FIELD patch, whenever the error message
+  // happened to mention one of six column names — an accommodation for databases where those columns had
+  // not been added yet. Measured 2026-10-02: all six exist in production and all 33 orders carry a
+  // doku_response, so the accommodation was dead, and dead code that reads like a safeguard is worse than
+  // none. It matched on a SUBSTRING of the message, so any error merely naming one of those columns — a
+  // constraint, a bad jsonb value, a value too long — silently dropped the gateway's own record of the
+  // payment, or the payment URL and its expiry, and returned as if the write had succeeded. This function
+  // is what "tandai lunas" calls: a failure here must reach the owner, not be patched around.
+  await updateOrderRow(orderId, patch);
 
   if (audit) {
     await createOrderAuditLog(paymentAudit);

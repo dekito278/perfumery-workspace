@@ -353,7 +353,7 @@ const VoucherManagementPage = () => {
                       className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
                     <span className="text-[10px] font-semibold normal-case text-muted-foreground">
-                      Di atas 0, kode ini wajib login dan hanya bisa dipakai sebanyak itu per akun. Butuh migrasi 20260915020000.
+                      Di atas 0, kode ini wajib login dan hanya bisa dipakai sebanyak itu per akun.
                     </span>
                   </label>
                   <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
