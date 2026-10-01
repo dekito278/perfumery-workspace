@@ -1061,7 +1061,17 @@ export const getOrderAuditLogs = async (orderIdOrNumber) => {
   }
 };
 
-export const getAllOrderAuditLogs = async ({ limit = 200 } = {}) => {
+/**
+ * How many audit entries the Studio feed loads at once.
+ *
+ * Exported because the screen has to be able to SAY it. Measured 2026-10-02: 558 rows in production, so
+ * this window covers the newest 200 and the other 358 — everything before 2 August — is not loaded. The
+ * dashboard then derived its event and admin filters from the rows it had, which offered 5 of the 7 event
+ * types and 2 of the 4 actors, and said nothing about either.
+ */
+export const ORDER_AUDIT_LOG_PAGE_SIZE = 200;
+
+export const getAllOrderAuditLogs = async ({ limit = ORDER_AUDIT_LOG_PAGE_SIZE } = {}) => {
   const localLogs = readLocalAuditLogs().map(normalizeAuditLog);
 
   try {

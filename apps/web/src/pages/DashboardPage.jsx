@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
-import { isReadyToPack, matchesOrderFilter } from '@/utils/orderWorkflow.js';
+import { isReadyToPack, matchesOrderFilter, ORDER_AUDIT_LABELS } from '@/utils/orderWorkflow.js';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, FileCheck2, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent } from 'lucide-react';
@@ -20,7 +20,7 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import { formatStatus } from '@/utils/formatting.js';
 import { getProductLowStock } from '@/services/productCatalogService.js';
 import { checkDokuHealth, checkShippingHealth, getOpsHealthSnapshot, runOpsHealthRetry } from '@/services/opsHealthService.js';
-import { getAllOrderAuditLogs, isOrderReservationExpired } from '@/services/orderService.js';
+import { getAllOrderAuditLogs, isOrderReservationExpired, ORDER_AUDIT_LOG_PAGE_SIZE } from '@/services/orderService.js';
 import { getVouchers } from '@/services/voucherService.js';
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -45,6 +45,10 @@ const auditActionLabels = {
   order_cancelled: 'Cancel order',
   order_deleted: 'Delete order',
 };
+// Rendered rows, in one place: the number is printed in the scope line below the list, and two spellings
+// of it would make that line a lie.
+const AUDIT_ROWS_SHOWN = 8;
+
 const importantAuditKeys = ['paymentStatus', 'status', 'paymentProofStatus', 'shipmentStatus', 'trackingNumber', 'payment_status', 'payment_proof_status', 'shipment_status', 'tracking_number'];
 
 const formatAuditValue = (value) => {
@@ -275,12 +279,17 @@ const DashboardPage = () => {
       }));
     return [...queued, ...stalePending];
   }, [navigate, opsHealth.pendingPaymentOrders, opsHealth.syncQueue]);
+  // Unlike the events, there is no canonical list of admins — they only exist in the rows. So this stays a
+  // sample, and the panel says so underneath rather than letting the gap be silent: measured 2026-10-02,
+  // two of the four actors in the log had acted recently enough to appear here.
   const auditAdmins = useMemo(() => (
     Array.from(new Set(orderAuditLogs.map((log) => log.actorEmail || log.actorName || 'system'))).filter(Boolean)
   ), [orderAuditLogs]);
-  const auditEvents = useMemo(() => (
-    Array.from(new Set(orderAuditLogs.map((log) => log.action))).filter(Boolean)
-  ), [orderAuditLogs]);
+  // The event filter is the VOCABULARY, not a sample of it. Derived from the rows, it offered only the
+  // event types that happened to fall inside the loaded window: measured 2026-10-02, five of seven, with
+  // order_status_updated and payment_proof_uploaded impossible to select at all even though both exist.
+  // A filter built from what you already loaded can never ask about what you did not.
+  const auditEvents = useMemo(() => Object.keys(ORDER_AUDIT_LABELS), []);
   const filteredAuditLogs = useMemo(() => {
     const query = auditFilters.query.trim().toLowerCase();
     return orderAuditLogs.filter((log) => {
@@ -733,7 +742,7 @@ const DashboardPage = () => {
               </select>
             </div>
             <div className="mt-4 grid gap-3">
-              {filteredAuditLogs.slice(0, 8).map((log) => {
+              {filteredAuditLogs.slice(0, AUDIT_ROWS_SHOWN).map((log) => {
                 const changes = getAuditChanges(log.previousValues, log.nextValues);
                 const important = changes.some((change) => importantAuditKeys.includes(change.key));
                 return (
@@ -760,6 +769,11 @@ const DashboardPage = () => {
               })}
               {!filteredAuditLogs.length ? <p className="rounded-2xl border border-dashed bg-[#fbfaf7] px-4 py-5 text-center text-sm font-semibold text-muted-foreground">Belum ada audit log yang cocok dengan filter.</p> : null}
             </div>
+            {/* What the panel is actually looking at. Without this the feed reads as the whole history:
+                eight rows rendered, out of a window of 200, out of 558 in the database. */}
+            <p className="mt-3 text-xs font-semibold text-muted-foreground">
+              {`Menampilkan ${Math.min(filteredAuditLogs.length, AUDIT_ROWS_SHOWN)} dari ${filteredAuditLogs.length} entri yang cocok, dalam ${ORDER_AUDIT_LOG_PAGE_SIZE} entri terakhir yang dimuat. Riwayat lebih lama ada di halaman order masing-masing.`}
+            </p>
           </section>
         </DashboardSection>
 
