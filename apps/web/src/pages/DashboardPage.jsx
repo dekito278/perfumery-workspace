@@ -212,8 +212,15 @@ const DashboardPage = () => {
       .reduce((sum, order) => sum + Number(order.subtotal || 0), 0),
     [orders],
   );
+  // The two halves of this used to disagree with each other: isOrderReservationExpired excludes a
+  // cancelled or completed order on purpose, and the paymentStatus check beside it let them all back in.
+  // Measured 2026-10-02: all SIX orders this counted were cancelled/expired — closed business, sitting in
+  // a row of things to act on. The tally now means what the row means.
   const expiredPaymentOrders = useMemo(
-    () => orders.filter((order) => order.paymentStatus === 'expired' || isOrderReservationExpired(order)),
+    () => orders.filter((order) => (
+      !['cancelled', 'completed'].includes(order.status)
+      && (order.paymentStatus === 'expired' || isOrderReservationExpired(order))
+    )),
     [orders],
   );
   const shipmentAgingOrders = useMemo(() => {
@@ -797,8 +804,8 @@ const DashboardPage = () => {
                   <div className="mt-1 text-2xl font-bold text-amber-700">{opsHealth.pendingPaymentOrders.length}</div>
                 </div>
                 <div className="rounded-2xl bg-white px-4 py-3">
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Expired</div>
-                  <div className="mt-1 text-2xl font-bold text-rose-700">{opsHealth.expiredPaymentOrders.length}</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">DOKU lewat tempo</div>
+                  <div className="mt-1 text-2xl font-bold text-rose-700">{opsHealth.dokuWindowLapsedOrders.length}</div>
                 </div>
                 <div className="rounded-2xl bg-white px-4 py-3">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Butuh resi</div>

@@ -1,7 +1,7 @@
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import {
-  getOrderReservationExpiresAt,
   getOrderSyncQueue,
+  isOrderReservationExpired,
   retryOrderSyncQueue,
   sweepExpiredOrderReservations,
 } from '@/services/orderService.js';
@@ -14,16 +14,23 @@ const toTimestamp = (value) => {
 
 export const getOpsHealthSnapshot = (orders = []) => {
   const now = Date.now();
+  const nowDate = new Date(now);
   const syncQueue = getOrderSyncQueue();
   const pendingPaymentOrders = orders.filter((order) => (
     order.paymentProvider === 'doku'
     && ['unpaid', 'pending'].includes(order.paymentStatus)
     && !['completed', 'cancelled'].includes(order.status)
   ));
-  const expiredPaymentOrders = pendingPaymentOrders.filter((order) => {
-    const expiresAt = toTimestamp(order.paymentExpiresAt || getOrderReservationExpiresAt(order));
-    return expiresAt && expiresAt <= now;
-  });
+  // ONE spelling of "this reservation has run out", and it is orderService's. This had its own, which
+  // compared the same two timestamps and then stopped — missing every exception the real rule spells out
+  // with its reasons: inventory that was never deducted (nothing is being held, so there is nothing to
+  // reclaim), a manual-transfer buyer whose proof is in and "must NEVER auto-cancel", and an international
+  // buyer still waiting on US for a shipping figure, who "loses their order to our slowness" otherwise.
+  //
+  // Measured 2026-10-02: zero rows reach this today, because all five orders awaiting payment are
+  // manual_transfer_bca and the filter above takes only DOKU. The copy was alive on today's data alone —
+  // the first DOKU order to sit past its window with a submitted proof would have been called expired.
+  const dokuWindowLapsedOrders = pendingPaymentOrders.filter((order) => isOrderReservationExpired(order, nowDate));
   const shipmentNeedsResi = orders.filter((order) => (
     order.paymentStatus === 'paid'
     && ['packing', 'ready_to_ship', 'shipped'].includes(order.shipmentStatus)
@@ -34,10 +41,10 @@ export const getOpsHealthSnapshot = (orders = []) => {
   return {
     syncQueue,
     pendingPaymentOrders,
-    expiredPaymentOrders,
+    dokuWindowLapsedOrders,
     shipmentNeedsResi,
     localOrders,
-    hasCriticalIssues: Boolean(syncQueue.some((item) => item.severity === 'critical') || expiredPaymentOrders.length),
+    hasCriticalIssues: Boolean(syncQueue.some((item) => item.severity === 'critical') || dokuWindowLapsedOrders.length),
   };
 };
 
