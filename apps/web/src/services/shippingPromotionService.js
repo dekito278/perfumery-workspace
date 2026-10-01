@@ -94,7 +94,22 @@ export const getShippingPromotionSettingsAsync = async () => {
 
     if (error) throw error;
     if (!data) {
-      return getShippingPromotionSettings();
+      // The server ANSWERED and there is no promo row. That IS the answer, and the answer is "no promo".
+      //
+      // Falling back to this browser's cache here is what kept a finished promo alive on every device
+      // that had ever seen it. resetShippingPromotionSettings deletes the row and clears only the
+      // ADMIN's own copy — every buyer keeps theirs, so they went on being QUOTED a discount while
+      // api/orders/create.js, which prices from the row, charged the full fare. Shown one courier fee
+      // and charged another is the exact failure the comments below exist to prevent, in the one
+      // direction they did not cover.
+      //
+      // The distinction is the one publicTrackingService already draws: a lookup that FAILED still
+      // falls back to the cache (see the catch), because not knowing is not the same as knowing there
+      // is nothing. This branch is the shop knowing there is nothing.
+      //
+      // Cached rather than merely returned, so the stale copy is overwritten instead of waiting to be
+      // read by the next synchronous caller.
+      return cacheSettings(defaultShippingPromotionSettings, false);
     }
 
     return cacheSettings(fromDatabaseRow(data), false);
