@@ -12,7 +12,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
   PAYMENT_PROOF_AUDIT_ACTIONS,
-  PAYMENT_PROOF_AUDIT_LABELS,
+  ORDER_AUDIT_LABELS,
   bespokeBriefRows,
   describeStockReservation,
   getNextOrderStatusForPayment,
@@ -167,7 +167,7 @@ const getProofTimeline = (logs = []) => logs
     return {
       id: log.id,
       attempt: proofLogs.length - index,
-      label: PAYMENT_PROOF_AUDIT_LABELS[log.action] || log.action,
+      label: ORDER_AUDIT_LABELS[log.action] || log.action,
       at: log.createdAt,
       actor: log.actorName || log.actorEmail || 'System',
       status,
