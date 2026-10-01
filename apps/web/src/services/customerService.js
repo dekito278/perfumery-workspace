@@ -234,6 +234,7 @@ export const verifyCustomerPortalSecurity = async (customerCode, securityAnswer)
 
     if (error) throw error;
     const result = data?.[0];
+    // The RPC ANSWERED and refused: the answer really is wrong. null means exactly that, and nothing else.
     if (!result?.customer?.customer_code) return null;
 
     return {
@@ -243,8 +244,14 @@ export const verifyCustomerPortalSecurity = async (customerCode, securityAnswer)
       persistence: 'database',
     };
   } catch (error) {
+    // The check FAILED — offline, Supabase down, RPC renamed. Swallowing that into null told the customer
+    // their own security answer was wrong, about a question they set themselves: after two or three
+    // tries the reasonable conclusion is that they have lost access to their own orders and invoices.
+    //
+    // Rethrow, the way publicTrackingService does for the same reason: not knowing is not the same as
+    // knowing the answer is wrong, and only the caller can say "try again" instead of "that is wrong".
     console.warn('Customer portal security verification failed:', error.message || error);
-    return null;
+    throw error;
   }
 };
 
