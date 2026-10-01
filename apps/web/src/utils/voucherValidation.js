@@ -21,6 +21,9 @@ export const VOUCHER_VALIDATION_REASONS = {
   USAGE_LIMIT_REACHED: 'usage_limit_reached',
   ACCOUNT_REQUIRED: 'account_required',
   ACCOUNT_LIMIT_REACHED: 'account_limit_reached',
+  // Not a refusal: we could not find out whether this account may use the code. Distinct from both
+  // of the two above, which each accuse the buyer of something.
+  ACCOUNT_CHECK_FAILED: 'account_check_failed',
   NOT_APPLICABLE: 'not_applicable',
   INVALID_DISCOUNT: 'invalid_discount',
 };

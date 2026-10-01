@@ -288,22 +288,25 @@ export const deleteVoucher = async (idOrCode) => {
 export const getMyVoucherRedemptions = async (code) => {
   const normalizedCode = normalizeVoucherCode(code);
   if (!normalizedCode) return 0;
-  try {
-    const { data, error } = await supabase.rpc('storefront_voucher_redeemed_by_me', { p_code: normalizedCode });
-    if (error) throw error;
-    return Number(data) || 0;
-  } catch {
-    return 0;
-  }
+  const { data, error } = await supabase.rpc('storefront_voucher_redeemed_by_me', { p_code: normalizedCode });
+  // A count that could not be taken is not a count of zero. Swallowing it here told checkout the account
+  // had never used the code, so the discount was applied, the buyer filled the whole form, and
+  // storefront_record_voucher_usage — the real authority — refused the order at the very last step.
+  if (error) throw error;
+  return Number(data) || 0;
 };
 
 const getSignedInAccountId = async () => {
-  try {
-    const { data } = await supabase.auth.getUser();
-    return data?.user?.id || null;
-  } catch {
-    return null;
-  }
+  // Local first: no stored session means a genuine anonymous visitor, answered without a round trip and
+  // without a failure to misread. Only a buyer who HAS a session goes on to the server — so anything that
+  // fails past this point is a failure to tell WHO they are, not proof that they are nobody. The old
+  // catch-all returned null for both, which told a signed-in buyer on a flaky connection to "masuk dengan
+  // Google dulu": a login they already have, for an account the voucher was printed for.
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData?.session) return null;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return data?.user?.id || null;
 };
 
 export const applyVoucherToSubtotalAsync = async ({ code, voucher, subtotal = 0, items = [], vouchers, now } = {}) => {
@@ -312,8 +315,25 @@ export const applyVoucherToSubtotalAsync = async ({ code, voucher, subtotal = 0,
   // Only asked when the voucher actually has a per-account limit: every other code is unaffected, and an
   // extra round trip on every keystroke of an ordinary code would be paid by everyone for nothing.
   const perAccount = Number(matchedVoucher?.usageLimitPerAccount || 0) > 0;
-  const accountId = perAccount ? await getSignedInAccountId() : null;
-  const accountRedemptions = perAccount && accountId ? await getMyVoucherRedemptions(normalizedCode) : 0;
+  let accountId = null;
+  let accountRedemptions = 0;
+  try {
+    accountId = perAccount ? await getSignedInAccountId() : null;
+    accountRedemptions = perAccount && accountId ? await getMyVoucherRedemptions(normalizedCode) : 0;
+  } catch (error) {
+    // Neither "you are not signed in" nor "you have never used this" — we could not find out. Saying
+    // either one accuses the buyer of something, and the second is worse than an accusation: it lets a
+    // doomed discount onto the page and spends the buyer's whole checkout before the server refuses it.
+    console.warn('Per-account voucher check failed:', error?.message || error);
+    return {
+      valid: false,
+      reason: VOUCHER_VALIDATION_REASONS.ACCOUNT_CHECK_FAILED,
+      message: `Voucher ${normalizedCode} belum bisa dicek — koneksi bermasalah. Coba lagi sebentar.`,
+      voucher: matchedVoucher,
+      subtotal: toAmount(subtotal),
+      discountAmount: 0,
+    };
+  }
   const validation = validateVoucher({
     code: normalizedCode,
     voucher: matchedVoucher,

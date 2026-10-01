@@ -114,7 +114,24 @@ assert.match(sqlRaw, /VERIFY/); assert.match(sqlRaw, /ROLLBACK/);  // these live
 // --- 8. The advisory count is advisory, and cannot grant anything ------------------------------------------
 const service = read('services', 'voucherService.js');
 assert.match(service, /storefront_voucher_redeemed_by_me/, 'checkout asks before the buyer fills the form');
-assert.match(service, /return 0;\s*\n\s*\}\s*\n\};/, 'and treats any failure as 0');
+// This used to assert the count "treats any failure as 0", which is the opposite of what the heading
+// above it promises: 0 means NEVER USED, so a failed count GRANTED the discount, the buyer filled the
+// whole form, and storefront_record_voucher_usage refused the order at the last step. Hold the rule the
+// heading states — a check that could not run must refuse, not grant.
+{
+  const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+  const code = strip(service);
+  const at = code.indexOf('export const applyVoucherToSubtotalAsync');
+  const body = code.slice(at, code.indexOf('\n};', at));
+  const rescue = body.slice(body.indexOf('} catch ('));
+  assert.ok(rescue.length > 40, 'the per-account check must handle its own failure');
+  assert.match(rescue, /valid: false/,
+    'a per-account check that could not RUN must refuse the voucher — answering 0 redemptions grants the '
+    + 'discount to an account that may already have spent it');
+  assert.match(rescue, /ACCOUNT_CHECK_FAILED/,
+    'and say so as its own reason, not as "not signed in" or "already used" — both accuse the buyer');
+  assert.match(rescue, /discountAmount: 0/, 'with no discount attached');
+}
 assert.match(service, /const perAccount = Number\(matchedVoucher\?\.usageLimitPerAccount \|\| 0\) > 0;/,
   'the extra round trip is only paid by codes that actually have a per-account limit');
 
