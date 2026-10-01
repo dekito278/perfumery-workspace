@@ -63,13 +63,27 @@ const sbRpc = async (fn, body) => {
   return r.json();
 };
 
-// Reads a table that may not exist yet: the tier pricing migration is applied by hand, and until it is,
-// every buyer is simply retail. A missing table is not an error here.
+// Reads a relation that may not exist yet: the migrations here are applied by hand, and until they are,
+// every buyer is simply retail. A missing table or column is not an error.
+//
+// EVERY OTHER failure is. The catch-all this replaces had a headline about unapplied migrations and a
+// subject of "anything at all", and all three callers price or gate on the answer: an empty array is
+// read as retail tier, no tier prices, and no voucher redemptions. So a Supabase read that merely
+// blipped charged a member the RETAIL price for every line — the exact case the tier-price caller's own
+// comment calls "the worst version of two implementations disagreeing", a buyer shown one price and
+// charged another — and nothing compares the total against what she confirmed on screen.
+//
+// Measured before narrowing this: storefront_customers.tier, storefront_voucher_usage_records.auth_user_id
+// and storefront_product_prices all exist in production today, so the delay this was written for is over
+// and nothing routine reaches the swallow any more.
+const MISSING_RELATION = /42P01|42703|PGRST20[45]|does not exist|Could not find the (table|column)/i;
+
 const sbSelectOptional = async (path) => {
   try {
     return await sbSelect(path);
-  } catch {
-    return [];
+  } catch (error) {
+    if (MISSING_RELATION.test(String(error?.message || ''))) return [];
+    throw error;
   }
 };
 
@@ -86,6 +100,8 @@ const resolveBuyer = async (req) => {
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token) return ANONYMOUS_BUYER;
 
+  let verified = '';
+
   const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
   const key = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return ANONYMOUS_BUYER;
@@ -98,20 +114,30 @@ const resolveBuyer = async (req) => {
     const user = await response.json();
     if (!user?.id) return ANONYMOUS_BUYER;
 
-    const rows = await sbSelectOptional(
-      `storefront_customers?auth_user_id=eq.${encodeURIComponent(user.id)}&select=tier&limit=1`,
-    );
-    // Signed in at all makes someone a member; only a row an admin wrote makes them a reseller.
-    return { tier: rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member', authUserId: user.id };
+    verified = user.id;
   } catch {
+    // A token that does not verify is retail, deliberately: that is the whole point of not trusting the
+    // customer code the browser sends. Reached only while the identity is still unknown.
     return ANONYMOUS_BUYER;
   }
+
+  // Past this line the identity is PROVEN, and the next rule says a signed-in buyer is at least a member.
+  // Falling back to ANONYMOUS_BUYER here contradicted it and charged her retail — so a failed tier read
+  // refuses the order instead of guessing a price. The same call this endpoint already makes for an
+  // invalid voucher: refuse, and let checkout re-price, rather than charge more than she confirmed.
+  const rows = await sbSelectOptional(
+    `storefront_customers?auth_user_id=eq.${encodeURIComponent(verified)}&select=tier&limit=1`,
+  );
+  // Signed in at all makes someone a member; only a row an admin wrote makes them a reseller.
+  return { tier: rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member', authUserId: verified };
 };
 
 // How much of this code the account has already redeemed. Advisory: it lets checkout be refused with the
 // right message before an order exists, but storefront_record_voucher_usage is what actually enforces
 // the limit, inside the lock. A missing auth_user_id column (migration not applied) reads as 0, which is
-// exactly right — without the column there is no per-account limit to enforce either.
+// exactly right — without the column there is no per-account limit to enforce either. A read that FAILED
+// no longer reads as 0: it used to let the pre-check pass and leave the refusal to the lock below, where
+// the buyer was told the quota had run out.
 const countAccountRedemptions = async (code, authUserId) => {
   if (!authUserId) return 0;
   const rows = await sbSelectOptional(
@@ -119,6 +145,31 @@ const countAccountRedemptions = async (code, authUserId) => {
     + `&auth_user_id=eq.${encodeURIComponent(authUserId)}&select=amount`,
   );
   return (rows || []).reduce((sum, row) => sum + (Number(row?.amount) || 0), 0);
+};
+
+// Why a voucher was refused, in words the buyer can act on.
+//
+// storefront_record_voucher_usage raises THREE different things, and this endpoint used to answer all of
+// them with "kemungkinan kuota habis" — the global-quota wording. The two it got wrong both mattered:
+// a buyer who was not signed in was told the code had run out, so the one thing that would have fixed it
+// (signing in, which is also what the member price is for — see the migration that added the rule) read
+// as pointless; and a buyer who had already redeemed it was sent to look for another code.
+//
+// An allowlist, not an echo: a database error message is not something to forward to a buyer, and the
+// generic line stays the default for anything unrecognised. Matched on the part of each raise that
+// carries no interpolated value, so a code with an unlucky name cannot change which branch fires.
+const VOUCHER_REFUSAL_MESSAGES = [
+  ['hanya untuk pembeli yang masuk', (code) => `Voucher ${code} hanya untuk pembeli yang masuk ke akunnya. Masuk dengan Google dulu — sekalian dapat harga member.`],
+  ['sudah dipakai di akun ini', (code) => `Voucher ${code} sudah pernah dipakai di akun ini.`],
+  ['Kuota voucher sudah habis', (code) => `Voucher ${code} sudah habis kuotanya. Checkout ulang tanpa voucher tersebut.`],
+];
+
+const voucherRefusalMessage = (error, code) => {
+  const raised = String(error?.message || '');
+  const matched = VOUCHER_REFUSAL_MESSAGES.find(([signature]) => raised.includes(signature));
+  return matched
+    ? matched[1](code)
+    : `Voucher ${code} sudah tidak tersedia (kemungkinan kuota habis). Checkout ulang tanpa voucher tersebut.`;
 };
 
 // --- authoritative price recompute (never trust a client price) ------------------------------------
@@ -536,7 +587,7 @@ export default async function handler(req, res) {
           headers: { ...headers, Prefer: 'return=minimal' },
           body: JSON.stringify({ status: 'cancelled', payment_status: 'expired' }),
         }).catch(() => {});
-        return jsonResponse(res, 409, { message: `Voucher ${voucherSnapshot.code} sudah tidak tersedia (kemungkinan kuota habis). Checkout ulang tanpa voucher tersebut.` });
+        return jsonResponse(res, 409, { message: voucherRefusalMessage(voucherError, voucherSnapshot.code) });
       }
     }
 
