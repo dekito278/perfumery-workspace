@@ -23,6 +23,16 @@ export const ASIA_MULTIPLIER = 2.2;
  *
  * Written out one by one rather than matched on the 'Asia/' prefix: Asia/Tokyo, Asia/Dubai and
  * Asia/Kolkata are all "Asia" to a prefix test and none of them belong here, and Asia/Jakarta is home.
+ *
+ * BOTH SPELLINGS OF EVERY RENAMED ZONE, and that is the rule rather than a courtesy. IANA renamed some
+ * of these and kept the old name as a link, and ICU builds do not agree on which one is canonical — on
+ * the Node this repo tests with, Intl resolves Asia/Yangon BACKWARDS to Asia/Rangoon, while a current
+ * browser reports Asia/Yangon. Whichever one the reader's device reports has to be in this list, so
+ * canonicalising the input would only pick a side; listing both picks neither.
+ *
+ * Asia/Saigon was already here for exactly this reason. Asia/Rangoon and Asia/Macao are the same case,
+ * and without them a buyer in Yangon was quoted the 3.5x world price instead of 2.2x — a 59% surcharge
+ * on the two markets this whole file exists to stop overcharging.
  */
 export const ASIA_TIME_ZONES = [
   'Asia/Singapore',
@@ -31,6 +41,7 @@ export const ASIA_TIME_ZONES = [
   'Asia/Brunei',
   'Asia/Hong_Kong',
   'Asia/Macau',
+  'Asia/Macao',
   'Asia/Bangkok',
   'Asia/Ho_Chi_Minh',
   'Asia/Saigon',
@@ -38,6 +49,7 @@ export const ASIA_TIME_ZONES = [
   'Asia/Phnom_Penh',
   'Asia/Vientiane',
   'Asia/Yangon',
+  'Asia/Rangoon',
   'Asia/Dili',
 ];
 

@@ -54,6 +54,7 @@ const TIME_ZONE_TO_COUNTRY = {
   'Asia/Brunei': 'BN',
   'Asia/Hong_Kong': 'HK',
   'Asia/Macau': 'MO',
+  'Asia/Macao': 'MO',
   'Asia/Bangkok': 'TH',
   'Asia/Ho_Chi_Minh': 'VN',
   'Asia/Saigon': 'VN',
@@ -61,6 +62,7 @@ const TIME_ZONE_TO_COUNTRY = {
   'Asia/Phnom_Penh': 'KH',
   'Asia/Vientiane': 'LA',
   'Asia/Yangon': 'MM',
+  'Asia/Rangoon': 'MM',
   'Asia/Dili': 'TL',
 };
 for (const zone of ASIA_TIME_ZONES) {
@@ -80,6 +82,46 @@ for (const [country, zone] of Object.entries(EXPORT_ZONE_BY_COUNTRY)) {
   assert.ok(clockCountries.has(country),
     `${country} is in zone ${zone} — a neighbour by destination — but no Asia time zone maps to it, so the shop would quote it the world price`);
 }
+
+// --- 1b. Every SPELLING a device might report, not just the one we happened to write down -------------
+//
+// The two checks above only ever walk spellings that are ALREADY in the list, so they were green while
+// Myanmar was quoted the world price. IANA renamed some of these zones and kept the old name as a link,
+// and ICU builds do not agree on which one is canonical: on this Node, Intl resolves Asia/Yangon
+// BACKWARDS to Asia/Rangoon, while a current browser reports Asia/Yangon. Only one of the two was listed.
+//
+// So: the list must be CLOSED under whatever this engine calls canonical. Asked of the engine rather than
+// written out, which is what makes it survive the next tzdata rename — and what makes it catch the
+// opposite direction when it runs on a browser's ICU instead of this one.
+//
+// Asia/Saigon was in the list from the start for exactly this reason. This is that fix, derived.
+const canonicalZone = (zone) => {
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone: zone }).resolvedOptions().timeZone;
+  } catch {
+    return zone;
+  }
+};
+const unlisted = [];
+const renamed = [];
+let examined = 0;
+for (const zone of ASIA_TIME_ZONES) {
+  examined += 1;
+  const canonical = canonicalZone(zone);
+  if (canonical === zone) continue;
+  renamed.push(`${zone} -> ${canonical}`);
+  if (!ASIA_TIME_ZONES.includes(canonical)) unlisted.push(`${zone} -> ${canonical}`);
+}
+assert.deepEqual(unlisted, [],
+  'this engine reports these zones under a spelling the list does not carry, so a reader whose device '
+  + 'reports it is quoted the 3.5x world price instead of 2.2x:\n  ' + unlisted.join('\n  '));
+// Counted, because "no violators" is true of an empty list: a sabotage that walked nothing at all passed
+// the assertion above on its own.
+assert.equal(examined, ASIA_TIME_ZONES.length, 'every zone in the list must be examined, not some of them');
+assert.ok(renamed.length >= 2,
+  `this engine should report at least two of these zones under a second spelling; found ${renamed.length}. `
+  + 'Either the aliases were dropped from the list, or this loop stopped looking.');
+console.log(`  ${examined} zones, closed under this engine's canonical spelling (${renamed.length} renamed: ${renamed.join(', ')})`);
 
 // And nothing outside that set may slip into the country half.
 for (const away of ['JP', 'AU', 'US', 'DE', 'GB', 'IN', 'AE', 'CN', 'KR', 'TW', 'NZ', 'CA']) {
