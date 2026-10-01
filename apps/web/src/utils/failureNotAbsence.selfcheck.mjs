@@ -17,6 +17,45 @@ import { dirname, join } from 'node:path';
 const srcRoot = dirname(fileURLToPath(import.meta.url)) + '/..';
 const read = (rel) => readFileSync(join(srcRoot, rel), 'utf8');
 
+// The portal's security gate, which is not a flag but a rethrow — the shape publicTrackingService uses.
+// A check that could not RUN told the customer their own security answer was wrong, about a question
+// they had set themselves: after two or three tries the reasonable conclusion is that they have lost
+// access to their own orders and invoices. Two screens ask it, and both had the same single branch.
+//
+// Counted, not listed: the screens are whichever call the verifier.
+{
+  // Comments stripped FIRST. Written without it, this very block passed a sabotage that removed the
+  // rethrow — because the comment explaining the rethrow contains the word "Rethrow", and the assertion
+  // matched the explanation instead of the code.
+  const stripComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+  const service = stripComments(read('services/customerService.js'));
+  const verifier = service.slice(service.indexOf('export const verifyCustomerPortalSecurity'));
+  const body = verifier.slice(0, verifier.indexOf('\n};'));
+  assert.ok(body.length > 100, 'verifyCustomerPortalSecurity is gone — update this guard, not the service');
+  assert.match(body, /catch[\s\S]*?throw/,
+    'the portal security check swallows a failed lookup into null again, so a flaky connection reads as '
+    + 'a wrong answer to the customer\'s own question');
+  assert.match(body, /if \(!result\?\.customer\?\.customer_code\) return null;/,
+    'and a genuine refusal must still be null, or the screens can no longer tell the two apart');
+
+  const askers = [];
+  const conflating = [];
+  for (const rel of ['pages/CustomerPortalPage.jsx', 'pages/CustomerInvoicePage.jsx']) {
+    const source = stripComments(read(rel));
+    if (!/verifyCustomerPortalSecurity\(/.test(source)) continue;
+    askers.push(rel);
+    // The call must sit inside a try whose catch says something OTHER than "wrong answer".
+    const at = source.indexOf('verifyCustomerPortalSecurity(');
+    const around = source.slice(Math.max(0, at - 400), at + 600);
+    const separates = /try \{[\s\S]*?catch[\s\S]*?CheckFailed/.test(around);
+    if (!separates) conflating.push(rel);
+  }
+  assert.equal(askers.length, 2, `expected both portal screens to ask; found ${askers.length}`);
+  assert.deepEqual(conflating, [],
+    'these screens tell the customer their security answer is wrong when the check merely failed:\n  '
+    + conflating.join('\n  '));
+}
+
 const MUST_SEPARATE = [
   ['pages/OrderDetailPage.jsx', 'loadFailed', 'a load that threw once rendered "Order tidak ditemukan"'],
   ['pages/mobile/MobileOrderDetailPage.jsx', 'loadFailed', 'same screen, mobile'],

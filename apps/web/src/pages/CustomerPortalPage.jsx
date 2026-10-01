@@ -1108,7 +1108,15 @@ const CustomerPortalPage = () => {
     }
 
     setSecurityLoading(true);
-    const result = await verifyCustomerPortalSecurity(customerCode, securityAnswer);
+    // A check that could not run is not a wrong answer — see the catch in verifyCustomerPortalSecurity.
+    let result;
+    try {
+      result = await verifyCustomerPortalSecurity(customerCode, securityAnswer);
+    } catch {
+      setSecurityLoading(false);
+      toast.error(t('cust.securityCheckFailed'));
+      return;
+    }
     setSecurityLoading(false);
 
     if (!result) {

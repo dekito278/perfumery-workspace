@@ -352,7 +352,15 @@ const CustomerInvoicePage = () => {
   const unlockInvoice = async (event) => {
     event.preventDefault();
     setSecurityLoading(true);
-    const result = await verifyCustomerPortalSecurity(portal.customer.customerCode, securityAnswer);
+    // A check that could not run is not a wrong answer — see the catch in verifyCustomerPortalSecurity.
+    let result;
+    try {
+      result = await verifyCustomerPortalSecurity(portal.customer.customerCode, securityAnswer);
+    } catch {
+      setSecurityLoading(false);
+      toast.error(t('inv.answerCheckFailed'));
+      return;
+    }
     setSecurityLoading(false);
 
     if (!result) {
