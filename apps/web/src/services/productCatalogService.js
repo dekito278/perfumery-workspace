@@ -458,16 +458,6 @@ const findVariantForOrderItem = (product = {}, item = {}) => {
 // One list, in utils/orderTotals.js. It used to be spelled out here too, and a duplicate of a rule is
 // a rule that holds in one place.
 
-const createInventoryRestoreEvent = (event = {}) => ({
-  ...event,
-  type: 'restore',
-  direction: 'in',
-  quantity: Number(event.quantity || 0),
-  movement: event.movement || 'Order cancelled/payment failed stock released',
-  restoredAt: new Date().toISOString(),
-  at: new Date().toISOString(),
-});
-
 export const validateOrderStock = async (items = []) => {
   const stockItems = items.filter(isStockOrderItem);
   if (!stockItems.length) return { ok: true, issues: [] };
@@ -504,33 +494,6 @@ export const validateOrderStock = async (items = []) => {
   }).filter(Boolean);
 
   return { ok: issues.length === 0, issues };
-};
-
-const restoreProductItemStock = (product, event = {}) => {
-  const quantity = Math.max(Number(event.quantity || 0), 0);
-  let restored = false;
-  const variants = (product.variants || []).map((variant, index) => {
-    const matchesVariant = event.variantId || event.variant_id
-      ? variant.id === (event.variantId || event.variant_id)
-      : (variant.size === event.size || (!event.size && index === 0));
-    if (!matchesVariant || restored) return variant;
-    restored = true;
-    return {
-      ...variant,
-      stock: Number(variant.stock || 0) + quantity,
-    };
-  });
-
-  if (!restored && variants.length) {
-    variants[0] = {
-      ...variants[0],
-      stock: Number(variants[0].stock || 0) + quantity,
-    };
-    restored = true;
-  }
-
-  const stock = getProductStockTotal(variants);
-  return { product: { ...product, variants, stock }, restored };
 };
 
 const ensureUniqueSlug = (slug, products, currentId) => {
@@ -1091,32 +1054,23 @@ export const restoreInventoryForOrder = async (order, reason = 'Order cancelled/
     dispatchProductsUpdated();
     return events;
   } catch (error) {
-    console.warn('Using client inventory restore fallback:', error.message || error);
+    // No client fallback, for the same reason deductInventoryForOrder has none — "the RPC is the only way
+    // stock moves" — and for one more that made this side the worse of the two.
+    //
+    // The fallback re-read every editable product, restored the units in memory, and saved the changed ones
+    // with `Promise.all`. That rejects on the FIRST failure, so a half-finished restore left some products
+    // holding their units back and the rest already returned, and then THREW — so the caller never reached
+    // markOrderInventoryRestored. The order kept inventory_deducted = true with its stock partly handed
+    // back, and the next cancel, expiry or delete restored the same units a second time. That function's own
+    // comment says exactly this: "a flag left true lets a second cancel restore the same units again."
+    //
+    // The deduct side's fallback merely did nothing and reported success (audit round 9, P-4). This one did
+    // something and reported failure, which is how stock gets invented.
+    //
+    // Measured 2026-10-02 against the live database: storefront_restore_inventory_for_order is one of the
+    // 31 RPCs registered in production, so the condition the fallback was written for does not hold — and
+    // every way the RPC can fail (no network, RLS refusal, the function gone) breaks the fallback too,
+    // because it needs the same connection and the same admin rights to write the same table.
+    throw new Error(error.message || 'Gagal mengembalikan stok untuk order ini');
   }
-
-  const editableProducts = await getEditableProducts();
-  const restoredEvents = [];
-  const nextProducts = editableProducts.map((product) => {
-    const matchingEvents = deductibleEvents.filter((event) => findProductForOrderItem([product], event));
-    if (!matchingEvents.length) return product;
-
-    return matchingEvents.reduce((currentProduct, event) => {
-      const result = restoreProductItemStock(currentProduct, event);
-      if (result.restored) {
-        restoredEvents.push(createInventoryRestoreEvent({
-          ...event,
-          movement: reason,
-        }));
-      }
-      return result.product;
-    }, product);
-  });
-
-  const changedProducts = nextProducts.filter((product) => {
-    const previous = editableProducts.find((item) => item.id === product.id);
-    return previous && JSON.stringify(previous.variants) !== JSON.stringify(product.variants);
-  });
-
-  await Promise.all(changedProducts.map((product) => saveCustomProduct(product)));
-  return restoredEvents;
 };
