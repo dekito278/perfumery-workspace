@@ -30,7 +30,7 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
-import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
 import {
   bespokeBriefRows,
   countOrdersByFilter,
@@ -270,8 +270,12 @@ const OrdersPage = () => {
     }
     setBulkSaving(true);
     try {
-      await Promise.all(selectedVisibleOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
-      toast.success(`${selectedVisibleOrders.length} order ditandai paid`);
+      const marked = await settleBulk(selectedVisibleOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
+      if (marked.failed) {
+        toast.error(`${marked.ok} dari ${marked.total} order ditandai paid; ${marked.failed} gagal. ${marked.reason}`.trim());
+      } else {
+        toast.success(`${marked.ok} order ditandai paid`);
+      }
     } catch (error) {
       toast.error(error.message || 'Gagal mark paid massal');
     } finally {
@@ -286,7 +290,7 @@ const OrdersPage = () => {
       toast.error('Pilih order paid untuk cetak resi');
       return;
     }
-    await Promise.all(selectedPrintableOrders.map((order) => (
+    const moves = await settleBulk(selectedPrintableOrders.map((order) => (
       hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
         ? Promise.resolve()
         : updateOrderShipment(order.id || order.orderNumber, {
@@ -299,6 +303,10 @@ const OrdersPage = () => {
     )));
     await reload();
     setOrderFilter('packing');
+    if (moves.failed) {
+      toast.error(`${printedCount} resi PDF siap, tapi ${moves.failed} order gagal dipindah ke Label/resi. ${moves.reason}`.trim());
+      return;
+    }
     toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
   };
 

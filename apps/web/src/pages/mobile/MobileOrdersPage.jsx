@@ -33,7 +33,7 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
-import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
 import {
   bespokeBriefRows,
   countOrdersByFilter,
@@ -268,8 +268,12 @@ const MobileOrdersPage = () => {
     }
     setBulkSaving(true);
     try {
-      await Promise.all(selectedFilteredOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
-      toast.success(`${selectedFilteredOrders.length} order ditandai paid`);
+      const marked = await settleBulk(selectedFilteredOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
+      if (marked.failed) {
+        toast.error(`${marked.ok} dari ${marked.total} order ditandai paid; ${marked.failed} gagal. ${marked.reason}`.trim());
+      } else {
+        toast.success(`${marked.ok} order ditandai paid`);
+      }
     } catch (error) {
       toast.error(error.message || 'Gagal mark paid massal');
     } finally {
@@ -285,7 +289,9 @@ const MobileOrdersPage = () => {
       return;
     }
     // Promise.all rejects on the first failure and would leave the rest unreported, so settle and count.
-    const moves = await Promise.allSettled(selectedPrintableOrders.map((order) => (
+    // The counting itself lives in settleBulk now: this screen was the only one doing it, and the other six
+    // bulk actions were copies of the broken shape.
+    const moves = await settleBulk(selectedPrintableOrders.map((order) => (
       hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
         ? Promise.resolve()
         : updateOrderShipment(order.id || order.orderNumber, {
@@ -298,9 +304,8 @@ const MobileOrdersPage = () => {
     )));
     await reload();
     setOrderFilter('packing');
-    const failed = moves.filter((result) => result.status === 'rejected').length;
-    if (failed) {
-      toast.error(`${printedCount} resi PDF siap, tapi ${failed} order gagal dipindah ke Label/resi. Muat ulang lalu coba lagi.`);
+    if (moves.failed) {
+      toast.error(`${printedCount} resi PDF siap, tapi ${moves.failed} order gagal dipindah ke Label/resi. ${moves.reason}`.trim());
       return;
     }
     toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
