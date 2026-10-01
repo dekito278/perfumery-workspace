@@ -10,50 +10,158 @@
 // as an empty list, which is honest, and the scanner flags PaymentPage's correct tri-state too. So this
 // guards the surfaces that make a claim.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const srcRoot = dirname(fileURLToPath(import.meta.url)) + '/..';
 const read = (rel) => readFileSync(join(srcRoot, rel), 'utf8');
 
-// The portal's security gate, which is not a flag but a rethrow — the shape publicTrackingService uses.
-// A check that could not RUN told the customer their own security answer was wrong, about a question
-// they had set themselves: after two or three tries the reasonable conclusion is that they have lost
-// access to their own orders and invoices. Two screens ask it, and both had the same single branch.
+// --- A lookup that could not run must never speak for the customer's code -----------------------------
 //
-// Counted, not listed: the screens are whichever call the verifier.
+// customerService had FOUR exported lookups and every one of them answered a thrown request with null.
+// null also means "no such customer", so five screens turned a dropped connection into an accusation:
+// "Kode customer tidak ditemukan" about a code the buyer had copied off their own order, and — on the
+// security step — "Jawaban keamanan salah" about a question they had set themselves. After two tries the
+// reasonable conclusion is that they have lost access to their own orders. #366 fixed the security
+// verifier alone; the siblings next to it in the same file had the identical shape.
+//
+// Derived, not listed, in three directions: the swallowing lookups are whichever ones they are, their
+// callers are whoever calls them, and the two messages are read out of the code rather than named here.
 {
-  // Comments stripped FIRST. Written without it, this very block passed a sabotage that removed the
-  // rethrow — because the comment explaining the rethrow contains the word "Rethrow", and the assertion
-  // matched the explanation instead of the code.
+  // Comments stripped FIRST. Written without it, the earlier version of this block passed a sabotage
+  // that removed the rethrow — because the comment explaining the rethrow contains the word "Rethrow",
+  // and the assertion matched the explanation instead of the code.
   const stripComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
-  const service = stripComments(read('services/customerService.js'));
-  const verifier = service.slice(service.indexOf('export const verifyCustomerPortalSecurity'));
-  const body = verifier.slice(0, verifier.indexOf('\n};'));
-  assert.ok(body.length > 100, 'verifyCustomerPortalSecurity is gone — update this guard, not the service');
-  assert.match(body, /catch[\s\S]*?throw/,
-    'the portal security check swallows a failed lookup into null again, so a flaky connection reads as '
-    + 'a wrong answer to the customer\'s own question');
-  assert.match(body, /if \(!result\?\.customer\?\.customer_code\) return null;/,
-    'and a genuine refusal must still be null, or the screens can no longer tell the two apart');
 
-  const askers = [];
-  const conflating = [];
-  for (const rel of ['pages/CustomerPortalPage.jsx', 'pages/CustomerInvoicePage.jsx']) {
-    const source = stripComments(read(rel));
-    if (!/verifyCustomerPortalSecurity\(/.test(source)) continue;
-    askers.push(rel);
-    // The call must sit inside a try whose catch says something OTHER than "wrong answer".
-    const at = source.indexOf('verifyCustomerPortalSecurity(');
-    const around = source.slice(Math.max(0, at - 400), at + 600);
-    const separates = /try \{[\s\S]*?catch[\s\S]*?CheckFailed/.test(around);
-    if (!separates) conflating.push(rel);
+  // Slice one `export const name = ...` declaration by counting braces, so a neighbouring function's
+  // catch can never satisfy an assertion about this one.
+  const declaration = (source, name) => {
+    const at = source.indexOf(`export const ${name} =`);
+    if (at === -1) return '';
+    let depth = 0;
+    let started = false;
+    for (let i = at; i < source.length; i += 1) {
+      const ch = source[i];
+      if (ch === '{') { depth += 1; started = true; } else if (ch === '}') {
+        depth -= 1;
+        if (started && depth === 0) return source.slice(at, i + 1);
+      }
+    }
+    return source.slice(at);
+  };
+
+  const service = stripComments(read('services/customerService.js'));
+  const exported = [...service.matchAll(/export const (\w+) = async/g)].map((m) => m[1]);
+  assert.ok(exported.length >= 6, `expected customerService to export several async functions; found ${exported.length}`);
+
+  // A catch that ends in a definite negative is claiming to know. Which ones do that is measured.
+  const NEGATIVE = /return (null|false|\[\]|''|"")\s*;[\s\}]*$/;
+  const swallowing = [];
+  for (const name of exported) {
+    const body = declaration(service, name);
+    const at = body.indexOf('} catch (');
+    if (at === -1) continue;
+    const rescue = body.slice(at);
+    if (/throw\b/.test(rescue)) continue;
+    if (NEGATIVE.test(rescue.trimEnd())) swallowing.push(name);
   }
-  assert.equal(askers.length, 2, `expected both portal screens to ask; found ${askers.length}`);
+
+  // One exception, and it carries the condition that makes it true: its only callers make NO claim.
+  // The portal answers null by quietly falling back to the code saved on the account, and checkout
+  // treats it as "not signed in" — there is nothing false to say, so there is nothing to fix.
+  const EXCUSED = {
+    getCustomerAccount: 'its callers make no claim on screen — they fall through silently',
+  };
+  const unexcused = swallowing.filter((name) => !EXCUSED[name]);
+  assert.deepEqual(unexcused, [],
+    'these lookups answer a FAILED request with a definite negative, so a dropped connection reads as '
+    + '"that code does not exist" to the customer:\n  ' + unexcused.join('\n  '));
+
+  // And the exception must still be real: if its callers start making a claim, it has to join the rest.
+  for (const name of Object.keys(EXCUSED)) {
+    assert.ok(swallowing.includes(name) || /throw\b/.test(declaration(service, name).slice(declaration(service, name).indexOf('} catch ('))),
+      `${name} is excused here but no longer swallows — drop the exception rather than leave it stale`);
+  }
+
+  // The lookups that now rethrow, and everyone who calls them. Both sets are derived.
+  const rethrowing = exported.filter((name) => {
+    const body = declaration(service, name);
+    const at = body.indexOf('} catch (');
+    return at !== -1 && /throw error;/.test(body.slice(at));
+  });
+  assert.ok(rethrowing.length >= 4,
+    `expected the lookups and the security verifier to rethrow; found ${rethrowing.length}: ${rethrowing.join(', ')}`);
+
+  // The screens are SWEPT, not listed. A listed set is how #356 went green while leaving a screen
+  // unprotected: the sixth caller nobody has written yet has to be caught by this, not by the next audit.
+  const SCREENS = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(join(srcRoot, dir), { withFileTypes: true })) {
+      const rel = dir ? `${dir}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) { walk(rel); continue; }
+      if (!/\.(jsx?|mjs)$/.test(entry.name) || /selfcheck/.test(entry.name)) continue;
+      if (rel === 'services/customerService.js') continue;
+      SCREENS.push(rel);
+    }
+  };
+  walk('');
+  const checked = [];
+  const conflating = [];
+  const frozen = [];
+  for (const rel of SCREENS) {
+    const source = stripComments(read(rel));
+    for (const name of rethrowing) {
+      let from = 0;
+      for (;;) {
+        const at = source.indexOf(`await ${name}(`, from);
+        if (at === -1) break;
+        from = at + 1;
+        checked.push(`${rel} -> ${name}`);
+
+        // The call must sit inside a try, and the two messages must DIFFER. Read out of the code: the
+        // first toast.error after the catch is what a failure says, the next one is what absence says.
+        const before = source.slice(Math.max(0, at - 400), at);
+        const after = source.slice(at, at + 1400);
+        const said = [...after.matchAll(/toast\.(?:error|info)\(([^\n]*?)\);/g)].map((m) => m[1].trim());
+        // `} catch {` with no binding is as valid as `} catch (error) {`. Hold the rule, not a spelling:
+        // an earlier draft of this guard pinned the paren and read CustomerInvoicePage's correct code as
+        // a violation.
+        const catchAt = after.search(/\} catch\s*[({]/);
+        const inTry = /try \{[^]*?$/.test(before) && catchAt !== -1;
+        if (!inTry || said.length < 2 || said[0] === said[1]) conflating.push(`${rel} -> ${name}`);
+
+        // A throw must not leave the spinner on. Whatever was switched on before the call has to be
+        // switched off on the failing path too — a finally, or inside the catch before it returns. Both
+        // spellings are fine; leaving it on is not.
+        const spun = [...before.matchAll(/set(\w*Loading)\(true\)/g)].pop();
+        if (spun && inTry) {
+          const off = `set${spun[1]}(false)`;
+          const finallyAt = after.indexOf('} finally {');
+          const clearedInFinally = finallyAt !== -1 && after.slice(finallyAt, finallyAt + 240).includes(off);
+          // Only the catch's own body counts, not the line after it that a throw never reaches.
+          const catchBody = after.slice(catchAt, after.indexOf('return;', catchAt) + 7);
+          if (!clearedInFinally && !catchBody.includes(off)) frozen.push(`${rel} -> ${name} (${off})`);
+        }
+      }
+    }
+  }
+  console.log(`  lookups that rethrow: ${rethrowing.join(', ')}`);
+  console.log(`  claiming call sites (swept ${SCREENS.length} files): ${checked.join(', ')}`);
+  assert.ok(checked.length >= 5, `expected at least 5 claiming call sites; found ${checked.length}`);
   assert.deepEqual(conflating, [],
-    'these screens tell the customer their security answer is wrong when the check merely failed:\n  '
+    'these call sites tell the customer their code or answer is wrong when the lookup merely failed:\n  '
     + conflating.join('\n  '));
+  assert.deepEqual(frozen, [],
+    'these call sites leave their spinner on forever when the lookup throws — clear it in a finally:\n  '
+    + frozen.join('\n  '));
+
+  // A genuine refusal must still be null, or the screens can no longer tell the two apart. Three
+  // functions carry this line; the guard must see it in the one it is talking about.
+  for (const name of ['verifyCustomerPortalSecurity', 'lookupCheckoutCustomerByCode']) {
+    assert.match(declaration(service, name), /if \(!\w+\?\.customer\?\.customer_code\) return null;|if \(!customer\?\.customer_code\) return null;/,
+      `${name} must keep null for a genuine "no such customer"`);
+  }
 }
 
 const MUST_SEPARATE = [

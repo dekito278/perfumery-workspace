@@ -321,8 +321,18 @@ const CustomerInvoicePage = () => {
 
     setLoading(true);
     setSearched(true);
-    const result = await getCustomerPortalByCode(code);
-    setLoading(false);
+    let result = null;
+    try {
+      result = await getCustomerPortalByCode(code);
+    } catch (error) {
+      // Same rule as the portal: a dropped connection must not be reported as a code that
+      // does not exist. See customerService.getCustomerPortalByCode.
+      console.warn('Invoice lookup failed:', error?.message || error);
+      toast.error(t('inv.codeLookupFailed'));
+      return;
+    } finally {
+      setLoading(false);
+    }
 
     if (!result) {
       setPortal(null);

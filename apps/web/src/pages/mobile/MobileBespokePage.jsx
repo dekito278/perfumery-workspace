@@ -312,7 +312,16 @@ const MobileBespokePage = () => {
       return;
     }
 
-    const customer = await lookupCustomerByCode(form.customerCode);
+    let customer = null;
+    try {
+      customer = await lookupCustomerByCode(form.customerCode);
+    } catch (error) {
+      // Prefill is optional here, so the honest message costs the buyer nothing — but claiming
+      // their code does not exist makes them doubt a code they own.
+      console.warn('Bespoke customer lookup failed:', error?.message || error);
+      toast.error(t('bsp.codeLookupFailed'));
+      return;
+    }
     if (!customer) {
       toast.error(t('bsp.codeNotFound'));
       return;
