@@ -258,7 +258,7 @@ const MobileDashboardPage = () => {
   // with no waybill, an order that never reached the server. Three things whose whole value is being
   // noticed, on the surface the shop is actually run from.
   const opsHealth = useMemo(() => getOpsHealthSnapshot(orders), [orders]);
-  const opsAttention = opsHealth.expiredPaymentOrders.length
+  const opsAttention = opsHealth.dokuWindowLapsedOrders.length
     + opsHealth.shipmentNeedsResi.length
     + opsHealth.localOrders.length;
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
@@ -370,7 +370,7 @@ const MobileDashboardPage = () => {
                 icon={opsHealth.hasCriticalIssues ? WifiOff : ShieldCheck}
                 label="Kesehatan order"
                 title={opsAttention ? `${opsAttention} hal perlu dicek` : 'Alur order terlihat sehat'}
-                helper={`${opsHealth.expiredPaymentOrders.length} bayar kedaluwarsa · ${opsHealth.shipmentNeedsResi.length} tanpa resi · ${opsHealth.localOrders.length} belum tersinkron`}
+                helper={`${opsHealth.dokuWindowLapsedOrders.length} DOKU lewat tempo · ${opsHealth.shipmentNeedsResi.length} tanpa resi · ${opsHealth.localOrders.length} belum tersinkron`}
                 tone={opsHealth.hasCriticalIssues ? 'rose' : (opsAttention ? 'amber' : 'emerald')}
                 onClick={() => navigate('/mobile/studio/orders')}
               />
