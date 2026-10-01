@@ -107,10 +107,10 @@ export const lookupCustomerByCode = async (customerCode) => {
     if (error) throw error;
     return data?.[0] ? normalizeCustomer(data[0]) : null;
   } catch (error) {
-    // "Not found" and "lookup failed" must not look the same to the caller, but neither can be served
-    // from a cache that nothing writes any more.
+    // "Not found" and "lookup failed" must not look the same to the caller, and for a long time they
+    // did: this returned null for both, and the bespoke prefill answered it with "kode tidak ditemukan".
     console.warn('Customer lookup failed:', error.message || error);
-    return null;
+    throw error;
   }
 };
 
@@ -130,8 +130,10 @@ export const lookupCheckoutCustomerByCode = async (customerCode, securityAnswer 
 
     return normalizeCustomer(customer);
   } catch (error) {
+    // Same rule as the two lookups above: checkout said "Kode customer tidak ditemukan" and, on the
+    // security step, "Jawaban keamanan salah" — both about a request that never reached the server.
     console.warn('Checkout customer lookup failed:', error.message || error);
-    return null;
+    throw error;
   }
 };
 
@@ -169,8 +171,13 @@ export const getCustomerPortalByCode = async (customerCode) => {
   } catch (error) {
     // Serving the portal from localStorage was also a privacy edge: on a shared device it showed whatever
     // customer had last used that browser. There is nothing to serve now, and nothing to leak.
+    //
+    // But nothing to serve is not the same as no such customer, and null meant both. Two screens turned
+    // that into "kode customer tidak ditemukan" — about a code the buyer copied off their own order. The
+    // lookup reaching the server and finding nothing is still null; a lookup that never got there is
+    // this, and only the caller can say "try again" instead of "that code does not exist".
     console.warn('Customer portal lookup failed:', error.message || error);
-    return null;
+    throw error;
   }
 };
 
@@ -191,6 +198,10 @@ export const getCustomerAccount = async () => {
     if (error) throw error;
     return buildAccountPortalResult(data?.[0]);
   } catch (error) {
+    // The ONE lookup here that may keep swallowing, and the reason is its caller: the portal answers null
+    // by quietly falling back to the code saved on the account. It makes no claim on screen, so there is
+    // nothing false to say — and a logged-in customer whose account lookup blipped still gets in by the
+    // other door. Guarded as an exception rather than left to look like an oversight.
     console.warn('Customer account lookup failed:', error.message || error);
     return null;
   }

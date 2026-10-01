@@ -868,8 +868,20 @@ const CustomerPortalPage = () => {
 
     setLoading(true);
     setSearched(true);
-    const result = await getCustomerPortalByCode(code);
-    setLoading(false);
+    let result = null;
+    try {
+      result = await getCustomerPortalByCode(code);
+    } catch (error) {
+      // A lookup that never reached the server is not a code that does not exist. Saying
+      // "kode tidak ditemukan" here sends the buyer hunting for a typo in a code they copied
+      // off their own order — and the portal is the door to every order they have.
+      console.warn('Portal lookup failed:', error?.message || error);
+      if (!silent) toast.error(t('cust.codeLookupFailed'));
+      return;
+    } finally {
+      // Before this, setLoading(false) sat after the await: a throw left the spinner on forever.
+      setLoading(false);
+    }
 
     if (!result) {
       setPortal(null);

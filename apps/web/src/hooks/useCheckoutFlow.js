@@ -409,8 +409,20 @@ export const useCheckoutFlow = ({
     }
 
     setLookupLoading(true);
-    const customer = await lookupCheckoutCustomerByCode(customerCode);
-    setLookupLoading(false);
+    let customer = null;
+    try {
+      customer = await lookupCheckoutCustomerByCode(customerCode);
+    } catch (error) {
+      // A lookup that never reached the server must not be reported as a code that does not
+      // exist — at checkout that pushes the buyer into retyping a correct code, or into
+      // ordering as a new customer and losing their history.
+      console.warn('Checkout customer lookup failed:', error?.message || error);
+      toast.error('Kodenya belum bisa dicek — koneksi bermasalah. Coba lagi sebentar; kodenya tidak salah.');
+      return;
+    } finally {
+      // setLookupLoading(false) used to sit after the await, so a throw froze the button.
+      setLookupLoading(false);
+    }
     if (!customer) {
       toast.error('Kode customer tidak ditemukan');
       return;
@@ -454,8 +466,18 @@ export const useCheckoutFlow = ({
     }
 
     setLookupLoading(true);
-    const customer = await lookupCheckoutCustomerByCode(securityChallenge.customerCode, securityAnswer);
-    setLookupLoading(false);
+    let customer = null;
+    try {
+      customer = await lookupCheckoutCustomerByCode(securityChallenge.customerCode, securityAnswer);
+    } catch (error) {
+      // The same wrong accusation as the portal's security step (#366), one screen over: a
+      // dropped connection told the buyer their own answer was wrong.
+      console.warn('Checkout security check failed:', error?.message || error);
+      toast.error('Jawabannya belum bisa dicek — koneksi bermasalah. Coba lagi sebentar; jawabanmu tidak salah.');
+      return;
+    } finally {
+      setLookupLoading(false);
+    }
     if (!customer || customer.requiresSecurity) {
       toast.error('Jawaban keamanan salah');
       return;
