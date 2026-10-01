@@ -645,6 +645,16 @@ const toOrderDatabasePayload = (order) => ({
   internal_notes: order.internalNotes || null,
   status_timeline: normalizeTimeline(order.statusTimeline),
   source: order.source || 'storefront',
+  // Which shop the order came from, carried through the RECOVERY path too.
+  //
+  // buildOrderPayload already writes this on the direct insert, and its comment says what was at stake:
+  // without it "an order created here had no shop at all and every message about it went out in
+  // Indonesian by default". When that insert FAILS the order is kept locally and re-sent from here — so
+  // the one path that exists for the worst moment was the one that quietly dropped the hint again.
+  //
+  // Through the same whitelist the other two writers use, and not merely copied: this value has been
+  // sitting in localStorage, where the buyer can edit it.
+  client_context: sanitizeClientContext(order.clientContext || {}),
   bespoke_production_status: order.bespokeProductionStatus || null,
   bespoke_production_timeline: normalizeBespokeProductionTimeline(order.bespokeProductionTimeline),
   shipment_status: order.shipmentStatus || 'not_ready',
