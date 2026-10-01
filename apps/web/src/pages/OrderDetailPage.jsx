@@ -73,7 +73,7 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import {
   PAYMENT_PROOF_AUDIT_ACTIONS,
-  PAYMENT_PROOF_AUDIT_LABELS,
+  ORDER_AUDIT_LABELS,
   bespokeBriefRows,
   describeStockReservation,
   getBespokeOrderSummary,
@@ -110,19 +110,6 @@ const paymentProofToneByStatus = {
   submitted: 'info',
   approved: 'success',
   rejected: 'danger',
-};
-
-const auditActionLabels = {
-  order_status_updated: 'Status order',
-  payment_status_updated: 'Status pembayaran',
-  payment_proof_uploaded: 'Bukti diupload',
-  payment_proof_approved: 'Bukti disetujui',
-  payment_proof_rejected: 'Bukti ditolak',
-  payment_proof_reviewed: 'Bukti direview',
-  shipment_updated: 'Fulfillment / resi',
-  bespoke_production_updated: 'Produksi bespoke',
-  order_cancelled: 'Order dibatalkan',
-  order_deleted: 'Order dihapus',
 };
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -187,7 +174,7 @@ const getProofTimeline = (logs = []) => logs
       id: log.id,
       attempt: proofLogs.length - index,
       action: log.action,
-      label: PAYMENT_PROOF_AUDIT_LABELS[log.action] || auditActionLabels[log.action] || log.action,
+      label: ORDER_AUDIT_LABELS[log.action] || log.action,
       at: log.createdAt,
       actor: log.actorName || log.actorEmail || 'System',
       status,
@@ -1295,7 +1282,7 @@ const OrderDetailPage = () => {
                 className="h-10 rounded-2xl border bg-white px-3 text-xs font-bold outline-none focus:border-amber-300"
               >
                 <option value="all">Semua event</option>
-                {auditEvents.map((event) => <option key={event} value={event}>{auditActionLabels[event] || event}</option>)}
+                {auditEvents.map((event) => <option key={event} value={event}>{ORDER_AUDIT_LABELS[event] || event}</option>)}
               </select>
             </div>
             {filteredAuditLogs.length ? (
@@ -1307,7 +1294,7 @@ const OrderDetailPage = () => {
                     <article key={log.id} className={`rounded-2xl p-3 ${important ? 'border border-amber-200 bg-amber-50' : 'bg-[#fbfaf7]'}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="text-sm font-bold">{auditActionLabels[log.action] || log.action}</div>
+                          <div className="text-sm font-bold">{ORDER_AUDIT_LABELS[log.action] || log.action}</div>
                           <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
                             {formatDate(log.createdAt)} / {log.actorName || log.actorEmail || 'Sistem'}
                           </div>

@@ -37,6 +37,11 @@ const auditActionLabels = {
   payment_proof_rejected: 'Proof rejected',
   payment_proof_reviewed: 'Proof reviewed',
   shipment_updated: 'Fulfillment / resi',
+  // Added, not reworded: this map had no entry for the bespoke workflow action at all, so the first time
+  // that control is used the audit chip here would read `bespoke_production_updated`. Zero rows carry it
+  // today (measured 2026-10-02 — every bespoke order is still at review_brief), which is why nobody has
+  // seen it. The English wording of this map is Dekito's own and is left exactly as it is.
+  bespoke_production_updated: 'Bespoke production',
   order_cancelled: 'Cancel order',
   order_deleted: 'Delete order',
 };

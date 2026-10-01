@@ -293,3 +293,24 @@ export const PAYMENT_PROOF_AUDIT_LABELS = {
 };
 
 export const PAYMENT_PROOF_AUDIT_ACTIONS = Object.keys(PAYMENT_PROOF_AUDIT_LABELS);
+
+/**
+ * Every action the order audit log can carry, in words.
+ *
+ * This lived as a module-local const inside OrderDetailPage, so the phone's order detail — the screen this
+ * shop is actually run from — could not reach it and fell back to `log.action`. Measured 2026-10-02 against
+ * the live log: 535 of 558 rows (96%) rendered on the phone as raw keys, `payment_status_updated` and
+ * `order_cancelled` among them. Only the four proof rows below had a label there.
+ *
+ * The proof map above stays a separate object because its KEYS are the proof-action filter
+ * (PAYMENT_PROOF_AUDIT_ACTIONS), and this is the union rather than a second copy of them.
+ */
+export const ORDER_AUDIT_LABELS = {
+  ...PAYMENT_PROOF_AUDIT_LABELS,
+  order_status_updated: 'Status order',
+  payment_status_updated: 'Status pembayaran',
+  shipment_updated: 'Fulfillment / resi',
+  bespoke_production_updated: 'Produksi bespoke',
+  order_cancelled: 'Order dibatalkan',
+  order_deleted: 'Order dihapus',
+};
