@@ -66,7 +66,9 @@ export const buildBespokeCheckoutDraft = (request = {}) => [
   formatLine('Bottle type', request.bottleType),
   formatLine('Cap design', request.capDesign),
   formatLine('Label design', request.labelDesign),
-  formatLine('Exotic material', request.exoticMaterial),
+  // Conditional for the same reason it is optional in buildBespokeNotes: no default, so nothing chosen
+  // is an answer rather than a gap. Same idiom as the customer code at the top of this draft.
+  request.exoticMaterial ? formatLine('Exotic material', request.exoticMaterial) : '',
   formatLine('Shipping', request.shippingSummary),
   request.shippingFee ? formatLine('Shipping fee', rupiah(request.shippingFee)) : '',
   request.voucherCode ? formatLine('Voucher', request.voucherCode) : '',
@@ -109,7 +111,18 @@ export const buildBespokeNotes = (request = {}) => {
   const filled = rows.filter(([, value]) => String(value ?? '').trim());
   // Only the rows the customer fills are worth naming as missing. Voucher, fee and total are absent
   // because the order had none, not because anybody declined to answer.
-  const optional = new Set(['Voucher', 'Voucher discount', 'Shipping fee', 'Estimated total']);
+  //
+  // Exotic material belongs in that sentence and was left out of it. bespokeFloorPrice sums four of the
+  // five option groups and skips this one, for the reason written beside cheapestEnabled: "it is the one
+  // group with no default — a buyer who picks nothing pays nothing for it". Picking nothing is the
+  // expected answer, not a gap, and the shop offers zero exotic materials today (measured 2026-10-02:
+  // storefront_bespoke_options has rows in four collections, none in exoticMaterials), so the buyer was
+  // never shown the question at all.
+  //
+  // The one order written since blanks were collapsed says: "Tidak diisi: Mood, Budget, Avoided notes,
+  // Story, Exotic material, Reference scent" — naming a choice nobody was offered alongside five the
+  // buyer really did skip.
+  const optional = new Set(['Voucher', 'Voucher discount', 'Shipping fee', 'Estimated total', 'Exotic material']);
   const blank = rows
     .filter(([label, value]) => !String(value ?? '').trim() && !optional.has(label))
     .map(([label]) => label);
