@@ -195,7 +195,6 @@ const BespokePage = () => {
   const [form, setForm] = useState({
     customerName: '',
     contact: '',
-    customerCode: '',
     perfumeName: '',
     scentDescription: referenceProduct?.notes || '',
     occasion: bespokeOccasionOptions[0]?.value || '',
@@ -563,7 +562,11 @@ const BespokePage = () => {
           paymentProvider: selectedPaymentMethod.provider,
           invoiceNumber: order.orderNumber,
           orderNumber: order.orderNumber,
-          customerCode: order.customerCode || form.customerCode,
+          // form.customerCode used to sit beside this. Nothing wrote it: every writer of `form` on this
+          // page is either updateField('<one of nine named keys>') or updateField(group.field) over the
+          // five option groups, and neither list contains it — so the fallback was always ''. It read
+          // like it preserved a code the buyer had typed, and this page has no field to type one into.
+          customerCode: order.customerCode || '',
           amount: paymentAmount,
           customerName: form.customerName,
           paymentStatus: 'pending',
@@ -597,7 +600,7 @@ const BespokePage = () => {
         paymentUrl: checkout.paymentUrl,
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
-        customerCode: order.customerCode || form.customerCode,
+        customerCode: order.customerCode || '',
         amount: paymentAmount,
         customerName: form.customerName,
         paymentStatus: 'pending',
