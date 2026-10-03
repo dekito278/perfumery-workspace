@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BadgePercent, CheckCircle2, ChevronDown, CreditCard, Globe, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { lookupCustomerByCode } from '@/services/customerService.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import TextReveal from '@/components/storefront/TextReveal.jsx';
@@ -182,6 +183,7 @@ const BespokePage = () => {
   const defaultCap = cheapestEnabled(capDesignOptions);
   const defaultLabel = cheapestEnabled(labelDesignOptions);
   const [saving, setSaving] = useState(false);
+  const [codeLoading, setCodeLoading] = useState(false);
   const [destinationSearch, setDestinationSearch] = useState('');
   const [destinationOptions, setDestinationOptions] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState(null);
@@ -193,6 +195,12 @@ const BespokePage = () => {
   const [activeChoiceGroup, setActiveChoiceGroup] = useState('size');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [form, setForm] = useState({
+    // Back, and wired this time. It was initialised and read here with no writer at all (#380), which is
+    // why it was deleted: the fallback `order.customerCode || form.customerCode` could only ever resolve
+    // to '', while reading as if it preserved a code the buyer had typed. The phone has had the field and
+    // the lookup since the bespoke flow shipped; desktop had neither, so a returning customer ordering
+    // from a laptop was filed under a freshly generated code and their history split in two.
+    customerCode: '',
     customerName: '',
     contact: '',
     perfumeName: '',
@@ -464,6 +472,44 @@ const BespokePage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- defaults are derived from the option arrays already in deps
   }, [bottleSizeOptions, bottleTypeOptions, capDesignOptions, labelDesignOptions, exoticMaterialOptions, defaultSize.value, defaultBottle.value, defaultCap.value, defaultLabel.value]);
 
+  // Mirrors MobileBespokePage.lookupCustomer, including the three answers it tells apart: a code that was
+  // not given, a code the server looked for and did not find, and a lookup that could not run at all.
+  // lookupCustomerByCode rethrows on failure now (#367), so "belum bisa dicek" is a real branch rather
+  // than a null that reads as "does not exist".
+  const lookupCustomer = useCallback(async () => {
+    if (!form.customerCode.trim()) {
+      toast.error(t('bsp.codeRequired'));
+      return;
+    }
+
+    setCodeLoading(true);
+    let customer = null;
+    try {
+      customer = await lookupCustomerByCode(form.customerCode);
+    } catch (error) {
+      console.warn('Bespoke customer lookup failed:', error?.message || error);
+      toast.error(t('bsp.codeLookupFailed'));
+      return;
+    } finally {
+      setCodeLoading(false);
+    }
+    if (!customer) {
+      toast.error(t('bsp.codeNotFound'));
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      customerCode: customer.customerCode,
+      customerName: customer.customerName,
+      // The public lookup no longer returns contact/address (they were harvestable by code guessing — see
+      // 20260819120000_customer_lookup_pii_lockdown.sql), so keep whatever the buyer already typed.
+      contact: customer.contact && customer.contact !== '-' ? customer.contact : current.contact,
+      deliveryAddress: customer.deliveryAddress || current.deliveryAddress,
+    }));
+    toast.success(t('bsp.codeLoaded', { code: customer.customerCode }));
+  }, [form.customerCode, t]);
+
   const validateForm = () => {
     if (!form.customerName.trim()) return t('bsp.errName');
     if (!form.contact.trim()) return t('bsp.errContact');
@@ -562,11 +608,10 @@ const BespokePage = () => {
           paymentProvider: selectedPaymentMethod.provider,
           invoiceNumber: order.orderNumber,
           orderNumber: order.orderNumber,
-          // form.customerCode used to sit beside this. Nothing wrote it: every writer of `form` on this
-          // page is either updateField('<one of nine named keys>') or updateField(group.field) over the
-          // five option groups, and neither list contains it — so the fallback was always ''. It read
-          // like it preserved a code the buyer had typed, and this page has no field to type one into.
-          customerCode: order.customerCode || '',
+          // The order's own code wins; the typed one is the fallback for a buyer who gave a code before the
+          // order row came back. Dead until this page got a field to type one into (#380 deleted the
+          // unwritten state, this restored it with a writer).
+          customerCode: order.customerCode || form.customerCode,
           amount: paymentAmount,
           customerName: form.customerName,
           paymentStatus: 'pending',
@@ -600,7 +645,7 @@ const BespokePage = () => {
         paymentUrl: checkout.paymentUrl,
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
-        customerCode: order.customerCode || '',
+        customerCode: order.customerCode || form.customerCode,
         amount: paymentAmount,
         customerName: form.customerName,
         paymentStatus: 'pending',
@@ -818,6 +863,24 @@ const BespokePage = () => {
                     same dead end waits here: a foreign city returns an empty area list with no error. */}
                 <InternationalCheckoutNotice quotedOnRequest className="mb-4" />
                 <div className="editorial-bespoke-checkout__fields">
+                  {/* Optional, and above the name on purpose: filling it fills the two fields below. The
+                      phone's version has a Paste button as well; on a laptop that is Ctrl+V. */}
+                  <label>
+                    {t('bsp.customerCode')}
+                    <div className="editorial-inline-field">
+                      <input
+                        type="text"
+                        value={form.customerCode}
+                        onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())}
+                        placeholder={t('bsp.customerCodeField')}
+                        aria-label={t('bsp.customerCodeField')}
+                        className="uppercase"
+                      />
+                      <button type="button" className="editorial-button" onClick={lookupCustomer} disabled={codeLoading}>
+                        {codeLoading ? t('bsp.checking') : t('bsp.check')}
+                      </button>
+                    </div>
+                  </label>
                   <label>{t('bsp.name')}<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} /></label>
                   <label>{t('bsp.contact')}<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="nama@email.com / +62..." /></label>
                   <label>{t('bsp.address')}<textarea rows="4" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} /></label>
