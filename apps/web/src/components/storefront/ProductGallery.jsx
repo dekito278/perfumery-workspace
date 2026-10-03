@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { getOptimizedProductImageUrl } from '@/services/productImageStorageService.js';
 import { getStorageImageSrcSet } from '@/utils/storageImage.js';
+import { lockBodyScroll } from '@/utils/bodyScrollLock.js';
 
 // 64 CSS px on screen, so 192 covers a 3x phone. Capped deliberately — an uncapped list would hand a
 // high-DPR phone a candidate far larger than a thumbnail needs.
@@ -69,8 +70,10 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
       if (e.key === 'ArrowRight') goToImage(1);
     };
     document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+    // Restores whatever was there, instead of writing ''. See utils/bodyScrollLock.js: this used to clear
+    // the lock an enclosing overlay had set.
+    const releaseScroll = lockBodyScroll();
+    return () => { document.removeEventListener('keydown', onKey); releaseScroll(); };
   }, [lightboxOpen, goToImage]);
 
   // Lightbox pinch-zoom + drag

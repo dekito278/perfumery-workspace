@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer.jsx';
 import { useMobileKeyboardAvoidance } from '@/hooks/useMobileKeyboardAvoidance.js';
 import { cn } from '@/lib/utils.js';
+import { lockBodyScroll } from '@/utils/bodyScrollLock.js';
 import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 
 const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="combobox"], [cmdk-input]';
@@ -32,20 +33,9 @@ const MobileBottomSheet = ({
   useEffect(() => {
     if (!open) return undefined;
 
-    const html = document.documentElement;
-    const body = document.body;
-    const previousStyles = {
-      htmlOverscrollBehavior: html.style.overscrollBehavior,
-      overflow: body.style.overflow,
-    };
-
-    html.style.overscrollBehavior = 'none';
-    body.style.overflow = 'hidden';
-
-    return () => {
-      html.style.overscrollBehavior = previousStyles.htmlOverscrollBehavior;
-      body.style.overflow = previousStyles.overflow;
-    };
+    // This file is where save-and-restore was done right; the helper is that, lifted, so the gallery's
+    // lightbox cannot go on clearing what this sheet set.
+    return lockBodyScroll();
   }, [open]);
 
   useIsomorphicLayoutEffect(() => {
