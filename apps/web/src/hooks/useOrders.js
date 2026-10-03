@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { getNextOrderStatusForPayment } from '@/utils/orderWorkflow.js';
 import { confirmAction } from '@/utils/confirmAction.js';
 import {
-  clearOrders,
   deleteOrder,
   getOrderSummary,
   getLocalOrders,
@@ -91,10 +90,6 @@ export const useOrders = () => {
         return;
       }
       setOrders(await deleteOrder(orderId));
-    },
-    clearAll: () => {
-      clearOrders();
-      setOrders([]);
     },
   };
 };

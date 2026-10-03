@@ -1745,4 +1745,16 @@ export const deleteOrder = async (orderId) => {
   return getOrders();
 };
 
-export const clearOrders = () => writeOrders([]);
+// There is no clearOrders. Its absence is the rule.
+//
+// It was `writeOrders([])`, and the only thing it could ever delete was an order the SERVER DOES NOT HAVE.
+// Every row in this store is written by createLocalOrder, which stamps persistence:'local',
+// sync_status:'sync_required' and raises a sync issue — it exists for the one case where the server write
+// failed and the browser is the only copy. The legitimate removal is the one at retryLocalOrderSync: drop
+// a single order AFTER it has synced.
+//
+// useOrders exposed it as `clearAll`, with no confirmation and a name that promised something it could not
+// do: the 33 orders on the server would be untouched, so the screen would empty, the owner would believe
+// they were deleted, and a reload would bring them all back — while the unsynced ones, the only ones it
+// actually removed, were gone for good. Counted before deleting: `clearAll` had exactly one reference in
+// src, api and tools, its own definition, and every useOrders() call site destructures explicitly.
