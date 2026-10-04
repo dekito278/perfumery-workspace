@@ -100,6 +100,7 @@ const PublicJournalPage = () => {
             <button
               key={cat}
               type="button"
+              aria-pressed={activeCategory === cat}
               className={`journal-tab${activeCategory === cat ? ' is-active' : ''}`}
               onClick={() => { setActiveCategory(cat); setVisibleCount(9); }}
             >

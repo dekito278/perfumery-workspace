@@ -144,6 +144,7 @@ const CatalogPage = () => {
                 <button
                   key={category}
                   type="button"
+                  aria-pressed={category === activeCategory}
                   className={`catalog-pill ${category === activeCategory ? 'is-active' : ''}`}
                   onClick={() => setActiveCategory(category)}
                 >

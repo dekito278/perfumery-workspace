@@ -99,6 +99,7 @@ export const MobileCatalogContent = ({ active = true }) => {
             <button
               key={cat}
               type="button"
+              aria-pressed={cat === activeCategory}
               className={`m-editorial-pill ${cat === activeCategory ? 'is-active' : ''}`}
               onClick={() => setActiveCategory(cat)}
             >

@@ -743,6 +743,7 @@ const BespokePage = () => {
                       <button
                         key={option.value}
                         type="button"
+                        aria-pressed={form.occasion === option.value}
                         className={form.occasion === option.value ? 'is-active' : ''}
                         onClick={() => updateField('occasion', option.value)}
                       >
@@ -933,6 +934,7 @@ const BespokePage = () => {
                           <button
                             key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
                             type="button"
+                            aria-pressed={active}
                             className={active ? 'is-active' : ''}
                             onClick={() => setSelectedShipping(rate)}
                           >

@@ -90,6 +90,7 @@ const getFriendlyShippingErrorKey = (error, fallbackKey = 'bsp.areaSearchFailed'
 const OptionButton = ({ active, children, extra = '', imageUrl = '', onClick }) => (
   <button
     type="button"
+    aria-pressed={active}
     onClick={onClick}
     className={cn(
       'mobile-commerce-choice min-h-[48px] overflow-hidden p-2 text-left text-xs font-bold leading-snug',
