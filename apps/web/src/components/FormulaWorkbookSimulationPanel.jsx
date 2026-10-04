@@ -725,7 +725,14 @@ const MetricCard = ({ label, value, tone = 'default', score = null }) => (
       {PACE_METRIC_HELP[label] ? (
         <Tooltip>
           <TooltipTrigger asChild>
-            <button type="button" className="inline-flex items-center text-muted-foreground/80 transition hover:text-foreground">
+            {/* The only icon-only button in the app without a name: screen readers announced "button" and
+                nothing else. Named with the metric it explains — the word is already on screen beside it,
+                so this adds no new copy to a Studio panel in either language. */}
+            <button
+              type="button"
+              aria-label={label}
+              className="inline-flex items-center text-muted-foreground/80 transition hover:text-foreground"
+            >
               <Info className="h-3 w-3" />
             </button>
           </TooltipTrigger>
