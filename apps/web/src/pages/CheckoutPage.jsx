@@ -277,6 +277,7 @@ const CheckoutPage = () => {
                     <button
                       key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
                       type="button"
+                      aria-pressed={selectedShipping?.service === rate.service && selectedShipping?.cost === rate.cost}
                       className={selectedShipping?.service === rate.service && selectedShipping?.cost === rate.cost ? 'is-active' : ''}
                       onClick={() => setSelectedShipping(rate)}
                     >

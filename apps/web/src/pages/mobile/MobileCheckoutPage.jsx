@@ -261,8 +261,8 @@ const MobileCheckoutPage = () => {
         >
             {repeatCustomer?.customerCode && (repeatCustomer.deliveryAddress || repeatCustomer.deliveryArea) ? (
               <div className="grid gap-2">
-                <button type="button" onClick={useCustomerLastAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'last' ? 'is-active' : ''}`}>{t('mcheckout.useLastAddress')}</button>
-                <button type="button" onClick={useCustomerNewAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'new' ? 'is-active' : ''}`}>{t('mcheckout.useNewAddress')}</button>
+                <button type="button" aria-pressed={repeatAddressMode === 'last'} onClick={useCustomerLastAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'last' ? 'is-active' : ''}`}>{t('mcheckout.useLastAddress')}</button>
+                <button type="button" aria-pressed={repeatAddressMode === 'new'} onClick={useCustomerNewAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'new' ? 'is-active' : ''}`}>{t('mcheckout.useNewAddress')}</button>
               </div>
             ) : null}
             <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} rows={3} autoComplete="street-address" className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
