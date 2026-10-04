@@ -32,7 +32,7 @@ import {
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { bespokeStepKeys, bespokeTakesPayment, bespokeOccasionLabel, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice, optionExtraPrice } from '@/utils/bespokeOrder.js';
-import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
+import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
@@ -130,7 +130,10 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
     <div className="editorial-bespoke-preview">
       <div className="editorial-bespoke-preview__visual">
         {visualImage ? (
-          <img className="editorial-bespoke-preview__backdrop" src={img(visualImage, 720)} alt={activeLabel} loading="lazy" decoding="async" />
+          /* Same gap as the home page's mood panel: one fixed 720px for every screen. Smaller here —
+             9 kB on a phone, measured — but the rule is the same one, and the next image added to this
+             preview will be a photograph rather than a flat mockup. */
+          <img className="editorial-bespoke-preview__backdrop" src={img(visualImage, 720)} srcSet={srcSet(visualImage)} sizes="(max-width: 767px) 100vw, 520px" alt={activeLabel} loading="lazy" decoding="async" />
         ) : null}
         <div className="editorial-bespoke-preview__mockup" aria-hidden="true">
           <span className={`editorial-bespoke-preview__bottle${isSquare ? ' is-square' : ''}${isLarge ? ' is-large' : ''}${isSmall ? ' is-small' : ''}`} />
