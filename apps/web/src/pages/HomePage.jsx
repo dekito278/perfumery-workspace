@@ -267,7 +267,11 @@ const HomePage = () => {
             <div className="home-moods__panel">
               <div className="home-moods__panel-visual" data-family={moodCategories[activeMood].family.toLowerCase()}>
                 {siteImages[moodCategories[activeMood].siteImageKey] ? (
-                  <img src={img(siteImages[moodCategories[activeMood].siteImageKey], 720)} alt={t(moodCategories[activeMood].nameKey)} className="home-moods__panel-image" />
+                  /* The hero, the statement and the newsletter band all carry a srcset; this panel asked
+                     for one fixed 720px whoever was looking. Measured on the live floral image: a phone
+                     took 171 kB to paint a panel that needs 42 kB. `sizes` is the panel's real width —
+                     it fills the column on a phone and is capped beside the copy on a wide screen. */
+                  <img src={img(siteImages[moodCategories[activeMood].siteImageKey], 720)} srcSet={srcSet(siteImages[moodCategories[activeMood].siteImageKey])} sizes="(max-width: 767px) 100vw, 480px" alt={t(moodCategories[activeMood].nameKey)} className="home-moods__panel-image" />
                 ) : null}
                 <span className="home-moods__panel-family">{moodCategories[activeMood].family}</span>
               </div>
