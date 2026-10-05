@@ -152,6 +152,12 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
       <p className="mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
         {t('intlQuote.duties')}
       </p>
+      {/* The condition that reached no screen at all until 2026-10-06, and the one that strands a parcel
+          when it is missed: the courier telephones the RECIPIENT to clear customs, so their name, address
+          and number have to be right. It was one of five sentences in a data file nobody imported. */}
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">
+        {t('intlQuote.recipient')}
+      </p>
       {/* WHY THERE IS A GAP, said plainly instead of hoped past. Dekito's decision, 2026-10-05: an export
           price large enough to raise the question is better off answering it. */}
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">

@@ -20,6 +20,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 import { Buffer } from 'node:buffer';
 
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -257,11 +258,32 @@ assert.match(quoteBuilder, /shippingTotal > 0/, 'a zero total must take a differ
 const zeroQuote = quoteBuilder.match(/Ongkir: \$\{shipping\.label\}/);
 assert.ok(zeroQuote, 'and that sentence must say what is true instead of printing Rp 0');
 
-// --- 7. The rule's conditions travel with the numbers -------------------------------------------------
-const data = read('data', 'internationalShippingRates.js');
-for (const condition of ['7 bottles or more', 'paid by the recipient', 'remote-area surcharge']) {
-  assert.ok(data.includes(condition), `the condition "${condition}" must stay with the prices it qualifies`);
+// --- 7. The rule's conditions reach the BUYER'S SCREEN -------------------------------------------------
+// This asserted that three sentences were PRESENT IN THE DATA FILE, under the heading "the conditions
+// travel with the numbers". They travelled nowhere: SHIPPING_RATE_NOTES was an exported array of five
+// English sentences that nothing imported. Two had been retyped into intlQuote.duties and reached the
+// buyer that way; three reached no screen at all — including the one that strands a parcel, that the
+// courier telephones the RECIPIENT to clear customs. A guard that reads a file can be satisfied by a file;
+// this one reads the screen.
+//
+// They also cannot live in a data file: the shop is bilingual, and English sentences in src/data are the
+// exact leak this repo's i18n rules exist to stop. So the conditions are message keys, the quote block
+// renders them, and both shops must carry them.
+const dataFile = read('data', 'internationalShippingRates.js');
+assert.doesNotMatch(dataFile, /export const SHIPPING_RATE_NOTES/,
+  'the card conditions are back in the data file, where nothing renders them and no translation can reach them');
+const quoteScreen = read('components', 'storefront', 'InternationalShippingQuote.jsx');
+for (const key of ['intlQuote.duties', 'intlQuote.recipient']) {
+  assert.ok(quoteScreen.includes(`t('${key}')`), `the quote block must show ${key} — it is a condition of the price beside it`);
+  for (const shop of ['id', 'en']) {
+    assert.ok(MESSAGES[shop][key], `${key} is missing from the ${shop} shop`);
+  }
 }
+// What each condition has to SAY, in both languages — held on meaning, not on one wording.
+assert.match(MESSAGES.en['intlQuote.duties'], /duties|taxes/i, 'the duties note must name the duties');
+assert.match(MESSAGES.id['intlQuote.duties'], /bea|pajak/i);
+assert.match(MESSAGES.en['intlQuote.recipient'], /courier|contact/i, 'the recipient note must say the courier may make contact');
+assert.match(MESSAGES.id['intlQuote.recipient'], /kurir|hubungi/i);
 
 assert.equal(formatShippingUsd(80), 'US$80');
 assert.equal(formatShippingUsd(0), '', 'no price is no string, not "US$0"');

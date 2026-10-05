@@ -43,9 +43,13 @@ const sizeIsOnTheCard = (size) => bottleMillilitres(size) === SHIPPING_RATE_BOTT
  *                  there is nothing priced
  * @param bottles   how many 30 ml bottles ride in the parcel
  * @param onTheCard whether every bottle is a size the rule was written for
+ * @param hasOrder  whether there is something to order at all. Defaults to "there is a price", which is
+ *                  right for a product page — the quote block only renders when there IS an export price.
+ *                  A CART has lines whether or not they can be priced, and a basket of unpriced lines
+ *                  still has to reach Dekito.
  */
 export const internationalQuoteFor = ({
-  country = '', bottles = 1, goodsUsd = null, onTheCard = true, t, region = 'en',
+  country = '', bottles = 1, goodsUsd = null, onTheCard = true, hasOrder = null, t, region = 'en',
 } = {}) => {
   // Nothing picked is its own case and must not be confused with a destination we cannot serve: the
   // first is a question the buyer has not answered, the second is an answer we do not have.
@@ -68,27 +72,35 @@ export const internationalQuoteFor = ({
     else onRequest = quote?.onRequest || 'destination';
   }
 
-  const destination = country && country !== DESTINATION_OTHER ? countryNameFor(country, region) : '';
+  // "Another country" NAMES ITSELF. It used to resolve to an empty string, and an empty destination meant
+  // no draft at all — so a buyer whose country the carrier sheet does not list picked the one option that
+  // describes them and then found a button that did nothing. That is the buyer who most needs to reach
+  // Dekito: their parcel is the one that has to be quoted by hand.
+  const destination = country
+    ? (country === DESTINATION_OTHER ? t('intlQuote.otherCountry') : countryNameFor(country, region))
+    : '';
   // "1 bottle(s)" is what a template with the noun baked in produces; the count arrives already worded
   // from the catalogue, in the shop's own language, so the template only places it.
   const countLabel = t(bottles === 1 ? 'intlQuote.bottleOne' : 'intlQuote.bottleMany', { count: bottles });
   // The arrival estimate, worded once here for both the screen and the draft.
   const eta = transitDays ? t('intlQuote.etaRange', { min: transitDays[0], max: transitDays[1] }) : '';
 
-  // The draft vars say only what is settled: a total, or a destination that still needs a rate.
+  // THE DRAFT SAYS WHAT IS KNOWN, and there is always something. A settled total travels as a total; a
+  // destination with no rate travels as a destination and a request for the rate — with the goods when
+  // they are priced and without them when they are not.
   let draftVars = null;
   if (totalUsd) {
     draftVars = {
       destination, count: countLabel, goods: `US$${goodsUsd}`, shipping: `US$${shippingUsd}`, total: `US$${totalUsd}`, eta,
     };
-  } else if (destination && goodsUsd) {
-    draftVars = { destination, count: countLabel, goods: `US$${goodsUsd}` };
+  } else if (destination) {
+    draftVars = { destination, count: countLabel, goods: goodsUsd ? `US$${goodsUsd}` : '' };
   }
 
   // THE GATE. A buyer who opens WhatsApp should arrive with the shipping and the arrival estimate already
   // in the message, not ask for them. Until a destination is chosen the order button is not a link to
   // WhatsApp; it is a pointer to the picker.
-  const needsDestination = Boolean(goodsUsd) && !country;
+  const needsDestination = (hasOrder === null ? Boolean(goodsUsd) : Boolean(hasOrder)) && !country;
 
   return {
     country, bottles, destination, transitDays, eta,
@@ -187,19 +199,22 @@ export const useCartInternationalQuote = (items = []) => {
     ? lines.reduce((sum, line) => sum + line.lineUsd, 0)
     : null;
   const core = internationalQuoteFor({
-    country, bottles: Math.max(1, bottles), goodsUsd,
+    country, bottles: Math.max(1, bottles), goodsUsd, hasOrder: lines.length > 0,
     onTheCard: lines.every((line) => line.onTheCard), t, region,
   });
-  const draft = core.settled
-    ? {
-      key: 'export.waCartDraft',
-      vars: {
-        ...core.draftVars,
-        lines: lines.map((line) => t('export.waCartLine', {
-          name: line.name, size: line.size || '', quantity: line.quantity, price: `US$${line.lineUsd}`,
-        })).join('\n'),
-      },
-    }
+  // Every line travels, priced or not: a line the shop cannot price yet is the one Dekito most needs to
+  // see, and leaving it out of the message would hand him a basket missing a bottle.
+  const lineText = lines.map((line) => t('export.waCartLine', {
+    name: line.name,
+    size: line.size || '',
+    quantity: line.quantity,
+    price: line.lineUsd ? `US$${line.lineUsd}` : t('intlQuote.onRequest.destination'),
+  })).join('\n');
+  // Settled: the total. Chosen but unquotable — "another country", seven bottles, a size the rule was not
+  // written for: the basket and the destination, asking for the rate. Nothing chosen: no draft, and the
+  // button points at the picker instead.
+  const draft = core.draftVars
+    ? { key: core.settled ? 'export.waCartDraft' : 'export.waCartAsk', vars: { ...core.draftVars, lines: lineText } }
     : null;
   return { ...core, lines, unpriced, bottles, setCountry, draft, focusDestinationPicker };
 };

@@ -38,9 +38,15 @@ const InternationalCartPage = () => {
   const phone = getStorefrontWhatsAppNumber();
   const { lines, unpriced, needsDestination, focusDestinationPicker, draft } = quote;
   const message = buildInternationalCartDraft({ t, quote: draft });
-  // The order goes out only when the message is complete — a destination picked and a rate found. Until
-  // then the button points at the picker, exactly as the product page's did before the cart existed.
-  const canOrder = Boolean(message) && Boolean(phone) && !unpriced.length;
+  // THE BUTTON IS NEVER DEAD. Until a destination is picked it points at the picker; once one is picked it
+  // opens WhatsApp, whether or not the rule could price the parcel. It used to require a SETTLED total, so
+  // a buyer who chose "another country" — the one option that describes a destination the carrier sheet
+  // does not list, and therefore the buyer who most needs to reach Dekito — pressed a button that did
+  // nothing at all. Same for seven bottles, and for a line with no export price.
+  const canOrder = Boolean(message) && Boolean(phone);
+  // Lines the catalogue can no longer fulfil. The domestic cart has said this since audit round 9; this
+  // one said nothing, and three bottles are out of stock in the shop as this is written.
+  const unfulfillable = lines.filter((line) => line.unavailable || line.outOfStock);
 
   return (
     <>
@@ -58,6 +64,11 @@ const InternationalCartPage = () => {
 
         <section className="cart-layout">
           <div className="cart-items">
+            {unfulfillable.length ? (
+              <p className="checkout-notice is-error" role="alert">
+                {t('cart.intl.unavailable', { names: unfulfillable.map((line) => line.name).join(', ') })}
+              </p>
+            ) : null}
             {unpriced.length ? (
               <p className="checkout-notice is-error" role="alert">
                 {t('cart.intl.unpriced', { names: unpriced.map((line) => line.name).join(', ') })}
