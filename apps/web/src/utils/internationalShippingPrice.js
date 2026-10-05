@@ -19,8 +19,6 @@ import {
   shippingZoneFor,
 } from '@/data/internationalShippingRates.js';
 
-export const QUOTE_ON_REQUEST = 'on_request';
-
 /** Whole dollars on a US$5 step, rounded UP — a cost rounded down is a cost understated. */
 const up5 = (usd) => Math.ceil(usd / 5) * 5;
 

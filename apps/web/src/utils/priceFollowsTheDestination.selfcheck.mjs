@@ -144,7 +144,10 @@ const DESTINATION_OTHER = ${asJs(DESTINATION_OTHER)};
 const SHIPPING_RATE_BOTTLE_SIZE_ML = 30;
 ${withoutImports(readRaw('hooks', 'useInternationalQuote.js'))}
 `);
-const { useInternationalQuote } = quoteHook;
+const { useInternationalQuote, internationalQuoteFor } = quoteHook;
+// The real English catalogue, so a worded value in a draft is what a buyer actually reads.
+const tEn = (key, vars) => String(MESSAGES.en[key] ?? key).replace(/\{(\w+)\}/g, (whole, name) => (
+  vars && Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : whole));
 const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => {
   globalThis.__fx = { country, bottles };
   return useInternationalQuote({ price, product: { size }, variant: { size } });
@@ -267,6 +270,61 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
 // And the picker has the STABLE id the gate points at — a useId one changes between renders.
 assert.match(read('components', 'storefront', 'InternationalShippingQuote.jsx'), /const countryId = DESTINATION_PICKER_ID;/,
   'the country picker must carry the id the order buttons send a buyer to');
+
+// --- 5b. THE ORDER BUTTON IS NEVER DEAD ------------------------------------------------------------
+// Found by running the core over every state a basket can be in, 2026-10-06. It used to require a SETTLED
+// total before it would build a draft, so three states left a button that did nothing at all when pressed:
+// seven bottles, a line with no export price, and — worst — "another country", the one option that
+// describes a destination the carrier sheet does not list, chosen by exactly the buyer whose parcel has to
+// be quoted by hand. There is always something to say: the basket, and the destination when one is picked.
+{
+  const states = [
+    ['a settled basket', { country: 'DE', bottles: 2, goodsUsd: 160 }],
+    ['more bottles than the rule prices', { country: 'DE', bottles: SHIPPING_RATE_MAX_BOTTLES + 1, goodsUsd: 560 }],
+    ['a line with no export price', { country: 'DE', bottles: 2, goodsUsd: null }],
+    ['a destination the sheet does not list', { country: DESTINATION_OTHER, bottles: 1, goodsUsd: 80 }],
+    ['a size the rule was not written for', { country: 'DE', bottles: 1, goodsUsd: 80, onTheCard: false }],
+    ['nothing chosen yet', { country: '', bottles: 1, goodsUsd: 80 }],
+    ['nothing chosen, nothing priced', { country: '', bottles: 2, goodsUsd: null }],
+  ];
+  for (const [label, args] of states) {
+    const r = internationalQuoteFor({ onTheCard: true, hasOrder: true, t: tEn, region: 'en', ...args });
+    assert.ok(r.draftVars || r.needsDestination,
+      `${label}: the order button would open nothing and point nowhere — a buyer presses it and the page does not move`);
+    if (r.draftVars) {
+      assert.ok(r.draftVars.destination, `${label}: a draft goes out naming no destination at all`);
+    }
+  }
+  // "Another country" NAMES itself rather than resolving to an empty string, which is what made its draft
+  // vanish: the draft was built only when `destination` was truthy.
+  const other = internationalQuoteFor({ country: DESTINATION_OTHER, bottles: 1, goodsUsd: 80, hasOrder: true, t: tEn, region: 'en' });
+  assert.equal(other.destination, MESSAGES.en['intlQuote.otherCountry'],
+    '"another country" must name itself in the message, or its draft disappears');
+  assert.equal(other.settled, false, 'and it must not claim a settled total');
+  // An empty basket is the one case with no button at all, and that is not the same as a dead one.
+  assert.equal(internationalQuoteFor({ country: '', bottles: 1, goodsUsd: null, hasOrder: false, t: tEn, region: 'en' }).needsDestination,
+    false, 'an empty basket needs no destination');
+}
+
+// --- 5c. AND BOTH ENGLISH CARTS SAY WHEN A LINE CANNOT BE FULFILLED ---------------------------------
+// The domestic cart has warned about lines that left the catalogue or ran out of stock since audit round
+// 9; the English cart, written on 2026-10-06, did not — and three bottles were out of stock in the shop
+// the day it shipped. A buyer whose basket cannot be filled would have sent Dekito an order for it.
+for (const page of [['pages', 'InternationalCartPage.jsx'], ['pages', 'mobile', 'MobileInternationalCartPage.jsx']]) {
+  const source = read(...page);
+  const name = page.join('/');
+  assert.match(source, /lines\.filter\(\(line\) => line\.unavailable \|\| line\.outOfStock\)/,
+    `${name} never looks at whether its lines can still be fulfilled`);
+  assert.match(source, /t\('cart\.intl\.unavailable', \{ names:/, `${name} finds unfulfillable lines and says nothing`);
+  // The button stays reachable: the warning is the protection, and blocking it would strand the buyer
+  // with a basket they cannot ask about. Held so a later "fix" cannot quietly re-add the dead state.
+  assert.match(source, /const canOrder = Boolean\(message\) && Boolean\(phone\);/,
+    `${name} gates the order on something other than having a message and a number — that is how the dead button came back`);
+}
+for (const shop of ['id', 'en']) {
+  assert.ok(MESSAGES[shop]['cart.intl.unavailable'], `cart.intl.unavailable is missing from the ${shop} shop`);
+  assert.ok(MESSAGES[shop]['export.waCartAsk'], `export.waCartAsk is missing from the ${shop} shop`);
+}
 
 // --- 6. THE GAP IS EXPLAINED, THE SUPPORT IS SAID, AND THE FREIGHT IS STILL NOT IN THE PRICE ------
 const quoteBlock = read('components', 'storefront', 'InternationalShippingQuote.jsx');

@@ -99,6 +99,7 @@ export const MESSAGES = {
     'export.waDraftPrice': '\nHarga yang saya lihat di website: {price}.',
     'export.waCartLine': '- {name} ({size}) x{quantity}: {price}',
     'export.waCartDraft': 'Halo SOLIVAGANT, saya mau pesan:\n{lines}\n\nTujuan: {destination} · {count}\nParfum: {goods} · Ongkir: {shipping} · Total: {total}\nEstimasi sampai: {eta}\n(angka ini yang saya lihat di website)\nBoleh dibantu konfirmasi dan cara bayarnya?\nSaya mengerti belum ada botol yang ditahan sampai kita sepakat.',
+    'export.waCartAsk': 'Halo SOLIVAGANT, saya mau pesan:\n{lines}\n\nTujuan: {destination} · {count}\nOngkir ke sana belum muncul di website — boleh dibantu angkanya dan total akhirnya?\nSaya mengerti belum ada botol yang ditahan sampai kita sepakat.',
     'cart.intl.lead': 'Pilih negara tujuan, lihat ongkir dan totalnya, lalu kirim pesanannya lewat WhatsApp.',
     'cart.intl.order': 'Pesan lewat WhatsApp',
     'cart.intl.howItWorks': 'Kami konfirmasi lewat WhatsApp dan mengirim cara bayar. Belum ada botol yang ditahan sampai itu.',
@@ -132,6 +133,8 @@ export const MESSAGES = {
     'intlQuote.eta': 'Estimasi sampai: {eta}.',
     'intlQuote.pickFirst': 'Pilih negara tujuan dulu',
     'intlQuote.duties': 'Bea masuk, pajak, dan biaya kepabeanan di negara tujuan ditanggung penerima. Sebagian alamat terpencil kena tambahan biaya — kami konfirmasi dulu sebelum kirim.',
+    'intlQuote.recipient': 'Pastikan nama, alamat lengkap, dan nomor telepon penerima benar — kurir bisa menghubungi penerima untuk pengantaran atau proses bea cukai.',
+    'cart.intl.unavailable': 'Stok {names} habis atau sudah tidak ada di katalog. Hapus dulu dari keranjang, atau tanyakan lewat WhatsApp sebelum memesan.',
     'intlQuote.why': 'Harga internasional mencakup kemas ekspor, dokumen kepabeanan, dan risiko kiriman yang tidak bisa kami tangani langsung dari Indonesia.',
     'nav.subscribeDraft': 'Halo SOLIVAGANT, saya mau berlangganan update atelier. Email saya: {email}',
 
@@ -1300,6 +1303,7 @@ export const MESSAGES = {
     'export.waDraftPrice': '\nThe international price shown on your site: {price}.',
     'export.waCartLine': '- {name} ({size}) x{quantity}: {price}',
     'export.waCartDraft': 'Hello SOLIVAGANT, I would like to order:\n{lines}\n\nDestination: {destination} · {count}\nPerfume: {goods} · Shipping: {shipping} · Total: {total}\nEstimated delivery: {eta}\n(these are the figures shown on your site)\nCould you confirm and let me know how to pay?\nI understand nothing is reserved until we confirm.',
+    'export.waCartAsk': 'Hello SOLIVAGANT, I would like to order:\n{lines}\n\nDestination: {destination} · {count}\nYour site quotes the shipping there on request — could you let me know the shipping and the final total?\nI understand nothing is reserved until we confirm.',
     'cart.intl.lead': 'Choose your country, see the shipping and the total, then send the order on WhatsApp.',
     'cart.intl.order': 'Order on WhatsApp',
     'cart.intl.howItWorks': 'We confirm on WhatsApp and send you how to pay. Nothing is reserved until then.',
@@ -1333,6 +1337,8 @@ export const MESSAGES = {
     'intlQuote.eta': 'Estimated delivery: {eta}.',
     'intlQuote.pickFirst': 'Select your country first',
     'intlQuote.duties': 'Import duties, taxes and customs fees in the destination country are paid by the recipient. A remote-area surcharge applies to some addresses — we confirm before shipping.',
+    'intlQuote.recipient': "Please make sure the recipient's name, full address and phone number are correct — the courier may contact them for delivery or customs clearance.",
+    'cart.intl.unavailable': '{names} is out of stock or no longer in the catalogue. Remove it from the cart, or ask us on WhatsApp before ordering.',
     'intlQuote.why': 'International prices include export packing, customs documentation, and the risk we carry on shipments we cannot service locally.',
     'nav.subscribeDraft': 'Hello SOLIVAGANT, I would like to subscribe to atelier updates. My email: {email}',
 

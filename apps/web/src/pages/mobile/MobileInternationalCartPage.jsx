@@ -29,7 +29,10 @@ const MobileInternationalCartPage = () => {
   const phone = getStorefrontWhatsAppNumber();
   const { lines, unpriced, needsDestination, focusDestinationPicker, draft, totalUsd, bottles } = quote;
   const message = buildInternationalCartDraft({ t, quote: draft });
-  const canOrder = Boolean(message) && Boolean(phone) && !unpriced.length;
+  // Same two rules as the desktop cart: the button is never dead, and a line the catalogue cannot fulfil
+  // is said out loud. See the notes in InternationalCartPage.jsx.
+  const canOrder = Boolean(message) && Boolean(phone);
+  const unfulfillable = lines.filter((line) => line.unavailable || line.outOfStock);
   const decrease = (line) => (line.quantity <= 1 ? removeItem(line.slug) : updateQuantity(line.slug, line.quantity - 1));
   const visualFor = (line) => {
     const product = products.find((entry) => entry.slug === line.productSlug || entry.id === line.productId);
@@ -57,6 +60,11 @@ const MobileInternationalCartPage = () => {
             </Button>
           )}
         </section>
+        {unfulfillable.length ? (
+          <p role="alert" style={{ margin: '12px 16px 0', borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
+            {t('cart.intl.unavailable', { names: unfulfillable.map((line) => line.name).join(', ') })}
+          </p>
+        ) : null}
         {unpriced.length ? (
           <p role="alert" style={{ margin: '12px 16px 0', borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
             {t('cart.intl.unpriced', { names: unpriced.map((line) => line.name).join(', ') })}

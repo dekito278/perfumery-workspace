@@ -119,11 +119,18 @@ export const shippingZoneFor = (countryCode) => {
 // and the ceiling leaves room for customs.
 export const SHIPPING_TRANSIT_DAYS = { 1: [2, 4], 2: [3, 5], 3: [3, 6], 4: [4, 7], 5: [5, 8], 6: [5, 9], 7: [5, 10], 8: [8, 15] };
 
-/** The conditions that travel with the numbers. */
-export const SHIPPING_RATE_NOTES = [
-  'Rates are in USD, per shipment, for 30 ml bottles sent by tracked express courier.',
-  'Orders of 7 bottles or more are quoted on request.',
-  'Import duties, taxes and customs fees in the destination country are paid by the recipient.',
-  'A remote-area surcharge may apply to some addresses. We will confirm before shipping.',
-  "Please make sure the recipient's name, full address and phone number are correct, as the courier may contact them for delivery or customs clearance.",
-];
+/*
+ * THE CARD'S CONDITIONS LIVE IN THE MESSAGE CATALOGUE, NOT HERE.
+ *
+ * They were an exported array of five English sentences, SHIPPING_RATE_NOTES, and
+ * internationalShippingPrice.selfcheck asserted that three of them were present in this file under the
+ * heading "the card's conditions travel with the numbers". They travelled nowhere: nothing imported the
+ * array. Two of the five had been retyped into intlQuote.duties and reached the buyer that way; the other
+ * three reached no screen at all — including the one that matters most on an international parcel, that
+ * the courier may telephone the recipient to clear customs.
+ *
+ * They cannot live here anyway: the shop is bilingual and a data file of English sentences is exactly the
+ * leak this repo's i18n rules exist to stop. So the conditions are intlQuote.duties and
+ * intlQuote.recipient in messages.js, the quote block renders both, and the guard checks the BUYER'S
+ * SCREEN in both shops rather than the presence of a string in a file nobody reads.
+ */
