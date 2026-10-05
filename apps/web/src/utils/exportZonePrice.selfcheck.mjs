@@ -37,10 +37,11 @@ const shim = [
   strip('data', 'rayspeedRates.js'),
   strip('utils', 'memberPriceFill.js'),
   strip('utils', 'shippingRegion.js'),
-  'export { ASIA_TIME_ZONES, isAsiaCountry, shippingRegionForTimeZone, internationalPriceFor, ASIA_MULTIPLIER, EXPORT_ZONE_BY_COUNTRY };',
+  'export { ASIA_TIME_ZONES, isAsiaCountry, shippingRegionForCountry, shippingRegionForTimeZone, internationalPriceFor, ASIA_MULTIPLIER, EXPORT_ZONE_BY_COUNTRY };',
 ].join('\n');
 const {
-  ASIA_TIME_ZONES, isAsiaCountry, shippingRegionForTimeZone, internationalPriceFor, EXPORT_ZONE_BY_COUNTRY,
+  ASIA_TIME_ZONES, isAsiaCountry, shippingRegionForCountry, shippingRegionForTimeZone, internationalPriceFor,
+  EXPORT_ZONE_BY_COUNTRY,
 } = await import(`data:text/javascript;base64,${Buffer.from(shim, 'utf8').toString('base64')}`);
 
 // --- 1. The two definitions of "the neighbours" must be the same set ----------------------------------
@@ -114,8 +115,24 @@ assert.equal(internationalPriceFor({ tierPrices: { overseas: 500000 }, linePrice
 
 // --- 3. The calculator prices from the destination ----------------------------------------------------
 const calculator = read('pages', 'ExportShippingCalculatorPage.jsx');
-assert.match(calculator, /const priceRegion = isAsiaCountry\(countryCode\) \? 'asia' : 'world'/,
-  'the destination country must decide which international price the order is written at');
+// HELD AS THE RULE, NOT AS THE SPELLING. This was pinned to the exact text
+// `isAsiaCountry(countryCode) ? 'asia' : 'world'` and it failed the day that line became a call to
+// shippingRegionForCountry — the shared split the storefront grew on 2026-10-05 when the price started
+// following the destination the buyer picks. Collapsing two copies of a price rule into one is the fix,
+// not the regression, and a guard that fails it is crying wolf. The message above already says what it
+// means, so RUN the page's own expression and check the destination is what decides.
+{
+  const regionLine = (calculator.match(/const priceRegion = ([^;]+);/) || [])[1];
+  assert.ok(regionLine, 'the calculator no longer decides a price region at all');
+  const decide = new Function('countryCode', 'isAsiaCountry', 'shippingRegionForCountry',
+    `return (${regionLine});`);
+  const at = (code) => decide(code, isAsiaCountry, shippingRegionForCountry);
+  assert.equal(at('MY'), 'asia', 'a parcel to Malaysia must be written at the neighbours\' price');
+  assert.equal(at('VN'), 'asia', 'and so must Vietnam, the destination this defect was found on');
+  assert.equal(at('DE'), 'world', 'while Europe pays the hand-set world price');
+  assert.equal(at('JP'), 'world', 'Japan is zone 3 — a rich market, not a neighbour');
+  assert.equal(at(''), 'world', 'and an unknown destination must never be quoted the cheaper of the two');
+}
 assert.match(calculator, /internationalPriceFor\(\{ tierPrices: forLine, linePrice: retailPrice, region: priceRegion \}\)/,
   'and each line must be priced with it');
 assert.match(calculator, /\[rows, products, tierPrices\.index, priceRegion\]/,

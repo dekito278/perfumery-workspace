@@ -2,12 +2,20 @@ import React from 'react';
 import { Globe } from 'lucide-react';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useExportPrice } from '@/hooks/useOverseasPrice.js';
+import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { buildOverseasDraft, overseasDraftKeys, quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 
 /**
- * Asking about an overseas order. Deliberately NOT a checkout: international shipping is quoted by
- * hand, so the buyer sees the product price here and the shipping cost comes from a conversation.
+ * Asking about an overseas order. Deliberately NOT a checkout — but no longer a question with half the
+ * price missing either.
+ *
+ * It used to read: "international shipping is quoted by hand, so the buyer sees the product price here
+ * and the shipping cost comes from a conversation." That was true and it was the problem. The buyer saw
+ * US$80 and learned about US$140 in a WhatsApp reply, after they had already decided. Since 2026-10-05
+ * InternationalShippingQuote settles the total on the page, and this draft carries it, so the
+ * conversation starts at a confirmation rather than at a surprise. The quote is still not a checkout:
+ * nothing here reserves stock.
  *
  * Nothing about this reserves stock, and the message says so — otherwise someone who asks on Monday
  * and orders on Friday believes a bottle was being held for them.
@@ -26,6 +34,9 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // this component is used in: the panel passes english, everything else does not.
   const { price: exportPrice, overseasVisitor } = useExportPrice(product, variant);
   const { t } = useTranslate();
+  // The total the quote block settled, when it settled one. Null until the buyer picks a destination,
+  // and then the draft quotes the total instead of the bare bottle price — see buildOverseasDraft.
+  const { draft: internationalDraft } = useInternationalQuote({ price: exportPrice, product, variant });
   const showExportPrice = Boolean(exportPrice) && !english && !overseasVisitor;
 
   if (!phoneNumber || !product?.name) return null;
@@ -51,7 +62,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // Dekito, and a rupiah figure in it is a number he then has to explain before he can quote a parcel.
   const quoted = quotedInternationalPrice(exportPrice, price);
   const message = buildOverseasDraft({
-    t, isInternational: overseasVisitor, name: product.name, size, price: quoted,
+    t, isInternational: overseasVisitor, name: product.name, size, price: quoted, quote: internationalDraft,
   });
 
   const link = (

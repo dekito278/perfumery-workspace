@@ -339,8 +339,46 @@ assert.doesNotMatch(button, /SOLIVAGANT,/, 'no draft is written in the component
 assert.match(button, /buildOverseasDraft\(\{[\s\S]{0,200}?price: quoted/,
   'and it must be the number that reaches the message');
 const draftBuilder = read('utils', 'overseasEnquiry.js');
-assert.match(draftBuilder, /line: price \? t\('export\.waDraftPrice', \{ price \}\) : ''/,
-  'the price the caller resolved must become the price line, and nothing when there is none');
+// HELD AS THE RULE, NOT AS THE SPELLING. This was pinned to the exact text
+// `line: price ? t('export.waDraftPrice', { price }) : ''` and it failed the day the builder learned to
+// carry a settled TOTAL as well as a bare price — a change that made the draft more honest, not less.
+// Its own comment above already said what it meant: the resolved number reaches WhatsApp, and an unknown
+// price prints no line at all. So RUN the builder and check that, with the real message catalogue.
+{
+  const runnable = "const usdPriceFor = (v) => (Number(v) > 0 ? Math.ceil(Number(v) / 16500 / 5) * 5 : null);\n"
+    + readFileSync(join(root, 'utils', 'overseasEnquiry.js'), 'utf8')
+      .split('\n').filter((line) => !line.startsWith('import ')).join('\n');
+  const { buildOverseasDraft: build } = await import(
+    `data:text/javascript;base64,${Buffer.from(runnable, 'utf8').toString('base64')}`);
+  const t = (key, vars) => (vars ? String(MESSAGES.en[key] ?? key).replace(/\{(\w+)\}/g, (whole, name) => (
+    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : whole)) : (MESSAGES.en[key] ?? key));
+  const draftFor = (extra) => build({ t, isInternational: true, name: 'La Tulipe', size: '30 ml', ...extra });
+
+  // A price and nothing else: the price line, with the number in it.
+  assert.match(draftFor({ price: 'US$80' }), /US\$80/,
+    'the price the caller resolved must reach the message');
+  // No price at all: no line, and NO leftover placeholder. An empty line is a draft with a gap in it;
+  // a leftover {line} is a draft that shows the buyer the template.
+  const bare = draftFor({ price: '' });
+  assert.doesNotMatch(bare, /\{line\}|\{price\}/, 'an unknown price must print no line, not the template');
+  assert.doesNotMatch(bare, /\n\s*\n\s*\n/, 'and must not leave a blank line where the price was');
+
+  // A settled total REPLACES the price line rather than joining it. Both name the bottle price, and a
+  // draft carrying it twice makes Dekito check one number against itself before he can reply.
+  const quoted = draftFor({
+    price: 'US$80',
+    quote: {
+      key: 'export.waDraftQuote',
+      vars: { destination: 'Germany', count: '1 bottle', goods: 'US$80', shipping: 'US$140', total: 'US$220' },
+    },
+  });
+  assert.match(quoted, /Germany/, 'the settled total must name where the parcel is going');
+  assert.match(quoted, /US\$220/, 'and it must carry the total the buyer was shown');
+  assert.equal((quoted.match(/US\$80/g) || []).length, 1,
+    'the bottle price belongs in the quote line only — the price line must stand down when a total exists');
+  assert.doesNotMatch(quoted, new RegExp(String(MESSAGES.en['export.waDraftPrice']).trim().split('{')[0].trim()),
+    'the old price line must not also appear beside the total');
+}
 // A fixed height clipped the two-line English label half out of its own box on a 375px phone.
 assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows to fit a label that wraps');
 assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned to a fixed height again');

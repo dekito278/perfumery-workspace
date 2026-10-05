@@ -95,6 +95,11 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // SWIFT/BIC is the label printed on the form at every bank in both countries. Translating it would
   // mean inventing an Indonesian name for a code the sender has to type exactly as it is.
   'pay.swift',
+  // The international quote block's bottom line. "Total" is the word on an Indonesian receipt and on an
+  // English one, and it sits in a row whose other half is a dollar figure. THE CONDITION: only this one
+  // key of the block — every other label in it differs between the two shops, including the five region
+  // names, so an untranslated sibling still fails here rather than hiding behind this entry.
+  'intlQuote.total',
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {

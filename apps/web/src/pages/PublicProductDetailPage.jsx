@@ -30,6 +30,8 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
+import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
@@ -83,6 +85,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
   // useOverseasPrice, not useExportPrice: the second hands the export price to the Indonesian shop too.
   const exportPrice = useOverseasPrice(product, selectedVariant);
+  // The same settled total the quote block below shows, so the sticky bar sends Dekito the figure the
+  // buyer was actually looking at. These two have drifted before — #362 fixed the action button's price
+  // line and left both bars sending a number that had not been offered.
+  const { draft: internationalDraft } = useInternationalQuote({ price: exportPrice, product, variant: selectedVariant });
 
   // Reveal a compact sticky buy-bar once the main add-to-cart button scrolls out of view.
   useEffect(() => {
@@ -240,7 +246,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 member/tier line are not shown at all: three prices on one screen left the reader to guess
                 which was theirs, which is what Dekito saw on his own phone. */}
             {exportPrice ? (
-              <InternationalPrice price={exportPrice} className="hero-animate-text hero-animate-text--d3" />
+              <>
+                <InternationalPrice price={exportPrice} className="hero-animate-text hero-animate-text--d3" />
+                <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-3" />
+              </>
             ) : (
               <>
                 <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
@@ -365,7 +374,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             </div>
             <div className="pdp-sticky-bar__text">
               <span className="pdp-sticky-bar__name">{product.name}</span>
-              <span className="pdp-sticky-bar__price">{exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel}</span>
+              {/* The dollar, for the same reason the headline shows it — see the note on the phone's
+                  sticky bar and the long one at the top of InternationalPrice.jsx. The rupiah of an
+                  export price is Dekito's book figure, not the amount the buyer is asked to send. */}
+              <span className="pdp-sticky-bar__price">{quotedInternationalPrice(exportPrice, selectedPriceLabel)}</span>
             </div>
           </div>
           {/* The sticky bar is a second add-to-cart. In the English shop the cart is not offered, so it
@@ -379,6 +391,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 name: product.name,
                 size: selectedSize,
                 price: quotedInternationalPrice(exportPrice, selectedPriceLabel),
+                quote: internationalDraft,
               }), getStorefrontWhatsAppNumber())}
               target="_blank"
               rel="noopener noreferrer"

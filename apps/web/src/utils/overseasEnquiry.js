@@ -48,12 +48,27 @@ export const overseasDraftKeys = (isInternational) => (isInternational
   ? { labelKey: 'export.order', draftKey: 'export.waOrderDraft' }
   : { labelKey: 'export.ask', draftKey: 'export.waDraft' });
 
-export const buildOverseasDraft = ({ t, isInternational = false, name = '', size = '', price = '' } = {}) => {
+/**
+ * `quote` is the settled international total, as a message KEY and VARS from useInternationalQuote —
+ * never rendered text, because text in a data object is Indonesian no scan for Indonesian can see.
+ *
+ * When it is present it REPLACES the price line rather than joining it. Both say what the bottle costs,
+ * and a draft reading "the international price shown on your site: US$80" directly above "Perfume
+ * US$80 · Shipping US$140 · Total US$220" makes Dekito read the same number twice to check it is the
+ * same number. The quote is the better of the two: it is the figure the buyer was actually shown, with
+ * the destination and the count that produced it, so the reply is a confirmation and not a calculation.
+ */
+export const buildOverseasDraft = ({
+  t, isInternational = false, name = '', size = '', price = '', quote = null,
+} = {}) => {
   if (typeof t !== 'function' || !name) return '';
   const { draftKey } = overseasDraftKeys(isInternational);
+  const line = quote?.key
+    ? t(quote.key, quote.vars || {})
+    : (price ? t('export.waDraftPrice', { price }) : '');
   return t(draftKey, {
     item: `${name}${size ? ` (${size})` : ''}`,
-    line: price ? t('export.waDraftPrice', { price }) : '',
+    line,
   });
 };
 

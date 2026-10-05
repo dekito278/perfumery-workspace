@@ -19,6 +19,7 @@ import {
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
@@ -350,6 +351,10 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
               SwitchToIndonesiaHint keeps the way back one tap away for whoever IS shipping inside
               Indonesia and simply prefers reading English. */}
           {exportPrice ? <InternationalPrice price={exportPrice} /> : null}
+          {/* The complete figure, before the buyer asks instead of after. Gated inside the component
+              on the same hook the headline above uses, so the two cannot disagree about whether this
+              reader is being quoted internationally. */}
+          <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-3" />
 
           {isInternational ? null : (
             <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
