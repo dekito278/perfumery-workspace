@@ -66,6 +66,7 @@ export const MESSAGES = {
     'pdp.soldOutOption': ' (Stok habis)',
     'pdp.addedSheetTitle': 'Masuk ke keranjang',
     'pdp.addedSheetBody': 'Lanjut belanja, atau langsung ke pembayaran.',
+    'pdp.addedSheetBodyIntl': 'Lanjut belanja, atau buka keranjang untuk memilih negara dan melihat ongkirnya.',
     'pdp.continueShopping': 'Lanjut belanja',
     'pdp.checkout': 'Checkout',
 
@@ -1270,6 +1271,7 @@ export const MESSAGES = {
     'pdp.soldOutOption': ' (sold out)',
     'pdp.addedSheetTitle': 'Added to cart',
     'pdp.addedSheetBody': 'Keep browsing, or go to checkout.',
+    'pdp.addedSheetBodyIntl': 'Keep browsing, or open your cart to choose your country and see the shipping.',
     'pdp.continueShopping': 'Keep browsing',
     'pdp.checkout': 'Checkout',
 
