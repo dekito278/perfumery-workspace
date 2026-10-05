@@ -32,7 +32,7 @@ const InternationalShippingQuote = ({ product, variant = null, className = '' })
   const price = useOverseasPrice(product, variant);
   const {
     country, bottles, setCountry, setBottles,
-    goodsUsd, shippingUsd, totalUsd, onRequest, bottleSizeLabel,
+    goodsUsd, shippingUsd, shippingSupportUsd, totalUsd, onRequest, bottleSizeLabel,
   } = useInternationalQuote({ price, product, variant });
   const countryId = useId();
   const bottlesId = useId();
@@ -107,6 +107,15 @@ const InternationalShippingQuote = ({ product, variant = null, className = '' })
           </dd>
         </div>
       </dl>
+
+      {/* The one sentence the whole rule was shaped to be: a number, not a percentage, so it can be said.
+          Shown only with a settled figure — "we cover US$30" over "quoted on request" is a promise about a
+          parcel we have not priced. */}
+      {shippingUsd && shippingSupportUsd ? (
+        <p className="mt-1 text-xs font-semibold leading-relaxed text-editorial-charcoal">
+          {t('intlQuote.support', { amount: shippingSupportUsd })}
+        </p>
+      ) : null}
 
       {totalUsd ? (
         <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-editorial-charcoal/15 pt-2">

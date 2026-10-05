@@ -57,7 +57,9 @@ for (const rel of files) {
   }
 }
 
-assert.ok(lists.length >= 2,
+// One list since 2026-10-06: ASIA_TIME_ZONES in shippingRegion.js decided the 2.2x Southeast Asia price
+// and was retired with it. The floor is still a floor — the shop-language detection's list must be found.
+assert.ok(lists.length >= 1,
   `expected to find the app's time zone lists by sweeping; found ${lists.length}. Either they moved out `
   + 'of array literals, or this sweep stopped matching them.');
 
@@ -65,9 +67,10 @@ assert.ok(lists.length >= 2,
 // green while missing a whole screen; the fix is to read the list out loud.
 for (const { file, zones } of lists) console.log(`  ${file}: ${zones.length} zones`);
 
-// The files whose lists decide money or which shop a reader sees. Not the subject of the rule — the rule
-// is over everything swept — but a floor under the sweep: if either stops being found, the sweep broke.
-for (const required of ['utils/shippingRegion.js', 'utils/overseasVisitor.js']) {
+// The file whose list decides which shop a reader sees. Not the subject of the rule — the rule is over
+// everything swept — but a floor under the sweep: if it stops being found, the sweep broke.
+// (utils/shippingRegion.js was here too until its list, and the price it decided, were retired.)
+for (const required of ['utils/overseasVisitor.js']) {
   assert.ok(lists.some((entry) => entry.file === required),
     `${required} holds a time zone list that decides a price, and this sweep no longer sees it`);
 }
@@ -124,19 +127,17 @@ assert.deepEqual(missingAlias, [],
 // sabotage that walked nothing at all.
 assert.equal(examined, lists.reduce((sum, entry) => sum + entry.zones.length, 0),
   'every zone found must be examined, not some of them');
-assert.ok(renamed >= 2,
-  `this engine should report at least two of these zones under a second spelling; found ${renamed}. `
-  + 'Either the aliases were dropped from a list, or this loop stopped looking.');
-
-// And the entries that exist FOR OTHER ENGINES must survive a tidy-up. Asia/Macao, Asia/Ho_Chi_Minh and
-// Asia/Yangon are all absent from this Node's reportable set — a reader of this file could reasonably
-// conclude they are dead weight and delete them, which would break exactly the browsers that report them.
+// There used to be two floors here — "at least two renamed zones" and "at least three spellings carried
+// for other engines" — and both were sanity checks on the sweep whose only examples lived in the Asia
+// list (Yangon/Rangoon, Saigon/Ho_Chi_Minh, Macau/Macao). That list was retired on 2026-10-06 with the
+// price it decided, and the Indonesian list has no renamed zones, so a floor demanding examples would
+// now fail for a reason that has nothing to do with the rule. The rule itself — both directions, over
+// every list found — still runs above, and the empty-sweep trap is still shut by `examined` matching the
+// count and by the list floor. The day a renamed zone appears in any list again, the two assertions
+// above catch a missing spelling without being told to look for one.
 const forOtherEngines = lists.flatMap(({ file, zones }) => zones
   .filter((zone) => !reportable.includes(zone))
   .map((zone) => `${file}: ${zone}`));
-assert.ok(forOtherEngines.length >= 3,
-  'the second spelling of each renamed zone is carried for engines OTHER than this one and must not be '
-  + `tidied away; expected at least 3 such entries, found ${forOtherEngines.length}`);
-console.log(`  carried for other engines (unreportable here, do not delete): ${forOtherEngines.join(', ')}`);
+if (forOtherEngines.length) console.log(`  carried for other engines (unreportable here, do not delete): ${forOtherEngines.join(', ')}`);
 
 console.log(`timeZoneListsAreClosed selfcheck OK (${lists.length} lists, ${examined} zones, ${renamed} renamed, ${reportable.length} reportable spellings checked both ways)`);

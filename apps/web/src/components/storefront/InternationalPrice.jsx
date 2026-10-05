@@ -3,7 +3,6 @@ import { Globe } from 'lucide-react';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
-import { useShippingRegion } from '@/hooks/useShippingRegion.js';
 
 /**
  * The price an international buyer actually pays, as the headline.
@@ -37,19 +36,13 @@ import { useShippingRegion } from '@/hooks/useShippingRegion.js';
 // dollar is what this buyer is shown — the rupiah stays in the books, where it belongs.
 const InternationalPrice = ({ price, className = '' }) => {
   const { t } = useTranslate();
-  // Which of the two international prices this headline is — the note under it has to name the one being
-  // shown, because "priced for outside Indonesia" over the Southeast Asia price is the right number under
-  // the wrong promise.
+  // ONE international price since 2026-10-06, so one sentence under it. There were two — "Southeast Asia
+  // price" and "priced for outside Indonesia" — while the neighbours paid 2.2x; that split is retired (see
+  // shippingRegion.js) and a line that still chose between them would be choosing between two true
+  // sentences and one that is no longer.
   //
-  // THE FREIGHT IS NOT IN EITHER PRICE. This comment used to say a reader in Kuala Lumpur was "looking at
-  // the Southeast Asia price with the shipping already inside it", which stopped being true on 2026-09-25
-  // when Dekito decided shipping is charged from the published card to every destination. The copy was
-  // corrected that day and this sentence was not, which is the more dangerous half: the next reader
-  // trusts the comment and writes the promise back in. See the long note in shippingRegion.js.
-  //
-  // Since 2026-10-05 the region follows the destination the buyer PICKED, not the browser's clock — so
-  // this line changes when they choose a country, which is the whole point of the quote block below.
-  const shippingRegion = useShippingRegion();
+  // THE FREIGHT IS NOT IN THE PRICE. The sentence here says so, and the quote block beneath the headline
+  // puts the actual shipping figure next to it, which is the only honest way to say "not included".
   const usd = usdPriceFor(price);
 
   return (
@@ -60,7 +53,7 @@ const InternationalPrice = ({ price, className = '' }) => {
       </p>
       <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold leading-relaxed text-muted-foreground">
         <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        <span>{t(shippingRegion === 'asia' ? 'intl.priceNoteAsia' : 'intl.priceNote')}</span>
+        <span>{t('intl.priceNote')}</span>
       </p>
     </div>
   );

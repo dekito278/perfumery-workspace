@@ -1,12 +1,19 @@
 // `node src/utils/internationalShippingPrice.selfcheck.mjs`
 //
-// The published rate card, checked as a price list rather than as a file that exists.
+// The international shipping price, checked as a RULE that is run rather than a table that is read.
 //
-// Two failure modes are worth guarding, and the second is the expensive one:
-//   * a wrong number — the card says $140 to Europe and the app must say $140, not $135 or $215
-//   * a number where the card printed a REFUSAL. Seven bottles, and any destination not on the card, are
-//     "quoted on request". Filling that in with the nearest tier would commit the shop to a price it
-//     never published, on the parcel most likely to be the expensive one.
+// Until 2026-10-06 this chain read a hand-written card back — nine countries, three tiers, the dollar
+// figures Dekito had published. Then he put the card beside the carrier's rate sheet: every figure was
+// the carrier's cost plus about ten percent, when his own practice was US$65 to the United States against
+// a US$95 cost. And Iceland sat in "Europe" at US$140 while the carrier bills it at US$155. The card was
+// a margin on freight that he was not actually charging, and it lost money on one destination before any
+// subsidy. So the card is gone and the rule is: carrier cost for the parcel's bracket, in dollars, less a
+// fixed support — US$30 for one bottle, US$50 for two or more. His numbers, made general.
+//
+// Two failure modes, and the second is the expensive one:
+//   * a wrong number — the rule says US$65 to the United States and the app must say US$65
+//   * a number where the rule REFUSES. Seven bottles, and any destination the carrier's sheet does not
+//     name, are "quoted on request". Filling that in commits the shop to a price it never published.
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
@@ -19,87 +26,140 @@ const srcRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 const read = (...parts) => stripComments(readFileSync(join(srcRoot, ...parts), 'utf8'));
 
-// The util imports the data through the '@/' alias, which node does not resolve: inline the data module
-// and strip the import, so the REAL table is what gets tested — not a copy written for the test.
-const dataSource = readFileSync(join(srcRoot, 'data', 'internationalShippingRates.js'), 'utf8')
-  .replace(/^export /gm, '');
-const utilSource = readFileSync(join(srcRoot, 'utils', 'internationalShippingPrice.js'), 'utf8')
+// The rule reads two carrier sheets through the '@/' alias, which node does not resolve: inline all four
+// modules in dependency order with their imports and exports stripped, so the REAL sheets and the REAL
+// arithmetic are what run — never a copy written for the test.
+const inline = (...parts) => readFileSync(join(srcRoot, ...parts), 'utf8')
   .replace(/^import\s[\s\S]*?from\s+'[^']+';\s*$/gm, '')
   .replace(/^export /gm, '');
-const module = await import(`data:text/javascript;base64,${Buffer.from(`${dataSource}\n${utilSource}
-export { quoteInternationalShippingPrice, formatShippingUsd, SHIPPING_RATE_REGIONS, SHIPPING_RATE_TIERS, shippingRateRegionFor };
+const module = await import(`data:text/javascript;base64,${Buffer.from(`
+${inline('data', 'exportZones.js')}
+${inline('data', 'exportRates.js')}
+${inline('data', 'internationalShippingRates.js')}
+${inline('utils', 'internationalShippingPrice.js')}
+export {
+  quoteInternationalShippingPrice, formatShippingUsd, shippingSupportUsd, shippingCostIdr,
+  SHIPPING_RATE_REGIONS, SHIPPING_RATE_TIERS, SHIPPING_RATE_MAX_BOTTLES, SHIPPING_COST_RATE,
+  SHIPPING_SUPPORT_USD, EXPORT_PACKAGE_RATES, EXPORT_ZONE_BY_COUNTRY,
+};
 `, 'utf8').toString('base64')}`);
-const { quoteInternationalShippingPrice: quote, formatShippingUsd, SHIPPING_RATE_REGIONS, SHIPPING_RATE_TIERS } = module;
+const {
+  quoteInternationalShippingPrice: quote, formatShippingUsd, shippingSupportUsd,
+  SHIPPING_RATE_REGIONS, SHIPPING_RATE_TIERS, SHIPPING_RATE_MAX_BOTTLES, SHIPPING_COST_RATE,
+  SHIPPING_SUPPORT_USD, EXPORT_PACKAGE_RATES, EXPORT_ZONE_BY_COUNTRY,
+} = module;
 
-// --- 1. Every price on the card, read back ------------------------------------------------------------
-// One country per region, all three tiers. If a digit is ever fat-fingered in the table, this is what
-// says so — and the table is the only place the shop's shipping price exists.
-const CARD = [
-  ['SG', [[1, 80], [2, 80], [3, 100], [4, 100], [5, 135], [6, 135]]],
-  ['HK', [[2, 80], [6, 135]]],
-  ['JP', [[1, 100], [3, 125], [5, 165]]],
-  ['AU', [[2, 100], [4, 125], [6, 165]]],
-  ['US', [[1, 115], [3, 160], [5, 195]]],
-  ['AE', [[1, 125], [3, 160], [5, 195]]],
-  ['IN', [[2, 125], [4, 160], [6, 195]]],
-  ['GB', [[1, 140], [3, 180], [5, 215]]],
-  ['DE', [[2, 140], [4, 180], [6, 215]]],
-];
+// --- 1. Dekito's own numbers, as facts -------------------------------------------------------------------
+// The rule was fitted to these four and must keep producing them. "DHL ke Amerika sekitar $95" is
+// Rp 1.709.000 at 18.000; he charges US$65 for one bottle and US$45 for two.
+assert.equal(SHIPPING_COST_RATE, 18000, 'the cost is converted at the market rate he quoted, not the pricing rate');
+assert.deepEqual(SHIPPING_SUPPORT_USD, { single: 30, multiple: 50 }, "Dekito's decision, 2026-10-06");
+{
+  const one = quote({ countryCode: 'US', bottles: 1 });
+  const two = quote({ countryCode: 'US', bottles: 2 });
+  assert.equal(one.costUsd, 95, 'one bottle to the United States costs the shop US$95 to send');
+  assert.equal(one.usd, 65, 'and the buyer is charged US$65 — his number');
+  assert.equal(two.costUsd, 95, 'two bottles ride in the same one-kilo parcel');
+  assert.equal(two.usd, 45, 'and are charged US$45 — his number');
+  assert.equal(one.zone, 5, 'the United States is zone 5 on the carrier sheet');
+}
 
-for (const [code, rows] of CARD) {
-  for (const [bottles, usd] of rows) {
-    const result = quote({ countryCode: code, bottles });
-    assert.equal(result.usd, usd, `${code} x${bottles} must be US$${usd} — the card is the price we committed to`);
+// --- 2. The rule, re-derived independently and compared for every zone and count ------------------------
+// Not a table of expected dollars: that would be the old card again, written by hand inside the guard.
+// The arithmetic is done HERE, from the carrier's own rows, and the function must agree everywhere.
+const up5 = (usd) => Math.ceil(usd / 5) * 5;
+const bracketKg = (bottles) => (bottles <= 2 ? 1 : bottles <= 4 ? 2 : 3);
+const sample = { 1: 'SG', 2: 'MY', 3: 'JP', 4: 'AU', 5: 'US', 6: 'AE', 7: 'DE', 8: 'IS' };
+let compared = 0;
+for (const zone of [1, 2, 3, 4, 5, 6, 7, 8]) {
+  for (let bottles = 1; bottles <= SHIPPING_RATE_MAX_BOTTLES; bottles += 1) {
+    const row = EXPORT_PACKAGE_RATES.find((entry) => entry[0] === bracketKg(bottles));
+    const expectedCost = up5(row[zone] / SHIPPING_COST_RATE);
+    const expectedPrice = expectedCost - (bottles >= 2 ? 50 : 30);
+    const result = quote({ countryCode: sample[zone], bottles });
+    assert.equal(result.zone, zone, `${sample[zone]} must resolve to zone ${zone}`);
+    assert.equal(result.costUsd, expectedCost, `zone ${zone} x${bottles}: cost must be the carrier's row at ${SHIPPING_COST_RATE}, rounded up to US$5`);
+    assert.equal(result.usd, expectedPrice, `zone ${zone} x${bottles}: price must be cost less the support`);
+    assert.ok(result.usd > 0, `zone ${zone} x${bottles}: the support must never swallow the whole cost`);
+    compared += 1;
   }
 }
+console.log(`  ${compared} zone x bottle quotes re-derived from the carrier sheet and matched`);
 
-// --- 2. Tier boundaries are where the card drew them --------------------------------------------------
-assert.equal(quote({ countryCode: 'SG', bottles: 2 }).usd, 80, '2 bottles is still the first tier');
-assert.equal(quote({ countryCode: 'SG', bottles: 3 }).usd, 100, '3 bottles crosses into the second');
-assert.equal(quote({ countryCode: 'SG', bottles: 4 }).usd, 100);
-assert.equal(quote({ countryCode: 'SG', bottles: 5 }).usd, 135);
-assert.equal(quote({ countryCode: 'SG', bottles: 6 }).usd, 135, '6 bottles is the last price the card prints');
+// Iceland — the destination the old card got wrong — is priced by its zone, not by the continent it is on.
+assert.equal(quote({ countryCode: 'IS', bottles: 1 }).zone, 8, 'Iceland is zone 8 on the carrier sheet');
+assert.equal(quote({ countryCode: 'IS', bottles: 1 }).usd, quote({ countryCode: 'BR', bottles: 1 }).usd,
+  'and pays what every other zone-8 destination pays, not what Germany pays');
+assert.ok(quote({ countryCode: 'IS', bottles: 1 }).usd > quote({ countryCode: 'DE', bottles: 1 }).usd,
+  'which is more than Germany — the card had it at the same figure and lost money on every Icelandic parcel');
 
-// --- 3. Where the card refuses, the app refuses -------------------------------------------------------
+// --- 3. The brackets, and the one-kilo minimum ----------------------------------------------------------
+// Two bottles cost the same to send as one, so the second bottle is charged LESS freight, not more.
+assert.equal(quote({ countryCode: 'SG', bottles: 1 }).costUsd, quote({ countryCode: 'SG', bottles: 2 }).costUsd,
+  'one and two bottles are the same parcel');
+assert.ok(quote({ countryCode: 'SG', bottles: 2 }).usd < quote({ countryCode: 'SG', bottles: 1 }).usd,
+  'and the buyer of two pays less freight than the buyer of one — the second bottle carries more of it');
+assert.ok(quote({ countryCode: 'SG', bottles: 3 }).costUsd > quote({ countryCode: 'SG', bottles: 2 }).costUsd,
+  '3 bottles crosses into the two-kilo bracket');
+assert.equal(quote({ countryCode: 'SG', bottles: 4 }).costUsd, quote({ countryCode: 'SG', bottles: 3 }).costUsd);
+assert.ok(quote({ countryCode: 'SG', bottles: 5 }).costUsd > quote({ countryCode: 'SG', bottles: 4 }).costUsd);
+assert.equal(shippingSupportUsd(1), 30); assert.equal(shippingSupportUsd(2), 50); assert.equal(shippingSupportUsd(6), 50);
+
+// --- 4. Where the rule refuses, the app refuses ---------------------------------------------------------
 const sevenBottles = quote({ countryCode: 'SG', bottles: 7 });
-assert.equal(sevenBottles.usd, null, '7 bottles has no price on the card — inventing one commits the shop to it');
+assert.equal(sevenBottles.usd, null, '7 bottles has no price — inventing one commits the shop to it');
 assert.equal(sevenBottles.onRequest, 'bottles');
 assert.equal(quote({ countryCode: 'SG', bottles: 40 }).usd, null);
-
-for (const unlisted of ['TR', 'RS', 'UA', 'RU', 'BR', 'ZA', 'NG', 'EG', 'KH']) {
+for (const unlisted of ['XX', 'ZZ', 'AA']) {
   const result = quote({ countryCode: unlisted, bottles: 2 });
-  assert.equal(result.usd, null, `${unlisted} is not on the card and must be quoted on request`);
+  assert.equal(result.usd, null, `${unlisted} is not on the carrier sheet and must be quoted on request`);
   assert.equal(result.onRequest, 'destination');
 }
+// Destinations the OLD card refused and the rule now prices, because the carrier does ship there.
+for (const nowPriced of ['TR', 'RS', 'UA', 'RU', 'BR', 'ZA', 'NG', 'EG', 'KH']) {
+  assert.ok(quote({ countryCode: nowPriced, bottles: 1 }).usd > 0, `${nowPriced} has a zone and must have a price`);
+}
 
-// Europe on the card is "Nordics & most of the EU" — an EU member is in, a non-EU European country is not.
-assert.equal(quote({ countryCode: 'PL', bottles: 1 }).usd, 140, 'an EU member is inside "most of the EU"');
-assert.equal(quote({ countryCode: 'TR', bottles: 1 }).usd, null, 'Turkey is not "most of the EU"');
-
-// --- 4. Home and nonsense -----------------------------------------------------------------------------
+// --- 5. Home and nonsense; every zone-sheet destination lands in exactly one group ----------------------
 assert.equal(quote({ countryCode: 'ID', bottles: 2 }), null, 'Indonesia is not an international destination');
 assert.equal(quote({ countryCode: '', bottles: 2 }), null);
 assert.equal(quote(), null, 'called with nothing at all, no crash');
-assert.equal(quote({ countryCode: 'sg', bottles: 2 }).usd, 80, 'a lowercase code is the same country');
-assert.equal(quote({ countryCode: 'SG', bottles: 0 }).usd, 80, 'an empty form quotes the smallest parcel, not nothing');
-assert.equal(quote({ countryCode: 'SG', bottles: -4 }).usd, 80);
-assert.equal(quote({ countryCode: 'SG', bottles: 2.6 }).usd, 100, 'a fractional count rounds to whole bottles');
+assert.equal(quote({ countryCode: 'sg', bottles: 2 }).usd, quote({ countryCode: 'SG', bottles: 2 }).usd, 'a lowercase code is the same country');
+assert.equal(quote({ countryCode: 'SG', bottles: 0 }).usd, quote({ countryCode: 'SG', bottles: 1 }).usd, 'an empty form quotes the smallest parcel, not nothing');
+assert.equal(quote({ countryCode: 'SG', bottles: -4 }).usd, quote({ countryCode: 'SG', bottles: 1 }).usd);
+assert.equal(quote({ countryCode: 'SG', bottles: 2.6 }).usd, quote({ countryCode: 'SG', bottles: 3 }).usd, 'a fractional count rounds to whole bottles');
 
-// --- 5. A price is never zero, and the regions never overlap ------------------------------------------
 const seen = new Map();
 for (const region of SHIPPING_RATE_REGIONS) {
-  assert.equal(region.usd.length, SHIPPING_RATE_TIERS.length, `${region.key} must price every tier`);
-  region.usd.forEach((usd, index) => {
-    assert.ok(usd > 0, `${region.key} tier ${index} must have a price`);
-    if (index > 0) {
-      assert.ok(usd >= region.usd[index - 1], `${region.key} must not get cheaper as the parcel grows`);
-    }
-  });
+  assert.ok(region.countries.length > 0, `${region.key} must hold at least one destination`);
   for (const code of region.countries) {
-    assert.ok(!seen.has(code), `${code} is in both ${seen.get(code)} and ${region.key} — one country, one price`);
+    assert.ok(!seen.has(code), `${code} is in both ${seen.get(code)} and ${region.key} — one country, one group`);
+    assert.ok(region.zones.includes(EXPORT_ZONE_BY_COUNTRY[code]), `${code} sits in ${region.key} but its zone is not one of that group's`);
     seen.set(code, region.key);
   }
 }
+assert.equal(seen.size, Object.keys(EXPORT_ZONE_BY_COUNTRY).length,
+  'every destination on the carrier sheet must land in a group — a missing one is a buyer told "on request" for a parcel we can price');
+assert.equal(SHIPPING_RATE_TIERS.length, 3);
+console.log(`  ${seen.size} destinations in ${SHIPPING_RATE_REGIONS.length} groups, none missing, none twice`);
+
+// --- 5b. Nothing anywhere may promise the freight is in the price ---------------------------------------
+// Moved here from asiaPrice.selfcheck when the Asia split was retired; the rule outlived the split. It was
+// promised from 19 to 25 September 2026 and broke on a single bottle, because the carrier bills a one-kilo
+// minimum. Held on the exported names, not on a comment, because a helper that lingers gets called again.
+const regionModule = read('utils', 'shippingRegion.js');
+assert.doesNotMatch(regionModule, /export const shippingIncludedFor/,
+  'shipping is charged on every destination — a helper that answers "is it free here" invites the old rule back');
+assert.doesNotMatch(regionModule, /^import .*rayspeedRates/m,
+  'and the carrier network no longer decides anything about the PRICE a buyer is shown');
+const messages = read('i18n', 'messages.js');
+for (const line of messages.split('\n')) {
+  if (!/'(export|intl|intlQuote)\.[\w.]+'|"(export|intl|intlQuote)\.[\w.]+"/.test(line)) continue;
+  assert.doesNotMatch(line, /ongkir sudah termasuk|shipping included|shipping is included|free shipping|gratis ongkir/i,
+    `this line still promises the freight is in the price:\n  ${line.trim()}`);
+}
+assert.doesNotMatch(read('components', 'storefront', 'OverseasPriceNote.jsx'), /[Ss]hipping is included/,
+  'the price panel still promises the freight is in the price');
 
 // --- 6. The card ADVISES the Studio page; Dekito decides ----------------------------------------------
 // This has moved twice and the direction it settled in is the point. The calculator first billed the
@@ -197,14 +257,14 @@ assert.match(quoteBuilder, /shippingTotal > 0/, 'a zero total must take a differ
 const zeroQuote = quoteBuilder.match(/Ongkir: \$\{shipping\.label\}/);
 assert.ok(zeroQuote, 'and that sentence must say what is true instead of printing Rp 0');
 
-// --- 7. The card's conditions travel with the numbers -------------------------------------------------
+// --- 7. The rule's conditions travel with the numbers -------------------------------------------------
 const data = read('data', 'internationalShippingRates.js');
 for (const condition of ['7 bottles or more', 'paid by the recipient', 'remote-area surcharge']) {
-  assert.ok(data.includes(condition), `the card's condition "${condition}" must stay with the prices it qualifies`);
+  assert.ok(data.includes(condition), `the condition "${condition}" must stay with the prices it qualifies`);
 }
 
 assert.equal(formatShippingUsd(80), 'US$80');
 assert.equal(formatShippingUsd(0), '', 'no price is no string, not "US$0"');
 assert.equal(formatShippingUsd(null), '');
 
-console.log('internationalShippingPrice selfcheck OK (the card is quoted exactly, and its refusals are kept)');
+console.log('internationalShippingPrice selfcheck OK (the price is the carrier cost less the support, re-derived for every zone, and the refusals are kept)');
