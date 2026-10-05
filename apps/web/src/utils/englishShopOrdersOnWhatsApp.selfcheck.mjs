@@ -110,6 +110,13 @@ for (const page of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobilePro
   for (const call of labels) {
     assert.match(call, /quotedInternationalPrice\(exportPrice/, `${page}: an add-to-cart label prints the domestic price in the English shop: ${call}`);
   }
+  // And every price a page STORES for its "added to cart" confirmation. The phone's sheet printed
+  // "30 ml — Rp 323.000" to Dekito himself under a US$80 page, the hour the English cart went live —
+  // the member price, because he was signed in. Any `price:` written into that state must go through the
+  // helper, whichever export-price variable the page happens to hold.
+  for (const call of source.match(/setLastAddedItem\(\{[^}]*\}\)/g) || []) {
+    assert.match(call, /price: quotedInternationalPrice\(/, `${page}: the added-to-cart confirmation stores the domestic price: ${call}`);
+  }
 }
 
 // --- 4. And no buyer page takes a PAYMENT in the English shop ----------------------------------------

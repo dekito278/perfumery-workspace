@@ -150,7 +150,10 @@ const MobileProductDetailPage = () => {
       price: formatRupiah(selectedPrice),
       priceNumber: selectedPrice,
     }, 1);
-    setLastAddedItem({ name: product.name, size: selectedSize, price: formatRupiah(selectedPrice) });
+    // The dollar in the English shop. Dekito found this one on his phone the hour the English cart went
+    // live: "Added to cart — 30 ml — Rp 323.000" — the MEMBER price, because he was signed in — over a
+    // page that had just said US$80. The sheet had been unreachable from the English shop until then.
+    setLastAddedItem({ name: product.name, size: selectedSize, price: quotedInternationalPrice(overseasPrice, formatRupiah(selectedPrice)) });
     // No toast here. The sheet below says the same thing with the size and the price in it, and a toast
     // lands at the bottom of the screen — exactly where the sheet keeps "Lanjut belanja" and "Checkout".
     // Two announcements of one event, and the louder one covered the way forward (reported 2026-09-21).
@@ -323,14 +326,16 @@ const MobileProductDetailPage = () => {
         open={cartPromptOpen}
         onOpenChange={setCartPromptOpen}
         title={t('pdp.addedSheetTitle')}
-        description={t('pdp.addedSheetBody')}
+        description={t(isInternational ? 'pdp.addedSheetBodyIntl' : 'pdp.addedSheetBody')}
         footer={(
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" className="h-12 rounded-2xl bg-white" onClick={() => setCartPromptOpen(false)}>
               {t('pdp.continueShopping')}
             </Button>
             <Button className="h-12 rounded-2xl gap-2" onClick={() => navigate('/mobile/cart')}>
-              {t('pdp.checkout')} <ArrowRight className="h-4 w-4" />
+              {/* The button opens the CART on both shops; in the English shop that cart is where the
+                  destination and the shipping are chosen, so "Checkout" would name a page it never reaches. */}
+              {t(isInternational ? 'pdp.viewCart' : 'pdp.checkout')} <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         )}

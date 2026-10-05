@@ -43,11 +43,20 @@ for (const [, name, body] of openers) {
 }
 
 // --- 2. The sheet carries what the toast used to say ------------------------------------------------------
-assert.match(page, /setLastAddedItem\(\{ name: product\.name, size: selectedSize, price: formatRupiah\(selectedPrice\) \}\)/,
-  'the sheet names the bottle, the size and the price — more than the toast ever did');
+// HELD AS THE RULE — the item carries a name, a size and a price — not as the one spelling of the price.
+// Pinned to `price: formatRupiah(selectedPrice)`, this failed the day the price learned to be the dollar
+// in the English shop (quotedInternationalPrice, 2026-10-06), which was the sheet getting MORE honest.
+const added = page.match(/setLastAddedItem\(\{([^}]*)\}\)/);
+assert.ok(added, 'the sheet no longer records what was added');
+for (const field of ['name: product.name', 'size: selectedSize', 'price: ']) {
+  assert.ok(added[1].includes(field), `the sheet must carry ${field.trim()} — more than the toast ever did: ${added[0]}`);
+}
 assert.match(page, /title=\{t\('pdp\.addedSheetTitle'\)\}/, 'and it still says what happened');
 for (const key of ['pdp.continueShopping', 'pdp.checkout']) {
-  assert.match(page, new RegExp(`t\\('${key.replace('.', '\\.')}'\\)`), `the sheet must keep ${key} — the way forward is the point`);
+  // The key may sit inside a shop ternary — `t(isInternational ? 'pdp.viewCart' : 'pdp.checkout')` since
+  // 2026-10-06, because the English shop's cart is where the destination is picked and "Checkout" would
+  // name a page it never opens. What must hold is that the key is still a t() argument on this page.
+  assert.match(page, new RegExp(`t\\([^)]*'${key.replace('.', '\\.')}'\\)`), `the sheet must keep ${key} — the way forward is the point`);
   for (const language of ['id', 'en']) {
     assert.ok(MESSAGES[language][key], `${language}.${key} is missing`);
   }
