@@ -2,7 +2,7 @@ import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronLeft, Globe, ShoppingBag } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronLeft, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
@@ -21,16 +21,14 @@ import { useCart } from '@/hooks/useCart.js';
 import useProductStory from '@/hooks/useProductStory.js';
 import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
 import { getProductStory } from '@/data/stories/index.js';
-import { buildOverseasDraft, overseasDraftKeys, quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
+import { quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
-import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
-import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -88,9 +86,6 @@ const MobileProductDetailPage = () => {
   // reading the international one. useExportPrice would hand it to everyone — it did, and the Indonesian
   // product page briefly led with Rp 2.630.000.
   const exportPrice = useOverseasPrice(product, selectedVariant);
-  // The figure the sticky bar sends has to be the figure the quote block showed. On the phone this bar
-  // is the only button most buyers ever press, which is why #362 leaving it behind mattered so much.
-  const { draft: internationalDraft, needsDestination, focusDestinationPicker } = useInternationalQuote({ price: exportPrice, product, variant: selectedVariant });
 
   if (!product && allProducts.loading) {
     return (
@@ -313,31 +308,13 @@ const MobileProductDetailPage = () => {
                 <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">{t('price.memberIs', { price: formatRupiah(selectedVariant?.memberPriceNumber || product.memberPriceNumber) })}</span>
               ) : null}
             </div>
-            {/* In the English shop the action is the enquiry, not the cart. A DISABLED cart button would
-                be worse than no cart button: it shows the buyer a door and then holds it shut. */}
-            {isInternational ? (
-              <a
-                href={buildWhatsAppCheckoutUrl(buildOverseasDraft({
-                  t,
-                  isInternational,
-                  name: product.name,
-                  size: selectedSize,
-                  price: quotedInternationalPrice(overseasPrice, formatRupiah(selectedPrice)),
-                  quote: internationalDraft,
-                }), getStorefrontWhatsAppNumber())}
-                onClick={needsDestination ? focusDestinationPicker : undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="m-editorial-pdp__sticky-btn"
-              >
-                <Globe className="h-4 w-4" /> {t(needsDestination ? 'intlQuote.pickFirst' : overseasDraftKeys(isInternational).labelKey)}
-              </a>
-            ) : (
-              <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
-                <ShoppingBag className="h-4 w-4" />
-                {previewMode ? 'Preview' : soldOut ? t('pdp.soldOut') : t('pdp.addToCart')}
-              </button>
-            )}
+            {/* The cart, in both shops. From 18 Sep to 6 Oct 2026 this bar carried a WhatsApp order in the
+                English shop; the order lives in the English cart now, where the basket, the destination
+                and the shipping sit together. */}
+            <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
+              <ShoppingBag className="h-4 w-4" />
+              {previewMode ? 'Preview' : soldOut ? t('pdp.soldOut') : t('pdp.addToCart')}
+            </button>
           </div>
         </StickyBottomActionBar>
       </main>

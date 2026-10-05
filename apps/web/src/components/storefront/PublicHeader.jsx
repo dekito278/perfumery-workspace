@@ -37,7 +37,7 @@ const megaMenuColumns = [
 
 const PublicHeader = () => {
   const { summary } = useCart();
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const { currentUser } = useAuth();
   // The header used to delete any cart line whose slug was not in the visible catalog, silently. A shopper
   // whose product went out of stock or got unpublished just found their cart shorter, with no reason given
@@ -130,15 +130,13 @@ const PublicHeader = () => {
           >
             <UserRound className="h-4 w-4" />
           </Link>
-          {/* The English shop has no cart to open. Leaving the icon there — with a count on it, from
-              a cart filled in the Indonesian shop — is an invitation to a checkout that now redirects,
-              and a count that quotes domestic prices. */}
-          {isInternational ? null : (
-            <Link to="/cart" className="editorial-cart-button" aria-label={t('nav.cartAria', { count: summary.boughtQuantity })}>
-              <ShoppingBag className="h-4 w-4" />
-              {summary.boughtQuantity > 0 ? <span className="editorial-cart-count">{summary.boughtQuantity}</span> : null}
-            </Link>
-          )}
+          {/* Both shops have a cart since 2026-10-06. In the English shop it opens the international
+              cart — dollars, a destination, the shipping — and hands the order to WhatsApp; the icon
+              was hidden there from 18 Sep to 6 Oct, when the English shop sold only by enquiry. */}
+          <Link to="/cart" className="editorial-cart-button" aria-label={t('nav.cartAria', { count: summary.boughtQuantity })}>
+            <ShoppingBag className="h-4 w-4" />
+            {summary.boughtQuantity > 0 ? <span className="editorial-cart-count">{summary.boughtQuantity}</span> : null}
+          </Link>
         </div>
       </header>
 

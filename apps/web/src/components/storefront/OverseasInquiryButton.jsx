@@ -36,10 +36,10 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   const { t } = useTranslate();
   // The total the quote block settled, when it settled one. Null until the buyer picks a destination,
   // and then the draft quotes the total instead of the bare bottle price — see buildOverseasDraft.
-  const { draft: internationalDraft, needsDestination, focusDestinationPicker } = useInternationalQuote({ price: exportPrice, product, variant });
-  // Only the international shop has a picker to send the buyer to. The Indonesian shop's enquiry button
-  // stays a plain link — see the note on needsDestination in useInternationalQuote.
-  const gated = overseasVisitor && needsDestination;
+  // The settled total, when the quote block above has one; it rides in the enquiry so Dekito reads the
+  // same figures the buyer saw. No gate here since 2026-10-06: this is an ENQUIRY in both shops, and the
+  // ORDER — with the gate — lives in the English cart.
+  const { draft: internationalDraft } = useInternationalQuote({ price: exportPrice, product, variant });
   const showExportPrice = Boolean(exportPrice) && !english && !overseasVisitor;
 
   if (!phoneNumber || !product?.name) return null;
@@ -65,13 +65,12 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // Dekito, and a rupiah figure in it is a number he then has to explain before he can quote a parcel.
   const quoted = quotedInternationalPrice(exportPrice, price);
   const message = buildOverseasDraft({
-    t, isInternational: overseasVisitor, name: product.name, size, price: quoted, quote: internationalDraft,
+    t, name: product.name, size, price: quoted, quote: internationalDraft,
   });
 
   const link = (
     <a
       href={buildWhatsAppCheckoutUrl(message, phoneNumber)}
-      onClick={gated ? focusDestinationPicker : undefined}
       target="_blank"
       rel="noopener noreferrer"
       // min-h, not h: the label wraps to two lines on a 375px phone — the English one certainly, the
@@ -81,7 +80,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
       <Globe className="h-4 w-4" />
       {/* One label for one action. The panel and the always-visible button used to carry different
           wording, which an English visitor saw twice on the same page as two different offers. */}
-      {t(gated ? 'intlQuote.pickFirst' : overseasDraftKeys(overseasVisitor).labelKey)}
+      {t(overseasDraftKeys().labelKey)}
     </a>
   );
 

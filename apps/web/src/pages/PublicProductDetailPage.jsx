@@ -1,12 +1,11 @@
-import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
-import { buildOverseasDraft, overseasDraftKeys, quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
+import { quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
-import { Globe, CheckCircle2, ShoppingBag, ChevronRight } from 'lucide-react';
+import { CheckCircle2, ShoppingBag, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
@@ -31,7 +30,6 @@ import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
-import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
@@ -85,10 +83,6 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
   // useOverseasPrice, not useExportPrice: the second hands the export price to the Indonesian shop too.
   const exportPrice = useOverseasPrice(product, selectedVariant);
-  // The same settled total the quote block below shows, so the sticky bar sends Dekito the figure the
-  // buyer was actually looking at. These two have drifted before — #362 fixed the action button's price
-  // line and left both bars sending a number that had not been offered.
-  const { draft: internationalDraft, needsDestination, focusDestinationPicker } = useInternationalQuote({ price: exportPrice, product, variant: selectedVariant });
 
   // Reveal a compact sticky buy-bar once the main add-to-cart button scrolls out of view.
   useEffect(() => {
@@ -318,21 +312,19 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             ) : null}
 
             <div className="pdp-actions" data-reveal>
-              {/* The cart is a domestic-delivery flow: RajaOngkir prices it and a foreign address returns
-                  an empty area list. Offering it in the English shop invites a form nobody can finish, so
-                  the enquiry takes its place — and SwitchToIndonesiaHint keeps the way back one tap away
-                  for whoever is actually shipping inside Indonesia. */}
-              {isInternational ? null : (
-                <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
-                  {soldOut ? (
-                    <>{t('pdp.soldOut')}</>
-                  ) : lastAddedSlug === product.slug ? (
-                    <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
-                  ) : (
-                    <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: selectedPriceLabel })}</>
-                  )}
-                </button>
-              )}
+              {/* Both shops add to the cart since 2026-10-06. The English cart prices the basket in dollars,
+                  asks for the destination and hands the order to WhatsApp; it never reaches the domestic
+                  checkout. The gate that hid this button in the English shop from 18 Sep to 6 Oct is gone
+                  with the reason for it. */}
+              <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
+                {soldOut ? (
+                  <>{t('pdp.soldOut')}</>
+                ) : lastAddedSlug === product.slug ? (
+                  <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
+                ) : (
+                  <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel) })}</>
+                )}
+              </button>
               <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
               <ShareProductButton product={product} className="mt-3" />
               <SwitchToIndonesiaHint className="mt-3" />
@@ -380,28 +372,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               <span className="pdp-sticky-bar__price">{quotedInternationalPrice(exportPrice, selectedPriceLabel)}</span>
             </div>
           </div>
-          {/* The sticky bar is a second add-to-cart. In the English shop the cart is not offered, so it
-              carries the enquiry instead — a bar that still says "Add to cart" undoes the whole page
-              above it. Missing this the first time is exactly why both nudges had to be gated twice. */}
-          {isInternational ? (
-            <a
-              href={buildWhatsAppCheckoutUrl(buildOverseasDraft({
-                t,
-                isInternational,
-                name: product.name,
-                size: selectedSize,
-                price: quotedInternationalPrice(exportPrice, selectedPriceLabel),
-                quote: internationalDraft,
-              }), getStorefrontWhatsAppNumber())}
-              onClick={needsDestination ? focusDestinationPicker : undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pdp-add-btn magnetic-hover"
-              tabIndex={showStickyBar ? 0 : -1}
-            >
-              <Globe className="h-4 w-4" /> {t(needsDestination ? 'intlQuote.pickFirst' : overseasDraftKeys(isInternational).labelKey)}
-            </a>
-          ) : (
+          {/* The sticky bar is a second add-to-cart, in both shops. From 18 Sep to 6 Oct 2026 it carried
+              a WhatsApp order in the English shop instead; the order lives in the English cart now. */}
+          {(
             <button
               type="button"
               className="pdp-add-btn magnetic-hover"

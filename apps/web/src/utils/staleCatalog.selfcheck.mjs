@@ -210,7 +210,10 @@ const walkBuyer = (dir) => {
     const rel = `${dir}/${entry.name}`;
     if (entry.isDirectory()) { walkBuyer(rel); continue; }
     if (!/\.(jsx|js)$/.test(entry.name) || entry.name.includes('.selfcheck.')) continue;
-    if (rel === 'hooks/useStorefrontProducts.js') continue;
+    // Hooks cannot render a notice. useStorefrontProducts is the catalogue itself; useInternationalQuote
+    // reads the catalogue to price an English basket, and the two pages that call it both render the
+    // notice — asserted right after this sweep, so the hook's exemption cannot hide a page's omission.
+    if (rel === 'hooks/useStorefrontProducts.js' || rel === 'hooks/useInternationalQuote.js') continue;
     const source = read(...rel.split('/'));
     if (!/useStorefrontProducts\s*\(/.test(source)) continue;
     buyerScreens.push(rel);
@@ -236,5 +239,11 @@ assert.deepEqual(silent, [],
 const staleExemptions = Object.keys(NOT_A_SCREEN).filter((key) => !buyerScreens.includes(key));
 assert.deepEqual(staleExemptions, [],
   `these exemptions no longer read the catalogue — delete them:\n  ${staleExemptions.join('\n  ')}`);
+
+// The pages behind the exempted hook, each of which must carry the notice itself.
+for (const page of [['pages', 'InternationalCartPage.jsx'], ['pages', 'mobile', 'MobileInternationalCartPage.jsx']]) {
+  assert.match(read(...page), /<StaleCatalogNotice stale=\{/,
+    `${page.join('/')} prices a basket from the catalogue and cannot say the catalogue came from this device`);
+}
 
 console.log('staleCatalog selfcheck OK (a catalogue served from this device because the server could not be reached says so, on every screen where a buyer acts on a price)');

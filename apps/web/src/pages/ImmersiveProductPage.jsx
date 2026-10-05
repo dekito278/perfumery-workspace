@@ -24,6 +24,7 @@ import PriceNote from '@/components/storefront/PriceNote.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import { quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { getPrimaryVariant } from '@/services/productCatalogService.js';
 import { toast } from 'sonner';
@@ -41,7 +42,7 @@ import { toast } from 'sonner';
  */
 const ImmersiveProductPage = ({ product, story, mobile = false, stale = false }) => {
   const { addItem } = useCart();
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
@@ -356,17 +357,17 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
               reader is being quoted internationally. */}
           <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-3" />
 
-          {isInternational ? null : (
-            <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
-              {soldOut ? (
-                <>{t('pdp.soldOut')}</>
-              ) : lastAddedSlug === product.slug ? (
-                <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
-              ) : (
-                <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: selectedPriceLabel })}</>
-              )}
-            </button>
-          )}
+          {/* Both shops add to the cart since 2026-10-06 — the English cart prices the basket in dollars
+              and hands the order to WhatsApp. */}
+          <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
+            {soldOut ? (
+              <>{t('pdp.soldOut')}</>
+            ) : lastAddedSlug === product.slug ? (
+              <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
+            ) : (
+              <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel) })}</>
+            )}
+          </button>
           <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
           <ShareProductButton product={product} className="mt-3" />
           <SwitchToIndonesiaHint className="mt-3" />

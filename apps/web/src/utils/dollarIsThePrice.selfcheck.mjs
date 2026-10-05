@@ -84,15 +84,21 @@ const walkDrafters = (dir) => {
     if (entry.isDirectory()) { walkDrafters(rel); continue; }
     if (!/\.jsx?$/.test(entry.name) || entry.name.includes('.selfcheck.')) continue;
     const source = strip(readFileSync(join(src, rel), 'utf8'));
-    if (!/buildOverseasDraft\(\{/.test(source)) continue;
+    const enquiry = /buildOverseasDraft\(\{/.test(source);
+    const order = /buildInternationalCartDraft\(\{/.test(source);
+    if (!enquiry && !order) continue;
     drafters.push(rel);
-    if (!/quotedInternationalPrice\(/.test(source)) spellingTheirOwn.push(rel);
+    // The enquiry quotes one bottle through quotedInternationalPrice; the cart order's lines are built in
+    // dollars inside useCartInternationalQuote, so the cart page must never reach for the rupiah at all.
+    if (enquiry && !/quotedInternationalPrice\(/.test(source)) spellingTheirOwn.push(rel);
+    if (order && /formatRupiah\(/.test(source)) spellingTheirOwn.push(`${rel} (cart order reaches for rupiah)`);
   }
 };
 walkDrafters('components'); walkDrafters('pages');
+// Three surfaces: the product page's enquiry button, and the two English cart pages that send the order.
+// The sticky bars stopped building drafts on 2026-10-06 when the order moved into the cart.
 assert.ok(drafters.length >= 3,
-  `only ${drafters.length} enquiry draft(s) found (${drafters.join(', ')}) — the derivation broke, and the `
-  + 'sticky bars are exactly what goes missing when it does');
+  `only ${drafters.length} draft surface(s) found (${drafters.join(', ')}) — the derivation broke`);
 assert.deepEqual(spellingTheirOwn, [],
   'these build a WhatsApp enquiry without going through quotedInternationalPrice, so an overseas buyer '
   + `sends Dekito a number in a currency he never quoted:\n  ${spellingTheirOwn.join('\n  ')}`);

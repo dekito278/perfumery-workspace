@@ -159,6 +159,12 @@ const NOT_SELLING_A_PRICE = new Map([
   ['MobileCartPage.jsx', 'same'],
   ['CheckoutPage.jsx', 'same'],
   ['MobileCheckoutPage.jsx', 'same'],
+  // The English cart. The member discount does not travel (Dekito, 2026-09-24): every line is priced at
+  // its export price in dollars, so there is no member price to put beside it — naming one would promise
+  // a figure the buyer can never be charged. THE CONDITION: englishShopOrdersOnWhatsApp.selfcheck holds
+  // that these two pages never reach memberSavingForCart at all.
+  ['InternationalCartPage.jsx', 'the English cart: priced in dollars, where no member price exists'],
+  ['MobileInternationalCartPage.jsx', 'same'],
 ]);
 const showsAProduct = walkPages(pagesRoot)
   .filter((file) => file.endsWith('.jsx'))

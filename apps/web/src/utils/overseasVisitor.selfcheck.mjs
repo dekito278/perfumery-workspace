@@ -248,8 +248,15 @@ for (const page of [
     `${page.join('/')} keeps the way back for a domestic buyer reading English`);
   assert.doesNotMatch(source, /<OverseasPriceNote/, 'and does not repeat the same number in a second panel');
 }
-// And none of the three offers the cart to a reader being quoted internationally. RajaOngkir prices the
-// cart and a foreign address returns an empty area list, so the button leads to a form nobody can finish.
+// And all three offer the cart to EVERY reader since 2026-10-06. From 18 Sep to 6 Oct the rule here was
+// the opposite — no add-to-cart on the international side of an isInternational gate — because the only
+// cart was the domestic one, priced by RajaOngkir, which returns an empty area list for a foreign
+// address. Dekito reopened the cart for the English shop ("orang luar itu masukin ke keranjang sama
+// kayak di Indonesia"); it prices the basket in dollars, asks for the destination and hands the order to
+// WhatsApp, and englishShopOrdersOnWhatsApp.selfcheck holds that it never reaches the domestic checkout.
+// What survives here is the half that was always about PRICE, not about the cart: the headline's export
+// price must come from the region-gated hook, or the domestic price is what gets replaced for an
+// Indonesian reader too.
 for (const page of [
   ['pages', 'PublicProductDetailPage.jsx'],
   ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
@@ -257,35 +264,8 @@ for (const page of [
 ]) {
   const source = read(...page);
   const name = page.join('/');
-  // Read by bracket depth rather than by regex. The first version looked for ") : (" between the gate
-  // and the button and found the soldOut ternary's own ") : (" instead, so moving the cart onto the
-  // international side of the gate walked straight through it.
-  const trueBranchOf = (from) => {
-    let depth = 0;
-    for (let i = from; i < source.length; i += 1) {
-      const c = source[i];
-      if ('([{'.includes(c)) depth += 1;
-      else if (')]}'.includes(c)) { if (depth === 0) return source.slice(from, i); depth -= 1; }
-      else if (c === ':' && depth === 0 && source[i - 1] !== '?') return source.slice(from, i);
-    }
-    return source.slice(from);
-  };
-
-  const gates = [...source.matchAll(/isInternational \?/g)];
-  assert.ok(gates.length, `${name}: nothing is gated on the region at all`);
-  for (const gate of gates) {
-    assert.ok(!trueBranchOf(gate.index + gate[0].length).includes('addToCartWithPrice'),
-      `${name}: an add-to-cart sits on the INTERNATIONAL side of an isInternational gate — offered to `
-      + 'exactly the buyer whose address the cart cannot ship to');
-  }
-  // And every add-to-cart has a gate above it, or it is offered to everyone.
-  for (const match of source.matchAll(/addToCartWithPrice/g)) {
-    const gateAt = source.slice(0, match.index).lastIndexOf('isInternational ?');
-    assert.ok(gateAt !== -1 && match.index - gateAt < 900,
-      `${name}: an add-to-cart is offered with no isInternational gate above it — the cart cannot ship abroad`);
-  }
-  // The export price must be the REGION-GATED one here, or the domestic price is what gets replaced for
-  // an Indonesian reader too.
+  assert.doesNotMatch(source, /isInternational \? null : \(\s*<button[\s\S]{0,240}?(?:handleAddToCart|addSelectedVariant)/,
+    `${name}: add-to-cart is still hidden from the English shop, which has a cart again`);
   assert.match(source, /const exportPrice = useOverseasPrice\(product, selectedVariant\);/,
     `${name} resolves the export price with the region-gated hook`);
 }
@@ -304,7 +284,8 @@ const button = read('components', 'storefront', 'OverseasInquiryButton.jsx');
 // while the international shop's picker is still empty — and it is a KEY too, chosen in the same `t(`
 // call. What must stay true is what the comment above says: one `t(` of message keys, never a string
 // assembled inline. Pinned to the one-key spelling, this failed the gate, which was a correct change.
-const labelCall = button.match(/\{t\(([^{}]*overseasDraftKeys\([a-zA-Z]+\)\.labelKey[^{}]*)\)\}/);
+// overseasDraftKeys takes no argument since 2026-10-06 — the button is the enquiry in both shops.
+const labelCall = button.match(/\{t\(([^{}]*overseasDraftKeys\(\)\.labelKey[^{}]*)\)\}/);
 assert.ok(labelCall, 'the enquiry button speaks the language the buyer was just reading, from the message file');
 assert.doesNotMatch(labelCall[1], /['"][^'"]*\s[^'"]*['"]/,
   'every branch of the label must be a message KEY — a quoted phrase with a space in it is inline text');
@@ -315,8 +296,10 @@ assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
 // is send the reader to WhatsApp rather than imply a form somewhere.
 assert.match(MESSAGES.en['export.ask'], /WhatsApp/i);
 assert.match(MESSAGES.id['export.ask'], /WhatsApp/i);
-assert.match(MESSAGES.en['export.order'], /order/i);
-assert.match(MESSAGES.id['export.order'], /[Pp]esan/);
+// The ORDER button lives in the English cart since 2026-10-06 (cart.intl.order); the product page's
+// button is the enquiry in both shops.
+assert.match(MESSAGES.en['cart.intl.order'], /order/i);
+assert.match(MESSAGES.id['cart.intl.order'], /[Pp]esan/);
 assert.notEqual(MESSAGES.en['export.ask'], MESSAGES.en['export.order'],
   'the two shops would say the same thing, so one of them misdescribes what its button does');
 // And so does the message it drafts — checked in the message file now, because that is where it lives.
@@ -391,11 +374,11 @@ assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned t
 assert.match(MESSAGES.en['export.waDraft'], /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
 assert.match(MESSAGES.id['export.waDraft'], /belum memesan stok/);
-// The English shop's version is an ORDER, not an enquiry — and it must be just as careful. Nothing is
-// held until the shipping is quoted by hand, which is the whole reason this is a conversation.
-assert.match(MESSAGES.en['export.waOrderDraft'], /nothing is reserved/i,
-  'the order draft lets a buyer believe a bottle is being held for them');
-assert.match(MESSAGES.id['export.waOrderDraft'], /belum ada botol yang ditahan/);
+// The ORDER lives in the English cart since 2026-10-06 (export.waCartDraft) — and it must be just as
+// careful as the enquiry. Nothing is held until Dekito confirms on WhatsApp.
+assert.match(MESSAGES.en['export.waCartDraft'], /nothing is reserved/i,
+  'the cart order draft lets a buyer believe a bottle is being held for them');
+assert.match(MESSAGES.id['export.waCartDraft'], /belum ada botol yang ditahan/);
 
 // --- 9b. The HEADLINE price is region-gated; the enquiry line is not -------------------------------------
 // useExportPrice returns the export price to EVERYONE — that is its job, and it is what lets the
@@ -433,17 +416,19 @@ for (const file of [
     `${file.join('/')} prints a card price outside CardPrice: ${raw.join(' | ')}`);
 }
 
-// EVERY add-to-cart on a product page is gated, not just the obvious one. The desktop page has two — the
-// main button and the sticky bar — and gating only the first left a bar at the bottom of the English
-// page still saying "Add to cart" under a price it cannot charge. Two nudges had to be gated twice for
-// the same reason; this is the third time that shape has appeared.
-for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
+// EVERY add-to-cart on a product page is offered in BOTH shops since 2026-10-06. From 18 Sep to 6 Oct the
+// rule here was the opposite — gated in the English shop, and gated twice because the sticky bar is a
+// second button — until Dekito decided the English shop takes a basket too: "orang luar itu masukin ke
+// keranjang sama kayak di Indonesia". The English cart prices the basket in dollars and hands the order
+// to WhatsApp (englishShopOrdersOnWhatsApp.selfcheck holds that); what this block holds is that no
+// product page has quietly kept the old gate, which would hide the cart from exactly the buyer the cart
+// was reopened for.
+for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'], ['pages', 'ImmersiveProductPage.jsx']]) {
   const source = read(...page);
   const carts = (source.match(/t\('pdp\.addToCart(?:WithPrice)?'/g) || []).length;
-  const gates = (source.match(/isInternational \?/g) || []).length;
-  assert.ok(carts > 0, `${page.join('/')} still has an add-to-cart to gate`);
-  assert.ok(gates >= carts,
-    `${page.join('/')} has ${carts} add-to-cart labels but only ${gates} region gates — one of them still offers the cart in the English shop`);
+  assert.ok(carts > 0, `${page.join('/')} no longer offers a cart at all`);
+  assert.doesNotMatch(source, /isInternational \? null : \(\s*<button[\s\S]{0,240}?(?:handleAddToCart|addSelectedVariant)/,
+    `${page.join('/')} still hides add-to-cart in the English shop — the English cart exists now`);
 }
 
 // CardPrice looks the price up through the PRIMARY VARIANT. Every export price is keyed by variant, so a
