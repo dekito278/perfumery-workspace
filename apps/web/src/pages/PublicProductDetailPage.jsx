@@ -88,7 +88,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   // The same settled total the quote block below shows, so the sticky bar sends Dekito the figure the
   // buyer was actually looking at. These two have drifted before — #362 fixed the action button's price
   // line and left both bars sending a number that had not been offered.
-  const { draft: internationalDraft } = useInternationalQuote({ price: exportPrice, product, variant: selectedVariant });
+  const { draft: internationalDraft, needsDestination, focusDestinationPicker } = useInternationalQuote({ price: exportPrice, product, variant: selectedVariant });
 
   // Reveal a compact sticky buy-bar once the main add-to-cart button scrolls out of view.
   useEffect(() => {
@@ -393,12 +393,13 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 price: quotedInternationalPrice(exportPrice, selectedPriceLabel),
                 quote: internationalDraft,
               }), getStorefrontWhatsAppNumber())}
+              onClick={needsDestination ? focusDestinationPicker : undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="pdp-add-btn magnetic-hover"
               tabIndex={showStickyBar ? 0 : -1}
             >
-              <Globe className="h-4 w-4" /> {t(overseasDraftKeys(isInternational).labelKey)}
+              <Globe className="h-4 w-4" /> {t(needsDestination ? 'intlQuote.pickFirst' : overseasDraftKeys(isInternational).labelKey)}
             </a>
           ) : (
             <button

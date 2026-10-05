@@ -102,6 +102,19 @@ export const shippingZoneFor = (countryCode) => {
   return EXPORT_ZONE_BY_COUNTRY[code] || null;
 };
 
+/**
+ * How long the parcel is in the air, per zone, in WORKING DAYS AFTER DISPATCH — [min, max].
+ *
+ * Dekito's ask, 2026-10-06: a buyer who opens WhatsApp should already know the shipping and the
+ * estimated arrival, not ask for them. The carrier's sheet prints prices and no transit times, so these
+ * are the express service's typical ranges from Jakarta by zone — the neighbours in a day or two, Europe
+ * within a week, zone 8 up to a fortnight — and they are a PROMISE the shop makes, so they live here as
+ * one table he can correct rather than inside a sentence. Counted from dispatch, not from the order:
+ * the days between confirming and handing the parcel to the courier are his, and the courier's clock
+ * only starts at the counter.
+ */
+export const SHIPPING_TRANSIT_DAYS = { 1: [1, 2], 2: [2, 3], 3: [2, 4], 4: [3, 5], 5: [3, 5], 6: [3, 6], 7: [4, 7], 8: [6, 12] };
+
 /** The conditions that travel with the numbers. */
 export const SHIPPING_RATE_NOTES = [
   'Rates are in USD, per shipment, for 30 ml bottles sent by tracked express courier.',

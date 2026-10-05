@@ -14,6 +14,7 @@ import {
   SHIPPING_RATE_MAX_BOTTLES,
   SHIPPING_RATE_TIERS,
   SHIPPING_SUPPORT_USD,
+  SHIPPING_TRANSIT_DAYS,
   shippingRateRegionFor,
   shippingZoneFor,
 } from '@/data/internationalShippingRates.js';
@@ -42,7 +43,7 @@ export const shippingCostIdr = (zone, kg) => {
 
 /**
  * @returns null for a domestic or empty destination; otherwise
- *   { region, regionLabel, zone, tierLabel, bottles, costIdr, costUsd, supportUsd, usd }   — a price
+ *   { region, regionLabel, zone, tierLabel, bottles, costIdr, costUsd, supportUsd, usd, transitDays } — a price
  *   { region, regionLabel, zone, bottles, usd: null, onRequest: 'bottles' | 'destination' }
  */
 export const quoteInternationalShippingPrice = ({ countryCode, bottles } = {}) => {
@@ -77,6 +78,7 @@ export const quoteInternationalShippingPrice = ({ countryCode, bottles } = {}) =
     costUsd,
     supportUsd,
     usd: costUsd - supportUsd,
+    transitDays: SHIPPING_TRANSIT_DAYS[zone] || null,
   };
 };
 

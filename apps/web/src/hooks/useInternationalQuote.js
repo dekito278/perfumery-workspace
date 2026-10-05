@@ -1,7 +1,7 @@
 import { useShippingDestination } from '@/hooks/useShippingDestination.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
-import { countryNameFor, DESTINATION_OTHER } from '@/utils/shippingDestination.js';
+import { countryNameFor, DESTINATION_OTHER, DESTINATION_PICKER_ID } from '@/utils/shippingDestination.js';
 import { quoteInternationalShippingPrice } from '@/utils/internationalShippingPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML } from '@/data/internationalShippingRates.js';
 
@@ -52,6 +52,7 @@ export const useInternationalQuote = ({ price, product = null, variant = null } 
   const shippingUsd = quote?.usd ?? null;
   const shippingCostUsd = quote?.costUsd ?? null;
   const shippingSupportUsd = quote?.supportUsd ?? null;
+  const transitDays = quote?.transitDays ?? null;
   const totalUsd = goodsUsd && shippingUsd ? goodsUsd + shippingUsd : null;
 
   // Which "no number" this is, most specific first. A size the card was not written for is not the
@@ -75,12 +76,14 @@ export const useInternationalQuote = ({ price, product = null, variant = null } 
   // The draft says only what is settled. With a total it quotes the total; with a destination but no rate
   // it quotes the destination and asks for the rate; with neither it falls back to the caller's own price
   // line, which is what every one of these surfaces sent before this screen existed.
+  // The arrival estimate, worded once here for both the screen and the draft.
+  const eta = transitDays ? t('intlQuote.etaRange', { min: transitDays[0], max: transitDays[1] }) : '';
   let draft = null;
   if (totalUsd) {
     draft = {
       key: 'export.waDraftQuote',
       vars: {
-        destination, count: countLabel, goods: `US$${goodsUsd}`, shipping: `US$${shippingUsd}`, total: `US$${totalUsd}`,
+        destination, count: countLabel, goods: `US$${goodsUsd}`, shipping: `US$${shippingUsd}`, total: `US$${totalUsd}`, eta,
       },
     };
   } else if (destination && goodsUsd) {
@@ -90,10 +93,27 @@ export const useInternationalQuote = ({ price, product = null, variant = null } 
     };
   }
 
+  // THE GATE. Dekito's ask, 2026-10-06: a buyer who opens WhatsApp should arrive with the shipping and
+  // the arrival estimate already in the message, not ask for them. Before this, the order button opened
+  // WhatsApp whether or not a country had been picked, and a buyer who skipped the picker sent the bare
+  // bottle price — the exact message this screen was built to replace. So until a destination is chosen
+  // the button is not a link to WhatsApp; it is a pointer to the picker. The ID shop's enquiry button
+  // (no picker on that page) must not use this.
+  const needsDestination = Boolean(price) && !country;
+  const focusDestinationPicker = (event) => {
+    if (event?.preventDefault) event.preventDefault();
+    if (typeof document === 'undefined') return;
+    const picker = document.getElementById(DESTINATION_PICKER_ID);
+    if (!picker) return;
+    picker.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    picker.focus();
+  };
+
   return {
     country, bottles, setCountry, setBottles,
-    bottleSizeLabel, destination,
+    bottleSizeLabel, destination, transitDays, eta,
     goodsUsd, shippingUsd, shippingCostUsd, shippingSupportUsd, totalUsd, onRequest, draft,
+    needsDestination, focusDestinationPicker,
   };
 };
 

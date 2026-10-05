@@ -19,6 +19,8 @@ import { SHIPPING_RATE_REGIONS } from '@/data/internationalShippingRates.js';
 
 export const DESTINATION_STORAGE_KEY = 'solivagant.storefront.destination.v1';
 export const DESTINATION_QUERY_KEY = 'dest';
+/** The country <select>'s DOM id — stable, because the order buttons send a buyer who has not picked yet to it. */
+export const DESTINATION_PICKER_ID = 'international-destination';
 
 /**
  * "Somewhere else" — a real choice, not an empty one.

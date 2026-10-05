@@ -300,8 +300,14 @@ const button = read('components', 'storefront', 'OverseasInquiryButton.jsx');
 // Indonesian shop this button sits BESIDE a working Add to cart and asks about shipping abroad, while
 // the English shop has no cart at all and this button is the purchase. Still one label per shop, still
 // out of the message file, still never assembled inline.
-assert.match(button, /\{t\(overseasDraftKeys\([a-zA-Z]+\)\.labelKey\)\}/,
-  'the enquiry button speaks the language the buyer was just reading, from the message file');
+// HELD AS THE RULE. Since 2026-10-06 the label has a second state — "pick your country first", shown
+// while the international shop's picker is still empty — and it is a KEY too, chosen in the same `t(`
+// call. What must stay true is what the comment above says: one `t(` of message keys, never a string
+// assembled inline. Pinned to the one-key spelling, this failed the gate, which was a correct change.
+const labelCall = button.match(/\{t\(([^{}]*overseasDraftKeys\([a-zA-Z]+\)\.labelKey[^{}]*)\)\}/);
+assert.ok(labelCall, 'the enquiry button speaks the language the buyer was just reading, from the message file');
+assert.doesNotMatch(labelCall[1], /['"][^'"]*\s[^'"]*['"]/,
+  'every branch of the label must be a message KEY — a quoted phrase with a space in it is inline text');
 assert.doesNotMatch(button, /english \? 'Ask about/, 'and there is only one label, not one per surface');
 assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
 // It used to have to say "shipping", because the shipping was the question. It no longer is — it is

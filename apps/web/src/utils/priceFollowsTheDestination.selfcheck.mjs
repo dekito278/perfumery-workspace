@@ -129,7 +129,12 @@ const quoteHook = await run(`
 const useShippingDestination = () => ({
   country: globalThis.__fx.country, bottles: globalThis.__fx.bottles, setCountry() {}, setBottles() {},
 });
-const useTranslate = () => ({ t: (key, vars) => (vars ? key + ':' + JSON.stringify(vars) : key), region: 'en' });
+const MESSAGES_EN = ${asJs(MESSAGES.en)};
+const useTranslate = () => ({
+  t: (key, vars) => String(MESSAGES_EN[key] ?? key).replace(/\\{(\\w+)\\}/g, (whole, name) => (
+    vars && Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : whole)),
+  region: 'en',
+});
 const USD_PRICE_RATE = ${asJs(USD_PRICE_RATE)};
 const USD_PRICE_STEP = ${asJs(USD_PRICE_STEP)};
 const usdPriceFor = ${usdPriceFor.toString()};
@@ -154,6 +159,14 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
   assert.equal(europe.shippingSupportUsd, 30, 'and the support — the sentence "we cover US$30"');
   assert.equal(europe.totalUsd, 165, 'the total must be the sum of the two lines above it');
   assert.equal(europe.onRequest, null, 'a settled total must not also claim to be on request');
+  // Dekito's ask, 2026-10-06: the buyer arrives on WhatsApp already knowing when it lands. The estimate
+  // is a table per zone and a promise, so it must be present, in working days, and WIDER for zone 8
+  // than for the neighbours — an estimate that does not grow with distance is a number, not an estimate.
+  assert.deepEqual(europe.transitDays, [4, 7], 'Germany (zone 7) ships in the Europe range');
+  assert.match(europe.eta, /^4–7/, 'and the worded estimate starts with that range');
+  assert.equal(europe.draft.vars.eta, europe.eta, 'the draft carries the same estimate the page shows');
+  const near = ask({ country: 'SG', bottles: 1 }); const far = ask({ country: 'BR', bottles: 1 });
+  assert.ok(near.transitDays[1] < far.transitDays[0], 'Singapore must arrive before Brazil even on its slowest day');
 }
 // The same bottle, the neighbours: the SAME bottle price and a cheaper freight line. Since 2026-10-06 that
 // is how Kuala Lumpur pays less than Berlin — through the parcel, not the bottle.
@@ -207,6 +220,8 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
     'a known destination with no rate must still name the destination — that is half the question answered');
   assert.equal(ask({ country: '', bottles: 1 }).draft, null,
     'and with nothing chosen there is no quote to send, so the caller\'s own price line stands');
+  assert.equal(ask({ country: '', bottles: 1 }).eta, '', 'and no arrival estimate either — there is no parcel to estimate');
+  assert.equal(ask({ country: DESTINATION_OTHER, bottles: 1 }).eta, '', 'nor for a destination the sheet does not name');
 }
 
 // --- 5. EVERY SURFACE THAT BUILDS THE DRAFT CARRIES THE TOTAL -------------------------------------
@@ -232,8 +247,29 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
     for (const call of caller.calls) {
       assert.match(call, /quote:/, `${caller.name} builds a WhatsApp draft without the settled total`);
     }
+    // THE GATE, on every surface. Dekito's ask, 2026-10-06: the buyer should open WhatsApp already
+    // knowing the shipping and the arrival. A surface that still opens WhatsApp before a destination is
+    // picked sends the bare bottle price — the message this screen replaced. So each must read
+    // needsDestination from the hook and, when it is set, send the click to the picker instead.
+    const source = stripComments(readRaw(...caller.name.split('/')));
+    assert.match(source, /\bneedsDestination\b/, `${caller.name} does not read whether a destination has been chosen`);
+    assert.match(source, /onClick=\{[^}]*\? focusDestinationPicker : undefined\}/,
+      `${caller.name} opens WhatsApp before a destination is chosen — the buyer leaves without the shipping`);
+    assert.match(source, /'intlQuote\.pickFirst'/, `${caller.name} does not tell the buyer to pick a country first`);
   }
 }
+// The gate itself, RUN: it closes only in the international shop, only while nothing is picked, and only
+// when there is a price to quote at all.
+{
+  assert.equal(ask({ country: '', bottles: 1 }).needsDestination, true, 'no destination yet: the gate is shut');
+  assert.equal(ask({ country: 'DE', bottles: 1 }).needsDestination, false, 'a destination chosen: the gate opens');
+  assert.equal(ask({ country: DESTINATION_OTHER, bottles: 1 }).needsDestination, false, '"another country" is an answer and opens it too');
+  assert.equal(ask({ country: '', bottles: 1, price: 0 }).needsDestination, false, 'with no export price there is nothing to gate');
+  assert.equal(MESSAGES.en['intlQuote.pickFirst'] && MESSAGES.id['intlQuote.pickFirst'] ? true : false, true, 'the gate needs its label in both shops');
+}
+// And the picker has the STABLE id the gate points at — a useId one changes between renders.
+assert.match(read('components', 'storefront', 'InternationalShippingQuote.jsx'), /const countryId = DESTINATION_PICKER_ID;/,
+  'the country picker must carry the id the order buttons send a buyer to');
 
 // --- 6. THE GAP IS EXPLAINED, THE SUPPORT IS SAID, AND THE FREIGHT IS STILL NOT IN THE PRICE ------
 const quoteBlock = read('components', 'storefront', 'InternationalShippingQuote.jsx');
