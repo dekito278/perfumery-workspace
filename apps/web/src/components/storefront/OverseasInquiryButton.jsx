@@ -36,7 +36,10 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   const { t } = useTranslate();
   // The total the quote block settled, when it settled one. Null until the buyer picks a destination,
   // and then the draft quotes the total instead of the bare bottle price — see buildOverseasDraft.
-  const { draft: internationalDraft } = useInternationalQuote({ price: exportPrice, product, variant });
+  const { draft: internationalDraft, needsDestination, focusDestinationPicker } = useInternationalQuote({ price: exportPrice, product, variant });
+  // Only the international shop has a picker to send the buyer to. The Indonesian shop's enquiry button
+  // stays a plain link — see the note on needsDestination in useInternationalQuote.
+  const gated = overseasVisitor && needsDestination;
   const showExportPrice = Boolean(exportPrice) && !english && !overseasVisitor;
 
   if (!phoneNumber || !product?.name) return null;
@@ -68,6 +71,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   const link = (
     <a
       href={buildWhatsAppCheckoutUrl(message, phoneNumber)}
+      onClick={gated ? focusDestinationPicker : undefined}
       target="_blank"
       rel="noopener noreferrer"
       // min-h, not h: the label wraps to two lines on a 375px phone — the English one certainly, the
@@ -77,7 +81,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
       <Globe className="h-4 w-4" />
       {/* One label for one action. The panel and the always-visible button used to carry different
           wording, which an English visitor saw twice on the same page as two different offers. */}
-      {t(overseasDraftKeys(overseasVisitor).labelKey)}
+      {t(gated ? 'intlQuote.pickFirst' : overseasDraftKeys(overseasVisitor).labelKey)}
     </a>
   );
 

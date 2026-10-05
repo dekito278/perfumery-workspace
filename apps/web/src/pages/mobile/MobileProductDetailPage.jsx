@@ -90,7 +90,7 @@ const MobileProductDetailPage = () => {
   const exportPrice = useOverseasPrice(product, selectedVariant);
   // The figure the sticky bar sends has to be the figure the quote block showed. On the phone this bar
   // is the only button most buyers ever press, which is why #362 leaving it behind mattered so much.
-  const { draft: internationalDraft } = useInternationalQuote({ price: exportPrice, product, variant: selectedVariant });
+  const { draft: internationalDraft, needsDestination, focusDestinationPicker } = useInternationalQuote({ price: exportPrice, product, variant: selectedVariant });
 
   if (!product && allProducts.loading) {
     return (
@@ -325,11 +325,12 @@ const MobileProductDetailPage = () => {
                   price: quotedInternationalPrice(overseasPrice, formatRupiah(selectedPrice)),
                   quote: internationalDraft,
                 }), getStorefrontWhatsAppNumber())}
+                onClick={needsDestination ? focusDestinationPicker : undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="m-editorial-pdp__sticky-btn"
               >
-                <Globe className="h-4 w-4" /> {t(overseasDraftKeys(isInternational).labelKey)}
+                <Globe className="h-4 w-4" /> {t(needsDestination ? 'intlQuote.pickFirst' : overseasDraftKeys(isInternational).labelKey)}
               </a>
             ) : (
               <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>

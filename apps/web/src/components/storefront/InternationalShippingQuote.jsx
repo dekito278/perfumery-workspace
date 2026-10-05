@@ -3,7 +3,7 @@ import { Globe } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
-import { destinationOptions, DESTINATION_OTHER } from '@/utils/shippingDestination.js';
+import { destinationOptions, DESTINATION_OTHER, DESTINATION_PICKER_ID } from '@/utils/shippingDestination.js';
 import { SHIPPING_RATE_MAX_BOTTLES } from '@/data/internationalShippingRates.js';
 
 /**
@@ -32,9 +32,11 @@ const InternationalShippingQuote = ({ product, variant = null, className = '' })
   const price = useOverseasPrice(product, variant);
   const {
     country, bottles, setCountry, setBottles,
-    goodsUsd, shippingUsd, shippingSupportUsd, totalUsd, onRequest, bottleSizeLabel,
+    goodsUsd, shippingUsd, shippingSupportUsd, totalUsd, onRequest, bottleSizeLabel, eta,
   } = useInternationalQuote({ price, product, variant });
-  const countryId = useId();
+  // A STABLE id for the country picker, not a useId one: the order buttons on this page send a buyer who
+  // has not chosen yet to this control, and they find it by id.
+  const countryId = DESTINATION_PICKER_ID;
   const bottlesId = useId();
 
   // No export price means this reader is not being quoted internationally, or the bottle has no export
@@ -124,6 +126,12 @@ const InternationalShippingQuote = ({ product, variant = null, className = '' })
           </span>
           <strong className="text-lg font-bold text-editorial-charcoal">US${totalUsd}</strong>
         </div>
+      ) : null}
+      {/* When it arrives, from the same table the draft reads — so the message says what the page said. */}
+      {totalUsd && eta ? (
+        <p className="mt-1 text-xs font-semibold leading-relaxed text-editorial-charcoal">
+          {t('intlQuote.eta', { eta })}
+        </p>
       ) : null}
 
       {/* The card's own footnotes, kept with the numbers they qualify — a total that hides the duties is
