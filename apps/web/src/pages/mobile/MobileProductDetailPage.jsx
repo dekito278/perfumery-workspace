@@ -29,6 +29,8 @@ import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
+import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -86,6 +88,9 @@ const MobileProductDetailPage = () => {
   // reading the international one. useExportPrice would hand it to everyone — it did, and the Indonesian
   // product page briefly led with Rp 2.630.000.
   const exportPrice = useOverseasPrice(product, selectedVariant);
+  // The figure the sticky bar sends has to be the figure the quote block showed. On the phone this bar
+  // is the only button most buyers ever press, which is why #362 leaving it behind mattered so much.
+  const { draft: internationalDraft } = useInternationalQuote({ price: exportPrice, product, variant: selectedVariant });
 
   if (!product && allProducts.loading) {
     return (
@@ -189,7 +194,10 @@ const MobileProductDetailPage = () => {
           <h1>{product.name}</h1>
           {/* Same rule as desktop: one price, for the shop being read. */}
           {exportPrice ? (
-            <InternationalPrice price={exportPrice} />
+            <>
+              <InternationalPrice price={exportPrice} />
+              <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-3" />
+            </>
           ) : (
             <>
               <p className="m-editorial-pdp__price">{product.price}</p>
@@ -288,7 +296,15 @@ const MobileProductDetailPage = () => {
           <div className="m-editorial-pdp__sticky-inner">
             <div className="m-editorial-pdp__sticky-info">
               <span className="m-editorial-pdp__sticky-name">{product.name}</span>
-              <span className="m-editorial-pdp__sticky-price">{formatRupiah(exportPrice || selectedPrice)}</span>
+              {/* THE DOLLAR, like the headline above it. This printed `formatRupiah(exportPrice)` — the
+                  export price in RUPIAH — to an international buyer, on the one surface most buyers on a
+                  phone ever look at. The headline said US$50 and the bar said Rp 790.000 for the same
+                  bottle, and the two are deliberately NOT equal: the dollar is converted at a rate held
+                  below the market and rounded up. Dekito did that division himself on 1 Oct 2026 — "kok
+                  ini 1.260.000 sih padahal saya cek 1.4 an". The fix landed in InternationalPrice.jsx
+                  that day and both sticky bars were left behind. Same helper as the draft, so the price
+                  shown and the price sent cannot drift. */}
+              <span className="m-editorial-pdp__sticky-price">{quotedInternationalPrice(exportPrice, formatRupiah(selectedPrice))}</span>
               {/* Silent for a visitor being quoted internationally: their price is the export price in
                   the panel above, so offering the member price here promises a number they will never be
                   charged. This bar is a SECOND member nudge, outside PriceNote — which is exactly why it
@@ -307,6 +323,7 @@ const MobileProductDetailPage = () => {
                   name: product.name,
                   size: selectedSize,
                   price: quotedInternationalPrice(overseasPrice, formatRupiah(selectedPrice)),
+                  quote: internationalDraft,
                 }), getStorefrontWhatsAppNumber())}
                 target="_blank"
                 rel="noopener noreferrer"

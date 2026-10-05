@@ -37,9 +37,18 @@ import { useShippingRegion } from '@/hooks/useShippingRegion.js';
 // dollar is what this buyer is shown — the rupiah stays in the books, where it belongs.
 const InternationalPrice = ({ price, className = '' }) => {
   const { t } = useTranslate();
-  // Which of the two international prices this headline is. A reader in Kuala Lumpur is looking at the
-  // Southeast Asia price with the shipping already inside it; telling them "anywhere else we work the
-  // shipping out on WhatsApp" invites a question they do not need to ask.
+  // Which of the two international prices this headline is — the note under it has to name the one being
+  // shown, because "priced for outside Indonesia" over the Southeast Asia price is the right number under
+  // the wrong promise.
+  //
+  // THE FREIGHT IS NOT IN EITHER PRICE. This comment used to say a reader in Kuala Lumpur was "looking at
+  // the Southeast Asia price with the shipping already inside it", which stopped being true on 2026-09-25
+  // when Dekito decided shipping is charged from the published card to every destination. The copy was
+  // corrected that day and this sentence was not, which is the more dangerous half: the next reader
+  // trusts the comment and writes the promise back in. See the long note in shippingRegion.js.
+  //
+  // Since 2026-10-05 the region follows the destination the buyer PICKED, not the browser's clock — so
+  // this line changes when they choose a country, which is the whole point of the quote block below.
   const shippingRegion = useShippingRegion();
   const usd = usdPriceFor(price);
 

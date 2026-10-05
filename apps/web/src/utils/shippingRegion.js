@@ -108,6 +108,21 @@ export const isAsiaCountry = (countryCode) => {
 };
 
 /**
+ * Which of the two international prices a parcel to this country is charged.
+ *
+ * This is the same split as `shippingRegionForTimeZone` and it answers a DIFFERENT question, which is the
+ * whole point of having both. The clock asks "where does this reader seem to be" and the answer is a
+ * guess about a person; this asks "where is the parcel going" and the answer is a fact about a shipment.
+ * Dekito's decision, 2026-10-05: the destination decides the price, and the clock only seeds the default.
+ *
+ * An unlisted or unrecognised destination — including the picker's own 'XX' for "somewhere else" — has no
+ * export zone and therefore falls to 'world', the dearer of the two. That direction is deliberate: it is
+ * the one that can only ever over-quote, and an over-quote is corrected downwards in a conversation while
+ * an under-quote has to be taken back.
+ */
+export const shippingRegionForCountry = (countryCode) => (isAsiaCountry(countryCode) ? 'asia' : 'world');
+
+/**
  * The international price for one line, in the region the reader appears to be in.
  *
  * 'world' is the price Dekito set by hand and it is left exactly alone — he asked for that, and at

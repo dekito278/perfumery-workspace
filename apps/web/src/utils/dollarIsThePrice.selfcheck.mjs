@@ -97,6 +97,43 @@ assert.deepEqual(spellingTheirOwn, [],
   'these build a WhatsApp enquiry without going through quotedInternationalPrice, so an overseas buyer '
   + `sends Dekito a number in a currency he never quoted:\n  ${spellingTheirOwn.join('\n  ')}`);
 
+// --- and EVERY surface that PRINTS an international price prints it in dollars ---------------------
+// A third gap, found on a phone on 2026-10-06 while the destination picker was being tested: the sticky
+// bar read `formatRupiah(exportPrice)` and showed Rp 790.000 under a headline reading US$50 for the same
+// bottle. BOTH bars did. The sweep above could never see it, because it only examines files that CONVERT
+// a price to dollars, and a bar that only ever printed rupiah converts nothing — the guard's subject was
+// "files that already do the right thing somewhere".
+//
+// So this one is derived the other way round: find every line that hands an EXPORT price to formatRupiah,
+// and require the dollar on that same line. CardPrice passes and must keep passing — `usd ? US$ :
+// formatRupiah(exportPrice)` is the stand-in pattern, not the pairing, and its rupiah branch cannot even
+// run while usdPriceFor only answers null at or below zero.
+const printers = [];
+const inRupiah = [];
+const walkPrinters = (dir) => {
+  for (const entry of readdirSync(join(src, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) { walkPrinters(rel); continue; }
+    if (!/\.jsx?$/.test(entry.name) || entry.name.includes('.selfcheck.')) continue;
+    const source = strip(readFileSync(join(src, rel), 'utf8'));
+    if (!/(export|overseas)Price/.test(source)) continue;
+    printers.push(rel);
+    for (const line of source.split('\n')) {
+      if (!/formatRupiah\([^)]*(?:export|overseas)[A-Za-z]*/.test(line)) continue;
+      // The dollar has to be offered first, on the same expression — as a conversion, or through the
+      // shared helper that does the conversion.
+      if (!/usd/i.test(line) && !/quotedInternationalPrice/.test(line)) inRupiah.push(`${rel}: ${line.trim()}`);
+    }
+  }
+};
+walkPrinters('components'); walkPrinters('pages');
+assert.ok(printers.length >= 4,
+  `only ${printers.length} surface(s) handle an international price — the derivation broke`);
+assert.deepEqual(inRupiah, [],
+  'these print an export price in RUPIAH to a buyer who pays in dollars. The two are deliberately not '
+  + 'equal — the dollar is converted below the market and rounded up — so the rupiah reads as the shop '
+  + `quoting one number and charging another:\n  ${inRupiah.join('\n  ')}`);
+
 // The helper itself, RUN: the dollar when there is one, rupiah only as a stand-in.
 assert.equal(quotedInternationalPrice(1260000), 'US$80');
 assert.equal(quotedInternationalPrice(0, 'Rp 359.000'), 'Rp 359.000', 'with no export price the caller label stands in');

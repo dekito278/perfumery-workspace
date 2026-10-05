@@ -11,7 +11,7 @@ import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { RAYSPEED_MEASURED_ON, rayspeedServes } from '@/data/rayspeedRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
-import { isAsiaCountry, internationalPriceFor } from '@/utils/shippingRegion.js';
+import { internationalPriceFor, shippingRegionForCountry } from '@/utils/shippingRegion.js';
 import { usdPriceFor, USD_PRICE_RATE, USD_PRICE_RATE_SET_ON } from '@/utils/usdPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
@@ -71,14 +71,17 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
 
   const products = useMemo(() => catalog.filter(isProductVisibleInStorefront), [catalog]);
 
-  // Which of the two international prices this destination pays. The storefront decides it from the
-  // reader's clock; here the destination country is known outright, and isAsiaCountry is the same split
-  // by country that shippingRegion already owns.
+  // Which of the two international prices this destination pays.
   //
   // This screen used to quote the WORLD price to everyone. A buyer in Kuala Lumpur was shown Rp 790.000
   // on the shop and written down at Rp 1.260.000 here — Rp 470.000 a bottle, Rp 2.820.000 on the
   // six-bottle order the page opens with.
-  const priceRegion = isAsiaCountry(countryCode) ? 'asia' : 'world';
+  //
+  // ONE SPELLING. This line used to read `isAsiaCountry(countryCode) ? 'asia' : 'world'`, which is the
+  // body of shippingRegionForCountry written out a second time. The storefront grew the same rule on
+  // 2026-10-05 when the price started following the destination the buyer picks, and two copies of a
+  // split that decides a price is how Kuala Lumpur came to be billed Europe's number in the first place.
+  const priceRegion = shippingRegionForCountry(countryCode);
 
   const lines = useMemo(() => rows.map((row) => {
     const product = products.find((item) => item.slug === row.slug);
