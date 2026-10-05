@@ -224,48 +224,45 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
   assert.equal(ask({ country: DESTINATION_OTHER, bottles: 1 }).eta, '', 'nor for a destination the sheet does not name');
 }
 
-// --- 5. EVERY SURFACE THAT BUILDS THE DRAFT CARRIES THE TOTAL -------------------------------------
-// DERIVED by walking the tree. A first version of this block said "derived" in its comment and listed
-// five files, and a sabotage adding a sixth surface walked straight past it — #362 happening a second
-// time inside the guard built to stop #362.
+// --- 5. EVERY SURFACE THAT SENDS AN ORDER CARRIES THE TOTAL AND IS GATED ON A DESTINATION --------
+// DERIVED by walking the tree. Since 2026-10-06 the ORDER lives in the English cart (two pages, phone
+// and desktop) and the product page's WhatsApp button is an enquiry again. The enquiry may go out
+// without a destination — it is a question — but it must still carry the settled quote when there is
+// one. The order may NOT go out without a destination: the whole point of the basket is that the
+// message arrives complete.
 {
   const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) return walk(full);
     return /\.(jsx?|mjs)$/.test(entry.name) ? [full] : [];
   });
-  const callers = [];
+  const enquiries = []; const orders = [];
   for (const full of walk(root)) {
     if (full.endsWith('overseasEnquiry.js') || full.includes('.selfcheck.')) continue;
     const source = stripComments(readFileSync(full, 'utf8'));
-    const calls = (source.match(/buildOverseasDraft\(\{[\s\S]*?\}\)/g) || []);
-    if (calls.length) callers.push({ name: full.slice(root.length + 1), calls });
+    const name = full.slice(root.length + 1);
+    for (const call of (source.match(/buildOverseasDraft\(\{[\s\S]*?\}\)/g) || [])) enquiries.push({ name, call });
+    for (const call of (source.match(/buildInternationalCartDraft\(\{[\s\S]*?\}\)/g) || [])) orders.push({ name, call, source });
   }
-  console.log(`  buildOverseasDraft call sites found: ${callers.map((c) => `${c.name} x${c.calls.length}`).join(', ')}`);
-  assert.ok(callers.length >= 3, 'fewer call sites than the three surfaces this rule exists for — the sweep is wrong, not the code');
-  for (const caller of callers) {
-    for (const call of caller.calls) {
-      assert.match(call, /quote:/, `${caller.name} builds a WhatsApp draft without the settled total`);
-    }
-    // THE GATE, on every surface. Dekito's ask, 2026-10-06: the buyer should open WhatsApp already
-    // knowing the shipping and the arrival. A surface that still opens WhatsApp before a destination is
-    // picked sends the bare bottle price — the message this screen replaced. So each must read
-    // needsDestination from the hook and, when it is set, send the click to the picker instead.
-    const source = stripComments(readRaw(...caller.name.split('/')));
-    assert.match(source, /\bneedsDestination\b/, `${caller.name} does not read whether a destination has been chosen`);
-    assert.match(source, /onClick=\{[^}]*\? focusDestinationPicker : undefined\}/,
-      `${caller.name} opens WhatsApp before a destination is chosen — the buyer leaves without the shipping`);
-    assert.match(source, /'intlQuote\.pickFirst'/, `${caller.name} does not tell the buyer to pick a country first`);
+  console.log(`  enquiry drafts: ${enquiries.map((e) => e.name).join(', ')} | order drafts: ${orders.map((o) => o.name).join(', ')}`);
+  assert.ok(enquiries.length >= 1, 'the product page no longer opens an enquiry at all');
+  for (const { name, call } of enquiries) assert.match(call, /quote:/, `${name} sends an enquiry without the settled quote`);
+  assert.ok(orders.length >= 2, `fewer than two order surfaces (${orders.length}) — the phone and desktop carts are the two`);
+  for (const { name, call, source } of orders) {
+    assert.match(call, /quote:/, `${name} sends an order without the quote`);
+    assert.match(source, /\bneedsDestination\b/, `${name} does not read whether a destination has been chosen`);
+    assert.match(source, /onClick=\{needsDestination \? focusDestinationPicker : undefined\}/,
+      `${name} opens WhatsApp before a destination is chosen — the buyer leaves without the shipping`);
+    assert.match(source, /'intlQuote\.pickFirst'/, `${name} does not tell the buyer to pick a country first`);
   }
 }
-// The gate itself, RUN: it closes only in the international shop, only while nothing is picked, and only
-// when there is a price to quote at all.
+// The gate itself, RUN: shut only while nothing is picked, and only when there is a price to quote.
 {
   assert.equal(ask({ country: '', bottles: 1 }).needsDestination, true, 'no destination yet: the gate is shut');
   assert.equal(ask({ country: 'DE', bottles: 1 }).needsDestination, false, 'a destination chosen: the gate opens');
   assert.equal(ask({ country: DESTINATION_OTHER, bottles: 1 }).needsDestination, false, '"another country" is an answer and opens it too');
   assert.equal(ask({ country: '', bottles: 1, price: 0 }).needsDestination, false, 'with no export price there is nothing to gate');
-  assert.equal(MESSAGES.en['intlQuote.pickFirst'] && MESSAGES.id['intlQuote.pickFirst'] ? true : false, true, 'the gate needs its label in both shops');
+  assert.ok(MESSAGES.en['intlQuote.pickFirst'] && MESSAGES.id['intlQuote.pickFirst'], 'the gate needs its label in both shops');
 }
 // And the picker has the STABLE id the gate points at — a useId one changes between renders.
 assert.match(read('components', 'storefront', 'InternationalShippingQuote.jsx'), /const countryId = DESTINATION_PICKER_ID;/,

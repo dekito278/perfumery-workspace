@@ -18,12 +18,11 @@ const StorefrontHeader = ({
   previewLabel,
   showLogo = !backLabel,
 }) => {
-  const { t, isInternational } = useTranslate();
-  // Same rule as PublicHeader: the English shop offers no cart, so its header must not link to one.
-  // The default action list is the only place this header names the cart; a caller that passes its own
-  // actions is responsible for its own.
+  const { t } = useTranslate();
+  // Both shops have a cart since 2026-10-06. The default action list is the only place this header names
+  // it; a caller that passes its own actions is responsible for its own.
   const headerActions = actions || [
-    ...(isInternational ? [] : [{ to: '/cart', labelKey: 'nav.cart', icon: 'cart', iconOnly: true }]),
+    { to: '/cart', labelKey: 'nav.cart', icon: 'cart', iconOnly: true },
     { to: '/catalog', labelKey: 'nav.catalog' },
   ];
   const backContent = (

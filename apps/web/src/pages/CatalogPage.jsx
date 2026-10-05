@@ -25,7 +25,7 @@ import WearFilter from '@/components/storefront/WearFilter.jsx';
 
 const CatalogPage = () => {
   const fetchedProducts = useStorefrontProducts();
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   // No fallback to the bundled seed data. featuredProducts is six invented perfumes — Santal Morn,
   // Petal Smoke and so on — that this shop has never sold. When the catalogue query came back empty, a
   // customer was shown all six with prices, and clicking one landed on "Halaman tidak ditemukan". An
@@ -193,12 +193,11 @@ const CatalogPage = () => {
                       priority={index < 4}
                       label={false}
                     />
-                    {/* No shortcut into a cart the English shop does not use. The card still opens the
-                        product page, where the international price and the WhatsApp order sit together —
-                        and that is the point: this button added the bottle at the DOMESTIC price, which
-                        is how La Tulipe reached an English cart at Rp 260.000 under a page quoting
-                        Rp 1.020.000. */}
-                    {isInternational ? null : (
+                    {/* Quick-add in both shops since 2026-10-06. It once added the bottle at the DOMESTIC
+                        price into a cart the English shop could not open — La Tulipe at Rp 260.000 under
+                        a page quoting Rp 1.020.000. The English cart now prices every line at its export
+                        price on read, so what the card adds is a line, not a price. */}
+                    {(
                     <button
                       type="button"
                       className={`catalog-card__quick-add${addedSlug === product.slug ? ' is-added' : ''}`}

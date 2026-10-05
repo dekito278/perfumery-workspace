@@ -44,9 +44,7 @@ export const quotedInternationalPrice = (exportPrice, fallback = '') => {
  * that conversation happens, and a draft that implies otherwise makes a promise the atelier has not
  * made.
  */
-export const overseasDraftKeys = (isInternational) => (isInternational
-  ? { labelKey: 'export.order', draftKey: 'export.waOrderDraft' }
-  : { labelKey: 'export.ask', draftKey: 'export.waDraft' });
+export const overseasDraftKeys = () => ({ labelKey: 'export.ask', draftKey: 'export.waDraft' });
 
 /**
  * `quote` is the settled international total, as a message KEY and VARS from useInternationalQuote —
@@ -59,10 +57,10 @@ export const overseasDraftKeys = (isInternational) => (isInternational
  * the destination and the count that produced it, so the reply is a confirmation and not a calculation.
  */
 export const buildOverseasDraft = ({
-  t, isInternational = false, name = '', size = '', price = '', quote = null,
+  t, name = '', size = '', price = '', quote = null,
 } = {}) => {
   if (typeof t !== 'function' || !name) return '';
-  const { draftKey } = overseasDraftKeys(isInternational);
+  const { draftKey } = overseasDraftKeys();
   const line = quote?.key
     ? t(quote.key, quote.vars || {})
     : (price ? t('export.waDraftPrice', { price }) : '');
@@ -70,6 +68,20 @@ export const buildOverseasDraft = ({
     item: `${name}${size ? ` (${size})` : ''}`,
     line,
   });
+};
+
+/**
+ * The order an international buyer sends from the ENGLISH CART — every line, the destination, the
+ * shipping, the total and the arrival estimate, in one message.
+ *
+ * Dekito's decision, 2026-10-06: the English shop takes a basket like the Indonesian one does. The
+ * product page's WhatsApp button went back to being an enquiry that day; this is the purchase. It is
+ * sent only when the quote is SETTLED — a destination picked and a rate found — because the whole point
+ * of the basket is that the message arrives complete.
+ */
+export const buildInternationalCartDraft = ({ t, quote = null } = {}) => {
+  if (typeof t !== 'function' || !quote?.key || !quote?.vars) return '';
+  return t(quote.key, quote.vars);
 };
 
 export default buildOverseasDraft;

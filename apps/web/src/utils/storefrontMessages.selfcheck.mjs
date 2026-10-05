@@ -100,6 +100,10 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // key of the block — every other label in it differs between the two shops, including the five region
   // names, so an untranslated sibling still fails here rather than hiding behind this entry.
   'intlQuote.total',
+  // One cart line of the WhatsApp order: "- {name} ({size}) x{quantity}: {price}". Four placeholders and
+  // punctuation, no words to translate. THE CONDITION: its siblings — the draft around it, the labels on
+  // the cart — all differ between the shops and still fail here if one is left untranslated.
+  'export.waCartLine',
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -324,6 +328,9 @@ const PAGES_FULLY_TRANSLATED = [
   ['pages', 'mobile', 'MobileArticlesPage.jsx'],
   ['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
+  // The English shop's carts, one address with the domestic ones (ByShop in App.jsx) and a different
+  // till: dollars, a destination, WhatsApp.
+  ['pages', 'InternationalCartPage.jsx'], ['pages', 'mobile', 'MobileInternationalCartPage.jsx'],
   ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   // Replaces the product page entirely for a product with a story, so none of the checks aimed at
@@ -645,7 +652,9 @@ for (const file of PAGES_FULLY_TRANSLATED) {
   // Wrappers that carry no copy of their own and hand through to the page inside them. Looked THROUGH
   // rather than skipped: the page they wrap still has to be fully translated, and reading the wrapper's
   // name instead would quietly exempt four buyer pages from every check in this file.
-  const PASS_THROUGH = new Set(['DomesticOnly']);
+  // ByShop wraps TWO pages — one per shop — and both must be translated, so every component inside a
+  // route is checked, not just the first.
+  const PASS_THROUGH = new Set(['DomesticOnly', 'ByShop']);
 
   const translated = new Set(PAGES_FULLY_TRANSLATED.map((file) => file[file.length - 1].replace('.jsx', '')));
   const unguarded = [];
@@ -653,12 +662,13 @@ for (const file of PAGES_FULLY_TRANSLATED) {
     const [, path, element] = route;
     if (/ProtectedRoute|RequireAuth/.test(element)) continue;
     if (path.startsWith('/studio') || path.startsWith('/mobile/studio')) continue;
-    const component = [...element.matchAll(/<(\w+)/g)]
+    const components = [...element.matchAll(/<(\w+)/g)]
       .map((match) => match[1])
-      .find((name) => !PASS_THROUGH.has(name));
-    if (!component || component === 'Navigate') continue;
-    if (STUDIO_AUTH.has(component) || REDIRECT_ONLY.has(component)) continue;
-    if (!translated.has(component)) unguarded.push(`${path} -> ${component}`);
+      .filter((name) => !PASS_THROUGH.has(name) && name !== 'Navigate');
+    for (const component of components) {
+      if (STUDIO_AUTH.has(component) || REDIRECT_ONLY.has(component)) continue;
+      if (!translated.has(component)) unguarded.push(`${path} -> ${component}`);
+    }
   }
   assert.deepEqual(unguarded, [],
     `these buyer routes render a page that is not in PAGES_FULLY_TRANSLATED, so none of the checks in this file ever look at it: ${unguarded.join(' | ')}`);
@@ -787,7 +797,9 @@ const walk = (dir, out = []) => {
       // A named variable is fine only if this file builds it from the message file.
       if (/^[A-Za-z_$][\w$]*$/.test(argument)) {
         const assigned = source.match(new RegExp(`const ${argument} = ([\\s\\S]{0,40})`));
-        if (assigned && /^(t\(|buildOverseasDraft\()/.test(assigned[1].trim())) continue;
+        // buildInternationalCartDraft is the English cart's order (2026-10-06): a t() of the key and
+        // vars useCartInternationalQuote chose, proven below like the other two.
+        if (assigned && /^(t\(|buildOverseasDraft\(|buildInternationalCartDraft\()/.test(assigned[1].trim())) continue;
       }
       offenders.push(`${rel}: sends \`${argument}\`, which is not built from the message file`);
     }
@@ -799,6 +811,8 @@ const walk = (dir, out = []) => {
     'buildOverseasDraft no longer draws its words from the message file, so the exemption above is a hole');
   assert.doesNotMatch(builder, /['\u0060"][A-Z][a-z]+ [a-z]+ [a-z]+/,
     'buildOverseasDraft has grown a sentence of its own; drafts belong in the message file');
+  assert.match(builder, /return t\(quote\.key, quote\.vars\);/,
+    'buildInternationalCartDraft no longer draws its words from the message file, so the exemption above is a hole');
 
   const bespokeBuilder = read('utils', 'bespokeOrder.js');
   assert.match(bespokeBuilder, /return t\('bsp\.waOrderDraft', \{/,

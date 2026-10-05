@@ -4,7 +4,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import { destinationOptions, DESTINATION_OTHER, DESTINATION_PICKER_ID } from '@/utils/shippingDestination.js';
-import { SHIPPING_RATE_MAX_BOTTLES } from '@/data/internationalShippingRates.js';
+import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATE_MAX_BOTTLES } from '@/data/internationalShippingRates.js';
 
 /**
  * The complete price an international buyer pays, before they ask instead of after.
@@ -21,7 +21,13 @@ import { SHIPPING_RATE_MAX_BOTTLES } from '@/data/internationalShippingRates.js'
  * not written for, or more bottles than it covers all come back "quoted on request", which is what the
  * card's own footnote says to do. None of those is a guess dressed up as a rate.
  */
-const InternationalShippingQuote = ({ product, variant = null, className = '' }) => {
+/**
+ * Two callers, one block. The product page hands in a product and a variant and the block prices one
+ * bottle; the English cart hands in a READY quote for the whole basket (`quote`), and the bottle count
+ * is the basket's, so the count picker is hidden. Both render the same lines from the same fields, so
+ * the cart can never say a different number from the page that led to it.
+ */
+const InternationalShippingQuote = ({ product = null, variant = null, quote = null, className = '' }) => {
   const { t, region } = useTranslate();
   // useOverseasPrice, not useExportPrice: GATED, so this block appears in exactly the places
   // InternationalPrice appears — the English shop, and a reader the detection places abroad. The ungated
@@ -29,11 +35,14 @@ const InternationalShippingQuote = ({ product, variant = null, className = '' })
   // product page: a dollar total with a country picker, under a rupiah price, for a buyer in Bandung
   // whose parcel is going to Bandung. An Indonesian sending a bottle abroad still has the WhatsApp
   // button, which is what they had before this screen existed.
-  const price = useOverseasPrice(product, variant);
+  const ownPrice = useOverseasPrice(product, variant);
+  const own = useInternationalQuote({ price: ownPrice, product, variant });
+  const fromCart = Boolean(quote);
+  const price = fromCart ? quote.goodsUsd : ownPrice;
   const {
     country, bottles, setCountry, setBottles,
     goodsUsd, shippingUsd, shippingSupportUsd, totalUsd, onRequest, bottleSizeLabel, eta,
-  } = useInternationalQuote({ price, product, variant });
+  } = fromCart ? { ...quote, setBottles: null, bottleSizeLabel: `${SHIPPING_RATE_BOTTLE_SIZE_ML} ml` } : own;
   // A STABLE id for the country picker, not a useId one: the order buttons on this page send a buyer who
   // has not chosen yet to this control, and they find it by id.
   const countryId = DESTINATION_PICKER_ID;
@@ -73,6 +82,9 @@ const InternationalShippingQuote = ({ product, variant = null, className = '' })
             <option value={DESTINATION_OTHER}>{t('intlQuote.otherCountry')}</option>
           </select>
         </div>
+        {/* The cart already knows how many bottles it holds; a second count beside it would be two
+            answers to one question. */}
+        {setBottles ? (
         <div className="w-28">
           <label htmlFor={bottlesId} className="sr-only">{t('intlQuote.bottlesLabel')}</label>
           <select
@@ -91,6 +103,7 @@ const InternationalShippingQuote = ({ product, variant = null, className = '' })
             <option value={SHIPPING_RATE_MAX_BOTTLES + 1}>{t('intlQuote.bottleMore')}</option>
           </select>
         </div>
+        ) : null}
       </div>
 
       <dl className="mt-3 space-y-1 text-sm">

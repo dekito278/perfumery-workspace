@@ -1,4 +1,4 @@
-// `node src/utils/englishShopHasNoCart.selfcheck.mjs`
+// `node src/utils/englishShopOrdersOnWhatsApp.selfcheck.mjs`
 //
 // The English shop does not take orders through this checkout. It cannot: shipping is priced by
 // RajaOngkir, which only knows Indonesian addresses, and the product pages quote the INTERNATIONAL
@@ -20,71 +20,21 @@ import { bespokeFlowSteps, bespokeStepKeys, bespokeTakesPayment, buildBespokeEnq
 const here = dirname(fileURLToPath(import.meta.url));
 const srcRoot = join(here, '..');
 const read = (...parts) => readFileSync(join(srcRoot, ...parts), 'utf8');
+// Comments stripped for the forbidden-symbol checks: the cart page's own header explains what it must
+// not reach, and a check that fails on the sentence explaining the rule is the trap this repo keeps.
+const stripComments = (source) => source.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+const readCode = (...parts) => stripComments(read(...parts));
 
-// --- 1. The draft that replaces the cart actually names what is being bought ------------------------
-// Both sticky bars used to send t('intl.noticeMessage') — a generic line naming no perfume at all. On
-// the phone the sticky bar is the only button most buyers ever press, so most orders arrived nameless.
-const t = (key, vars = {}) => {
-  const table = {
-    'export.waDraft': 'ASK about international shipping for {item}.{line}',
-    'export.waOrderDraft': 'ORDER {item}.{line}',
-    'export.waDraftPrice': ' price {price}.',
-  };
-  return String(table[key] ?? key).replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''));
-};
 
-const english = buildOverseasDraft({ t, isInternational: true, name: 'La Tulipe', size: '30 ml', price: 'Rp 1.020.000' });
-assert.ok(english.includes('La Tulipe'), `the draft does not name the perfume:\n${english}`);
-assert.ok(english.includes('30 ml'), `the draft does not say which bottle:\n${english}`);
-assert.ok(english.includes('Rp 1.020.000'), `the draft does not carry the price the page quoted:\n${english}`);
-assert.ok(english.startsWith('ORDER'), 'the English shop has no cart, so its draft must read as an order, not an enquiry');
+// --- 0. WHAT CHANGED ON 2026-10-06 -------------------------------------------------------------------
+// This file was englishShopHasNoCart.selfcheck: from 18 Sep the English shop sold one bottle at a time
+// by WhatsApp enquiry, and every add-to-cart, cart link and reorder was gated out of it, because the
+// only cart was the domestic one — rupiah, a voucher box, an Indonesian courier list and DOKU. Dekito
+// reversed that: "orang luar itu masukin ke keranjang sama kayak di Indonesia — dari situ baru pilih
+// negara dan kelihatan ongkir, baru order ke WA." So the English shop has a cart again, and what this
+// guard holds is what that cart may and may not be: a basket in dollars with a destination and the
+// shipping beside it, whose till is WhatsApp — and NEVER the domestic checkout.
 
-const indonesian = buildOverseasDraft({ t, isInternational: false, name: 'La Tulipe', size: '30 ml', price: 'Rp 260.000' });
-assert.ok(indonesian.startsWith('ASK'), 'the Indonesian shop still sells through the cart; its overseas button is an enquiry beside it');
-assert.notEqual(english, indonesian, 'both shops send the same draft — one of the two is wrong');
-
-// A price the caller could not resolve must leave the line out rather than print an empty one.
-assert.ok(!buildOverseasDraft({ t, isInternational: true, name: 'La Tulipe' }).includes('price'),
-  'an unknown price printed an empty price line');
-// No product, no draft: a WhatsApp link with an empty body is worse than no link.
-assert.equal(buildOverseasDraft({ t, isInternational: true, name: '' }), '');
-assert.equal(buildOverseasDraft(), '');
-
-assert.notEqual(overseasDraftKeys(true).labelKey, overseasDraftKeys(false).labelKey,
-  'the button reads the same in both shops, so one of them is lying about what it does');
-
-// --- 1b. And every WhatsApp link on a product page uses that builder ---------------------------------
-// The assertions above prove the builder is right; they say nothing about whether the page still calls
-// it. Both sticky bars passed a generic message for months while a perfectly good builder sat beside
-// them, so the call sites are checked by rule rather than by memory.
-for (const page of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
-  const source = read(page);
-  const calls = [...source.matchAll(/buildWhatsAppCheckoutUrl\(/g)];
-  assert.ok(calls.length, `${page} no longer opens WhatsApp at all`);
-  for (const call of calls) {
-    const window = source.slice(call.index, call.index + 200);
-    assert.match(window, /buildOverseasDraft/,
-      `${page} opens WhatsApp with a message that is not built from the product — the buyer taps "order" `
-      + `and Dekito receives a note naming no perfume:\n  ${window.split('\n')[0].trim()}`);
-  }
-}
-
-// --- 2. The cart and checkout routes do not exist in the English shop --------------------------------
-const app = read('App.jsx');
-for (const path of ['/cart', '/checkout', '/mobile/cart', '/mobile/checkout']) {
-  const line = app.split('\n').find((row) => row.includes(`<Route path="${path}"`));
-  assert.ok(line, `the route ${path} has disappeared from App.jsx`);
-  assert.match(line, /<DomesticOnly>/,
-    `${path} is reachable in the English shop, where its prices and its courier list are both wrong:\n  ${line.trim()}`);
-}
-// And the wrapper must actually send the visitor away, not merely exist.
-const gate = app.slice(app.indexOf('const DomesticOnly'), app.indexOf('const DomesticOnly') + 400);
-assert.match(gate, /isInternational/, 'DomesticOnly does not consult the shop at all');
-assert.match(gate, /<Navigate/, 'DomesticOnly renders no redirect, so the gated pages still render');
-
-// --- 3. NO buyer surface reaches the cart without asking which shop it is in -------------------------
-// Found by scanning, not by a list: the next add-to-cart button somebody adds has to be caught by this
-// too, and a hardcoded list would quietly pass it.
 const jsxFilesIn = (rel) => readdirSync(join(srcRoot, rel))
   .filter((name) => name.endsWith('.jsx'))
   .map((name) => join(rel, name));
@@ -106,30 +56,61 @@ const candidates = [
 // Any name of the shape add…Item(, not the one spelling we happened to look for first: the customer
 // portal's reorder calls addCartItem(), slipped past a pattern that only knew addItem(), and quietly
 // filled a basket the English shop cannot open.
-const REACHES_CART = /\badd[A-Za-z]*Item\(|to="\/cart"|'\/cart'|"\/mobile\/cart"|'\/mobile\/cart'/;
-let checked = 0;
-for (const rel of candidates) {
-  if (EXEMPT.has(rel) || GATED_BY_ROUTE.test(rel) || STUDIO.test(rel)) continue;
-  const source = read(rel);
-  if (!REACHES_CART.test(source)) continue;
-  checked += 1;
-  // TWO tests, because the obvious one is not enough. Simply searching for the word `isInternational`
-  // passes on a file that still MENTIONS it in dead JSX after the binding was deleted — which is what
-  // three of the sabotage runs did: remove it from the destructuring and the gate silently stops working
-  // while the guard stays green. So: the file must BIND it, and must actually branch on it.
-  assert.match(source, /const\s*\{[^}]*\bisInternational\b[^}]*\}\s*=/,
-    `${rel} reaches the cart but never reads which shop it is in — in the English shop that is a domestic `
-    + 'price under an international one.');
-  // Branching on it directly, or handing it to a named rule that does — bespoke routes three surfaces
-  // through bespokeTakesPayment() rather than repeating the ternary, which is the better answer and
-  // must not read as "never used".
-  assert.match(source, /isInternational\s*\?|!\s*isInternational|\w+\(\s*isInternational\s*\)|\(\s*\w+,\s*isInternational\s*\)/,
-    `${rel} reads which shop it is in and then does nothing with it — the cart is still offered in the `
-    + 'English shop.');
+
+// --- 1. One address, two carts; the checkout stays domestic --------------------------------------
+const app = read('App.jsx');
+for (const path of ['/cart', '/mobile/cart']) {
+  const line = app.split('\n').find((entry) => entry.includes(`path="${path}"`));
+  assert.ok(line, `the route ${path} has disappeared from App.jsx`);
+  assert.match(line, /<ByShop /, `${path} must render one cart or the other by shop`);
+  assert.match(line, /international=\{<(Mobile)?InternationalCartPage/, `${path} must hand the English shop its own cart page`);
+  assert.doesNotMatch(line, /DomesticOnly/, `${path} is still closed to the English shop`);
 }
-// The scan must actually be finding files. A regex that matches nothing would pass every assertion above
-// while guarding nothing at all, which is the way this class of guard usually dies.
-assert.ok(checked >= 4, `the cart-surface scan only found ${checked} file(s); it has stopped seeing the shop`);
+for (const path of ['/checkout', '/mobile/checkout']) {
+  const line = app.split('\n').find((entry) => entry.includes(`path="${path}"`));
+  assert.ok(line, `the route ${path} has disappeared from App.jsx`);
+  assert.match(line, /<DomesticOnly>/, `${path} is reachable from the English shop — a dollar basket would meet a rupiah till`);
+}
+const byShop = (app.match(/const ByShop = [\s\S]*?\n\};/) || [''])[0];
+assert.match(byShop, /isInternational \? international : domestic/, 'ByShop must choose by the shop and nothing else');
+
+// --- 2. The English cart can reach the dollar, the destination and WhatsApp — and nothing domestic --
+for (const page of ['pages/InternationalCartPage.jsx', 'pages/mobile/MobileInternationalCartPage.jsx']) {
+  const source = readCode(page);
+  for (const forbidden of [/formatRupiah/, /\bRp\b/, /useAppliedVoucher|cart-voucher|voucherCode/, /\/checkout/, /checkoutPaymentMethods|createDokuCheckout|isManualTransferPayment/, /FreeVialPicker/, /memberSavingForCart/]) {
+    assert.doesNotMatch(source, forbidden, `${page} reaches something domestic: ${forbidden} — the English cart must not`);
+  }
+  assert.match(source, /useCartInternationalQuote\(items\)/, `${page} must price the basket through the international quote`);
+  assert.match(source, /<InternationalShippingQuote quote=\{quote\}/, `${page} must show the destination, shipping and total from that same quote`);
+  assert.match(source, /buildInternationalCartDraft\(\{ t, quote: draft \}\)/, `${page} must send the order through the cart draft builder`);
+  assert.match(source, /canOrder \? buildWhatsAppCheckoutUrl\(message, phone\) : '#'/, `${page} must open WhatsApp only with a complete message`);
+  assert.match(source, /US\$\$\{/, `${page} must print its prices in dollars`);
+}
+// The domestic carts never touch the international quote: a rupiah basket that starts quoting dollars
+// is the mirror of the leak this guard was first written for.
+for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx', 'pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
+  assert.doesNotMatch(readCode(page), /useCartInternationalQuote|buildInternationalCartDraft/, `${page} is the domestic till and must not quote internationally`);
+}
+
+// --- 3. The product page's WhatsApp button is an enquiry again, in both shops ----------------------
+const keys = read('utils/overseasEnquiry.js');
+assert.match(keys, /export const overseasDraftKeys = \(\) => \(\{ labelKey: 'export\.ask', draftKey: 'export\.waDraft' \}\);/,
+  'the product page button must be the enquiry in both shops — the order lives in the cart now');
+const messages = read('i18n/messages.js');
+assert.doesNotMatch(messages, /'export\.waOrderDraft'|'export\.order'/, 'the order-from-product-page copy is retired with the button');
+assert.match(messages, /'export\.waCartDraft'/, 'the cart order draft must exist');
+for (const page of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx', 'pages/ImmersiveProductPage.jsx']) {
+  const source = readCode(page);
+  assert.doesNotMatch(source, /buildWhatsAppCheckoutUrl\(|buildOverseasDraft\(/, `${page} builds its own WhatsApp link — the enquiry button is the one surface for that`);
+  // The button's own price. Found on the first local run: "Add to cart — Rp 359.000" in the English shop,
+  // because the label read the domestic string. Every priced add-to-cart label must go through
+  // quotedInternationalPrice, which answers the dollar when there is an export price and the caller's
+  // own label when there is not.
+  const labels = source.match(/t\('pdp\.addToCartWithPrice', \{[^}]*\}\)/g) || [];
+  for (const call of labels) {
+    assert.match(call, /quotedInternationalPrice\(exportPrice/, `${page}: an add-to-cart label prints the domestic price in the English shop: ${call}`);
+  }
+}
 
 // --- 4. And no buyer page takes a PAYMENT in the English shop ----------------------------------------
 //
@@ -238,4 +219,4 @@ assert.equal(
 assert.match(buildBespokeEnquiryDraft({ t: stub }), /\|-\|-\|-\|-$/, 'an unanswered field must read as a dash, not as "undefined"');
 assert.equal(buildBespokeEnquiryDraft(), '', 'no translator, no draft');
 
-console.log(`englishShopHasNoCart selfcheck OK (no cart and no till in the English shop: ${checked} buy surface(s) and ${payChecked} payment surface(s) gated, 4 routes redirected, and the WhatsApp draft names the bottle and its international price)`);
+console.log(`englishShopOrdersOnWhatsApp selfcheck OK (the English cart is dollars, a destination and WhatsApp; ${payChecked} payment surface(s) still gated; the checkout stays domestic)`);

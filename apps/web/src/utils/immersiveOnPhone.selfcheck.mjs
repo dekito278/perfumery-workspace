@@ -62,10 +62,16 @@ assert.match(immersive, /props\.mobile\s*\n?\s*\?\s*<MobileCommerceLayout>/,
 assert.match(immersive, /to=\{mobile \? '\/mobile\/catalog' : '\/catalog'\}/,
   'the back link sends a phone reader to the desktop catalogue');
 
-// --- 5. And the English shop still has no cart here ----------------------------------------------------
-// This page has its own add-to-cart, which is exactly the kind of second till that /en/bespoke turned out
-// to be hiding. It was already gated; adding a second surface must not un-gate it.
-assert.match(immersive, /\{isInternational \? null : \(/,
-  'the immersive page offers a cart in the English shop, which has none');
+// --- 5. And this page's own add-to-cart is offered in BOTH shops ----------------------------------------
+// It was gated out of the English shop from 18 Sep to 6 Oct 2026, when that shop had no cart. Since the
+// English cart exists (englishShopOrdersOnWhatsApp.selfcheck), a page that quietly kept the gate would
+// hide the cart from exactly the buyer it was reopened for. The till it must NOT reach is the domestic
+// checkout, and this page never links there.
+assert.match(immersive, /t\('pdp\.addToCart(?:WithPrice)?'/, 'the immersive page no longer offers a cart at all');
+// The gate's SHAPE — a shop ternary whose domestic branch is the cart button — not a character window:
+// a sabotage that re-wrapped the button sat a few characters past a 400-char window and walked through.
+assert.doesNotMatch(immersive, /isInternational \? null : \(\s*<button[\s\S]{0,240}?(?:handleAddToCart|addSelectedVariant)/,
+  'the immersive page still hides add-to-cart in the English shop — the English cart exists now');
+assert.doesNotMatch(immersive, /to="\/checkout"|'\/checkout'/, 'the immersive page must not link to the domestic checkout');
 
 console.log('immersiveOnPhone selfcheck OK (one story, two surfaces, one shell each — and the English shop still cannot reach a cart through it)');

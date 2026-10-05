@@ -127,7 +127,10 @@ const MobileLoginPage = lazyRoute(() => import('@/pages/mobile/MobileLoginPage.j
 const MobileCommerceTabsPage = lazyRoute(() => import('@/pages/mobile/MobileCommerceTabsPage.jsx'));
 const MobileProductDetailPage = lazyRoute(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
 const MobileBespokePage = lazyRoute(() => import('@/pages/mobile/MobileBespokePage.jsx'));
+// The international cart is lazy like the phone's: it is one shop's page, not every visitor's.
+const InternationalCartPage = lazyRoute(() => import('@/pages/InternationalCartPage.jsx'));
 const MobileCartPage = lazyRoute(() => import('@/pages/mobile/MobileCartPage.jsx'));
+const MobileInternationalCartPage = lazyRoute(() => import('@/pages/mobile/MobileInternationalCartPage.jsx'));
 const MobileCheckoutPage = lazyRoute(() => import('@/pages/mobile/MobileCheckoutPage.jsx'));
 const MobileProductListPage = lazyRoute(() => import('@/pages/mobile/MobileProductListPage.jsx'));
 const MobileProductWearTaggingPage = lazyRoute(() => import('@/pages/mobile/MobileProductWearTaggingPage.jsx'));
@@ -470,6 +473,22 @@ const DomesticOnly = ({ children }) => {
   return isInternational ? <Navigate to="/catalog" replace /> : children;
 };
 
+/**
+ * One address, two pages — the cart since 2026-10-06.
+ *
+ * Dekito reversed the 18 Sep decision: the English shop takes a basket too. But not THIS basket. The
+ * domestic cart totals rupiah, offers a voucher and leads to /checkout and a courier list; the
+ * international one totals dollars, asks for a destination, shows the shipping and leads to WhatsApp.
+ * They share storage and nothing else, so /cart renders one or the other by shop rather than one page
+ * that branches inside itself — a page that renders half of itself is how the first attempt leaked a
+ * domestic price under an international one. /checkout stays DomesticOnly: the English cart never
+ * reaches it.
+ */
+const ByShop = ({ domestic, international }) => {
+  const { isInternational } = useStorefrontRegion();
+  return isInternational ? international : domestic;
+};
+
 function AppRoutes() {
   return (
     <Router basename={ROUTER_BASENAME}>
@@ -495,7 +514,7 @@ function AppRoutes() {
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/journal" element={<PublicJournalPage />} />
-        <Route path="/cart" element={<DomesticOnly><CartPage /></DomesticOnly>} />
+        <Route path="/cart" element={<ByShop domestic={<CartPage />} international={<InternationalCartPage />} />} />
         <Route path="/checkout" element={<DomesticOnly><CheckoutPage /></DomesticOnly>} />
         <Route path="/payment" element={<PaymentPage />} />
         {/* The greeting card in every parcel points here. */}
@@ -531,7 +550,7 @@ function AppRoutes() {
 
         <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
 
-        <Route path="/mobile/cart" element={<DomesticOnly><MobileCartPage /></DomesticOnly>} />
+        <Route path="/mobile/cart" element={<ByShop domestic={<MobileCartPage />} international={<MobileInternationalCartPage />} />} />
         <Route path="/mobile/checkout" element={<DomesticOnly><MobileCheckoutPage /></DomesticOnly>} />
 
         <Route path="/mobile/payment" element={<PaymentPage />} />
