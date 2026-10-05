@@ -137,8 +137,11 @@ export const splitFreeVialLines = (items = []) => {
  *
  * The name is the owner's own: the vial product's name as he wrote it, and the variant label as he wrote
  * it. It travels to the invoice and to the packing slip, where it is the only thing saying this bottle
- * was not paid for — so it has to read as a gift without any translation layer, and the shop that has a
- * cart is the Indonesian one.
+ * was not paid for — so it has to read as a gift without any translation layer.
+ *
+ * `price` is the Indonesian word 'Gratis' and stays that way. Both shops have a cart since 2026-10-06,
+ * but this field is read by the invoice and the packing slip, which are Dekito's own documents; the
+ * English buyer meets the gift through FreeVialPicker, which draws every word from the message file.
  */
 export const buildFreeVialCartItem = ({ vialProduct = {}, choice = {} } = {}) => ({
   productId: vialProduct.id,
@@ -197,9 +200,8 @@ export const dropOrphanedGift = (lines = []) => {
  * A pure rule rather than a condition inside the component, so it can be RUN — the component is the one
  * part of this a guard cannot mount.
  */
-export const shouldOfferFreeVial = ({ opened = false, isInternational = false, vialProduct = null, gift = null } = {}) => (
+export const shouldOfferFreeVial = ({ opened = false, vialProduct = null, gift = null } = {}) => (
   Boolean(opened)
-  && !isInternational
   && !gift
   && freeVialChoices(vialProduct).length > 0
 );

@@ -9,6 +9,7 @@ import { useCartInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import { buildInternationalCartDraft } from '@/utils/overseasEnquiry.js';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
+import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
@@ -32,7 +33,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
  */
 const InternationalCartPage = () => {
   const { t } = useTranslate();
-  const { items, updateQuantity, removeItem } = useCart();
+  const { items, updateQuantity, removeItem, setGift } = useCart();
   const catalog = useStorefrontProducts();
   const quote = useCartInternationalQuote(items);
   const phone = getStorefrontWhatsAppNumber();
@@ -114,6 +115,10 @@ const InternationalCartPage = () => {
                 </div>
               ))
             )}
+            {/* The gift, in both shops since 2026-10-06. Every word of it comes from the message file, so
+                it reads in English here; the line it writes into the cart carries Dekito's own Indonesian
+                'Gratis' for the packing slip, which the buyer never sees. */}
+            <FreeVialPicker items={items} products={catalog} onPick={setGift} />
           </div>
 
           <aside className="cart-summary">

@@ -16,6 +16,7 @@ import { dirname, join, relative } from 'node:path';
 
 import { buildOverseasDraft, overseasDraftKeys } from './overseasEnquiry.js';
 import { bespokeFlowSteps, bespokeStepKeys, bespokeTakesPayment, buildBespokeEnquiryDraft } from './bespokeOrder.js';
+import { MESSAGES } from '../i18n/messages.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const srcRoot = join(here, '..');
@@ -77,7 +78,10 @@ assert.match(byShop, /isInternational \? international : domestic/, 'ByShop must
 // --- 2. The English cart can reach the dollar, the destination and WhatsApp — and nothing domestic --
 for (const page of ['pages/InternationalCartPage.jsx', 'pages/mobile/MobileInternationalCartPage.jsx']) {
   const source = readCode(page);
-  for (const forbidden of [/formatRupiah/, /\bRp\b/, /useAppliedVoucher|cart-voucher|voucherCode/, /\/checkout/, /checkoutPaymentMethods|createDokuCheckout|isManualTransferPayment/, /FreeVialPicker/, /memberSavingForCart/]) {
+  // FreeVialPicker is NOT on this list since 2026-10-06: Dekito opened the gift to both shops, and every
+  // word the picker shows comes from the message file, so it reads in English. What it must do here is
+  // reach the ORDER — asserted below — because the gift is the one line he cannot infer from the total.
+  for (const forbidden of [/formatRupiah/, /\bRp\b/, /useAppliedVoucher|cart-voucher|voucherCode/, /\/checkout/, /checkoutPaymentMethods|createDokuCheckout|isManualTransferPayment/, /memberSavingForCart/]) {
     assert.doesNotMatch(source, forbidden, `${page} reaches something domestic: ${forbidden} — the English cart must not`);
   }
   assert.match(source, /useCartInternationalQuote\(items\)/, `${page} must price the basket through the international quote`);
@@ -85,6 +89,18 @@ for (const page of ['pages/InternationalCartPage.jsx', 'pages/mobile/MobileInter
   assert.match(source, /buildInternationalCartDraft\(\{ t, quote: draft \}\)/, `${page} must send the order through the cart draft builder`);
   assert.match(source, /canOrder \? buildWhatsAppCheckoutUrl\(message, phone\) : '#'/, `${page} must open WhatsApp only with a complete message`);
   assert.match(source, /US\$\$\{/, `${page} must print its prices in dollars`);
+  // The gift, offered here and carried into the order. A picker with no line in the message would let a
+  // buyer choose an aroma that never reaches him.
+  assert.match(source, /<FreeVialPicker items=\{items\} products=\{(catalog|products)\} onPick=\{setGift\} \/>/,
+    `${page} does not offer the free vial — both shops have had it since 2026-10-06`);
+}
+{
+  const hook = readCode('hooks/useInternationalQuote.js');
+  assert.match(hook, /gift \? \[t\('export\.waCartGiftLine'/,
+    'the English cart order does not name the gift, so he would pack the parcel without it');
+  for (const shop of ['id', 'en']) {
+    assert.ok(MESSAGES[shop]['export.waCartGiftLine'], `export.waCartGiftLine is missing from the ${shop} shop`);
+  }
 }
 // The domestic carts never touch the international quote: a rupiah basket that starts quoting dollars
 // is the mirror of the leak this guard was first written for.
@@ -146,19 +162,23 @@ for (const rel of candidates) {
 }
 assert.ok(payChecked >= 2, `the payment-surface scan only found ${payChecked} file(s); it has stopped seeing the tills`);
 
-// --- 4b. Reorder is not offered where there is no cart to reorder into --------------------------------
+// --- 4b. Reorder is offered in both shops, and must LAND somewhere that exists -------------------------
 //
-// Pinned to the BUTTON, not to the file. The scan above only asks whether the portal consults the shop
-// somewhere, and it does — in a second, belt-and-braces line — so deleting the gate around the button
-// itself left every other assertion green while an English customer got a Reorder button that fills a
-// basket they cannot open and drops them on the catalogue.
+// It was hidden in the English shop until 2026-10-06, when that shop had no cart; Dekito opened it with
+// the cart. What had to change with it is the destination: reorder fills the basket and then navigates,
+// and /checkout is still domestic-only — so an English customer would have been given a full basket and
+// a bounce to the catalogue. Held on the NAVIGATION, which is the half that breaks silently.
 {
-  const portal = read('pages/CustomerPortalPage.jsx');
+  const portal = readCode('pages/CustomerPortalPage.jsx');
   const at = portal.indexOf('onReorder(order)');
   assert.ok(at > 0, 'the reorder button has moved; this check no longer points at anything');
   const before = portal.slice(Math.max(0, at - 400), at);
-  assert.match(before, /isInternational \? null :/,
-    'the Reorder button is offered in the English shop, which has no cart to put anything into');
+  assert.doesNotMatch(before, /isInternational \? null :/,
+    'the Reorder button is hidden from the English shop again — that shop has a cart now');
+  assert.match(portal, /if \(isInternational\) navigate\(isMobileRoute \? '\/mobile\/cart' : '\/cart'\);/,
+    'reorder must land an English customer in the CART — /checkout is domestic-only and would bounce them');
+  assert.match(portal, /navigate\(isMobileRoute \? '\/mobile\/checkout' : '\/checkout'\)/,
+    'and an Indonesian customer must still land in the checkout');
 }
 
 // --- 5. Bespoke stops at the design in the English shop ----------------------------------------------
