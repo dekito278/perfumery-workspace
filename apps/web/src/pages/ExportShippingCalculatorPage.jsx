@@ -11,7 +11,7 @@ import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { RAYSPEED_MEASURED_ON, rayspeedServes } from '@/data/rayspeedRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
-import { internationalPriceFor, shippingRegionForCountry } from '@/utils/shippingRegion.js';
+import { internationalPriceFor } from '@/utils/shippingRegion.js';
 import { usdPriceFor, USD_PRICE_RATE, USD_PRICE_RATE_SET_ON } from '@/utils/usdPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
@@ -71,18 +71,6 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
 
   const products = useMemo(() => catalog.filter(isProductVisibleInStorefront), [catalog]);
 
-  // Which of the two international prices this destination pays.
-  //
-  // This screen used to quote the WORLD price to everyone. A buyer in Kuala Lumpur was shown Rp 790.000
-  // on the shop and written down at Rp 1.260.000 here — Rp 470.000 a bottle, Rp 2.820.000 on the
-  // six-bottle order the page opens with.
-  //
-  // ONE SPELLING. This line used to read `isAsiaCountry(countryCode) ? 'asia' : 'world'`, which is the
-  // body of shippingRegionForCountry written out a second time. The storefront grew the same rule on
-  // 2026-10-05 when the price started following the destination the buyer picks, and two copies of a
-  // split that decides a price is how Kuala Lumpur came to be billed Europe's number in the first place.
-  const priceRegion = shippingRegionForCountry(countryCode);
-
   const lines = useMemo(() => rows.map((row) => {
     const product = products.find((item) => item.slug === row.slug);
     const variants = product?.variants || [];
@@ -98,14 +86,14 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
       // internationalPriceFor returns null when no overseas price is set for the line; falling back to
       // resolveTierPrice keeps the existing behaviour of charging the domestic price and flagging the row
       // rather than refusing to quote at all.
-      unitPrice: internationalPriceFor({ tierPrices: forLine, linePrice: retailPrice, region: priceRegion })
+      unitPrice: internationalPriceFor({ tierPrices: forLine, linePrice: retailPrice })
         || resolveTierPrice({ retailPrice, tierPrices: forLine, overseas: true }),
       name: product?.name || '',
       size: variant?.size || product?.size || '',
       weightGram: itemWeightGram(variant?.size || product?.size || '', FALLBACK_GRAM),
       weighedSize: isWeighedSize(variant?.size || product?.size || ''),
     };
-  }), [rows, products, tierPrices.index, priceRegion]);
+  }), [rows, products, tierPrices.index]);
 
   const visibleDestinations = filterDestinations(destinations, countrySearch, countryCode);
   const destinationMatches = countMatches(destinations, countrySearch);
@@ -128,9 +116,9 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // deliberate, and the manual field below is the answer to it.
   const carrierQuote = quoteInternationalShipping({ countryCode, weightGram, outsideDeliveryArea });
   const quote = carrierQuote?.total ? carrierQuote : null;
-  // What the buyer is CHARGED, from the published rate card — the number Dekito committed to, which the
-  // carrier cost above does not decide. The card is written for 30 ml bottles, so a cart holding other
-  // sizes is counted but flagged rather than quietly quoted at a price the card never covered.
+  // What the buyer is CHARGED: the carrier's rate for the bracket, less the support SOLIVAGANT carries
+  // (internationalShippingRates.js). Written for 30 ml bottles, so a cart holding other sizes is counted
+  // but flagged rather than quietly quoted at a price the rule never covered.
   const priceCard = quoteInternationalShippingPrice({ countryCode, bottles });
   // The rate that DECIDES, not the one that estimates. This rupiah figure is not a caption: the "Pakai"
   // button below types it into the shipping field, and that field is what the order is billed. Converting
@@ -571,14 +559,19 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
             is how a shop quotes its own cost price. */}
         <section className="mt-4 rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] p-4">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-editorial-charcoal">
-            Kartu tarif {SHIPPING_RATES_EFFECTIVE_YEAR} · ditagih ke pembeli
+            Harga ongkir {SHIPPING_RATES_EFFECTIVE_YEAR} · ditagih ke pembeli
           </p>
           {priceCard?.usd ? (
             <>
               <p className="mt-1 text-3xl font-bold text-editorial-charcoal">{formatShippingUsd(priceCard.usd)}</p>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">
-                {priceCard.regionLabel} · {priceCard.tierLabel} · {priceCard.bottles} botol · ≈ {formatPrice(priceCardIdr)}
+                {priceCard.regionLabel} · zona {priceCard.zone} · {priceCard.tierLabel} · {priceCard.bottles} botol · ≈ {formatPrice(priceCardIdr)}
                 {' '}(kurs {USD_PRICE_RATE.toLocaleString('id-ID')}, {USD_PRICE_RATE_SET_ON})
+              </p>
+              {/* The arithmetic, in the open: a figure Dekito can check against the carrier's sheet is a
+                  figure he can trust the "Pakai" button with. */}
+              <p className="mt-1 text-xs text-[#6b7280]">
+                Biaya kurir {formatShippingUsd(priceCard.costUsd)} ({formatPrice(priceCard.costIdr)}) − ditanggung SOLIVAGANT {formatShippingUsd(priceCard.supportUsd)}
               </p>
               <Button type="button" variant="outline" className="mt-2 h-9 rounded-2xl bg-white text-xs" onClick={() => setManualShipping(priceCardIdr)}>
                 Pakai {formatPrice(priceCardIdr)}
@@ -587,15 +580,15 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           ) : (
             <p className="mt-1 text-sm font-semibold leading-relaxed text-[#6b7280]">
               {priceCard?.onRequest === 'bottles'
-                ? `${priceCard.bottles} botol — di atas 6 botol kartu tarifnya minta dikutip manual. Isi ongkirnya di bawah.`
-                : 'Negara ini tidak ada di kartu tarif. Kutip manual, lalu isi ongkirnya di bawah.'}
+                ? `${priceCard.bottles} botol — di atas 6 botol dikutip manual. Isi ongkirnya di bawah.`
+                : 'Negara ini tidak ada di lembar zona kurir. Kutip manual, lalu isi ongkirnya di bawah.'}
             </p>
           )}
           {offCardSizes.length ? (
             <p className="mt-2 flex gap-2 text-xs font-semibold leading-relaxed text-amber-900">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
-                Kartu tarifnya ditulis untuk botol {SHIPPING_RATE_BOTTLE_SIZE_ML} ml. Di keranjang ini ada{' '}
+                Harga ongkirnya dihitung untuk botol {SHIPPING_RATE_BOTTLE_SIZE_ML} ml. Di keranjang ini ada{' '}
                 {offCardSizes.join(', ')} — jumlahnya tetap dihitung per botol, tapi cek dulu sebelum dikutip.
               </span>
             </p>

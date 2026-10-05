@@ -1,7 +1,7 @@
 import React from 'react';
 import { Globe } from 'lucide-react';
 import { formatRupiah } from '@/services/productCatalogService.js';
-import { useExportPrice, useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
 import OverseasInquiryButton from './OverseasInquiryButton.jsx';
 
@@ -15,10 +15,6 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
   // Null covers both "not abroad" and "no export price set for this bottle". Inventing one from the
   // domestic price is the guess this whole component exists to stop.
   const price = useOverseasPrice(product, variant);
-  // Which of the two international prices this is. The neighbours pay 2.2x and the rest of the world
-  // 3.5x, and the sentence below has to name the one being shown — a panel that says "outside
-  // Indonesia" over the Southeast Asia price is quoting the right number under the wrong promise.
-  const { shippingRegion } = useExportPrice(product, variant);
   if (!price) return null;
 
   const usd = usdPriceFor(price);
@@ -40,9 +36,7 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
           Los Angeles costs Rp 670.500 to send out of a US$80 price — the promise only ever held on a
           full parcel. Shipping is quoted from the published card now, on every destination. */}
       <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">
-        {shippingRegion === 'asia'
-          ? 'Priced for Southeast Asia and separate from the Indonesian price above. Shipping is quoted separately, once we know where the parcel is going.'
-          : 'International orders are priced separately from the Indonesian price above. Shipping is quoted separately, from our rate card, once we know where the parcel is going.'}
+        International orders are priced separately from the Indonesian price above. Shipping is quoted separately, once we know where the parcel is going.
       </p>
       <OverseasInquiryButton
         product={product}

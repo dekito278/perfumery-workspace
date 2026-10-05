@@ -50,6 +50,8 @@ export const useInternationalQuote = ({ price, product = null, variant = null } 
     ? quoteInternationalShippingPrice({ countryCode: country, bottles })
     : null;
   const shippingUsd = quote?.usd ?? null;
+  const shippingCostUsd = quote?.costUsd ?? null;
+  const shippingSupportUsd = quote?.supportUsd ?? null;
   const totalUsd = goodsUsd && shippingUsd ? goodsUsd + shippingUsd : null;
 
   // Which "no number" this is, most specific first. A size the card was not written for is not the
@@ -91,7 +93,7 @@ export const useInternationalQuote = ({ price, product = null, variant = null } 
   return {
     country, bottles, setCountry, setBottles,
     bottleSizeLabel, destination,
-    goodsUsd, shippingUsd, totalUsd, onRequest, draft,
+    goodsUsd, shippingUsd, shippingCostUsd, shippingSupportUsd, totalUsd, onRequest, draft,
   };
 };
 

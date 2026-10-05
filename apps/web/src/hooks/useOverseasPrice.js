@@ -2,7 +2,6 @@ import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { tierPricesForLine } from '@/utils/tierPrice.js';
 import { internationalPriceFor } from '@/utils/shippingRegion.js';
-import { useShippingRegion } from '@/hooks/useShippingRegion.js';
 
 /**
  * The export price for this line, or null — the single answer to "is this visitor being quoted
@@ -23,12 +22,9 @@ export const useExportPrice = (product, variant = null) => {
   // international shop from Indonesia.
   const { isInternational: overseasVisitor } = useStorefrontRegion();
 
-  // Southeast Asia pays a different price from the rest of the world — 2.2x retail instead of 3.5x —
-  // because free shipping cannot do the work there: RaySpeed charges about Rp 90.000 to Malaysia, so
-  // waiving it is a gift worth 8% that nobody feels. Only the price itself moves that number.
-  const shippingRegion = useShippingRegion();
-
-  if (!product?.slug) return { price: null, overseasVisitor, shippingRegion };
+  // ONE international price, everywhere. Southeast Asia paid 2.2x retail from 19 Sep to 6 Oct 2026; the
+  // neighbours' lower total is now done by the shipping line instead — see shippingRegion.js.
+  if (!product?.slug) return { price: null, overseasVisitor };
   // The RETAIL price, never the one this visitor happens to be entitled to.
   //
   // applyTierPrices rewrites priceNumber to the member price for a signed-in member and keeps the
@@ -46,9 +42,8 @@ export const useExportPrice = (product, variant = null) => {
   const price = internationalPriceFor({
     tierPrices: tierPricesForLine(index, product.slug, variant?.id || ''),
     linePrice,
-    region: shippingRegion,
   });
-  return { price, overseasVisitor, shippingRegion };
+  return { price, overseasVisitor };
 };
 
 /**

@@ -23,10 +23,10 @@ export const DESTINATION_QUERY_KEY = 'dest';
 /**
  * "Somewhere else" — a real choice, not an empty one.
  *
- * The card covers 57 countries and the world has rather more. Without this the only way to say "my
- * country is not on your list" is to leave the picker alone, which is indistinguishable from not having
- * noticed it. Chosen, it quotes the bottle at the world price and says the shipping is on request, which
- * is exactly what the card's own footnote instructs.
+ * The carrier's zone sheet names 233 destinations and the picker offers every one it can put a name to,
+ * so this is now the rare case rather than the common one. It stays because the alternative — leaving the
+ * picker alone — is indistinguishable from not having noticed it. Chosen, it quotes the bottle and says
+ * the shipping is on request.
  *
  * Deliberately NOT an ISO code: 'XX' is unassigned in ISO 3166-1, so it can never collide with a country
  * the card gains later, and `shippingRateRegionFor('XX')` already answers null without being told about
@@ -34,7 +34,7 @@ export const DESTINATION_QUERY_KEY = 'dest';
  */
 export const DESTINATION_OTHER = 'XX';
 
-/** Every country the published card can quote, flat. */
+/** Every destination the rule can price, flat — the carrier's zone sheet, by way of the groups. */
 export const CARD_COUNTRIES = SHIPPING_RATE_REGIONS.flatMap((region) => region.countries);
 
 export const isCardCountry = (countryCode) => CARD_COUNTRIES.includes(
@@ -66,17 +66,21 @@ export const countryNameFor = (countryCode, locale = 'en') => {
 };
 
 /**
- * The picker's options, grouped exactly as the card groups them.
+ * The picker's options, grouped as the rate groups are, A-Z by LOCALISED name inside each — a reader
+ * scanning for "Germany" is scanning an alphabet, and the Indonesian shop reads Jerman under J.
  *
- * The card's own order between groups — it is his sheet and the order is his — but A-Z by NAME inside
- * each, because the card lists countries in the order he wrote them and a reader scanning for "Germany"
- * is scanning an alphabet. Sorted by the LOCALISED name, so the Indonesian shop reads Jerman under J.
+ * Only destinations the platform can NAME. The carrier's sheet carries a handful of codes that are not
+ * ISO 3166 — Bonaire as XB, Curaçao as XC, Kosovo as KV, the Canaries as IC — and Intl.DisplayNames has
+ * no word for them, so they would appear in the list as their bare code between "Bolivia" and "Brazil".
+ * A buyer there can still choose "another country"; a dropdown that shows "XB" looks broken to everyone
+ * else.
  */
 export const destinationOptions = (locale = 'en') => SHIPPING_RATE_REGIONS.map((region) => ({
   key: region.key,
   label: region.label,
   countries: region.countries
     .map((code) => ({ code, name: countryNameFor(code, locale) }))
+    .filter((item) => item.name !== item.code)
     .sort((a, b) => a.name.localeCompare(b.name, locale)),
 }));
 

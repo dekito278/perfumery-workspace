@@ -1,146 +1,40 @@
-// Which international price a reader is being shown, and whether the shipping is on the house.
+// The international price of one line.
 //
-// One export price for the whole world was always going to be wrong at one end. It was set in USD,
-// reasoning that US$62 reads modestly in New York — which it does — and then sent to the neighbours,
-// where the same number is RM 290 for 30 ml from a house nobody there has heard of. Dekito spotted it
-// himself: "kok jadinya kelihatannya mahal, udah kayak brand besar".
+// This file used to hold a split: Southeast Asia at 2.2x retail, the rest of the world at the hand-set
+// 3.5x, decided first from the browser's clock and then from the destination the buyer picked. Dekito
+// retired the split on 2026-10-06. Looking at the numbers with the carrier's cost beside them, the
+// neighbours' price left almost nothing above the Indonesian retail once the parcel was paid for — "saya
+// mau untung, gak mau sama kayak di Indonesia" — and the thing the lower price was for, a total that does
+// not frighten a buyer in Kuala Lumpur, is now done by the SHIPPING line instead: Singapore pays the
+// least to ship to, so Singapore still pays the least in total, with the bottle at the same price
+// everywhere. See internationalShippingRates.js.
 //
-// So there are two prices, split where the carrier splits the world.
-
-import { EXPORT_ZONE_BY_COUNTRY } from '@/data/exportZones.js';
-import { overseasPriceFromRetail } from '@/utils/memberPriceFill.js';
+// So there is one international price, and it is the one Dekito set by hand.
 
 /**
- * Southeast Asia plus Hong Kong and Macau — LTU's zones 1 and 2, which is also roughly "the neighbours".
- * They get a lower multiplier because free shipping cannot do the work there: RaySpeed charges about
- * Rp 90.000 to Malaysia, so waiving it is a gift worth 8% that nobody feels. Only the price itself can
- * move the number a buyer in Kuala Lumpur is looking at.
+ * The hand-set international price for a line, or null when none is set.
+ *
+ * Null rather than a guess: a product with no export price has not been priced for export, and inventing
+ * one from the domestic price is the thing OverseasPriceNote and CardPrice exist to refuse. The price
+ * must also exceed the retail line, because an "export price" below retail is a data-entry slip, not a
+ * discount.
  */
-export const ASIA_MULTIPLIER = 2.2;
-
-/**
- * The same countries, as IANA time zones, because a browser tells you its clock and not its address.
- *
- * Written out one by one rather than matched on the 'Asia/' prefix: Asia/Tokyo, Asia/Dubai and
- * Asia/Kolkata are all "Asia" to a prefix test and none of them belong here, and Asia/Jakarta is home.
- *
- * BOTH SPELLINGS OF EVERY RENAMED ZONE, and that is the rule rather than a courtesy. IANA renamed some
- * of these and kept the old name as a link, and ICU builds do not agree on which one is canonical — on
- * the Node this repo tests with, Intl resolves Asia/Yangon BACKWARDS to Asia/Rangoon, while a current
- * browser reports Asia/Yangon. Whichever one the reader's device reports has to be in this list, so
- * canonicalising the input would only pick a side; listing both picks neither.
- *
- * Asia/Saigon was already here for exactly this reason. Asia/Rangoon and Asia/Macao are the same case,
- * and without them a buyer in Yangon was quoted the 3.5x world price instead of 2.2x — a 59% surcharge
- * on the two markets this whole file exists to stop overcharging.
- */
-export const ASIA_TIME_ZONES = [
-  'Asia/Singapore',
-  'Asia/Kuala_Lumpur',
-  'Asia/Kuching',
-  'Asia/Brunei',
-  'Asia/Hong_Kong',
-  'Asia/Macau',
-  'Asia/Macao',
-  'Asia/Bangkok',
-  'Asia/Ho_Chi_Minh',
-  'Asia/Saigon',
-  'Asia/Manila',
-  'Asia/Phnom_Penh',
-  'Asia/Vientiane',
-  'Asia/Yangon',
-  'Asia/Rangoon',
-  'Asia/Dili',
-];
-
-/** 'asia' | 'world'. A clock this app does not recognise is 'world', which is the dearer of the two. */
-export const shippingRegionForTimeZone = (timeZone) => (
-  ASIA_TIME_ZONES.includes(String(timeZone || '').trim()) ? 'asia' : 'world'
-);
-
-/**
- * ?ship=asia / ?ship=world on the address, which beats the clock.
- *
- * The same reason ?lang= exists: Dekito cannot see his own Southeast Asia price from Jakarta otherwise,
- * and neither can anyone checking his work. A guess nobody can override is a guess nobody can correct —
- * that lesson is already written into the region switch this shop shipped in September.
- */
-export const readShippingRegionFromUrl = (search) => {
-  try {
-    const query = typeof search === 'string' ? search : window.location.search;
-    const value = new URLSearchParams(query).get('ship');
-    return value === 'asia' || value === 'world' ? value : null;
-  } catch {
-    return null;
-  }
-};
-
-export const detectShippingRegion = () => {
-  const chosen = readShippingRegionFromUrl();
-  if (chosen) return chosen;
-  try {
-    return shippingRegionForTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
-  } catch {
-    // No Intl, or a browser that refuses to say. 'world' never under-quotes.
-    return 'world';
-  }
+export const internationalPriceFor = ({ tierPrices = {}, linePrice = 0 } = {}) => {
+  const world = Number(tierPrices?.overseas) || 0;
+  const line = Number(linePrice) || 0;
+  return world && line && world > line ? world : null;
 };
 
 /*
  * There is no longer a `shippingIncludedFor`, and its absence is the rule.
  *
  * It read `rayspeedServes(country)` and meant "the price already carries the freight". The arithmetic
- * behind that only ever worked on a full parcel: RaySpeed bills a one-kilo minimum, so ONE 30 ml bottle
- * to the United States costs Rp 670.500 to send — against a US$80 price — while four of them cost the
- * same Rp 670.500. The promise was measured on the four-bottle case and quietly applied to the one.
+ * behind that only ever worked on a full parcel: the carrier bills a one-kilo minimum, so ONE 30 ml
+ * bottle to the United States costs as much to send as two. The promise was measured on the full parcel
+ * and quietly applied to the single bottle.
  *
  * Dekito's decision, 2026-09-25, on a live American order for a single bottle: shipping is charged, to
- * every destination, from the published card in internationalShippingRates.js. The card is the price;
- * rayspeedRates.js stays what it always was, the cost. Nothing in the shop may say the freight is
- * included — asiaPrice.selfcheck holds that across the copy, and internationalShippingPrice.selfcheck
- * holds it in the screen that writes the order.
+ * every destination. Since 2026-10-06 the charge is derived from the carrier's rate less a fixed support
+ * (internationalShippingRates.js). Nothing in the shop may say the freight is included —
+ * internationalShippingPrice.selfcheck holds that across the copy.
  */
-
-/** The zone a country sits in, for the two callers that need to reason about the split by country. */
-export const isAsiaCountry = (countryCode) => {
-  const zone = EXPORT_ZONE_BY_COUNTRY[String(countryCode || '').trim().toUpperCase()];
-  return zone === 1 || zone === 2;
-};
-
-/**
- * Which of the two international prices a parcel to this country is charged.
- *
- * This is the same split as `shippingRegionForTimeZone` and it answers a DIFFERENT question, which is the
- * whole point of having both. The clock asks "where does this reader seem to be" and the answer is a
- * guess about a person; this asks "where is the parcel going" and the answer is a fact about a shipment.
- * Dekito's decision, 2026-10-05: the destination decides the price, and the clock only seeds the default.
- *
- * An unlisted or unrecognised destination — including the picker's own 'XX' for "somewhere else" — has no
- * export zone and therefore falls to 'world', the dearer of the two. That direction is deliberate: it is
- * the one that can only ever over-quote, and an over-quote is corrected downwards in a conversation while
- * an under-quote has to be taken back.
- */
-export const shippingRegionForCountry = (countryCode) => (isAsiaCountry(countryCode) ? 'asia' : 'world');
-
-/**
- * The international price for one line, in the region the reader appears to be in.
- *
- * 'world' is the price Dekito set by hand and it is left exactly alone — he asked for that, and at
- * US$62 it reads modestly in the markets it was written for.
- *
- * 'asia' is COMPUTED from the retail price rather than stored, so it follows every price change without
- * eighteen rows to keep in step. That is the whole reason it is a formula and not a column.
- *
- * And it is never dearer than the world price. A hand-set overseas price below 2.2x would otherwise make
- * the neighbours pay more than America, which is the opposite of the point.
- */
-export const internationalPriceFor = ({ tierPrices = {}, linePrice = 0, region = 'world' } = {}) => {
-  const world = Number(tierPrices?.overseas) || 0;
-  const line = Number(linePrice) || 0;
-  const worldPrice = world && line && world > line ? world : null;
-  if (region !== 'asia') return worldPrice;
-
-  const asia = overseasPriceFromRetail(line, ASIA_MULTIPLIER);
-  if (!asia) return worldPrice;
-  return worldPrice ? Math.min(asia, worldPrice) : asia;
-};
