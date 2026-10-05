@@ -113,7 +113,11 @@ export const shippingZoneFor = (countryCode) => {
  * the days between confirming and handing the parcel to the courier are his, and the courier's clock
  * only starts at the counter.
  */
-export const SHIPPING_TRANSIT_DAYS = { 1: [1, 2], 2: [2, 3], 3: [2, 4], 4: [3, 5], 5: [3, 5], 6: [3, 6], 7: [4, 7], 8: [6, 12] };
+// WIDER THAN THE COURIER'S OWN FIGURES, on purpose. Dekito, 6 Oct 2026: "dikasih gap lebih jauh aja biar
+// ekspektasinya gak terlalu tinggi." A parcel that lands a day early is a delighted buyer; one that lands a
+// day late is a complaint — so the floor is a day or two later than the express service usually manages,
+// and the ceiling leaves room for customs.
+export const SHIPPING_TRANSIT_DAYS = { 1: [2, 4], 2: [3, 5], 3: [3, 6], 4: [4, 7], 5: [5, 8], 6: [5, 9], 7: [5, 10], 8: [8, 15] };
 
 /** The conditions that travel with the numbers. */
 export const SHIPPING_RATE_NOTES = [

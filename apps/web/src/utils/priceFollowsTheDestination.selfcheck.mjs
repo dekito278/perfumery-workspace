@@ -162,8 +162,8 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
   // Dekito's ask, 2026-10-06: the buyer arrives on WhatsApp already knowing when it lands. The estimate
   // is a table per zone and a promise, so it must be present, in working days, and WIDER for zone 8
   // than for the neighbours — an estimate that does not grow with distance is a number, not an estimate.
-  assert.deepEqual(europe.transitDays, [4, 7], 'Germany (zone 7) ships in the Europe range');
-  assert.match(europe.eta, /^4–7/, 'and the worded estimate starts with that range');
+  assert.deepEqual(europe.transitDays, [5, 10], 'Germany (zone 7) ships in the Europe range — widened on purpose, see the table');
+  assert.match(europe.eta, /^5–10/, 'and the worded estimate starts with that range');
   assert.equal(europe.draft.vars.eta, europe.eta, 'the draft carries the same estimate the page shows');
   const near = ask({ country: 'SG', bottles: 1 }); const far = ask({ country: 'BR', bottles: 1 });
   assert.ok(near.transitDays[1] < far.transitDays[0], 'Singapore must arrive before Brazil even on its slowest day');
