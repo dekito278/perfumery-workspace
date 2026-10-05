@@ -7,6 +7,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
+import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useCart } from '@/hooks/useCart.js';
@@ -23,7 +24,7 @@ import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/service
 const MobileInternationalCartPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslate();
-  const { items, updateQuantity, removeItem } = useCart();
+  const { items, updateQuantity, removeItem, setGift } = useCart();
   const products = useStorefrontProducts();
   const quote = useCartInternationalQuote(items);
   const phone = getStorefrontWhatsAppNumber();
@@ -94,6 +95,8 @@ const MobileInternationalCartPage = () => {
             </article>
           ))}
         </section>
+        {/* Same rule as the desktop cart — see the note there. */}
+        <FreeVialPicker items={items} products={products} onPick={setGift} />
         {lines.length ? (
           <section style={{ padding: '16px' }}>
             <InternationalShippingQuote quote={quote} />

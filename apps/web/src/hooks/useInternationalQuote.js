@@ -167,6 +167,7 @@ export const useCartInternationalQuote = (items = []) => {
   const { index } = useTierPrices();
   const catalog = useStorefrontProducts();
 
+  const { gift } = splitFreeVialLines(items);
   const lines = useMemo(() => {
     const { lines: bought } = splitFreeVialLines(items);
     return bought.map((item) => {
@@ -204,19 +205,26 @@ export const useCartInternationalQuote = (items = []) => {
   });
   // Every line travels, priced or not: a line the shop cannot price yet is the one Dekito most needs to
   // see, and leaving it out of the message would hand him a basket missing a bottle.
-  const lineText = lines.map((line) => t('export.waCartLine', {
-    name: line.name,
-    size: line.size || '',
-    quantity: line.quantity,
-    price: line.lineUsd ? `US$${line.lineUsd}` : t('intlQuote.onRequest.destination'),
-  })).join('\n');
+  const lineText = [
+    ...lines.map((line) => t('export.waCartLine', {
+      name: line.name,
+      size: line.size || '',
+      quantity: line.quantity,
+      price: line.lineUsd ? `US$${line.lineUsd}` : t('intlQuote.onRequest.destination'),
+    })),
+    // The gift rides in the same parcel and is the one line Dekito cannot infer from the total: it costs
+    // nothing, weighs 10 g against a one-kilo minimum, and changes neither the bottle count nor the
+    // shipping. Left out of the message he would pack the order without it, and the buyer would have
+    // chosen an aroma that never arrived.
+    ...(gift ? [t('export.waCartGiftLine', { name: gift.name })] : []),
+  ].join('\n');
   // Settled: the total. Chosen but unquotable — "another country", seven bottles, a size the rule was not
   // written for: the basket and the destination, asking for the rate. Nothing chosen: no draft, and the
   // button points at the picker instead.
   const draft = core.draftVars
     ? { key: core.settled ? 'export.waCartDraft' : 'export.waCartAsk', vars: { ...core.draftVars, lines: lineText } }
     : null;
-  return { ...core, lines, unpriced, bottles, setCountry, draft, focusDestinationPicker };
+  return { ...core, lines, gift, unpriced, bottles, setCountry, draft, focusDestinationPicker };
 };
 
 export default useInternationalQuote;

@@ -760,15 +760,18 @@ const SelfServiceActions = ({
   order,
   refreshing = false,
 }) => {
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const paymentPath = buildPaymentPath({ isMobileRoute, order });
-  // Reorder fills the cart and sends the buyer to it. The English shop has no cart and /en/cart
-  // redirects, so the button would quietly stock a basket nobody can open and drop the customer on the
-  // catalogue — a dead end that looks like a bug rather than a policy.
+  // Reorder fills the cart and sends the buyer to it. It was hidden in the English shop until
+  // 2026-10-06, when that shop had no cart to fill; Dekito opened it with the cart. What had to change
+  // with it is where it LANDS — see handleReorder: the English basket is finished in the cart and sent
+  // to WhatsApp, and /checkout is still domestic-only, so sending an English customer there would stock
+  // a basket and then bounce them to the catalogue.
+  //
   // The same list the reorder actually uses, or the button offers itself and then fails. A bespoke
   // brief is priced and displayed like a product but cannot be put in a cart — it is re-ordered by
   // writing a new brief.
-  const canReorder = !isInternational && getReorderableItems(order).length > 0;
+  const canReorder = getReorderableItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
   const buttonClass = compact
     ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
@@ -814,14 +817,10 @@ const SelfServiceActions = ({
         <ExternalLink className="h-4 w-4" />
         {t('cust.publicTracking')}
       </a>
-      {/* Hidden rather than disabled in the English shop: a greyed button is still an offer, and this
-          one cannot be honoured there at all. */}
-      {isInternational ? null : (
-        <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
-          <ShoppingBag className="h-4 w-4" />
-          {t('cust.orderAgain')}
-        </button>
-      )}
+      <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
+        <ShoppingBag className="h-4 w-4" />
+        {t('cust.orderAgain')}
+      </button>
       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
         <button type="button" onClick={() => onRefreshPayment(order)} disabled={refreshing} className={`${outlineClass} disabled:opacity-60`}>
           {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -1262,10 +1261,12 @@ const CustomerPortalPage = () => {
       }, quantity);
     });
 
-    // Hand the saved details to checkout. A portal visitor who came in with just a customer code is not
-    // logged in, so checkout's own account prefill never fires for them.
-    const customer = portal?.customer || {};
-    seedCheckoutDraft({
+    // Hand the saved details to checkout — the DOMESTIC one. An English customer never reaches it: their
+    // basket is finished in the cart and sent to WhatsApp, so seeding a form they will not open would
+    // only leave a stale address behind, and carrying the old voucher over would arm a domestic discount
+    // that fires the day they switch shops.
+    const customer = isInternational ? null : (portal?.customer || {});
+    if (customer) seedCheckoutDraft({
       customerCode: customer.customerCode || customerCode,
       // The portal customer is the only source for these: the RPC sends the name and contact ONCE, on the
       // customer object, and never repeats them per order. `order.customerName` was undefined every time.
@@ -1278,13 +1279,17 @@ const CustomerPortalPage = () => {
 
     // Carry the old voucher code over as an intent only — checkout revalidates it against the DB and
     // drops it with a message if it no longer applies.
-    const previousVoucher = getOrderVoucherSnapshot(order);
+    const previousVoucher = customer ? getOrderVoucherSnapshot(order) : null;
     if (previousVoucher?.code) {
       setAppliedVoucherCode(previousVoucher.code);
     }
 
     toast.success(t('cust.itemsToCart', { order: order.orderNumber }));
-    navigate(isMobileRoute ? '/mobile/checkout' : '/checkout');
+    // The English basket is finished in the CART — destination, shipping, then WhatsApp — and /checkout
+    // is domestic-only, so sending an English customer there would bounce them to the catalogue with a
+    // full basket and no explanation.
+    if (isInternational) navigate(isMobileRoute ? '/mobile/cart' : '/cart');
+    else navigate(isMobileRoute ? '/mobile/checkout' : '/checkout');
   };
 
 

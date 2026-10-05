@@ -28,8 +28,15 @@ assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: vial }), true,
   'a bottle went in the basket, no aroma picked yet, and there is one in stock — this is the whole feature');
 assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: vial, gift: chosen }), false,
   'once an aroma is chosen it must never ask again: one vial per ORDER, not per bottle');
-assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: vial, isInternational: true }), false,
-  'the English shop has no cart to add to');
+// THE SHOP IS NO LONGER PART OF THIS RULE. It carried `isInternational` until 2026-10-06, when the
+// English shop had no cart to put a gift into; Dekito opened both that day. The parameter is gone rather
+// than ignored — an argument a function does not read is dropped in silence and goes on reading like a
+// rule (ignoredArguments.selfcheck exists for exactly that), so a caller still passing it is a caller
+// that believes in a gate which is not there.
+assert.doesNotMatch(readFileSync(join(src, 'utils', 'freeVial.js'), 'utf8'), /shouldOfferFreeVial = \(\{[^}]*isInternational/,
+  'the gift rule reads the shop again — both shops have a cart');
+assert.doesNotMatch(readFileSync(join(src, 'components', 'storefront', 'FreeVialPrompt.jsx'), 'utf8'), /isInternational/,
+  'the prompt still gates itself on the shop, so the English buyer is never offered the gift');
 assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: null }), false,
   'no vial product, nothing to offer');
 assert.equal(shouldOfferFreeVial({
