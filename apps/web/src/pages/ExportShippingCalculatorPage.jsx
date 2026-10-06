@@ -12,7 +12,9 @@ import { quoteExportShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
 import { internationalPriceFor } from '@/utils/shippingRegion.js';
 import { usdPriceFor, USD_PRICE_RATE, USD_PRICE_RATE_SET_ON } from '@/utils/usdPrice.js';
-import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
+import {
+  SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR, EXPORT_BOX, exportParcelKg,
+} from '@/data/internationalShippingRates.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
@@ -23,18 +25,13 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getTierPricesFor } from '@/services/tierPricingService.js';
 import { resolveTierPrice, tierPricesForLine, OVERSEAS_TIER } from '@/utils/tierPrice.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
-import { itemWeightGram, isWeighedSize, DEFAULT_ITEM_WEIGHT_GRAM, ITEM_WEIGHT_GRAM_BY_ML } from '@/utils/itemWeight.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 // One component behind both the desktop and the mobile route. The two-copy habit in this repo is where
 // five separate fixes went to one side and not the other; a page this small has no reason to repeat it.
-const FALLBACK_GRAM = Number(import.meta.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || DEFAULT_ITEM_WEIGHT_GRAM);
-// Read off the table Dekito weighed, not retyped from it. The half of this sentence about unweighed
-// sizes already came from the module while the weights beside it were typed out by hand, so the line
-// would have gone on reciting 2026-09-13's figures after the next time a bottle was put on the scales.
-const WEIGHED_SIZES = Object.entries(ITEM_WEIGHT_GRAM_BY_ML)
-  .map(([ml, gram]) => `${ml} ml ${gram} g`)
-  .join(', ');
+// Read off the packing rule, not retyped from it. The weight line here used to recite the per-bottle
+// gram table — right for a domestic parcel, wrong for this screen: an export parcel is billed by the BOX.
+const BOX_RULE = `${EXPORT_BOX.bottles} botol per box, ${EXPORT_BOX.kg} kg per box`;
 const COMPARE_QUANTITIES = [1, 3, 6, 12, 24];
 
 const ExportShippingCalculatorPage = ({ mobile = false }) => {
@@ -89,8 +86,6 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
         || resolveTierPrice({ retailPrice, tierPrices: forLine, overseas: true }),
       name: product?.name || '',
       size: variant?.size || product?.size || '',
-      weightGram: itemWeightGram(variant?.size || product?.size || '', FALLBACK_GRAM),
-      weighedSize: isWeighedSize(variant?.size || product?.size || ''),
     };
   }), [rows, products, tierPrices.index]);
 
@@ -98,18 +93,12 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const destinationMatches = countMatches(destinations, countrySearch);
   const destination = destinations.find((item) => item.code === countryCode);
   const bottles = lines.reduce((sum, line) => sum + Math.max(0, Math.round(Number(line.quantity) || 0)), 0);
-  const safeBottles = Math.max(1, bottles);
-  // Per size, from ITEM_WEIGHT_GRAM_BY_ML. Export brackets are steep, so one flat figure for every
-  // bottle was worst exactly where it cost the most.
-  const chosenWeightGram = lines.reduce(
-    (sum, line) => sum + Math.max(0, Math.round(Number(line.quantity) || 0)) * line.weightGram, 0,
-  );
-  // The fallback stands in for an empty form only. Using it as a minimum would weigh the smallest bottle
-  // at the flat figure and push it into a dearer bracket than it belongs in.
-  const weightGram = chosenWeightGram > 0 ? chosenWeightGram : FALLBACK_GRAM;
-  const unweighedSizes = [...new Set(lines
-    .filter((line) => line.product && Number(line.quantity) > 0 && !line.weighedSize)
-    .map((line) => line.size))];
+  // From the box, not from a sum of grams. This screen added up 250 g a bottle and asked the carrier for
+  // 1,5 kg while the card beside it charged the buyer for a 3 kg parcel — six bottles quoted at
+  // Rp 1.733.000 against Rp 2.283.000, for the same shipment. The gram table is still right for a
+  // domestic parcel; an export parcel is boxes.
+  const parcelKg = exportParcelKg(bottles);
+  const weightGram = parcelKg * 1000;
   // One carrier, DHL, off the sheet Dekito handed over. A country that is not on the zone sheet gets no
   // total at all — deliberate, and the manual field below is the answer to it.
   const quote = quoteExportShipping({ countryCode, weightGram, outsideDeliveryArea });
@@ -315,11 +304,10 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           <div className="grid content-start gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
             Berat kiriman
             <p className="h-11 content-center rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-3 text-sm font-semibold normal-case text-[#111827]">
-              {bottles} botol — {(weightGram / 1000).toFixed(2)} kg
+              {bottles} botol — {Math.ceil(bottles / EXPORT_BOX.bottles) || 1} box — {parcelKg} kg
             </p>
             <span className="text-[11px] font-medium normal-case text-[#8b949e]">
-              Berat per ukuran: {WEIGHED_SIZES}.
-              {unweighedSizes.length ? ` Ukuran ${unweighedSizes.join(', ')} belum ditimbang — dipakai ${FALLBACK_GRAM} g.` : ''}
+              {BOX_RULE}. Satu botol tetap satu box, jadi ongkirnya sama dengan dua botol.
             </span>
           </div>
 
@@ -640,11 +628,10 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               </thead>
               <tbody className="font-semibold text-[#111827]">
                 {COMPARE_QUANTITIES.map((count) => {
-                  // Scaled from the mix actually chosen, so the comparison uses the same bottles rather
-                  // than an imaginary average one.
+                  // The same box rule, so this table cannot disagree with the panel above it.
                   const row = quoteExportShipping({
                     countryCode,
-                    weightGram: Math.round((weightGram / safeBottles) * count),
+                    weightGram: exportParcelKg(count) * 1000,
                     outsideDeliveryArea,
                   });
                   if (!row?.total) return null;

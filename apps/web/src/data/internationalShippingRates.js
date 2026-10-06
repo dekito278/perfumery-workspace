@@ -49,15 +49,51 @@ export const SHIPPING_COST_RATE = 18000;
 export const SHIPPING_SUPPORT_USD = { single: 30, multiple: 50 };
 
 /**
- * Bottle counts to the carrier's weight brackets. A packed 30 ml bottle is about half a kilo and the
- * carrier bills a one-kilo minimum, so one bottle and two bottles are the same parcel — "dua botol
- * setara satu kilo", in Dekito's words.
+ * How an export parcel is PACKED, which is what decides its weight. Dekito, 6 Oct 2026: "botol saja
+ * sekitar 200g, tetapi ada box dan packing sehingga jika di buat untuk 1 box itu bisa muat 2 parfum
+ * dengan ukuran 1kg."
+ *
+ * So the thing the carrier bills is the BOX, not the bottle. One bottle ships in the same kilo as two —
+ * confirmed by his own cost figure for the United States, "DHL sekitar $95": that is Rp 1.709.000, the
+ * sheet's 1 kg row for zone 5, and not the 0.5 kg row at Rp 1.304.000. A single bottle is not half a
+ * parcel; it is a parcel with a spare slot.
+ *
+ * Every export weight in the app is derived from here. `itemWeight.js` keeps the per-bottle gram table
+ * for DOMESTIC parcels, which are packed differently and quoted per gram by a domestic courier — adding
+ * up 250 g a bottle is right there and wrong here, and summing grams for an export quote under-weighed
+ * every parcel on the Studio screen until this was written.
  */
-export const SHIPPING_RATE_TIERS = [
-  { maxBottles: 2, kg: 1, label: '1–2 bottles' },
-  { maxBottles: 4, kg: 2, label: '3–4 bottles' },
-  { maxBottles: 6, kg: 3, label: '5–6 bottles' },
-];
+export const EXPORT_BOX = { bottles: 2, kg: 1 };
+
+/**
+ * Chargeable kilos for an export parcel of `bottles` 30 ml bottles: whole boxes, rounded up, never zero.
+ *
+ * Non-30 ml sizes are counted as bottles and flagged rather than quietly re-packed — the box rule was
+ * measured on the only size this shop sells, and a 100 ml bottle is a conversation, not a formula.
+ */
+export const exportParcelKg = (bottles) => {
+  const count = Math.max(1, Math.round(Number(bottles) || 0));
+  return Math.ceil(count / EXPORT_BOX.bottles) * EXPORT_BOX.kg;
+};
+
+/**
+ * Bottle counts to the carrier's weight brackets, DERIVED from the box above rather than listed.
+ *
+ * Listed, it was a second place the packing rule lived: the table said two bottles to the kilo while the
+ * Studio screen beside it added up 250 g a bottle and quoted a 2 kg parcel where the card charged for
+ * 3 kg. One rule, one spelling.
+ */
+export const SHIPPING_RATE_TIERS = Array.from(
+  { length: Math.ceil(SHIPPING_RATE_MAX_BOTTLES / EXPORT_BOX.bottles) },
+  (_, index) => {
+    const maxBottles = (index + 1) * EXPORT_BOX.bottles;
+    return {
+      maxBottles,
+      kg: exportParcelKg(maxBottles),
+      label: `${maxBottles - EXPORT_BOX.bottles + 1}–${maxBottles} bottles`,
+    };
+  },
+);
 
 /**
  * How the destinations are GROUPED for a buyer, with the carrier's zones underneath.
