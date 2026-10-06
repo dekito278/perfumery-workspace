@@ -7,7 +7,7 @@
 // side, and it has to carry three things the domestic checkout would get wrong:
 //
 //   1. the OVERSEAS unit price, not the Indonesian one,
-//   2. shipping that was quoted by hand (or by the LTU table on this page), not by a domestic courier,
+//   2. shipping that was quoted by hand (or by the DHL table on this page), not by a domestic courier,
 //   3. the shop it belongs to, so every message about it afterwards is written in English.
 //
 // Import-free so a selfcheck can RUN it. This produces the number a real person is charged; reading the

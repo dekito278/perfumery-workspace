@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button.jsx';
 import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
-import { RAYSPEED_MEASURED_ON, rayspeedServes } from '@/data/rayspeedRates.js';
-import { quoteInternationalShipping } from '@/utils/exportShipping.js';
+import { quoteExportShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
 import { internationalPriceFor } from '@/utils/shippingRegion.js';
 import { usdPriceFor, USD_PRICE_RATE, USD_PRICE_RATE_SET_ON } from '@/utils/usdPrice.js';
@@ -111,11 +110,9 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const unweighedSizes = [...new Set(lines
     .filter((line) => line.product && Number(line.quantity) > 0 && !line.weighedSize)
     .map((line) => line.size))];
-  // The carrier Dekito actually ships with, not the one whose sheet happened to be in the repo. A
-  // country RaySpeed serves but whose rate nobody has measured comes back with no total at all — that is
-  // deliberate, and the manual field below is the answer to it.
-  const carrierQuote = quoteInternationalShipping({ countryCode, weightGram, outsideDeliveryArea });
-  const quote = carrierQuote?.total ? carrierQuote : null;
+  // One carrier, DHL, off the sheet Dekito handed over. A country that is not on the zone sheet gets no
+  // total at all — deliberate, and the manual field below is the answer to it.
+  const quote = quoteExportShipping({ countryCode, weightGram, outsideDeliveryArea });
   // What the buyer is CHARGED: the carrier's rate for the bracket, less the support SOLIVAGANT carries
   // (internationalShippingRates.js). Written for 30 ml bottles, so a cart holding other sizes is counted
   // but flagged rather than quietly quoted at a price the rule never covered.
@@ -135,11 +132,10 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // bottles to Malaysia.
   //
   // Nothing is charged automatically, and nothing is free. Until 2026-09-25 this screen wrote Rp 0 for
-  // every country RaySpeed serves, because the shop promised the freight was in the price — a promise
-  // measured on a full parcel that broke on a single bottle, since the carrier bills a one-kilo MINIMUM:
-  // one 30 ml bottle to Los Angeles costs Rp 670.500 to send out of a US$80 price, while four cost the
-  // same Rp 670.500. Then it billed the published card outright, which is a price Dekito had not agreed
-  // to apply to every order.
+  // the near-Asia countries a second carrier (RaySpeed) was then quoted from, because the shop promised
+  // the freight was in the price — a promise measured on a full parcel that broke on a single bottle,
+  // since that carrier billed a one-kilo MINIMUM. Then it billed the published card outright, which is a
+  // price Dekito had not agreed to apply to every order. The second carrier is gone as of 6 Oct 2026.
   //
   // His decision: the international PRICE is fixed at 3.5x retail and the shipping is set by hand, here,
   // with both tables on this screen as the reference. So the typed figure is the charge; the card and the
@@ -270,9 +266,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           </p>
           <h1 className="text-2xl font-bold text-[#111827]">Hitung ongkir ke luar negeri</h1>
           <p className="text-sm font-medium text-[#6b7280]">
-            {rayspeedServes(countryCode)
-              ? `Tarif RaySpeed, diukur ${RAYSPEED_MEASURED_ON}.`
-              : `Tarif LTU Express, berlaku ${EXPORT_RATE_EFFECTIVE}.`}
+            {`Tarif DHL, berlaku ${EXPORT_RATE_EFFECTIVE}.`}
             {' '}Dipakai untuk menjawab pertanyaan pembeli sebelum ordernya dibuat.
           </p>
         </header>
@@ -605,7 +599,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
         {quote ? (
           <section className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-800">
-              {destination?.name} · {quote.carrier === 'rayspeed' ? 'RaySpeed' : `LTU zona ${quote.zone}`} · ditagih {quote.chargeableKg} kg
+              {destination?.name} · DHL zona {quote.zone} · ditagih {quote.chargeableKg} kg
             </p>
             <p className="mt-1 text-3xl font-bold text-emerald-950">{formatPrice(quote.total)}</p>
             {/* The COST, offered as a figure to charge only because Dekito sometimes decides to pass it
@@ -618,12 +612,6 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
                 {formatPrice(quote.baseCost)} + ODA {formatPrice(quote.odaFee)}
               </p>
             ) : null}
-            {quote.estimated ? (
-              <p className="mt-1 text-xs font-semibold text-emerald-900">
-                Perkiraan: yang diukur baru tarif 1 kg, di atas itu dikalikan per kilo. Konfirmasi ke
-                RaySpeed sebelum mengutip ke pembeli.
-              </p>
-            ) : null}
             {quote.overThirtyKg ? (
               <p className="mt-1 text-xs font-semibold text-emerald-900">
                 Di atas 30 kg — tarif flat per kg, dibulatkan ke {quote.chargeableKg} kg.
@@ -632,9 +620,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           </section>
         ) : (
           <section className="mt-4 rounded-2xl border border-dashed border-[#d8d5ca] bg-white p-4 text-sm font-semibold text-[#6b7280]">
-            {carrierQuote?.carrier === 'rayspeed'
-              ? `RaySpeed melayani ${destination?.name || 'negara ini'}, tapi tarifnya belum pernah diukur. Cek di simulator RaySpeed lalu isi ongkirnya di bawah — jangan pakai angka LTU, itu berkali-kali lipat.`
-              : 'Negara ini tidak ada di daftar tujuan ekspor kurir.'}
+            Negara ini tidak ada di daftar tujuan ekspor DHL. Kutip manual, lalu isi ongkirnya di bawah.
           </section>
         )}
 
@@ -656,7 +642,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
                 {COMPARE_QUANTITIES.map((count) => {
                   // Scaled from the mix actually chosen, so the comparison uses the same bottles rather
                   // than an imaginary average one.
-                  const row = quoteInternationalShipping({
+                  const row = quoteExportShipping({
                     countryCode,
                     weightGram: Math.round((weightGram / safeBottles) * count),
                     outsideDeliveryArea,

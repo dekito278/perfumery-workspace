@@ -1,8 +1,14 @@
 // Quoting an international parcel against the carrier's own sheet: country decides the zone, weight
 // decides the bracket. No API — the rate card is a table, and the table is the price we will be billed.
+//
+// ONE CARRIER. From 19 Sep to 6 Oct 2026 a second rate table lived beside this one (RaySpeed Asia,
+// measured on their simulator) and eight near-Asia destinations were quoted from it instead — about a
+// seventh of the DHL price to Malaysia. Dekito ships DHL; he said so on 6 Oct, and the sheet the whole
+// price rule is built on is his. The second table is gone, and `carrierNamedIsCarrierUsed.selfcheck.mjs`
+// holds the rule that made it dangerous: the carrier a screen NAMES is the carrier its quote CAME from,
+// so a second sheet cannot be added here without the screen saying which parcels it covers.
 import { EXPORT_FLAT_PER_KG, EXPORT_ODA_FEE, EXPORT_PACKAGE_RATES } from '@/data/exportRates.js';
 import { EXPORT_ZONE_BY_COUNTRY } from '@/data/exportZones.js';
-import { rayspeedRateFor, rayspeedServes } from '@/data/rayspeedRates.js';
 
 export const HOME_COUNTRY = 'ID';
 
@@ -56,46 +62,4 @@ export const quoteExportShipping = ({ countryCode, weightGram, outsideDeliveryAr
 
   const odaFee = outsideDeliveryArea ? EXPORT_ODA_FEE : 0;
   return { zone, chargeableKg, baseCost, odaFee, total: baseCost + odaFee, overThirtyKg };
-};
-
-/**
- * What this parcel actually costs to send, from the carrier that will actually send it.
- *
- * Three answers, and the middle one is the point:
- *
- *   carrier 'rayspeed', measured true  — a rate read off RaySpeed's own simulator. Quote it.
- *   carrier 'rayspeed', measured false — RaySpeed goes there, but nobody has measured the rate. Quote
- *                                        NOTHING and ask for a number. Falling back to the LTU sheet
- *                                        here would put Rp 890.000 on a Singapore parcel that almost
- *                                        certainly costs about Rp 90.000, and a confident wrong number
- *                                        is worse than a blank.
- *   carrier 'ltu'                      — RaySpeed does not go there (Europe). The LTU sheet is not
- *                                        wrong, it is just expensive and asks for an MSDS.
- *
- * Above one kilo the RaySpeed figure is an ESTIMATE and says so: only the 1 kg point was measured, and
- * one measured point does not describe a curve. Four 30 ml bottles come to exactly one kilo, which is
- * most of what this shop actually ships.
- */
-export const quoteInternationalShipping = ({ countryCode, weightGram, outsideDeliveryArea = false } = {}) => {
-  const code = String(countryCode || '').trim().toUpperCase();
-  if (!isExportDestination(code)) return null;
-
-  if (rayspeedServes(code)) {
-    const perKg = rayspeedRateFor(code);
-    if (!perKg) {
-      return { carrier: 'rayspeed', measured: false, estimated: false, chargeableKg: null, total: null };
-    }
-    const kg = Math.max(Number(weightGram) || 0, 1) / 1000;
-    const chargeableKg = Math.max(1, Math.ceil(kg));
-    return {
-      carrier: 'rayspeed',
-      measured: true,
-      estimated: chargeableKg > 1,
-      chargeableKg,
-      total: perKg * chargeableKg,
-    };
-  }
-
-  const ltu = quoteExportShipping({ countryCode: code, weightGram, outsideDeliveryArea });
-  return ltu ? { ...ltu, carrier: 'ltu', measured: true, estimated: false } : null;
 };
