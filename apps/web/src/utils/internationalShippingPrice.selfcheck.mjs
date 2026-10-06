@@ -38,16 +38,19 @@ ${inline('data', 'exportZones.js')}
 ${inline('data', 'exportRates.js')}
 ${inline('data', 'internationalShippingRates.js')}
 ${inline('utils', 'internationalShippingPrice.js')}
+${inline('utils', 'exportShipping.js')}
 export {
   quoteInternationalShippingPrice, formatShippingUsd, shippingSupportUsd, shippingCostIdr,
   SHIPPING_RATE_REGIONS, SHIPPING_RATE_TIERS, SHIPPING_RATE_MAX_BOTTLES, SHIPPING_COST_RATE,
   SHIPPING_SUPPORT_USD, EXPORT_PACKAGE_RATES, EXPORT_ZONE_BY_COUNTRY,
+  EXPORT_BOX, exportParcelKg, quoteExportShipping,
 };
 `, 'utf8').toString('base64')}`);
 const {
   quoteInternationalShippingPrice: quote, formatShippingUsd, shippingSupportUsd,
   SHIPPING_RATE_REGIONS, SHIPPING_RATE_TIERS, SHIPPING_RATE_MAX_BOTTLES, SHIPPING_COST_RATE,
   SHIPPING_SUPPORT_USD, EXPORT_PACKAGE_RATES, EXPORT_ZONE_BY_COUNTRY,
+  EXPORT_BOX, exportParcelKg, quoteExportShipping,
 } = module;
 
 // --- 1. Dekito's own numbers, as facts -------------------------------------------------------------------
@@ -144,7 +147,67 @@ assert.equal(seen.size, Object.keys(EXPORT_ZONE_BY_COUNTRY).length,
 assert.equal(SHIPPING_RATE_TIERS.length, 3);
 console.log(`  ${seen.size} destinations in ${SHIPPING_RATE_REGIONS.length} groups, none missing, none twice`);
 
-// --- 5b. Nothing anywhere may promise the freight is in the price ---------------------------------------
+// --- 5a. One packing rule, and both screens ask the carrier for the same kilos --------------------------
+// Dekito, 6 Oct 2026: "botol saja sekitar 200g, tetapi ada box dan packing sehingga jika di buat untuk
+// 1 box itu bisa muat 2 parfum dengan ukuran 1kg." So the billed unit is the BOX.
+//
+// Two places believed two things about that. The card charged the buyer from a bottles-to-kilos table
+// (two to the kilo), and the Studio cost panel beside it added up `itemWeightGram` — 250 g a 30 ml bottle,
+// the figure for a DOMESTIC parcel. Six bottles: the card charged for 3 kg, the panel asked the carrier
+// about 1,5 kg, and the same shipment read Rp 2.283.000 on one line and Rp 1.733.000 on the next.
+//
+// The tiers are derived from the box now, so this runs BOTH and requires them to agree at every count
+// the shop quotes — and one count past it, because the derivation is the thing most likely to drift at
+// its edge.
+for (let bottles = 1; bottles <= SHIPPING_RATE_MAX_BOTTLES; bottles += 1) {
+  const tier = SHIPPING_RATE_TIERS.find((candidate) => bottles <= candidate.maxBottles);
+  assert.ok(tier, `${bottles} bottles falls outside every tier, yet the shop quotes up to ${SHIPPING_RATE_MAX_BOTTLES}`);
+  assert.equal(exportParcelKg(bottles), tier.kg,
+    `${bottles} bottles: the box rule says ${exportParcelKg(bottles)} kg and the tier the card picks says `
+    + `${tier.kg} kg. One of the two screens is quoting a parcel the other is not`);
+  // And what the carrier is actually asked, which is the figure that was wrong.
+  const quote = quoteExportShipping({ countryCode: 'MY', weightGram: exportParcelKg(bottles) * 1000 });
+  assert.equal(quote.chargeableKg, tier.kg,
+    `${bottles} bottles lands in the carrier's ${quote.chargeableKg} kg bracket while the card charges for `
+    + `${tier.kg} kg`);
+}
+assert.equal(exportParcelKg(1), exportParcelKg(2),
+  'one bottle and two must cost the same: a single bottle is a box with a spare slot, not half a parcel. '
+  + "Dekito's own US figure, $95 = Rp 1.709.000, is the sheet's 1 kg row and not the 0.5 kg one");
+assert.equal(exportParcelKg(SHIPPING_RATE_MAX_BOTTLES + 1), Math.ceil((SHIPPING_RATE_MAX_BOTTLES + 1) / EXPORT_BOX.bottles),
+  'past the quoting limit the rule must still answer — the Studio comparison table asks it for 12 and 24');
+for (const absurd of [0, -3, null, undefined, NaN, '']) {
+  assert.equal(exportParcelKg(absurd), EXPORT_BOX.kg,
+    `${String(absurd)} bottles must still be one box: a parcel asked for 0 kg comes back from a carrier as `
+    + 'an error or a suspiciously cheap rate');
+}
+console.log(`  box rule ${EXPORT_BOX.bottles} bottles/${EXPORT_BOX.kg} kg — card and cost panel agree at `
+  + `every count 1–${SHIPPING_RATE_MAX_BOTTLES}`);
+
+// --- 5b. The Studio cost panel derives its weight, and sums no grams -----------------------------------
+// The gram table is still the right answer for a domestic parcel, which is exactly why this is worth
+// pinning: `itemWeightGram` is a correct function that was being called in the wrong place.
+const costPanelPage = read('pages', 'ExportShippingCalculatorPage.jsx');
+assert.doesNotMatch(costPanelPage, /itemWeightGram|ITEM_WEIGHT_GRAM_BY_ML|totalItemWeightGram/,
+  'the export screen is adding up per-bottle grams again. Those grams are a domestic parcel: an export '
+  + 'parcel is boxes, and summing them under-weighed every quote on this screen');
+// EVERY weight the screen hands the carrier, not just one mention of the rule somewhere on the page.
+// Checking the name appeared was not enough: the comparison table kept calling exportParcelKg while the
+// panel above it went back to grams, and the page read as correct.
+const weights = [...costPanelPage.matchAll(/weightGram\s*[:=]\s*([^,;\n]+)/g)].map((match) => match[1].trim());
+assert.ok(weights.length >= 2,
+  `found ${weights.length} weights handed to the carrier on this screen — the scan is broken, not the code`);
+for (const expression of weights) {
+  assert.match(expression, /exportParcelKg\(|parcelKg\b/,
+    `this screen asks the carrier about a weight that does not come from the box rule: \`${expression}\`. `
+    + 'That is how it came to quote 1,5 kg for the parcel the card charged 3 kg for');
+}
+const derivation = (costPanelPage.match(/const parcelKg\s*=\s*[^;]+;/) || [''])[0];
+assert.match(derivation, /exportParcelKg\(\s*bottles\s*\)/,
+  `parcelKg must be the box rule applied to the bottle count, not arithmetic of its own: \`${derivation}\``);
+console.log(`  ${weights.length} carrier weights on the Studio screen, every one from the box rule`);
+
+// --- 5c. Nothing anywhere may promise the freight is in the price ---------------------------------------
 // Moved here from asiaPrice.selfcheck when the Asia split was retired; the rule outlived the split. It was
 // promised from 19 to 25 September 2026 and broke on a single bottle, because the carrier bills a one-kilo
 // minimum. Held on the exported names, not on a comment, because a helper that lingers gets called again.
