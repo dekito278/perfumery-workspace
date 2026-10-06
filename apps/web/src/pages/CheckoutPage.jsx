@@ -1,6 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from '@/utils/freeVial.js';
-import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
 import React, { useMemo, useState } from 'react';
@@ -163,7 +162,6 @@ const CheckoutPage = () => {
 
         <section className="checkout-layout">
           {/* Checkout form */}
-          <InternationalCheckoutNotice className="mb-4" />
           <form className="checkout-form" onSubmit={handleSubmitAttempt} noValidate>
             {/* Customer info */}
             <fieldset className="checkout-fieldset">

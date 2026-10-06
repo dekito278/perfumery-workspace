@@ -108,6 +108,30 @@ for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx', 'pa
   assert.doesNotMatch(readCode(page), /useCartInternationalQuote|buildInternationalCartDraft/, `${page} is the domestic till and must not quote internationally`);
 }
 
+// --- 2b. THE CART IS REACHABLE FROM THE NAVIGATION, ON BOTH SHOPS -----------------------------------
+// Found on 2026-10-06, four days after the English cart shipped: the phone's bottom nav still dropped the
+// cart tab in the English shop. It had been right while that shop had no cart and /mobile/cart redirected
+// — "a tab that bounces you back is worse than no tab" — and nothing moved it when the cart arrived. An
+// English buyer on a phone could add a bottle and have no way back to the basket from the navigation at
+// all; the only door left was the one "View cart" button on the sheet that opens with the add, and
+// dismissing it closed the shop's own checkout. On a phone the bottom nav IS the navigation.
+//
+// Held on the LIST, not on the layout's words: the tab must be there unconditionally.
+{
+  const layout = readCode('layouts/MobileCommerceLayout.jsx');
+  const items = (layout.match(/const COMMERCE_NAV_ITEMS = \[[\s\S]*?\n\];/) || [''])[0];
+  assert.ok(items, 'the phone nav no longer declares its tabs as one list');
+  assert.match(items, /path: '\/mobile\/cart'/, 'the phone nav has no cart tab at all');
+  assert.doesNotMatch(items, /isInternational/,
+    'the phone nav drops a tab depending on the shop again — the English shop has a cart to reach');
+  // The desktop headers are the same question, asserted where they live.
+  for (const header of ['components/storefront/PublicHeader.jsx', 'components/storefront/StorefrontHeader.jsx']) {
+    const source = readCode(header);
+    assert.match(source, /'\/cart'|to="\/cart"/, `${header} no longer links to the cart`);
+    assert.doesNotMatch(source, /isInternational \? (null|\[\]) :/, `${header} hides the cart from one of the shops`);
+  }
+}
+
 // --- 3. The product page's WhatsApp button is an enquiry again, in both shops ----------------------
 const keys = read('utils/overseasEnquiry.js');
 assert.match(keys, /export const overseasDraftKeys = \(\) => \(\{ labelKey: 'export\.ask', draftKey: 'export\.waDraft' \}\);/,

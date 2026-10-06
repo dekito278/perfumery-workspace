@@ -1,6 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
-import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
@@ -122,7 +121,6 @@ const CartPage = () => {
 
           {/* Order summary sidebar */}
           <aside className="cart-summary">
-            <InternationalCheckoutNotice className="mb-4" />
             <p className="editorial-eyebrow">{t('cart.summaryEyebrow')}</p>
             <h2>{t('cart.summary')}</h2>
 

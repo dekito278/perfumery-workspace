@@ -35,14 +35,12 @@ export const quotedInternationalPrice = (exportPrice, fallback = '') => {
  * all, so an order placed from the bar arrived as "I'd like to ask about international shipping" with
  * nothing to ship. On the phone the sticky bar is the only button most buyers ever press.
  *
- * The wording splits on the shop, not on the reader:
- *   - Indonesian shop — this is an ENQUIRY beside a working Add to cart, for an Indonesian buyer who
- *     wants a bottle sent abroad.
- *   - English shop — there is no cart; this IS how you buy, so it says so.
+ * ONE WORDING, BOTH SHOPS, since 2026-10-06. It split on the shop while the English one had no cart and
+ * this button was the purchase there; both shops buy through the cart now, and this is the question
+ * asked beside it in either language.
  *
- * Neither version claims a bottle is held. Shipping is quoted by hand and nothing is reserved until
- * that conversation happens, and a draft that implies otherwise makes a promise the atelier has not
- * made.
+ * It does not claim a bottle is held. Nothing is reserved until Dekito confirms on WhatsApp, and a draft
+ * that implies otherwise makes a promise the atelier has not made.
  */
 export const overseasDraftKeys = () => ({ labelKey: 'export.ask', draftKey: 'export.waDraft' });
 

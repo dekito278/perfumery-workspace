@@ -59,8 +59,9 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // and the draft said "the price I saw on your site: Rp 750.000" directly under a line reading "Harga
   // untuk pengiriman ke luar negeri: Rp 2.630.000". Dekito then received an enquiry quoting a number he
   // had not offered for that shipment. The export price is right here, ungated, for exactly this.
-  // In the English shop there is no cart at all, so this button is not a question asked beside a
-  // purchase — it IS the purchase. Same builder as both sticky bars, so the three cannot drift.
+  // An ENQUIRY in both shops since 2026-10-06. It was the purchase in the English shop while that shop
+  // had no cart; the purchase is the cart's "Order on WhatsApp" now, and this stays the question asked
+  // beside it — which is why its draft carries the settled quote when there is one.
   // In dollars, for the same reason the panel shows dollars: this draft is the buyer's own words back to
   // Dekito, and a rupiah figure in it is a number he then has to explain before he can quote a parcel.
   const quoted = quotedInternationalPrice(exportPrice, price);
