@@ -11,9 +11,22 @@ import pocketbaseAuthPlugin from './plugins/vite-plugin-pocketbase-auth.js';
 import scentreeImportDevPlugin from './plugins/scentree-import-dev-plugin.js';
 
 import { readFileSync } from 'node:fs';
+import { dropUnreadClientEnv } from './src/utils/clientEnv.js';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 const allDeps = Object.keys(pkg.dependencies || {});
+
+// Vercel copies its own system variables into VITE_-prefixed twins, and Vite inlines every VITE_ name
+// into the client bundle. Sixteen of them were served to every visitor and the app reads none — including
+// VITE_VERCEL_GIT_COMMIT_MESSAGE, the whole commit BODY, which in this repo is a page of notes about
+// pricing and defects. Dropped before Vite reads the environment.
+//
+// Not a `define` for one key: nothing reads these by name, so Vite inlines the whole env object and a
+// define would never be reached.
+const droppedClientEnv = dropUnreadClientEnv(process.env);
+if (droppedClientEnv.length) {
+	console.log(`[env] ${droppedClientEnv.length} unread Vercel variable(s) kept out of the client bundle`);
+}
 
 const isDev = process.env.NODE_ENV !== 'production';
 const appBuildId = process.env.VERCEL_GIT_COMMIT_SHA
