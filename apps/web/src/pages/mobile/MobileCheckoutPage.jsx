@@ -1,6 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from '@/utils/freeVial.js';
-import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
 import React, { useState } from 'react';
@@ -216,7 +215,6 @@ const MobileCheckoutPage = () => {
           ) : null}
         </section>
         <CheckoutProgress steps={checkoutSteps} missing={missingRequirements} ready={canSubmitCheckout} />
-        <InternationalCheckoutNotice className="mb-3" />
         <CheckoutSection
           step="1"
           title={t('mcheckout.contact')}

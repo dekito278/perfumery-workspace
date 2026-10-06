@@ -194,7 +194,8 @@ export const dropOrphanedGift = (lines = []) => {
  *   - once an aroma is chosen, never again. The rule is one vial per ORDER, not per bottle; asking on
  *     the second bottle would be asking about a gift the buyer already has, and turns a thank-you into a
  *     toll on every tap.
- *   - never in the English shop, which has no cart to add to.
+ *   - the shop is no longer part of it: both have a cart since 2026-10-06, and the parameter that
+ *     carried the old rule was removed rather than left to be ignored.
  *   - never when there is nothing to offer: no vial product, or every aroma out of stock.
  *
  * A pure rule rather than a condition inside the component, so it can be RUN — the component is the one

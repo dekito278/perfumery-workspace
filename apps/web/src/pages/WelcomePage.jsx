@@ -22,9 +22,11 @@ import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 const WelcomeContent = ({ mobile, currentUser, signIn }) => {
   const prefix = mobile ? '/mobile' : '';
   const { t } = useTranslate();
-  // The card's code is a CART thing, and the English shop has no cart. Telling an international reader to
-  // type it at checkout would be an instruction with nowhere to follow it — so the note is not shown
-  // there at all, and its English words say what IS true instead, for the day this gate is edited.
+  // The card's code is a VOUCHER thing, and the English cart has no voucher box: an international order
+  // is confirmed on WhatsApp, where a domestic discount code has nothing to apply to. Telling that reader
+  // to type it at checkout would be an instruction with nowhere to follow it — so the note is not shown
+  // there, and its English words say what IS true instead, for the day this gate is edited.
+  // (It read "the English shop has no cart" until 2026-10-06, when that shop got one.)
   const { isInternational } = useStorefrontRegion();
   return (
     <>

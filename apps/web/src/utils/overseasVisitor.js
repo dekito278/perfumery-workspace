@@ -1,9 +1,13 @@
 // Is this visitor probably outside Indonesia, and what should they be quoted?
 //
-// The shop prices in Rupiah and ships domestically. An international order is priced separately and its
-// shipping is quoted by hand over WhatsApp — so a visitor abroad who reads the Indonesian price and then
-// asks is quoted something far higher. Dekito's one hand-set export price is 2,55x retail. A 2,5x jump
-// after the fact reads as a bait-and-switch, which is worse than showing no price at all.
+// The shop prices in Rupiah and ships domestically. An international order is priced separately — the
+// hand-set export price, 3,5x retail since 2026-09-15 — so a visitor abroad who reads the Indonesian
+// price and then asks is quoted something far higher. A jump of that size after the fact reads as a
+// bait-and-switch, which is worse than showing no price at all.
+//
+// (The shipping was quoted by hand over WhatsApp when this was written. Since 2026-10-06 the shop quotes
+// it from the carrier's own sheet the moment a destination is picked; this file still only decides which
+// PRICE a reader is shown.)
 //
 // So the export price is shown UP FRONT to visitors who are probably abroad. Three rules hold it together:
 //

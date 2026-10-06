@@ -12,18 +12,22 @@ import { useMobileFormEnhancements } from '@/hooks/useMobileFormEnhancements.js'
 import { useMobileTouchFeedback } from '@/hooks/useMobileTouchFeedback.js';
 import { cn } from '@/lib/utils.js';
 
-// The English shop takes its orders on WhatsApp, so it has no cart tab — /mobile/cart redirects there
-// anyway, and a tab that bounces you back is worse than no tab.
-// Tailwind scans source text, so the class names have to appear literally somewhere — a computed
-// `grid-cols-${n}` compiles to nothing.
-const navGridColumns = { 5: 'grid-cols-5', 6: 'grid-cols-6' };
+// SIX TABS, BOTH SHOPS. The cart tab was dropped in the English shop while that shop had no cart and
+// /mobile/cart redirected — "a tab that bounces you back is worse than no tab". Since 2026-10-06 it has
+// its own cart, and the tab was still missing: an English buyer on a phone could add a bottle and then
+// have no way back to the basket from the navigation at all, only the one "View cart" button on the
+// sheet that opens with the add. On a phone the bottom nav IS the navigation.
+//
+// Tailwind scans source text, so the class name has to appear literally — a computed `grid-cols-${n}`
+// compiles to nothing.
+const NAV_GRID_CLASS = 'grid-cols-6';
 
-const commerceNavItemsFor = (isInternational) => [
+const COMMERCE_NAV_ITEMS = [
   { path: '/mobile/dashboard', labelKey: 'nav.home', icon: Home },
   { path: '/mobile/catalog', labelKey: 'nav.shop', icon: Search, aliases: ['/mobile/products'] },
   { path: '/mobile/articles', labelKey: 'nav.articles', icon: BookOpenText },
   { path: '/mobile/bespoke', labelKey: 'nav.bespokeShort', icon: MessageCircle },
-  ...(isInternational ? [] : [{ path: '/mobile/cart', labelKey: 'nav.cart', icon: ShoppingBag }]),
+  { path: '/mobile/cart', labelKey: 'nav.cart', icon: ShoppingBag },
   // Was "Cek Order": tracking is what an account DOES, not why anyone opens one. The reason is the price.
   { path: '/mobile/customer', labelKey: 'nav.accountShort', icon: UserRound },
 ];
@@ -38,10 +42,10 @@ const preserveScrollOnCommerceTabTap = (path) => (
 const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const { isAdmin } = useAuth();
   const { summary } = useCart();
-  const commerceNavItems = commerceNavItemsFor(isInternational);
+  const commerceNavItems = COMMERCE_NAV_ITEMS;
   const keyboardActive = useMobileKeyboardState();
   useMobileKeyboardAvoidance();
   useMobileFormEnhancements();
@@ -101,7 +105,7 @@ const MobileCommerceLayout = ({ children }) => {
           set to six left a sixth of the bar empty on the phone, and the next person to add a tab would
           have had to remember two places. */}
       <nav
-        className={cn('mobile-bottom-nav mobile-commerce-bottom-nav grid gap-1 p-1.5', navGridColumns[commerceNavItems.length] || 'grid-cols-6')}
+        className={cn('mobile-bottom-nav mobile-commerce-bottom-nav grid gap-1 p-1.5', NAV_GRID_CLASS)}
         aria-label={t('nav.mobileShopAria')}
       >
         {commerceNavItems.map((item) => {

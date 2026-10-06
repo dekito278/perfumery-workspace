@@ -10,9 +10,12 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * city returns an EMPTY LIST with no error. Without this, a buyer outside Indonesia types their city,
  * sees nothing come back, and never learns why — a dead end that says nothing.
  *
- * It also reconciles two numbers the same visitor has just seen. The product page quotes them the
- * international price; this cart totals the Indonesian one. Both are true, and which applies depends on
- * where the parcel goes — so the notice says exactly that.
+ * ONLY BESPOKE SINCE 2026-10-06. It stood on the two carts and the two checkouts as well, and on all four
+ * it had become dead code that reads like a safeguard: the carts are chosen by shop (ByShop in App.jsx)
+ * so the domestic ones only ever render for a domestic reader, and the checkouts are DomesticOnly — this
+ * component's own `if (!isInternational) return null` could never be false on any of them. The bespoke
+ * pages are the two that really are reachable in the English shop with a domestic courier search inside,
+ * which is the dead end this exists to close.
  *
  * `quotedOnRequest` is for the bespoke request, where that reconciliation does not apply: there is no
  * product page and no international price, because the bottle does not exist yet. Bespoke prices live in

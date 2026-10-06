@@ -83,10 +83,6 @@ assert.doesNotMatch(MESSAGES.en['intl.quotedOnRequest'], /product page/i,
 for (const [file, expected] of [
   ['pages/BespokePage.jsx', true],
   ['pages/mobile/MobileBespokePage.jsx', true],
-  ['pages/CartPage.jsx', false],
-  ['pages/mobile/MobileCartPage.jsx', false],
-  ['pages/CheckoutPage.jsx', false],
-  ['pages/mobile/MobileCheckoutPage.jsx', false],
 ]) {
   const source = read(...file.split('/'));
   const tag = (source.match(/<InternationalCheckoutNotice[^/]*\/>/) || [''])[0];
@@ -104,23 +100,27 @@ assert.match(notice, /getStorefrontWhatsAppNumber\(\)/, 'the number has one sour
 assert.match(notice, /whatsapp \? \(/, 'and the button is hidden when none is configured — a dead link is worse than none');
 assert.doesNotMatch(notice, /\d{9,}/, 'no hardcoded number');
 
-// --- 5. Before the address form, on all four surfaces ---------------------------------------------------------------
-// Two carts and two checkouts. Missing from one of them is the dead end this exists to close, on exactly
-// the surface nobody tested.
-for (const page of [
-  ['pages', 'CartPage.jsx'],
-  ['pages', 'mobile', 'MobileCartPage.jsx'],
-  ['pages', 'CheckoutPage.jsx'],
-  ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
-  // Bespoke runs the same domestic-only courier search, so the same dead end waits there.
-  ['pages', 'BespokePage.jsx'],
-  ['pages', 'mobile', 'MobileBespokePage.jsx'],
-]) {
+// --- 5. On the two surfaces that can actually render it, and nowhere else -------------------------------
+// It stood on the two carts and the two checkouts as well, and this guard required it there. On all four
+// it was dead: the carts are chosen by shop (ByShop) so the domestic ones render only for a domestic
+// reader, and the checkouts are DomesticOnly — the component's own `if (!isInternational) return null`
+// could never be false on any of them. A guard can hold dead code in place as firmly as live code, and
+// dead code that reads like a safeguard is worse than none.
+//
+// Bespoke is the real case: reachable in the English shop, with the same domestic-only courier search
+// inside it.
+for (const page of [['pages', 'BespokePage.jsx'], ['pages', 'mobile', 'MobileBespokePage.jsx']]) {
   assert.match(read(...page), /<InternationalCheckoutNotice /, `${page.join('/')} shows the notice`);
 }
-// On the desktop checkout it has to come BEFORE the form, not under it.
-const checkout = read('pages', 'CheckoutPage.jsx');
-assert.ok(checkout.indexOf('<InternationalCheckoutNotice') < checkout.indexOf('<form className="checkout-form"'),
-  'the notice comes before the form — said after the search fails, it is an apology rather than a warning');
+// And it must not come back where it cannot render. Held as the RULE — a page the English shop never
+// opens cannot carry a notice only the English shop would see.
+for (const page of [['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
+  ['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx']]) {
+  assert.doesNotMatch(read(...page), /<InternationalCheckoutNotice /,
+    `${page.join('/')} is domestic-only, so the international notice there can never render`);
+}
+const app = read('App.jsx');
+assert.match(app, /path="\/cart" element=\{<ByShop/, 'the cart routes must still split by shop, or the notice was not dead after all');
+assert.match(app, /path="\/checkout" element=\{<DomesticOnly>/, 'and the checkout must still be domestic-only');
 
 console.log('internationalCheckout selfcheck OK (a buyer who cannot finish this checkout is told before the form, not after an empty search, and nobody is blocked on a guess)');

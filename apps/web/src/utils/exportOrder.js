@@ -1,6 +1,8 @@
 // Turning an export quote into a real order.
 //
-// An international sale arrives on WhatsApp, not through the checkout — the English shop has no cart,
+// An international sale arrives on WhatsApp, not through the domestic checkout. The English shop has a
+// cart of its own (dollars, a destination, the shipping) but it ends at a WhatsApp message rather than a
+// till, so the order is still written here by hand —
 // and RajaOngkir cannot price a foreign address anyway. So the order has to be written down from this
 // side, and it has to carry three things the domestic checkout would get wrong:
 //

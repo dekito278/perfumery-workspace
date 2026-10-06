@@ -1,6 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
-import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React from 'react';
 import { Helmet } from 'react-helmet';
@@ -110,7 +109,6 @@ const MobileCartPage = () => {
             </div>
           )}
         </section>
-        <InternationalCheckoutNotice className="mx-4 mt-3" />
         {items.length ? (
           <section style={{ padding: '16px', borderBottom: '1px solid var(--editorial-stone)' }}>
             <div style={{ display: 'flex', alignItems: 'start', gap: 12 }}>
