@@ -55,7 +55,7 @@ export const FREE_VIAL_SIZE = '2 ml';
  * It matters more than it looks. The weight table knows 10/30/50/100 ml and falls back to 300 g for
  * anything else — which is HEAVIER than the 30 ml bottle most orders are. Left unmeasured, every order
  * carrying a gift would be quoted freight for 300 g that is not in the box, and on an export parcel,
- * where RaySpeed bills a one-kilogram minimum, a phantom 300 g can cross into the next band.
+ * where DHL bills in half-kilo brackets, a phantom 300 g can cross into the next bracket.
  */
 export const FREE_VIAL_WEIGHT_GRAM = itemWeightGram(FREE_VIAL_SIZE);
 

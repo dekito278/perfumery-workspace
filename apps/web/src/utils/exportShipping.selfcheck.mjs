@@ -1,6 +1,6 @@
 // `node src/utils/exportShipping.selfcheck.mjs`
 //
-// Values checked against the carrier's printed sheet (LTU Express, EXPORT RATE EXPRESS 2026, efektif
+// Values checked against the carrier's printed sheet (DHL, EXPORT RATE EXPRESS 2026, efektif
 // 5 Feb 2026). If the sheet is reissued, these numbers are what tell us the table was not updated with it.
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';

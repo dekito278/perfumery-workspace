@@ -1,4 +1,8 @@
-// LTU Express "EXPORT RATE EXPRESS 2026" (efektif 5 Februari 2026), PACKAGE table, in IDR.
+// DHL "EXPORT RATE EXPRESS 2026" (efektif 5 Februari 2026), PACKAGE table, in IDR.
+//
+// This is the sheet Dekito handed over, and DHL is the carrier he ships with — his words, 6 Oct 2026.
+// Every export figure in the app comes from here, the published price card included. An earlier header
+// named it "LTU Express", which was a guess at the forwarder rather than anything the sheet prints.
 // Rows are the carrier's weight brackets in kg; a parcel is billed at the first bracket it fits in.
 //
 // Only the PACKAGE table is here. The sheet also prints a DOKUMEN table, which does not apply to goods.
@@ -24,7 +28,7 @@ export const EXPORT_PACKAGE_RATES = [
   [4.5, 2381000, 2957000, 3159000, 3508000, 3744000, 4021000, 4292000, 5710000],
   // zone 1 at 5.0 kg prints as 5.470.000 — more than double the 4.5 kg row and far above the 5.5 kg one.
   // Transcribed as printed; quoteExportShipping() never returns more than a heavier bracket costs, so a
-  // buyer is not quoted this. Worth confirming with LTU.
+  // buyer is not quoted this. Worth confirming with DHL.
   [5.0, 5470000, 3182000, 3398000, 3767000, 4004000, 4309000, 4580000, 6093000],
   [5.5, 2704000, 3406000, 3637000, 4026000, 4264000, 4597000, 4868000, 6475000],
   [6.0, 2860000, 3631000, 3875000, 4285000, 4524000, 4884000, 5156000, 6857000],

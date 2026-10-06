@@ -1,86 +1,127 @@
 // `node src/utils/carrierNamedIsCarrierUsed.selfcheck.mjs`
 //
-// The export quote screen opened with a sentence naming the sheet its numbers came from: "Tarif LTU
-// Express, berlaku 2026-02-05." That was true when it was written. RaySpeed was added later and took
-// eight destinations off that sheet — and they are not eight arbitrary ones. They are Malaysia,
-// Singapore, Hong Kong, Taiwan, Japan, Brunei, Australia: the near-Asia orders this shop actually gets,
-// and Malaysia is the country the screen opens on. LTU still covers the other 225, so the sentence is
-// right for most of the map and wrong for most of the parcels.
+// For three weeks this repo held two carriers at once and could not say which one it shipped with.
 //
-// The code thirty lines below says how wrong: "jangan pakai angka LTU, itu berkali-kali lipat." A screen
-// whose whole purpose is answering "how much is shipping" told Dekito the figure in front of him came
-// from a sheet several times more expensive than the one it had actually used.
+// `exportRates.js` is the sheet every export figure comes from, and its header named a forwarder nobody
+// had confirmed. `rayspeedRates.js` opened with "the carrier Dekito actually ships with" and took eight
+// near-Asia destinations off that sheet — Rp 90.000 the kilo to Malaysia against Rp 1.188.000, about a
+// seventh. Both were live, and the Studio quote screen put a "Pakai" button under each: two freight
+// figures seven times apart, side by side, for the same parcel. Whichever one Dekito pressed, the other
+// said he had got it badly wrong.
 //
-// The fix that introduced RaySpeed went to the quoting function and to every panel that shows a result.
-// It did not go to the heading, because the heading is not a result — it is a claim about where results
-// come from, and nothing connected the two.
+// Dekito settled it on 6 Oct 2026: he ships DHL, and the sheet is his. The second table is deleted.
 //
-// The rule: the carrier a screen NAMES is the carrier its quote CAME from. Checked both ways — the
-// predicate the heading branches on really is the one the quoter uses (run, over every destination), and
-// the heading really does branch (read, off the page).
+// What this guard holds is not "DHL" — it is the shape that let the contradiction exist: more than one
+// source of freight, more than one function quoting it, and a heading that branched instead of saying
+// so. Five ways, four of them derived by walking the tree rather than reading a list.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, basename, relative } from 'node:path';
 import { Buffer } from 'node:buffer';
 import { listExportDestinations } from '../data/exportZones.js';
-import { rayspeedServes, RAYSPEED_MEASURED_ON } from '../data/rayspeedRates.js';
 import { EXPORT_RATE_EFFECTIVE } from '../data/exportRates.js';
 
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
+const stripComments = (source) => source
+  .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 
-// The quoter, run for real. Its own imports go through the '@/' alias, which node cannot resolve, so they
-// are rewritten to absolute file URLs rather than stubbed — stubbing the rate tables would mean asserting
-// against rates this guard invented.
-const quoterSource = readFileSync(join(src, 'utils', 'exportShipping.js'), 'utf8')
-  .replace(/'@\//g, `'${pathToFileURL(src).href}/`);
-const { quoteInternationalShipping } = await import(
-  `data:text/javascript;base64,${Buffer.from(quoterSource, 'utf8').toString('base64')}`
-);
+const walk = (dir) => readdirSync(dir).flatMap((entry) => {
+  const full = join(dir, entry);
+  if (statSync(full).isDirectory()) return walk(full);
+  return /\.(js|jsx|mjs)$/.test(entry) ? [full] : [];
+});
+// Guards are prose about history by nature — they are the one place the retired carrier SHOULD still be
+// named. Everything else is live code.
+const sources = walk(src).filter((file) => !file.endsWith('.selfcheck.mjs'));
+assert.ok(sources.length > 300, `expected the whole tree, walked ${sources.length} files — the scan is broken`);
 
-// --- 1. The predicate the heading branches on is the one the quoter obeys -------------------------------
+// --- 1. One function quotes the freight ----------------------------------------------------------------
+// Two of them is how the message to the buyer and the order written beside it came to disagree: one read
+// the carrier cost, the other the published card. A screen cannot name the carrier its number came from
+// when two different numbers are on offer.
+const quoter = readFileSync(join(src, 'utils', 'exportShipping.js'), 'utf8');
+const quoters = [...stripComments(quoter).matchAll(/^export const (quote\w+)/gm)].map((match) => match[1]);
+assert.deepEqual(quoters, ['quoteExportShipping'],
+  `exportShipping.js exports ${quoters.length} quoting functions (${quoters.join(', ')}) — one sheet, one `
+  + 'quoter, or the two can be read against each other again');
+
+// --- 2. One source of freight, found by walking, not listed -------------------------------------------
+// A module whose name says Rate is a table of money somebody will be billed. Every one of them that any
+// file in the app reads is collected here, and the set is fixed: a third means a second carrier is back,
+// and this is where its owner has to come and say which parcels it covers.
+const KNOWN_RATE_MODULES = {
+  'exportRates.js': 'the DHL sheet Dekito handed over — the only carrier prices in the app',
+  'internationalShippingRates.js': 'not a carrier sheet: how much of the DHL cost SOLIVAGANT absorbs',
+};
+const rateModules = new Map();
+for (const file of sources) {
+  for (const [, specifier] of stripComments(readFileSync(file, 'utf8'))
+    .matchAll(/from\s+'(@\/data\/[^']*[Rr]ate[^']*\.js)'/g)) {
+    const name = basename(specifier);
+    if (!rateModules.has(name)) rateModules.set(name, []);
+    rateModules.get(name).push(relative(src, file));
+  }
+}
+console.log('  rate tables the app reads:');
+for (const [name, readers] of [...rateModules].sort()) {
+  console.log(`    ${name} — ${readers.length} reader(s): ${readers.join(', ')}`);
+}
+assert.deepEqual([...rateModules.keys()].sort(), Object.keys(KNOWN_RATE_MODULES).sort(),
+  'a rate table appeared or vanished. Two carriers quoting the same parcel seven times apart is the '
+  + 'defect this guard exists for: if this is a second courier, the screen must say which parcels it '
+  + 'covers and rule 4 below must branch with it');
+
+// --- 3. That one sheet answers every destination it lists ---------------------------------------------
+// The second carrier served eight countries and had measured two, so six of them produced a panel with
+// no number in it — on a screen whose entire job is answering "how much is shipping". Run for real: the
+// quoter's own imports go through '@/', which node cannot resolve, so they are rewritten to file URLs
+// rather than stubbed. Stubbing the rate table would mean asserting against rates this guard invented.
+const { quoteExportShipping } = await import(`data:text/javascript;base64,${Buffer.from(
+  quoter.replace(/'@\//g, `'${pathToFileURL(src).href}/`), 'utf8').toString('base64')}`);
+
 const destinations = listExportDestinations();
 assert.ok(destinations.length >= 100,
   `expected the full destination list, found ${destinations.length} — the scan is broken, not the code`);
-
-let rayspeed = 0;
-let ltu = 0;
+let quoted = 0;
 for (const destination of destinations) {
-  const quote = quoteInternationalShipping({ countryCode: destination.code, weightGram: 500 });
-  if (!quote) continue;
-  const served = rayspeedServes(destination.code);
-  assert.equal(quote.carrier === 'rayspeed', served,
-    `${destination.code} is quoted by ${quote.carrier} but rayspeedServes says ${served} — the heading `
-    + 'branches on rayspeedServes, so the two disagreeing means the heading names the wrong sheet again');
-  served ? (rayspeed += 1) : (ltu += 1);
+  const quote = quoteExportShipping({ countryCode: destination.code, weightGram: 500 });
+  assert.ok(quote && quote.total > 0,
+    `${destination.code} is on the zone sheet and still came back without a price — a blank panel on the `
+    + 'screen that exists to answer "how much is shipping"');
+  quoted += 1;
 }
-assert.ok(rayspeed > 0 && ltu > 0,
-  `both carriers must still be reachable for the heading to need a branch at all (rayspeed ${rayspeed}, `
-  + `ltu ${ltu}) — if one is now dead, delete the branch and say so, do not leave the other's name up`);
-// The specific case that was wrong on screen: the country the page opens on.
-assert.equal(quoteInternationalShipping({ countryCode: 'MY', weightGram: 500 }).carrier, 'rayspeed',
-  'Malaysia is the default country on this screen; it was the one being labelled LTU');
-assert.equal(quoteInternationalShipping({ countryCode: 'DE', weightGram: 500 })?.carrier, 'ltu',
-  'and Germany is why the LTU sheet is still in the repo');
+// The two destinations the contradiction was measured on, and the one that proved it mattered.
+assert.equal(quoteExportShipping({ countryCode: 'MY', weightGram: 500 }).total, 909000,
+  'Malaysia is the country this screen opens on, and the one the two sheets disagreed about seven-fold');
+assert.ok(quoteExportShipping({ countryCode: 'DE', weightGram: 500 }).total > 900000, 'Europe still quotes');
+assert.equal(quoteExportShipping({ countryCode: 'ID', weightGram: 500 }), null, 'home is not an export');
 
-// --- 2. The heading really does branch, and names each sheet's own date ---------------------------------
-const page = readFileSync(join(src, 'pages', 'ExportShippingCalculatorPage.jsx'), 'utf8');
+// --- 4. The screen names the carrier, without branching, and dates itself from its sheet --------------
+// The heading is a claim about where the numbers below came from. When a second carrier took over most of
+// the parcels, the fix went to the quoter and to every panel showing a result — and not here, because a
+// heading is not a result. Nothing connected the two.
+// Comments stripped first. A heading that names DHL in a {/* comment */} and prints a bare date to the
+// screen reads as correct source and tells Dekito nothing — the claim has to be in what he can see.
+const page = stripComments(readFileSync(join(src, 'pages', 'ExportShippingCalculatorPage.jsx'), 'utf8'));
 const start = page.indexOf('<header');
 const heading = page.slice(start, page.indexOf('</header>', start));
 assert.ok(start !== -1 && heading, 'the heading has moved; this guard no longer reads it');
+assert.match(heading, /DHL/, 'the heading does not name the carrier whose sheet every figure below is from');
+assert.match(heading, /EXPORT_RATE_EFFECTIVE/,
+  "and it must date itself from that sheet's own constant, not from a date typed beside it");
+assert.doesNotMatch(heading, /\?[^;]*Tarif|Serves\(|carrier/i,
+  'the heading branches on a carrier again — if a second one is back, rule 2 above is where to say so');
+assert.ok(/^20\d\d-\d\d-\d\d$/.test(EXPORT_RATE_EFFECTIVE), 'the sheet carries the date it took effect');
 
-for (const name of ['RaySpeed', 'LTU']) {
-  assert.ok(heading.includes(name),
-    `the heading names one carrier and not ${name} — on every destination the other one serves, it is a `
-    + 'claim about the numbers below that is simply false');
-}
-assert.match(heading, /rayspeedServes\(/,
-  'the heading states a carrier without asking which one this country ships by');
-// Each sheet carries its own date, and swapping them is the same lie in quieter form: the LTU sheet is
-// from February, the RaySpeed rates were measured in September.
-assert.notEqual(RAYSPEED_MEASURED_ON, EXPORT_RATE_EFFECTIVE, 'the two sheets are dated separately');
-assert.match(heading, /RAYSPEED_MEASURED_ON/, 'the RaySpeed half must date itself from the RaySpeed sheet');
-assert.match(heading, /EXPORT_RATE_EFFECTIVE/, 'and the LTU half from the LTU sheet');
+// --- 5. The retired carrier is gone from live code, and only from live code ----------------------------
+// Comments and guards keep the history on purpose: the reason a decision was made outlives the code it
+// removed, and "we used to quote a carrier seven times cheaper" is worth a reader's time. What must not
+// survive is a switched-on gate — the pile that made the last sweep worth running.
+const live = sources.filter((file) => /rayspeed/i.test(stripComments(readFileSync(file, 'utf8'))))
+  .map((file) => relative(src, file));
+assert.deepEqual(live, [],
+  `the retired carrier is still live in: ${live.join(', ')} — history belongs in comments, not in code`);
 
-console.log(`carrierNamedIsCarrierUsed selfcheck OK (${rayspeed} destinations quoted by RaySpeed, ${ltu} by `
-  + 'LTU, and the heading names whichever one this country actually ships by)');
+console.log(`carrierNamedIsCarrierUsed selfcheck OK (one quoter, one carrier sheet, ${quoted} destinations `
+  + 'priced from it, and the heading names DHL without branching)');

@@ -1,4 +1,4 @@
-// LTU Express "Zona Express Export Rate" — every destination country mapped to a zone 1-8.
+// DHL "Zona Express Export Rate" — every destination country mapped to a zone 1-8.
 // Transcribed from the carrier's own sheet: use their zones, never invent regional groupings, because
 // their zone is what they bill against. A homemade "Asia" bucket that disagrees with this table is a
 // silent loss on every shipment.
