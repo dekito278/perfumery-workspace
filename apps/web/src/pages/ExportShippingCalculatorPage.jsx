@@ -152,11 +152,18 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // An order may not be written on an undecided figure. Zero is a legitimate answer — Dekito can waive
   // the freight on an order he chooses to — but it has to be typed, not left behind.
   const shippingSettled = quoteLater || manualShipping !== '';
-  const shippingLabel = quoteLater ? 'dikutip menyusul' : 'dikutip manual';
+  // The label travels INTO a message the buyer reads, so it is written in their language, not in the
+  // Studio's. "dikutip menyusul" went out to a German customer verbatim until 2026-10-06.
+  const shippingLabel = quoteLater ? 'to be confirmed — we will send it shortly' : 'confirmed below';
   const summary = buildExportQuote({
     destinationName: destination?.name || '',
     lines,
-    shipping: shippingCharged > 0 ? { total: shippingCharged, label: shippingLabel } : null,
+    shipping: shippingCharged > 0 || quoteLater ? { total: shippingCharged, label: shippingLabel } : null,
+    // The same rounding the storefront applies, so this quote cannot disagree with the page the buyer
+    // was reading when they wrote.
+    toUsd: usdPriceFor,
+    // And the same arrival estimate the website promises for this destination.
+    eta: priceCard?.transitDays ? `${priceCard.transitDays[0]}–${priceCard.transitDays[1]} working days after dispatch` : '',
     formatMoney: formatPrice,
   });
 

@@ -1,79 +1,125 @@
 // `node src/utils/exportQuote.selfcheck.mjs`
 //
-// This text gets pasted into a message to a real buyer, so every number and every omission in it is a
-// statement Dekito made. Two of them are promises he must not accidentally make: that the price covers
-// the destination country's import duty (it does not — the recipient pays it on arrival), and that
-// asking holds a bottle (it does not).
+// The quote Dekito copies out of the Studio and sends to an overseas buyer — the only message that
+// crosses from his side of the shop to theirs.
+//
+// It was written in Indonesian rupiah until 2026-10-06, and this chain asserted exactly that: it matched
+// "Subtotal produk", "Ongkir", "Rp 2.209.000". The storefront learned English in September and moved its
+// international prices to the dollar on 24 Sep, and nothing looked at the one piece of copy pointed at a
+// foreign customer. A buyer who wrote in English, reading US$80 on the product page, was answered with a
+// rupiah figure in a language they do not read.
+//
+// So the rule is now about WHO READS IT: English, dollars, and the same rounding the page they came from
+// used — a hand-sent figure that disagrees with the website by five dollars is the bait-and-switch this
+// whole feature exists to prevent, arriving by WhatsApp instead.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import { buildExportQuote } from './exportQuote.js';
+import { usdPriceFor } from './usdPrice.js';
 
-const src = join(dirname(fileURLToPath(import.meta.url)), '..');
-const money = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Math.round(Number(value) || 0))}`;
-const shipping = { total: 909000, chargeableKg: 2 };
-const line = (over) => ({ name: 'Sunda', size: '30 ml', quantity: 2, unitPrice: 650000, overseasPriceSet: over });
+const money = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+// La Tulipe's class, measured in production: retail Rp 359.000, export Rp 1.260.000 -> US$80.
+const line = (overseasPriceSet = true, unitPrice = 1260000) => ({
+  name: 'Jason Voorhees', size: '30 ml', quantity: 2, unitPrice, overseasPriceSet,
+});
+const shipping = { total: 1072500, label: 'confirmed below' };
+const quote = buildExportQuote({
+  destinationName: 'Germany', lines: [line()], shipping, toUsd: usdPriceFor, formatMoney: money,
+});
 
-// --- the arithmetic ---------------------------------------------------------------------------------
-const quote = buildExportQuote({ destinationName: 'Malaysia', lines: [line(true)], shipping, formatMoney: money });
+// --- 1. The figures the Studio screen keeps, in rupiah ------------------------------------------------
 assert.equal(quote.bottles, 2);
-assert.equal(quote.subtotal, 1300000);
-assert.equal(quote.shippingTotal, 909000);
-assert.equal(quote.total, 2209000, 'the total must be the subtotal plus shipping, nothing else');
-assert.match(quote.message, /2 × Sunda 30 ml — Rp 650\.000 = Rp 1\.300\.000/);
-assert.match(quote.message, /Total: Rp 2\.209\.000/);
-assert.match(quote.message, /Malaysia/);
+assert.equal(quote.subtotal, 2520000);
+assert.equal(quote.shippingTotal, 1072500);
+assert.equal(quote.total, 3592500, 'the rupiah total must be the subtotal plus shipping, nothing else');
 
-// --- the two promises, in every quote ---------------------------------------------------------------
-for (const [label, built] of [
-  ['served country', quote],
-  ['unserved country', buildExportQuote({ destinationName: 'Nowhere', lines: [line(true)], shipping: null, formatMoney: money })],
-  ['domestic price', buildExportQuote({ destinationName: 'Malaysia', lines: [line(false)], shipping, formatMoney: money })],
-]) {
-  assert.match(built.message, /ditagih ke penerima saat barang tiba/, `${label}: the duty line must be there`);
-  assert.match(built.message, /belum memesan stok/, `${label}: the quote must not read as a reservation`);
+// --- 2. The message the BUYER reads: English, dollars, and the storefront's own arithmetic -------------
+assert.match(quote.message, /2 × Jason Voorhees 30 ml — US\$80 = US\$160/,
+  'each line is priced per bottle in dollars, the way the product page prices it');
+assert.match(quote.message, /Perfume: US\$160/);
+assert.match(quote.message, /Shipping: US\$65/, 'the typed rupiah figure is converted with the same rounding');
+assert.match(quote.message, /Total: US\$225/);
+assert.match(quote.message, /Germany/);
+// THE ROUNDING IS PER BOTTLE. Summing the rupiah first and converting once gives a different answer, and
+// the buyer would be quoted a total the product page never showed them.
+assert.equal(quote.goodsUsd, usdPriceFor(1260000) * 2, 'the goods total is the per-bottle dollar times the count');
+assert.notEqual(quote.goodsUsd, usdPriceFor(2520000), 'converting the summed rupiah is a different number — that is the bug this prevents');
+assert.equal(quote.totalUsd, quote.goodsUsd + quote.shippingUsd);
+
+// No rupiah, and no Indonesian, in anything the buyer reads. Held as a sweep over the whole message
+// rather than on the phrases that happened to be there: the next sentence someone adds has to be caught.
+assert.doesNotMatch(quote.message, /\bRp\b/, 'the buyer pays in dollars; rupiah in this message is a number they cannot act on');
+for (const indonesian of [/Subtotal produk/, /Ongkir/, /\bbelum\b/, /\bditagih\b/, /\bperkiraan\b/i, /\bdikutip\b/]) {
+  assert.doesNotMatch(quote.message, indonesian, `the quote still speaks Indonesian to a foreign buyer: ${indonesian}`);
 }
 
-// --- no shipping rate is said out loud, never implied as free ---------------------------------------
-const unserved = buildExportQuote({ destinationName: 'Nowhere', lines: [line(true)], shipping: null, formatMoney: money });
-assert.equal(unserved.shippingTotal, 0);
-assert.match(unserved.message, /belum ada di daftar tujuan kurir/,
-  'a country with no rate must say so — a quote reading "Ongkir: Rp 0" would promise free shipping');
-assert.doesNotMatch(unserved.message, /Ongkir \(LTU Express/);
+// --- 3. The two promises it must not make ------------------------------------------------------------
+for (const [label, built] of [
+  ['with shipping', quote],
+  ['without', buildExportQuote({ destinationName: 'Germany', lines: [line()], toUsd: usdPriceFor, formatMoney: money })],
+]) {
+  assert.match(built.message, /charged to the recipient on arrival/, `${label}: the duty line must be there`);
+  assert.match(built.message, /does not reserve stock/, `${label}: the quote must not read as a reservation`);
+  assert.doesNotMatch(built.message, /shipping is included|free shipping|included in the price/i,
+    `${label}: nothing may say the freight is in the price — that promise was retired on 2026-09-25`);
+}
 
-// --- lines still at the domestic price are named, not swallowed --------------------------------------
+// --- 4. Where there is no figure yet, it says so rather than printing a zero --------------------------
+const later = buildExportQuote({
+  destinationName: 'Iceland', lines: [line()], toUsd: usdPriceFor, formatMoney: money,
+  shipping: { total: 0, label: 'to be confirmed — we will send it shortly' },
+});
+assert.equal(later.shippingUsd, 0);
+assert.match(later.message, /Shipping: to be confirmed/, 'a shipping figure still to come is said, not printed as zero');
+assert.doesNotMatch(later.message, /Shipping: US\$0/, '"US$0" reads as free on a parcel that is not free');
+assert.equal(later.totalUsd, later.goodsUsd, 'and the total is the goods alone until the freight is known');
+const unserved = buildExportQuote({ destinationName: 'Nauru', lines: [line()], toUsd: usdPriceFor, formatMoney: money });
+assert.match(unserved.message, /confirming the rate to your country/, 'no shipping object at all still gets an honest sentence');
+assert.doesNotMatch(unserved.message, /Ongkir \(LTU Express/, 'and never names a carrier the shop does not use');
+
+// --- 5. The arrival estimate, when the destination has one --------------------------------------------
+// The website promises one the moment a country is picked; a hand-sent quote that omits it leaves the
+// buyer with less than the page gave them.
+const withEta = buildExportQuote({
+  destinationName: 'Germany', lines: [line()], shipping, toUsd: usdPriceFor, formatMoney: money,
+  eta: '5–10 working days after dispatch',
+});
+assert.match(withEta.message, /Estimated delivery: 5–10 working days after dispatch/);
+assert.doesNotMatch(quote.message, /Estimated delivery/, 'and it is left out entirely when there is none to give');
+
+// --- 6. A line still on the domestic price is named, never swallowed ----------------------------------
 const mixed = buildExportQuote({
-  destinationName: 'Malaysia',
-  lines: [line(true), { name: 'Pantura', size: '10 ml', quantity: 1, unitPrice: 129000, overseasPriceSet: false }],
-  shipping, formatMoney: money,
+  destinationName: 'Germany', toUsd: usdPriceFor, formatMoney: money, shipping,
+  lines: [line(true), { name: 'Pantura', size: '30 ml', quantity: 1, unitPrice: 429000, overseasPriceSet: false }],
 });
 assert.deepEqual(mixed.withoutOverseasPrice, ['Pantura'],
-  'quoting an overseas buyer the Indonesian price is what the overseas tier exists to prevent');
-assert.deepEqual(buildExportQuote({ lines: [line(true)], shipping, formatMoney: money }).withoutOverseasPrice, []);
+  'quoting an overseas buyer the Indonesian price is the whole thing the overseas tier exists to prevent');
+assert.deepEqual(buildExportQuote({ lines: [line(true)], shipping, toUsd: usdPriceFor, formatMoney: money }).withoutOverseasPrice, []);
 
-// --- empty and junk input ---------------------------------------------------------------------------
-// An empty message is what lets the page disable the copy button; a blank quote sent to a buyer is worse
-// than no reply.
+// --- 7. Nothing to quote, nothing to send -------------------------------------------------------------
 assert.equal(buildExportQuote({ formatMoney: money }).message, '');
-assert.equal(buildExportQuote({ lines: [{ name: 'Sunda', quantity: 0, unitPrice: 650000 }], formatMoney: money }).message, '',
-  'a line with no quantity is not an order line');
-assert.equal(buildExportQuote({ lines: [{ name: '', quantity: 3, unitPrice: 1 }], formatMoney: money }).message, '',
-  'a row with no product chosen must not reach the message');
-const junk = buildExportQuote({ lines: [{ name: 'Sunda', quantity: '2', unitPrice: undefined }], shipping, formatMoney: money });
+assert.equal(buildExportQuote({ lines: [{ name: 'Sunda', quantity: 0, unitPrice: 650000 }], toUsd: usdPriceFor, formatMoney: money }).message, '',
+  'a row with no quantity is not a line');
+assert.equal(buildExportQuote({ lines: [{ name: '', quantity: 3, unitPrice: 1 }], toUsd: usdPriceFor, formatMoney: money }).message, '',
+  'nor is a row with no product');
+const junk = buildExportQuote({ destinationName: 'Germany', lines: [{ name: 'Sunda', quantity: 2 }], toUsd: usdPriceFor, shipping, formatMoney: money });
 assert.equal(junk.subtotal, 0, 'a missing price counts as zero, it must not become NaN in the message');
 assert.doesNotMatch(junk.message, /NaN/);
 
-// --- the page asks for the overseas price, not the viewer's own tier ---------------------------------
-const page = readFileSync(join(src, 'pages', 'ExportShippingCalculatorPage.jsx'), 'utf8');
-assert.match(page, /resolveTierPrice\(\{ retailPrice, tierPrices: forLine, overseas: true \}\)/,
-  'the quote must use the overseas price; the admin viewing this page is a member, and member pricing '
-  + 'is Indonesia-only');
-assert.match(page, /20260913090000_customer_tiers_and_tier_prices\.sql/,
-  'Studio must name the migration when the tier table is missing, or every quote silently goes out at '
-  + 'the domestic price');
-assert.match(page, /disabled=\{!summary\.message\}/, 'the copy button must be dead until there is something to copy');
-assert.doesNotMatch(page, /useStorefrontProducts/,
-  'this page prices in overseas terms itself — a tier-priced catalog here would apply member prices too');
+// --- 8. The page passes the real converter, not a stand-in -------------------------------------------
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', 'ExportShippingCalculatorPage.jsx'), 'utf8');
+assert.match(page, /toUsd: usdPriceFor/, 'the Studio must hand the quote the app\'s own dollar rounding');
+assert.match(page, /eta: priceCard\?\.transitDays/, 'and the arrival estimate it already shows on screen');
+// The LABEL travels into the buyer's message, so it is their language too — and it is declared on its own
+// line, not inline in the object, which is how a first version of this check missed a sabotage that put
+// "dikutip menyusul" straight back. Read the declaration and sweep its words.
+{
+  const declaration = (page.match(/const shippingLabel = [^\n]*/) || [''])[0];
+  assert.ok(declaration, 'the page no longer names where the shipping figure came from');
+  assert.doesNotMatch(declaration, /\b(dikutip|menyusul|belum|nanti|ongkir|akan|kami|kirim|tangan)\b/i,
+    `the shipping label reaches a foreign buyer verbatim and may not be Indonesian: ${declaration.trim()}`);
+}
 
-console.log('exportQuote selfcheck OK (duty and stock are never promised; a missing rate says so)');
+console.log('exportQuote selfcheck OK (the one message that reaches a foreign buyer is English, in dollars, rounded the way the page they came from rounds)');

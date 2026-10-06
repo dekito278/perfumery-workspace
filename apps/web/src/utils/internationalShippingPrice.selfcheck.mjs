@@ -216,8 +216,17 @@ assert.ok(page.includes(`{${conversion}.toLocaleString(`),
 // One figure, two places. Caught on the screen before this shipped: the WhatsApp summary was still built
 // from the carrier quote while the order used the card, so the message said Rp 180.000 and the order said
 // Rp 2.227.500 for the same six bottles to Malaysia.
-assert.match(page, /shipping: shippingCharged > 0 \? \{ total: shippingCharged/,
-  'the copied summary must quote the same shipping figure the order is billed');
+// HELD AS THE RULE, NOT AS THE CONDITION. Pinned to `shippingCharged > 0 ? {` this failed the day the
+// "quote later" case started sending the buyer a labelled line instead of a generic sentence — a change
+// that made the message more honest, and left the AMOUNT untouched. What must stay true is that the
+// summary's figure is the same variable the order is billed.
+{
+  const arg = (page.match(/shipping: [^\n]*\{ total: (\w+)/) || [])[1];
+  assert.equal(arg, 'shippingCharged',
+    `the copied summary must quote the same shipping figure the order is billed, not ${arg}`);
+  const orderArg = (page.match(/shippingTotal: (\w+)/) || [])[1];
+  assert.equal(orderArg, 'shippingCharged', `and the order must bill that same figure, not ${orderArg}`);
+}
 assert.doesNotMatch(page, /shipping: quote,/,
   'the summary may not be built from the carrier cost while the order bills what Dekito typed');
 
@@ -252,11 +261,15 @@ assert.doesNotMatch(quoteBuilder, /Ongkir \(LTU Express/,
   'the quote message may not hardcode a carrier the shop no longer bills through');
 assert.match(quoteBuilder, /shipping\.label/, 'it must name the basis the caller actually used');
 
-// Zero shipping is an answer, not a blank: "Ongkir: Rp 0" reads like a mistake to the person receiving
-// the quote, and invites the question the sentence exists to prevent.
-assert.match(quoteBuilder, /shippingTotal > 0/, 'a zero total must take a different sentence');
-const zeroQuote = quoteBuilder.match(/Ongkir: \$\{shipping\.label\}/);
-assert.ok(zeroQuote, 'and that sentence must say what is true instead of printing Rp 0');
+// Zero shipping is an answer, not a blank: a bare "US$0" reads like a mistake to the person receiving the
+// quote, and invites the question the sentence exists to prevent. Held on the BEHAVIOUR — the two Indonesian
+// spellings this pinned ("Ongkir: Rp 0", "Ongkir: ${shipping.label}") both went out to foreign buyers until
+// the message was moved into English and dollars on 2026-10-06.
+assert.match(quoteBuilder, /shippingUsd > 0/, 'a zero total must take a different sentence');
+assert.match(quoteBuilder, /Shipping: \$\{shipping\.label\}/,
+  'and that sentence must name the basis instead of printing a zero');
+assert.doesNotMatch(quoteBuilder, /Ongkir|Subtotal produk|belum memesan stok/,
+  'the quote message speaks to a foreign buyer and may not be written in Indonesian');
 
 // --- 7. The rule's conditions reach the BUYER'S SCREEN -------------------------------------------------
 // This asserted that three sentences were PRESENT IN THE DATA FILE, under the heading "the conditions
