@@ -13,23 +13,33 @@
 
 begin;
 
--- The arrays first, element by element: array_replace matches a whole element, so unlike a string
--- replace it cannot half-rename a note or miss one that sits at the end of the line.
+-- These columns are jsonb, so the rename works on the JSON TEXT of each array. Every element is
+-- quoted in that text, and the quotes are what make the match exact: '"Oud"' cannot match inside
+-- '"Oud Malinau"', and once 'Oud Malinau' has become 'Oud Accord' the later '"Oud"' pass cannot
+-- touch it either. Order matters, so the longer name goes first.
 update public.storefront_products set
-    top_notes      = array_replace(array_replace(array_replace(array_replace(top_notes,      'Oud Malinau', 'Oud Accord'), 'Oud', 'Oud Accord'), 'Sandalwood Kupang', 'Sandalwood Accord'), 'Sandalwood', 'Sandalwood Accord'),
-    heart_notes    = array_replace(array_replace(array_replace(array_replace(heart_notes,    'Oud Malinau', 'Oud Accord'), 'Oud', 'Oud Accord'), 'Sandalwood Kupang', 'Sandalwood Accord'), 'Sandalwood', 'Sandalwood Accord'),
-    base_notes     = array_replace(array_replace(array_replace(array_replace(base_notes,     'Oud Malinau', 'Oud Accord'), 'Oud', 'Oud Accord'), 'Sandalwood Kupang', 'Sandalwood Accord'), 'Sandalwood', 'Sandalwood Accord'),
-    top_notes_en   = array_replace(array_replace(array_replace(array_replace(top_notes_en,   'Oud Malinau', 'Oud Accord'), 'Oud', 'Oud Accord'), 'Sandalwood Kupang', 'Sandalwood Accord'), 'Sandalwood', 'Sandalwood Accord'),
-    heart_notes_en = array_replace(array_replace(array_replace(array_replace(heart_notes_en, 'Oud Malinau', 'Oud Accord'), 'Oud', 'Oud Accord'), 'Sandalwood Kupang', 'Sandalwood Accord'), 'Sandalwood', 'Sandalwood Accord'),
-    base_notes_en  = array_replace(array_replace(array_replace(array_replace(base_notes_en,  'Oud Malinau', 'Oud Accord'), 'Oud', 'Oud Accord'), 'Sandalwood Kupang', 'Sandalwood Accord'), 'Sandalwood', 'Sandalwood Accord')
+    top_notes      = replace(replace(replace(replace(top_notes::text,      '"Oud Malinau"', '"Oud Accord"'), '"Oud"', '"Oud Accord"'), '"Sandalwood Kupang"', '"Sandalwood Accord"'), '"Sandalwood"', '"Sandalwood Accord"')::jsonb,
+    heart_notes    = replace(replace(replace(replace(heart_notes::text,    '"Oud Malinau"', '"Oud Accord"'), '"Oud"', '"Oud Accord"'), '"Sandalwood Kupang"', '"Sandalwood Accord"'), '"Sandalwood"', '"Sandalwood Accord"')::jsonb,
+    base_notes     = replace(replace(replace(replace(base_notes::text,     '"Oud Malinau"', '"Oud Accord"'), '"Oud"', '"Oud Accord"'), '"Sandalwood Kupang"', '"Sandalwood Accord"'), '"Sandalwood"', '"Sandalwood Accord"')::jsonb,
+    top_notes_en   = replace(replace(replace(replace(top_notes_en::text,   '"Oud Malinau"', '"Oud Accord"'), '"Oud"', '"Oud Accord"'), '"Sandalwood Kupang"', '"Sandalwood Accord"'), '"Sandalwood"', '"Sandalwood Accord"')::jsonb,
+    heart_notes_en = replace(replace(replace(replace(heart_notes_en::text, '"Oud Malinau"', '"Oud Accord"'), '"Oud"', '"Oud Accord"'), '"Sandalwood Kupang"', '"Sandalwood Accord"'), '"Sandalwood"', '"Sandalwood Accord"')::jsonb,
+    base_notes_en  = replace(replace(replace(replace(base_notes_en::text,  '"Oud Malinau"', '"Oud Accord"'), '"Oud"', '"Oud Accord"'), '"Sandalwood Kupang"', '"Sandalwood Accord"'), '"Sandalwood"', '"Sandalwood Accord"')::jsonb
 where slug in ('aquilaria-tuberosa', 'wayback', 'l-iris', 'soli-extended-j-adore-la-vanille');
 
 -- Then rebuild the notes line FROM the arrays, the same way the main migration built it, so the
 -- summary and the pyramid cannot drift apart again.
-update public.storefront_products set
-    notes    = 'Fragrance Notes: ' || array_to_string(top_notes    || heart_notes    || base_notes,    ', '),
-    notes_en = 'Fragrance Notes: ' || array_to_string(top_notes_en || heart_notes_en || base_notes_en, ', ')
-where slug in ('aquilaria-tuberosa', 'wayback', 'l-iris', 'soli-extended-j-adore-la-vanille');
+update public.storefront_products p set
+    notes = 'Fragrance Notes: ' || (
+        select string_agg(e.value #>> '{}', ', ' order by e.ord)
+        from jsonb_array_elements(coalesce(p.top_notes, '[]'::jsonb) || coalesce(p.heart_notes, '[]'::jsonb) || coalesce(p.base_notes, '[]'::jsonb))
+             with ordinality as e(value, ord)
+    ),
+    notes_en = 'Fragrance Notes: ' || (
+        select string_agg(e.value #>> '{}', ', ' order by e.ord)
+        from jsonb_array_elements(coalesce(p.top_notes_en, '[]'::jsonb) || coalesce(p.heart_notes_en, '[]'::jsonb) || coalesce(p.base_notes_en, '[]'::jsonb))
+             with ordinality as e(value, ord)
+    )
+where p.slug in ('aquilaria-tuberosa', 'wayback', 'l-iris', 'soli-extended-j-adore-la-vanille');
 
 commit;
 

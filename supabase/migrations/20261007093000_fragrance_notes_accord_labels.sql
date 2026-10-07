@@ -40,24 +40,24 @@ begin;
 update public.storefront_products set
     notes = 'Fragrance Notes: Metallic Accord, Almond, Cherry, Ylang-ylang, Nagarmotha, Oud, Animalic Accord',
     notes_en = 'Fragrance Notes: Metallic Accord, Almond, Cherry, Ylang-ylang, Nagarmotha, Oud, Animalic Accord',
-    top_notes = array['Metallic Accord', 'Almond', 'Cherry']::text[],
-    heart_notes = array['Ylang-ylang', 'Nagarmotha']::text[],
-    base_notes = array['Oud', 'Animalic Accord']::text[],
-    top_notes_en = array['Metallic Accord', 'Almond', 'Cherry']::text[],
-    heart_notes_en = array['Ylang-ylang', 'Nagarmotha']::text[],
-    base_notes_en = array['Oud', 'Animalic Accord']::text[]
+    top_notes = jsonb_build_array('Metallic Accord', 'Almond', 'Cherry'),
+    heart_notes = jsonb_build_array('Ylang-ylang', 'Nagarmotha'),
+    base_notes = jsonb_build_array('Oud', 'Animalic Accord'),
+    top_notes_en = jsonb_build_array('Metallic Accord', 'Almond', 'Cherry'),
+    heart_notes_en = jsonb_build_array('Ylang-ylang', 'Nagarmotha'),
+    base_notes_en = jsonb_build_array('Oud', 'Animalic Accord')
 where slug = 'wayback';
 
 -- Animal Farm
 update public.storefront_products set
     notes = 'Fragrance Notes: Green, Leather Accord, Musk Accord, Animalic Accord, Earthy Accord',
     notes_en = 'Fragrance Notes: Green, Leather Accord, Musk Accord, Animalic Accord, Earthy Accord',
-    top_notes = array['Green']::text[],
-    heart_notes = array['Leather Accord', 'Musk Accord']::text[],
-    base_notes = array['Animalic Accord', 'Earthy Accord']::text[],
-    top_notes_en = array['Green']::text[],
-    heart_notes_en = array['Leather Accord', 'Musk Accord']::text[],
-    base_notes_en = array['Animalic Accord', 'Earthy Accord']::text[],
+    top_notes = jsonb_build_array('Green'),
+    heart_notes = jsonb_build_array('Leather Accord', 'Musk Accord'),
+    base_notes = jsonb_build_array('Animalic Accord', 'Earthy Accord'),
+    top_notes_en = jsonb_build_array('Green'),
+    heart_notes_en = jsonb_build_array('Leather Accord', 'Musk Accord'),
+    base_notes_en = jsonb_build_array('Animalic Accord', 'Earthy Accord'),
     description = 'Bayangin lo lagi jalan di peternakan pagi-pagi. Tanah basah, jerami, kandang, suara ternak dari kejauhan. Semua campur jadi satu suasana yang liar, kacau, tapi jujur.
 
 Dari sanalah aku dapet ide bikin parfum ini. Namanya Animal Farm. Sebuah eksperimen aroma yang gak manis, gak indah, tapi nyata, kayak hidup yang apa adanya.
@@ -74,36 +74,36 @@ where slug = 'animal-farm';
 update public.storefront_products set
     notes = 'Fragrance Notes: Tuberose Absolute, Orange Flower Absolute, Sandalwood Kupang, Orris Root, Ambrocenide, Oud Malinau',
     notes_en = 'Fragrance Notes: Tuberose Absolute, Orange Flower Absolute, Sandalwood Kupang, Orris Root, Ambrocenide, Oud Malinau',
-    top_notes = array['Tuberose Absolute', 'Orange Flower Absolute']::text[],
-    heart_notes = array['Sandalwood Kupang', 'Orris Root']::text[],
-    base_notes = array['Ambrocenide', 'Oud Malinau']::text[],
-    top_notes_en = array['Tuberose Absolute', 'Orange Flower Absolute']::text[],
-    heart_notes_en = array['Sandalwood Kupang', 'Orris Root']::text[],
-    base_notes_en = array['Ambrocenide', 'Oud Malinau']::text[]
+    top_notes = jsonb_build_array('Tuberose Absolute', 'Orange Flower Absolute'),
+    heart_notes = jsonb_build_array('Sandalwood Kupang', 'Orris Root'),
+    base_notes = jsonb_build_array('Ambrocenide', 'Oud Malinau'),
+    top_notes_en = jsonb_build_array('Tuberose Absolute', 'Orange Flower Absolute'),
+    heart_notes_en = jsonb_build_array('Sandalwood Kupang', 'Orris Root'),
+    base_notes_en = jsonb_build_array('Ambrocenide', 'Oud Malinau')
 where slug = 'aquilaria-tuberosa';
 
 -- Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)
 update public.storefront_products set
     notes = 'Fragrance Notes: Jasmine, Tuberose, Amberwood F, Radiant Musk Accord, Amber',
     notes_en = 'Fragrance Notes: Jasmine, Tuberose, Amberwood F, Radiant Musk Accord, Amber',
-    top_notes = array['Jasmine', 'Tuberose']::text[],
-    heart_notes = array['Amberwood F']::text[],
-    base_notes = array['Radiant Musk Accord', 'Amber']::text[],
-    top_notes_en = array['Jasmine', 'Tuberose']::text[],
-    heart_notes_en = array['Amberwood F']::text[],
-    base_notes_en = array['Radiant Musk Accord', 'Amber']::text[]
+    top_notes = jsonb_build_array('Jasmine', 'Tuberose'),
+    heart_notes = jsonb_build_array('Amberwood F'),
+    base_notes = jsonb_build_array('Radiant Musk Accord', 'Amber'),
+    top_notes_en = jsonb_build_array('Jasmine', 'Tuberose'),
+    heart_notes_en = jsonb_build_array('Amberwood F'),
+    base_notes_en = jsonb_build_array('Radiant Musk Accord', 'Amber')
 where slug = 'ayang-ayang';
 
 -- HUG N°1
 update public.storefront_products set
     notes = 'Fragrance Notes: Metallic Accord, Medicinal, Milky, Powdery, Musk Accord, Animalic Accord',
     notes_en = 'Fragrance Notes: Metallic Accord, Medicinal, Milky, Powdery, Musk Accord, Animalic Accord',
-    top_notes = array['Metallic Accord', 'Medicinal']::text[],
-    heart_notes = array['Milky', 'Powdery']::text[],
-    base_notes = array['Musk Accord', 'Animalic Accord']::text[],
-    top_notes_en = array['Metallic Accord', 'Medicinal']::text[],
-    heart_notes_en = array['Milky', 'Powdery']::text[],
-    base_notes_en = array['Musk Accord', 'Animalic Accord']::text[],
+    top_notes = jsonb_build_array('Metallic Accord', 'Medicinal'),
+    heart_notes = jsonb_build_array('Milky', 'Powdery'),
+    base_notes = jsonb_build_array('Musk Accord', 'Animalic Accord'),
+    top_notes_en = jsonb_build_array('Metallic Accord', 'Medicinal'),
+    heart_notes_en = jsonb_build_array('Milky', 'Powdery'),
+    base_notes_en = jsonb_build_array('Musk Accord', 'Animalic Accord'),
     description = 'Terinspirasi dari momen kelahiran, saat waktu terasa berhenti, dan segalanya berubah.
 
 HUG adalah parfum yang menangkap keajaiban pelukan pertama: udara ruang yang bersih, kulit yang hangat, sabun lembut, dan susu pertama yang menyambut hidup.
@@ -120,36 +120,36 @@ where slug = 'hug-n-1';
 update public.storefront_products set
     notes = 'Fragrance Notes: Boozy Vanilla, Resin, Sandalwood, Vanilla, Animalic Accord',
     notes_en = 'Fragrance Notes: Boozy Vanilla, Resin, Sandalwood, Vanilla, Animalic Accord',
-    top_notes = array['Boozy Vanilla']::text[],
-    heart_notes = array['Resin', 'Sandalwood']::text[],
-    base_notes = array['Vanilla', 'Animalic Accord']::text[],
-    top_notes_en = array['Boozy Vanilla']::text[],
-    heart_notes_en = array['Resin', 'Sandalwood']::text[],
-    base_notes_en = array['Vanilla', 'Animalic Accord']::text[]
+    top_notes = jsonb_build_array('Boozy Vanilla'),
+    heart_notes = jsonb_build_array('Resin', 'Sandalwood'),
+    base_notes = jsonb_build_array('Vanilla', 'Animalic Accord'),
+    top_notes_en = jsonb_build_array('Boozy Vanilla'),
+    heart_notes_en = jsonb_build_array('Resin', 'Sandalwood'),
+    base_notes_en = jsonb_build_array('Vanilla', 'Animalic Accord')
 where slug = 'soli-extended-j-adore-la-vanille';
 
 -- J’adore La Vetiver
 update public.storefront_products set
     notes = 'Fragrance Notes: Lime, Amberwood F, Vetiver',
     notes_en = 'Fragrance Notes: Lime, Amberwood F, Vetiver',
-    top_notes = array['Lime']::text[],
-    heart_notes = array['Amberwood F']::text[],
-    base_notes = array['Vetiver']::text[],
-    top_notes_en = array['Lime']::text[],
-    heart_notes_en = array['Amberwood F']::text[],
-    base_notes_en = array['Vetiver']::text[]
+    top_notes = jsonb_build_array('Lime'),
+    heart_notes = jsonb_build_array('Amberwood F'),
+    base_notes = jsonb_build_array('Vetiver'),
+    top_notes_en = jsonb_build_array('Lime'),
+    heart_notes_en = jsonb_build_array('Amberwood F'),
+    base_notes_en = jsonb_build_array('Vetiver')
 where slug = 'j-adore-la-vetiver';
 
 -- Jason Voorhees
 update public.storefront_products set
     notes = 'Fragrance Notes: Green, Wet Moss, Leather Accord, Smoky Accord, Animalic Accord, Earthy',
     notes_en = 'Fragrance Notes: Green, Wet Moss, Leather Accord, Smoky Accord, Animalic Accord, Earthy',
-    top_notes = array['Green', 'Wet Moss']::text[],
-    heart_notes = array['Leather Accord', 'Smoky Accord']::text[],
-    base_notes = array['Animalic Accord', 'Earthy']::text[],
-    top_notes_en = array['Green', 'Wet Moss']::text[],
-    heart_notes_en = array['Leather Accord', 'Smoky Accord']::text[],
-    base_notes_en = array['Animalic Accord', 'Earthy']::text[],
+    top_notes = jsonb_build_array('Green', 'Wet Moss'),
+    heart_notes = jsonb_build_array('Leather Accord', 'Smoky Accord'),
+    base_notes = jsonb_build_array('Animalic Accord', 'Earthy'),
+    top_notes_en = jsonb_build_array('Green', 'Wet Moss'),
+    heart_notes_en = jsonb_build_array('Leather Accord', 'Smoky Accord'),
+    base_notes_en = jsonb_build_array('Animalic Accord', 'Earthy'),
     description = 'Terinspirasi dari danau dan hutan yang mengelilinginya.
 
 Dibuka hijau dan basah — lumut, kayu lembap, udara setelah hujan. Lalu leather accord dan asap tipis naik pelan, dan di bawahnya animalic accord yang hangat dan gelap.
@@ -166,12 +166,12 @@ where slug = 'jason-voorhees';
 update public.storefront_products set
     notes = 'Fragrance Notes: Ozonic, Aquatic, Smoky Accord, Leather Accord, Animalic Accord, Geosmin',
     notes_en = 'Fragrance Notes: Ozonic, Aquatic, Smoky Accord, Leather Accord, Animalic Accord, Geosmin',
-    top_notes = array['Ozonic', 'Aquatic']::text[],
-    heart_notes = array['Smoky Accord', 'Leather Accord']::text[],
-    base_notes = array['Animalic Accord', 'Geosmin']::text[],
-    top_notes_en = array['Ozonic', 'Aquatic']::text[],
-    heart_notes_en = array['Smoky Accord', 'Leather Accord']::text[],
-    base_notes_en = array['Animalic Accord', 'Geosmin']::text[],
+    top_notes = jsonb_build_array('Ozonic', 'Aquatic'),
+    heart_notes = jsonb_build_array('Smoky Accord', 'Leather Accord'),
+    base_notes = jsonb_build_array('Animalic Accord', 'Geosmin'),
+    top_notes_en = jsonb_build_array('Ozonic', 'Aquatic'),
+    heart_notes_en = jsonb_build_array('Smoky Accord', 'Leather Accord'),
+    base_notes_en = jsonb_build_array('Animalic Accord', 'Geosmin'),
     description = 'Bayangin, lo lagi ikut upacara Nadran di Indramayu.
 
 Sesajen dilepas ke laut sebagai penghormatan untuk yang menjaga air. Perahu goyang, asap dupa kebawa angin, dan bau laut nempel di mana-mana.
@@ -188,12 +188,12 @@ where slug = 'jata-bhumi';
 update public.storefront_products set
     notes = 'Fragrance Notes: Iris, Spice, Leather Accord, Orris, Musk Accord, Sandalwood',
     notes_en = 'Fragrance Notes: Iris, Spice, Leather Accord, Orris, Musk Accord, Sandalwood',
-    top_notes = array['Iris', 'Spice']::text[],
-    heart_notes = array['Leather Accord', 'Orris']::text[],
-    base_notes = array['Musk Accord', 'Sandalwood']::text[],
-    top_notes_en = array['Iris', 'Spice']::text[],
-    heart_notes_en = array['Leather Accord', 'Orris']::text[],
-    base_notes_en = array['Musk Accord', 'Sandalwood']::text[],
+    top_notes = jsonb_build_array('Iris', 'Spice'),
+    heart_notes = jsonb_build_array('Leather Accord', 'Orris'),
+    base_notes = jsonb_build_array('Musk Accord', 'Sandalwood'),
+    top_notes_en = jsonb_build_array('Iris', 'Spice'),
+    heart_notes_en = jsonb_build_array('Leather Accord', 'Orris'),
+    base_notes_en = jsonb_build_array('Musk Accord', 'Sandalwood'),
     description = 'Awalnya powdery. Lama-lama jadi leathery. Vanila, cendana, dan musk yang bertahan.
 
 Wangi yang nggak minta diperhatiin.',
@@ -206,108 +206,108 @@ where slug = 'l-iris';
 update public.storefront_products set
     notes = 'Fragrance Notes: Nectar, Rose, Musk Accord',
     notes_en = 'Fragrance Notes: Nectar, Rose, Musk Accord',
-    top_notes = array['Nectar']::text[],
-    heart_notes = array['Rose']::text[],
-    base_notes = array['Musk Accord']::text[],
-    top_notes_en = array['Nectar']::text[],
-    heart_notes_en = array['Rose']::text[],
-    base_notes_en = array['Musk Accord']::text[]
+    top_notes = jsonb_build_array('Nectar'),
+    heart_notes = jsonb_build_array('Rose'),
+    base_notes = jsonb_build_array('Musk Accord'),
+    top_notes_en = jsonb_build_array('Nectar'),
+    heart_notes_en = jsonb_build_array('Rose'),
+    base_notes_en = jsonb_build_array('Musk Accord')
 where slug = 'la-rose';
 
 -- La Tulipe
 update public.storefront_products set
     notes = 'Fragrance Notes: Muguet, Tulip, Musk Accord',
     notes_en = 'Fragrance Notes: Muguet, Tulip, Musk Accord',
-    top_notes = array['Muguet']::text[],
-    heart_notes = array['Tulip']::text[],
-    base_notes = array['Musk Accord']::text[],
-    top_notes_en = array['Muguet']::text[],
-    heart_notes_en = array['Tulip']::text[],
-    base_notes_en = array['Musk Accord']::text[]
+    top_notes = jsonb_build_array('Muguet'),
+    heart_notes = jsonb_build_array('Tulip'),
+    base_notes = jsonb_build_array('Musk Accord'),
+    top_notes_en = jsonb_build_array('Muguet'),
+    heart_notes_en = jsonb_build_array('Tulip'),
+    base_notes_en = jsonb_build_array('Musk Accord')
 where slug = 'la-tulipe';
 
 -- Lintang Asmoro
 update public.storefront_products set
     notes = 'Fragrance Notes: Clean Accord, Aldehydes, Floral, Musk Accord',
     notes_en = 'Fragrance Notes: Clean Accord, Aldehydes, Floral, Musk Accord',
-    top_notes = array['Clean Accord', 'Aldehydes']::text[],
-    heart_notes = array['Floral']::text[],
-    base_notes = array['Musk Accord']::text[],
-    top_notes_en = array['Clean Accord', 'Aldehydes']::text[],
-    heart_notes_en = array['Floral']::text[],
-    base_notes_en = array['Musk Accord']::text[]
+    top_notes = jsonb_build_array('Clean Accord', 'Aldehydes'),
+    heart_notes = jsonb_build_array('Floral'),
+    base_notes = jsonb_build_array('Musk Accord'),
+    top_notes_en = jsonb_build_array('Clean Accord', 'Aldehydes'),
+    heart_notes_en = jsonb_build_array('Floral'),
+    base_notes_en = jsonb_build_array('Musk Accord')
 where slug = 'lintang-asmoro';
 
 -- Maskumambang
 update public.storefront_products set
     notes = 'Fragrance Notes: Jasmine Sambac, Cempaka, Olibanum Boswellia, White Musk Accord, Deer Musk Accord',
     notes_en = 'Fragrance Notes: Jasmine Sambac, Champaca, Olibanum Boswellia, White Musk Accord, Deer Musk Accord',
-    top_notes = array['Jasmine Sambac']::text[],
-    heart_notes = array['Cempaka', 'Olibanum Boswellia']::text[],
-    base_notes = array['White Musk Accord', 'Deer Musk Accord']::text[],
-    top_notes_en = array['Jasmine Sambac']::text[],
-    heart_notes_en = array['Champaca', 'Olibanum Boswellia']::text[],
-    base_notes_en = array['White Musk Accord', 'Deer Musk Accord']::text[]
+    top_notes = jsonb_build_array('Jasmine Sambac'),
+    heart_notes = jsonb_build_array('Cempaka', 'Olibanum Boswellia'),
+    base_notes = jsonb_build_array('White Musk Accord', 'Deer Musk Accord'),
+    top_notes_en = jsonb_build_array('Jasmine Sambac'),
+    heart_notes_en = jsonb_build_array('Champaca', 'Olibanum Boswellia'),
+    base_notes_en = jsonb_build_array('White Musk Accord', 'Deer Musk Accord')
 where slug = 'maskumambang';
 
 -- Pantura
 update public.storefront_products set
     notes = 'Fragrance Notes: Orange, Lime, Bergamot, Sea Salt Accord, Green, Solar Note, Floral, Bitter, Smoky Accord, Amber, Amberwood F, Musk Accord',
     notes_en = 'Fragrance Notes: Orange, Lime, Bergamot, Sea Salt Accord, Green, Solar Note, Floral, Bitter, Smoky Accord, Amber, Amberwood F, Musk Accord',
-    top_notes = array['Orange', 'Lime', 'Bergamot', 'Sea Salt Accord', 'Green']::text[],
-    heart_notes = array['Solar Note', 'Floral', 'Bitter']::text[],
-    base_notes = array['Smoky Accord', 'Amber', 'Amberwood F', 'Musk Accord']::text[],
-    top_notes_en = array['Orange', 'Lime', 'Bergamot', 'Sea Salt Accord', 'Green']::text[],
-    heart_notes_en = array['Solar Note', 'Floral', 'Bitter']::text[],
-    base_notes_en = array['Smoky Accord', 'Amber', 'Amberwood F', 'Musk Accord']::text[]
+    top_notes = jsonb_build_array('Orange', 'Lime', 'Bergamot', 'Sea Salt Accord', 'Green'),
+    heart_notes = jsonb_build_array('Solar Note', 'Floral', 'Bitter'),
+    base_notes = jsonb_build_array('Smoky Accord', 'Amber', 'Amberwood F', 'Musk Accord'),
+    top_notes_en = jsonb_build_array('Orange', 'Lime', 'Bergamot', 'Sea Salt Accord', 'Green'),
+    heart_notes_en = jsonb_build_array('Solar Note', 'Floral', 'Bitter'),
+    base_notes_en = jsonb_build_array('Smoky Accord', 'Amber', 'Amberwood F', 'Musk Accord')
 where slug = 'pantura';
 
 -- Patchouli so sexy
 update public.storefront_products set
     notes = 'Fragrance Notes: Nilam, Coklat Putih, Amber, Balsamic, Vanilla',
     notes_en = 'Fragrance Notes: Patchouli, White Chocolate, Amber, Balsamic, Vanilla',
-    top_notes = array['Nilam', 'Coklat Putih']::text[],
-    heart_notes = array['Amber', 'Balsamic']::text[],
-    base_notes = array['Vanilla', 'Nilam']::text[],
-    top_notes_en = array['Patchouli', 'White Chocolate']::text[],
-    heart_notes_en = array['Amber', 'Balsamic']::text[],
-    base_notes_en = array['Vanilla', 'Patchouli']::text[]
+    top_notes = jsonb_build_array('Nilam', 'Coklat Putih'),
+    heart_notes = jsonb_build_array('Amber', 'Balsamic'),
+    base_notes = jsonb_build_array('Vanilla', 'Nilam'),
+    top_notes_en = jsonb_build_array('Patchouli', 'White Chocolate'),
+    heart_notes_en = jsonb_build_array('Amber', 'Balsamic'),
+    base_notes_en = jsonb_build_array('Vanilla', 'Patchouli')
 where slug = 'patchouli-so-sexy';
 
 -- Sudra
 update public.storefront_products set
     notes = 'Fragrance Notes: Spice, Green, Rice Note, Cedarwood, Amberwood F',
     notes_en = 'Fragrance Notes: Spice, Green, Rice Note, Cedarwood, Amberwood F',
-    top_notes = array['Spice', 'Green']::text[],
-    heart_notes = array['Rice Note', 'Cedarwood']::text[],
-    base_notes = array['Amberwood F']::text[],
-    top_notes_en = array['Spice', 'Green']::text[],
-    heart_notes_en = array['Rice Note', 'Cedarwood']::text[],
-    base_notes_en = array['Amberwood F']::text[]
+    top_notes = jsonb_build_array('Spice', 'Green'),
+    heart_notes = jsonb_build_array('Rice Note', 'Cedarwood'),
+    base_notes = jsonb_build_array('Amberwood F'),
+    top_notes_en = jsonb_build_array('Spice', 'Green'),
+    heart_notes_en = jsonb_build_array('Rice Note', 'Cedarwood'),
+    base_notes_en = jsonb_build_array('Amberwood F')
 where slug = 'sudra';
 
 -- Vanille Planifolia
 update public.storefront_products set
     notes = 'Fragrance Notes: Spice, Creamy, Rum, Lily of the Valley, Fruity Note, Musk Accord, Vanilla',
     notes_en = 'Fragrance Notes: Spice, Creamy, Rum, Lily of the Valley, Fruity Note, Musk Accord, Vanilla',
-    top_notes = array['Spice', 'Creamy', 'Rum']::text[],
-    heart_notes = array['Lily of the Valley', 'Fruity Note']::text[],
-    base_notes = array['Musk Accord', 'Vanilla']::text[],
-    top_notes_en = array['Spice', 'Creamy', 'Rum']::text[],
-    heart_notes_en = array['Lily of the Valley', 'Fruity Note']::text[],
-    base_notes_en = array['Musk Accord', 'Vanilla']::text[]
+    top_notes = jsonb_build_array('Spice', 'Creamy', 'Rum'),
+    heart_notes = jsonb_build_array('Lily of the Valley', 'Fruity Note'),
+    base_notes = jsonb_build_array('Musk Accord', 'Vanilla'),
+    top_notes_en = jsonb_build_array('Spice', 'Creamy', 'Rum'),
+    heart_notes_en = jsonb_build_array('Lily of the Valley', 'Fruity Note'),
+    base_notes_en = jsonb_build_array('Musk Accord', 'Vanilla')
 where slug = 'vanille-planifolia';
 
 -- Wongka!
 update public.storefront_products set
     notes = 'Fragrance Notes: Fresh, Green, Musk Accord',
     notes_en = 'Fragrance Notes: Fresh, Green, Musk Accord',
-    top_notes = array['Fresh']::text[],
-    heart_notes = array['Green']::text[],
-    base_notes = array['Musk Accord']::text[],
-    top_notes_en = array['Fresh']::text[],
-    heart_notes_en = array['Green']::text[],
-    base_notes_en = array['Musk Accord']::text[]
+    top_notes = jsonb_build_array('Fresh'),
+    heart_notes = jsonb_build_array('Green'),
+    base_notes = jsonb_build_array('Musk Accord'),
+    top_notes_en = jsonb_build_array('Fresh'),
+    heart_notes_en = jsonb_build_array('Green'),
+    base_notes_en = jsonb_build_array('Musk Accord')
 where slug = 'wongka';
 
 commit;
