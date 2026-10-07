@@ -1,17 +1,18 @@
--- Sandalwood written as an accord.
+-- The sandalwood is a reconstruction too, so Sandalwood Accord is its name.
 --
--- RUN THIS ONLY IF THE SANDALWOOD IS A RECONSTRUCTION, NOT DISTILLED OIL.
+-- Dekito, 7 Oct 2026: "cendana jg", right after settling the oud the same way. Both materials in
+-- Aquilaria tuberosa were named by provenance -- "Oud Malinau", "Sandalwood Kupang" -- for things
+-- that have no provenance, and the accord name is the accurate one.
 --
--- The oud is already done: Dekito confirmed on 7 Oct 2026 that his is a reconstruction, and
--- 20261007140000_oud_is_an_accord.sql applied it. He said nothing about the sandalwood, and
--- Santalum album carries no CITES listing, so it was left as written. "Sandalwood Kupang" does name
--- a provenance, which is the only reason this file exists.
+-- Santalum album carries no CITES listing, so this was never the urgent half; it sat in
+-- supabase/manual/ waiting for a decision rather than for a risk. The decision has been made and
+-- applied, so it lives here now: leaving a conditional "run only if..." file in manual/ would tell
+-- the next reader it is still open.
 --
--- If the material is natural, do not run this: it understates your own product, and it changes
--- nothing about what anyone inspects. What is controlled is the contents of the bottle.
+-- Three products name sandalwood: Aquilaria tuberosa ("Sandalwood Kupang"), L'iris and
+-- J'adore la Vanille (plain "Sandalwood").
 --
--- Deliberately kept OUT of supabase/migrations/ so no migration run can apply it by accident.
--- Safe to run twice.
+-- Safe to run twice. To undo just this: supabase/manual/20261007150000_sandalwood_is_an_accord.rollback.sql
 
 begin;
 
