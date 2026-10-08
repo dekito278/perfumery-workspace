@@ -7,6 +7,7 @@ import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useCartInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import { buildInternationalCartDraft } from '@/utils/overseasEnquiry.js';
+import { shortNoteList } from '@/utils/shortNoteList.js';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
@@ -92,7 +93,7 @@ const InternationalCartPage = () => {
                   </Link>
                   <div className="cart-line__info">
                     <Link to={`/catalog/${line.productSlug}`} className="cart-line__name">{line.name}</Link>
-                    <span className="cart-line__meta">{[line.notes, line.size].filter(Boolean).join(' · ')}</span>
+                    <span className="cart-line__meta">{[shortNoteList(line.notes), line.size].filter(Boolean).join(' · ')}</span>
                     {/* The dollar alone, per bottle and for the line — see the note at the top of
                         InternationalPrice.jsx for why the rupiah is not beside it. */}
                     <span className="cart-line__price">

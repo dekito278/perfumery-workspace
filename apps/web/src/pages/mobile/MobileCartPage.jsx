@@ -17,6 +17,7 @@ import { isProductVisibleInStorefront } from '@/services/productCatalogService.j
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
+import { shortNoteList } from '@/utils/shortNoteList.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
@@ -167,7 +168,7 @@ const MobileCartPage = () => {
                 <ProductVisual product={getCartItemProduct(item)} className="h-[76px] rounded-[10px]" label={false} sizes="76px" />
                 <div style={{ minWidth: 0 }}>
                   <h2 style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--editorial-charcoal)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.name}</h2>
-                  <p style={{ marginTop: 4, fontSize: '0.78rem', lineHeight: 1.4, color: 'var(--editorial-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.notes}</p>
+                  <p style={{ marginTop: 4, fontSize: '0.78rem', lineHeight: 1.4, color: 'var(--editorial-muted)' }}>{shortNoteList(item.notes)}</p>
                   <p style={{ marginTop: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--editorial-brass)' }}>{item.price} / {item.size}</p>
                   <CartPriceChange item={item} className="mt-1" />
                   {hasLineDiscount ? (
