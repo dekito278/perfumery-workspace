@@ -20,6 +20,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
+import { shortNoteList } from '@/utils/shortNoteList.js';
 
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -97,7 +98,7 @@ const CartPage = () => {
                   </Link>
                   <div className="cart-line__info">
                     <Link to={`/catalog/${item.productSlug || item.slug}`} className="cart-line__name">{item.name}</Link>
-                    <span className="cart-line__meta">{[item.notes, item.size].filter(Boolean).join(' · ')}</span>
+                    <span className="cart-line__meta">{[shortNoteList(item.notes), item.size].filter(Boolean).join(' · ')}</span>
                     <span className="cart-line__price">{item.price}</span>
                     <CartPriceChange item={item} className="mt-1" />
                   </div>
