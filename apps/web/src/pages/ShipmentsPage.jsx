@@ -13,6 +13,7 @@ import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderSe
 import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
+import { ordersMissingWaybill } from '@/utils/waybillPrompt.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
@@ -222,9 +223,20 @@ const ShipmentsPage = () => {
       shipmentStatus: bulkDraft.shipmentStatus,
       ...(bulkDraft.courierName.trim() ? { courierName: bulkDraft.courierName } : {}),
     };
+    // Moving a selection to "Dikirim" carries each order's existing waybill along unchanged, so an order
+    // without one ships untrackable and nobody is asked — the one-order screens ask, this never did.
+    // Read from the DRAFT: a number typed into the row just now has not been saved yet.
+    const untrackable = ordersMissingWaybill(selectedShipmentOrders, patch.shipmentStatus,
+      (order) => (drafts[order.id || order.orderNumber] || buildShipmentDraft(order)).trackingNumber);
+    const untrackableKeys = new Set(untrackable.map((order) => order.id || order.orderNumber));
+    const movable = selectedShipmentOrders.filter((order) => !untrackableKeys.has(order.id || order.orderNumber));
+    if (untrackable.length && !movable.length) {
+      toast.error(`${untrackable.length} order belum punya nomor resi, jadi tidak ada yang bisa ditandai dikirim. Isi resinya dulu di barisnya masing-masing.`);
+      return;
+    }
     setBulkSaving(true);
     try {
-      const updated = await settleBulk(selectedShipmentOrders.map((order) => {
+      const updated = await settleBulk(movable.map((order) => {
         const key = order.id || order.orderNumber;
         const currentDraft = drafts[key] || buildShipmentDraft(order);
         return updateOrderShipment(key, {
@@ -236,8 +248,14 @@ const ShipmentsPage = () => {
         });
       }));
       await reload();
+      // Named, not just counted: "3 dilewati" sends him looking through the whole selection for them.
+      const skipped = untrackable.length
+        ? ` ${untrackable.length} dilewati karena belum ada resi: ${untrackable.map((order) => order.orderNumber).join(', ')}.`
+        : '';
       if (updated.failed) {
-        toast.error(`${updated.ok} dari ${updated.total} pengiriman diperbarui; ${updated.failed} gagal. ${updated.reason}`.trim());
+        toast.error(`${updated.ok} dari ${updated.total} pengiriman diperbarui; ${updated.failed} gagal. ${updated.reason}${skipped}`.trim());
+      } else if (skipped) {
+        toast.warning(`${updated.ok} pengiriman diperbarui.${skipped}`);
       } else {
         toast.success(`${updated.ok} pengiriman diperbarui`);
       }

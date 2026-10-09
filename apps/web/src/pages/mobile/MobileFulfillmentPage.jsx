@@ -22,6 +22,7 @@ import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
+import { ordersMissingWaybill } from '@/utils/waybillPrompt.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
@@ -242,6 +243,14 @@ const MobileFulfillmentPage = () => {
   const saveShipment = async (order, shipmentStatus, overrides = {}) => {
     const orderKey = order.id || order.orderNumber;
     const draft = { ...(drafts[orderKey] || {}), ...overrides };
+    // This screen already knows which orders need one — isNeedsResi drives its own "Butuh resi" queue —
+    // and the button that ships them was reading a different list. The field is on the row, two inches
+    // above: "Scan / paste resi kurir".
+    if (ordersMissingWaybill([order], shipmentStatus, () => draft.trackingNumber || order.trackingNumber).length) {
+      toast.error(`${order.orderNumber} belum ada nomor resi. Isi "Scan / paste resi kurir" di baris ini dulu.`);
+      setSavingId('');
+      return;
+    }
     setSavingId(orderKey);
     try {
       await updateOrderShipment(orderKey, {
