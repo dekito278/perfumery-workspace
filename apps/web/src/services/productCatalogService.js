@@ -591,6 +591,7 @@ const toDatabasePayload = (product) => ({
   wear: normalizeWear(product.wear),
   description: product.description,
   concentration: product.concentration,
+  launch_year: product.launchYear ?? null,
   stock: product.stock,
   variants: product.variants,
   tags: product.tags,
@@ -627,6 +628,9 @@ const fromDatabaseRow = (row) => normalizeProduct({
   heartNotesEn: row.heart_notes_en || [],
   baseNotesEn: row.base_notes_en || [],
   concentration: row.concentration,
+  // Null until the atelier states it. Never derived from created_at, which is when this row was made
+  // in this app and not when the perfume was released — the two are years apart on the older ones.
+  launchYear: row.launch_year ?? null,
   stock: row.stock,
   variants: row.variants,
   tags: row.tags,
