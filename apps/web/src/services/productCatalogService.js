@@ -553,6 +553,11 @@ export const normalizeProduct = (input, existingProducts = []) => {
     heartNotesEn: splitList(input.heartNotesEn),
     baseNotesEn: splitList(input.baseNotesEn),
     concentration: input.concentration || 'Eau de Parfum',
+    // Null until the atelier states it. This list is hand-written and drops whatever it does not name,
+    // which is how the launch year reached the database, the buyer's view, fromDatabaseRow AND
+    // getPublicFragranceCatalog and still never appeared on a page: four explicit allowlists between
+    // the row and the screen, and the field has to be written into every one of them.
+    launchYear: input.launchYear ?? null,
     stock,
     variants,
     tags: [

@@ -185,6 +185,11 @@ export const toPublicFragrance = (product = {}) => {
     visual: product.visual,
     availability: product.availability || publicStatus,
     publicStatus,
+    // The product pages read product.launchYear, and this mapper names every field it passes: the
+    // column reached the catalogue service and stopped here, so "Released 2023" never appeared on a
+    // single page while the database and the buyer's view both held it. Second mapper, same trap the
+    // carts hit the day before.
+    launchYear: product.launchYear ?? null,
     wear: normalizeWear(product.wear),
     materialHighlights: product.materialHighlights || inferMaterialHighlights(product),
     relatedFragrances: product.relatedFragrances || [],
