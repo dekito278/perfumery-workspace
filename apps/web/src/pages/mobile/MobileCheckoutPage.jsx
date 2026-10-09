@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useSignOut } from '@/hooks/useSignOut.js';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
-import StateBlock from '@/components/ui/state-block.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
@@ -177,12 +176,20 @@ const MobileCheckoutPage = () => {
           <div className="text-[10px] font-bold uppercase text-amber-700">Checkout</div>
           <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">{t('mcheckout.emptyLead')}</h1>
           <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{t('mcheckout.emptyBody')}</p>
-          <Button type="button" className="mt-4 h-11 w-full rounded-2xl gap-2" onClick={() => navigate('/mobile/catalog')}>
-            <ShoppingBag className="h-4 w-4" />
-            {t('mcheckout.openCatalog')}
-          </Button>
+          {/* Two buttons, because mcheckout.emptyBody offers two things — "add a bottle in stock, or
+              start from a bespoke request" — and this screen showed one. Below it stood a second empty
+              state, "Keranjang kosong", with a SECOND "Buka katalog" going to the same place: two
+              headings and two identical buttons for one destination. Same shape the carts had. */}
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => navigate('/mobile/catalog')}>
+              <ShoppingBag className="h-4 w-4" />
+              {t('mcheckout.openCatalog')}
+            </Button>
+            <Button type="button" variant="outline" className="h-11 rounded-2xl gap-2" onClick={() => navigate('/mobile/bespoke')}>
+              {t('cart.bespoke')}
+            </Button>
+          </div>
         </section>
-        <StateBlock className="mobile-card" icon={ShoppingBag} title={t('mcheckout.emptyTitle')} description={t('mcheckout.emptyPick')} action={t('mcheckout.openCatalog')} onAction={() => navigate('/mobile/catalog')} />
       </main>
     </MobileCommerceLayout>
   );

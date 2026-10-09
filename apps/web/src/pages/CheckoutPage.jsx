@@ -132,9 +132,10 @@ const CheckoutPage = () => {
             <p>{t('checkout.emptyTitle')}</p>
           </section>
           <section className="checkout-layout">
+            {/* The hero above already says the cart is empty; "Keranjang kosong" under it was the
+                second time on one screen. What is left is the instruction and the way out. */}
             <div className="cart-empty">
               <ShoppingBag className="h-8 w-8" />
-              <h2>{t('checkout.emptyEyebrow')}</h2>
               <p>{t('checkout.emptyBody')}</p>
               <Link to="/catalog" className="cart-empty__cta">{t('home.seeCollection')}</Link>
             </div>
