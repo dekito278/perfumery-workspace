@@ -192,10 +192,7 @@ const MobileProductDetailPage = () => {
           <h1>{product.name}</h1>
           {/* Same rule as desktop: one price, for the shop being read. */}
           {exportPrice ? (
-            <>
-              <InternationalPrice price={exportPrice} />
-              <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-3" />
-            </>
+            <InternationalPrice price={exportPrice} />
           ) : (
             <>
               <p className="m-editorial-pdp__price">{product.price}</p>
@@ -230,6 +227,18 @@ const MobileProductDetailPage = () => {
               <span className="m-editorial-pdp__notes-values">{copy.baseNotes.join(', ')}</span>
             </div>
           </div>
+
+          {/* The shipping quote sits HERE, under the notes, and not under the price.
+              Measured on this page at 375px, same product, same width: the Indonesian shop reached the
+              description at y=935 and the pyramid at y=1167; the English shop reached them at y=1361
+              and y=1573, because a destination picker, a quote and three paragraphs about duties,
+              recipient details and export packing stood between the price and the first word about the
+              perfume. A buyer abroad had to work through a form to find out what it smells of.
+              The headline still says shipping is quoted separately — the form is just now where
+              somebody who has decided they want it will look for it. */}
+          {exportPrice ? (
+            <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-4" />
+          ) : null}
 
           {/* Variant selector */}
           {product.variants?.length > 1 ? (
