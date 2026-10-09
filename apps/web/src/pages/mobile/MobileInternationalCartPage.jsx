@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import { isProductVisibleInStorefront, getProductStockTotal } from '@/services/productCatalogService.js';
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import { useCartInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import { buildInternationalCartDraft } from '@/utils/overseasEnquiry.js';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
@@ -26,6 +28,16 @@ const MobileInternationalCartPage = () => {
   const { t } = useTranslate();
   const { items, updateQuantity, removeItem, setGift } = useCart();
   const products = useStorefrontProducts();
+  // In stock, counted. The two carts reach the catalogue through DIFFERENT mappers — the Studio one
+  // here, the public one on CatalogPage — and only the public one carries `publicStatus`, so the
+  // obvious-looking predicate silently matched nothing and emptied the whole list. getProductStockTotal
+  // is what publicStatus is itself derived from, and it works on either shape.
+  //
+  // Both carts were offering La Tulipe, which has been at zero for days: the first thing an empty cart
+  // suggests should not be the one bottle the catalogue greys out.
+  const recommended = !items.length
+    ? products.filter((entry) => isProductVisibleInStorefront(entry) && getProductStockTotal(entry.variants || []) > 0).slice(0, 4)
+    : [];
   const quote = useCartInternationalQuote(items);
   const phone = getStorefrontWhatsAppNumber();
   const { lines, unpriced, needsDestination, focusDestinationPicker, draft, totalUsd, bottles } = quote;
@@ -55,10 +67,18 @@ const MobileInternationalCartPage = () => {
           <p style={{ marginTop: 8, fontSize: '0.78rem', lineHeight: 1.6, color: 'var(--editorial-muted)' }}>
             {lines.length ? t('cart.intl.lead') : t('cart.emptyMobileBody')}
           </p>
+          {/* Two buttons, because the sentence above offers two things. It is the same string the
+              Indonesian cart uses — "pick a bottle in stock, or start a bespoke request" — and this
+              shop printed it over a single Shop button, promising a door it did not show. */}
           {lines.length ? null : (
-            <Button type="button" className="mt-4 h-11 w-full rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/catalog')}>
-              <ShoppingBag className="h-4 w-4" /> {t('mcart.shop')}
-            </Button>
+            <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/catalog')}>
+                <ShoppingBag className="h-4 w-4" /> {t('mcart.shop')}
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: 'var(--editorial-stone)', background: 'var(--editorial-paper)', color: 'var(--editorial-charcoal)' }} onClick={() => navigate('/mobile/bespoke')}>
+                {t('cart.bespoke')}
+              </Button>
+            </div>
           )}
         </section>
         {unfulfillable.length ? (
@@ -97,6 +117,32 @@ const MobileInternationalCartPage = () => {
         </section>
         {/* Same rule as the desktop cart — see the note there. */}
         <FreeVialPicker items={items} products={products} onPick={setGift} />
+        {/* An empty cart ended here in this shop: one button and nothing to look at, in the shop that
+            has taken no orders at all. The Indonesian cart has shown four bottles in this spot all
+            along. Prices in dollars, because this is the shop that reads in dollars. */}
+        {!lines.length && recommended.length ? (
+          <section style={{ padding: '16px' }}>
+            <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>{t('cart.recommendations')}</h2>
+            <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {recommended.map((product) => (
+                <button
+                  key={product.slug}
+                  type="button"
+                  onClick={() => navigate(`/mobile/products/${product.slug}`)}
+                  style={{ textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                >
+                  <ProductVisual product={product} className="aspect-[4/5] rounded-[10px]" label={false} sizes="(max-width: 480px) 45vw, 180px" />
+                  <span style={{ display: 'block', marginTop: 6, fontSize: '0.8rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>{product.name}</span>
+                  {/* CardPrice, not a conversion of my own: the export price is keyed by VARIANT, so
+                      pricing from product.priceNumber quotes the DOMESTIC figure converted to dollars —
+                      L'iris came out at US$30 against its real US$95. That is the exact mistake the
+                      overseas tier exists to prevent, and it was on screen before it was measured. */}
+                  <CardPrice product={product} className="block text-[0.78rem] text-[color:var(--editorial-muted)]" />
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
         {lines.length ? (
           <section style={{ padding: '16px' }}>
             <InternationalShippingQuote quote={quote} />
