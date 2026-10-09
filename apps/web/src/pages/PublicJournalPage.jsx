@@ -16,6 +16,7 @@ import {
 } from '@/services/journalPostsSupabaseService.js';
 import { getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
+import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { formatDate } from '@/utils/formatting.js';
 import { articleExcerpt } from '@/utils/articleExcerpt.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
@@ -28,6 +29,7 @@ const CATEGORIES = ['All', ...JOURNAL_CATEGORIES.map((category) => category.labe
 
 const PublicJournalPage = () => {
   const { t } = useTranslate();
+  const { isInternational } = useStorefrontRegion();
   const revealRef = useScrollReveal();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,15 @@ const PublicJournalPage = () => {
             </button>
           ))}
         </nav>
+
+        {/* The journal has no English twin: journal_posts has one set of columns, so /en/journal shows
+            the Indonesian articles rather than a translation that does not exist. robots.txt keeps
+            crawlers off it for that reason, but the link is in the English shop's own nav, so a reader
+            does reach it — and finds Indonesian titles with nothing saying why. One line, said plainly,
+            rather than hiding the writing from them or pretending it is translated. */}
+        {isInternational ? (
+          <p className="journal-language-note">{t('journal.indonesianOnly')}</p>
+        ) : null}
 
         <section className="journal-content">
           {loading ? (

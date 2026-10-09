@@ -7797,3 +7797,13 @@ main :is(a, figure, picture, div, span):has(> img) {
 @media (prefers-reduced-motion: reduce) {
   .free-vial-prompt__sheet { animation: none; }
 }
+
+/* Said once, above the grid, in the English shop only: the articles below are in Indonesian. */
+.journal-language-note {
+  margin: 0 auto 1.25rem;
+  max-width: 48rem;
+  padding: 0 1rem;
+  color: var(--editorial-muted);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
