@@ -268,6 +268,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               <span>{product.concentration}</span>
               {product.intensity ? <span>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</span> : null}
               <span>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</span>
+              {/* Shown only once the atelier has stated it. A fragrance database records a launch year
+                  for everything it lists, and an absent year is answered honestly rather than guessed —
+                  created_at is right there and means something else entirely. */}
+              {product.launchYear ? <span>{t('pdp.released', { year: product.launchYear })}</span> : null}
             </div>
 
             {/* The catalogue filter promises this bottle suits a moment; the product page has to

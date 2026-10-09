@@ -259,6 +259,7 @@ const MobileProductDetailPage = () => {
             {product.concentration ? <span>{product.concentration}</span> : null}
             {product.intensity ? <span>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</span> : null}
             {product.sizeVariants?.length ? <span>{product.sizeVariants.map((v) => v.size).join(' / ')}</span> : null}
+            {product.launchYear ? <span>{t('pdp.released', { year: product.launchYear })}</span> : null}
           </div>
         </div>
 
