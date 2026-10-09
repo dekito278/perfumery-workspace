@@ -21,6 +21,7 @@ const footerColumns = [
     key: 'info',
     titleKey: 'nav.info',
     links: [
+      { labelKey: 'nav.about', to: '/about' },
       { labelKey: 'nav.account', to: '/customer' },
       { labelKey: 'nav.trackOrder', to: '/track-order' },
     ],

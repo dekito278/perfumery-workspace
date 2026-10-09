@@ -84,6 +84,23 @@ const staticPublicPages = [
     items: ['Aroma', 'Preferensi', 'Botol', 'Ongkir', 'Bayar'],
   },
   {
+    route: '/about',
+    title: 'About SOLIVAGANT - Artisan Perfume Atelier',
+    // The page a fragrance database editor reads before entering the house, so the prerendered copy
+    // carries the same facts the live page does and states no founding year, because nobody has.
+    description: 'SOLIVAGANT is the artisan perfume atelier of Dekito, in Indonesia. Every bottle is blended and packed in the atelier and sold straight to the person who wears it.',
+    eyebrow: 'Artisan Perfume Atelier',
+    heading: 'About SOLIVAGANT',
+    headline: 'Made by hand, one bottle at a time.',
+    intro: 'SOLIVAGANT is the artisan perfume atelier of Dekito: scents built from raw materials, memory and ritual, blended and packed by the perfumer and sold straight from the atelier in Indonesia and abroad.',
+    sections: [
+      ['The atelier', 'Every bottle is blended and packed by Dekito himself, with no warehouse and no reseller in between.'],
+      ['The work', 'A scent is built from raw materials, memory and ritual, then tried again until it reads true.'],
+      ['Bespoke', 'For a scent that is not in the collection, the atelier composes one to order.'],
+    ],
+    items: ['Eau de Parfum', '30 ml', 'Indonesia', 'Bespoke'],
+  },
+  {
     route: '/journal',
     title: 'Journal - SOLIVAGANT',
     description: 'SOLIVAGANT public editorial journal about scent memory, raw materials, atelier process, product stories, and perfumery culture.',

@@ -323,6 +323,9 @@ for (const file of [
 
 const PAGES_FULLY_TRANSLATED = [
   ['pages', 'PaymentPage.jsx'], ['pages', 'PublicTrackingPage.jsx'], ['pages', 'NotFoundPage.jsx'],
+  // One component behind /about and /mobile/about, in both shops. The English half is the one a
+  // fragrance-database editor reads, so an untranslated line here reaches exactly the reader it must not.
+  ['pages', 'AboutPage.jsx'],
   ['pages', 'PublicJournalPage.jsx'],
   ['pages', 'PublicJournalArticlePage.jsx'],
   ['pages', 'mobile', 'MobileArticlesPage.jsx'],

@@ -126,6 +126,7 @@ const StoryEditorPage = lazyRoute(() => import('@/pages/StoryEditorPage.jsx'));
 const MobileLoginPage = lazyRoute(() => import('@/pages/mobile/MobileLoginPage.jsx'));
 const MobileCommerceTabsPage = lazyRoute(() => import('@/pages/mobile/MobileCommerceTabsPage.jsx'));
 const MobileProductDetailPage = lazyRoute(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
+const AboutPage = lazyRoute(() => import('@/pages/AboutPage.jsx'));
 const MobileBespokePage = lazyRoute(() => import('@/pages/mobile/MobileBespokePage.jsx'));
 // The international cart is lazy like the phone's: it is one shop's page, not every visitor's.
 const InternationalCartPage = lazyRoute(() => import('@/pages/InternationalCartPage.jsx'));
@@ -189,6 +190,7 @@ const storefrontRoutePrefixes = [
   '/catalog',
   '/products',
   '/articles',
+  '/about',
   '/bespoke',
   '/journal',
   '/cart',
@@ -512,6 +514,7 @@ function AppRoutes() {
         <Route path="/trace-daventure" element={<Navigate to="/catalog" replace />} />
         <Route path="/articles" element={<Navigate to="/journal" replace />} />
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/journal" element={<PublicJournalPage />} />
         <Route path="/cart" element={<ByShop domestic={<CartPage />} international={<InternationalCartPage />} />} />
@@ -548,6 +551,7 @@ function AppRoutes() {
 
         <Route path="/mobile/articles/:slug" element={<PublicJournalArticlePage mobile />} />
 
+        <Route path="/mobile/about" element={<AboutPage mobile />} />
         <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
 
         <Route path="/mobile/cart" element={<ByShop domestic={<MobileCartPage />} international={<MobileInternationalCartPage />} />} />
