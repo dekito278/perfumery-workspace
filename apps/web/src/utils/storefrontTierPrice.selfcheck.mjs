@@ -139,7 +139,18 @@ assert.ok(routedBuyerPages.size >= 15, `only ${routedBuyerPages.size} buyer page
 // The bespoke pages ask the catalogue for ONE product by slug, and read its notes, name and slug —
 // never its price. A tier price on a reference perfume would mean nothing, so the raw catalogue is the
 // right thing for them to hold.
-const REFERENCE_ONLY = new Set(['BespokePage.jsx', 'mobile/MobileBespokePage.jsx']);
+const REFERENCE_ONLY = new Set([
+  'BespokePage.jsx', 'mobile/MobileBespokePage.jsx',
+  // Counts how many fragrances are published, for the brand details an outside database transcribes.
+  // The file contains the word "price" nowhere at all, so the tier-priced catalogue would tell it
+  // nothing it asks about.
+  //
+  // This list is read rather than derived, and an attempt to make it self-verifying was backed out:
+  // "reads no price" matched the bespoke pages too, whose `.price` reads are on their OWN options —
+  // size, bottle, cap, label, material — and have nothing to do with a catalogue product. A check that
+  // misfires on a correct entry gets loosened later, which is worse than a short list with reasons.
+  'AboutPage.jsx',
+]);
 const CALLS_A_CATALOG = /use(?:Storefront|Catalog)Products\(/;
 
 const subjects = [...FLOOR];
