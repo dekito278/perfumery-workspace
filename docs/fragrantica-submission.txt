@@ -26,7 +26,7 @@ FRAGRANCES
   .Wayback
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Metallic notes, Almond, Cherry
     Heart          Ylang-ylang, Nagarmotha
@@ -36,7 +36,7 @@ FRAGRANCES
   Animal Farm
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Green Notes
     Heart          Leather, Musk
@@ -46,7 +46,7 @@ FRAGRANCES
   Aquilaria tuberosa
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Tuberose Absolute, Orange Flower Absolute
     Heart          Sandalwood, Orris Root
@@ -56,7 +56,7 @@ FRAGRANCES
   Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Jasmine, Tuberose
     Heart          Amberwood
@@ -66,7 +66,7 @@ FRAGRANCES
   HUG N°1
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Metallic notes
     Heart          Milk, Powdery Notes
@@ -76,7 +76,7 @@ FRAGRANCES
   J’adore la Vanille
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Boozy Vanilla
     Heart          Resin, Sandalwood
@@ -86,7 +86,7 @@ FRAGRANCES
   J’adore La Vetiver
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Lime
     Heart          Amberwood
@@ -96,7 +96,7 @@ FRAGRANCES
   Jason Voorhees
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Green Notes, Wet Moss
     Heart          Leather, Smoke
@@ -106,7 +106,7 @@ FRAGRANCES
   Jata Bhumi
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Ozonic, Aquatic
     Heart          Smoke, Leather
@@ -116,7 +116,7 @@ FRAGRANCES
   L’iris
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Iris, Spicy Notes
     Heart          Leather, Orris
@@ -126,7 +126,7 @@ FRAGRANCES
   La Rose
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Honey
     Heart          Rose
@@ -136,7 +136,7 @@ FRAGRANCES
   La Tulipe
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Lily-of-the-Valley
     Heart          Tulip
@@ -146,7 +146,7 @@ FRAGRANCES
   Lintang Asmoro
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Aldehydes
     Heart          Floral Notes
@@ -156,7 +156,7 @@ FRAGRANCES
   Maskumambang
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Jasmine Sambac
     Heart          Champaca, Olibanum
@@ -166,7 +166,7 @@ FRAGRANCES
   Pantura
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Orange, Lime, Bergamot, Sea Notes, Green Notes
     Heart          Solar Notes, Floral Notes
@@ -176,7 +176,7 @@ FRAGRANCES
   Patchouli so sexy
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Patchouli, White Chocolate
     Heart          Amber, Balsamic
@@ -186,7 +186,7 @@ FRAGRANCES
   Sudra
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Spicy Notes, Green Notes
     Heart          Rice, Cedarwood
@@ -196,7 +196,7 @@ FRAGRANCES
   Vanille Planifolia
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
     Top            Spicy Notes, Cream, Rum
     Heart          Lily of the Valley, Fruity Notes
@@ -206,9 +206,9 @@ FRAGRANCES
   Wongka!
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Launched       2023
     Perfumer       Dekito
-    Top            —
+    Top            *** PICK ONE BEFORE POSTING — see the bottom of this file ***
     Heart          Green Notes
     Base           Musk
     Page           https://www.solivagantscent.com/en/catalog/wongka
@@ -245,13 +245,23 @@ NAME CHANGES APPLIED (website left as it is)
 DROPPED — no Fragrantica equivalent, too vague to map, not invented
   Bitter, Clean Accord, Fresh, Medicinal
 
-BEFORE SENDING — three things only Dekito can settle
-  1. Wongka! has no top note left. Its only one was "Fresh", which Fragrantica has no
-     entry for and which this file refuses to invent a replacement for. Give it a
-     concrete opening note (Citrus, Water Notes, Bergamot...) or send it with none.
-  2. The launch years all say 2023, from "Rilis dari 2023". That is when the house
-     started releasing; change any bottle that came out later before sending, because
-     a wrong year there is permanent.
-  3. "Jason Voorhees" is a trademarked character. Dekito has decided the name stays;
-     this line is here so the decision is visible to whoever reads the file next, not
-     to reopen it.
+BEFORE SENDING — one thing left
+  Wongka! has no top note. Its only one was "Fresh", which is not a Fragrantica
+  note and which this file will not invent a replacement for. Dekito's own
+  description of it — a waterfall that seems to be breathing, wet leaves that feel
+  alive — points at water rather than citrus, and the shop already uses Aquatic and
+  Ozonic on Jata Bhumi. Pick one and put it on the Top line:
+
+      Water Notes      closest to "a waterfall that seems to be breathing"
+      Aquatic Notes    the same family, already used elsewhere in this shop
+      Ozonic Notes     cooler and airier, also already used here
+      (or leave it out — three notes is thin but a missing one is not wrong)
+
+  Wongka! carries only three notes in total. That is fine to submit; it is just
+  less than the others, in case more belong there.
+
+SETTLED, recorded here so the next reader does not reopen them
+  Launch years    2023 on all nineteen, from "Rilis dari 2023". Change any bottle
+                  that came out later BEFORE sending — a wrong year is permanent.
+  Brand           Founded 2023, Bogor, Indonesia. Dekito's own words, 9 Oct 2026.
+  Jason Voorhees  A trademarked character. Dekito has decided the name stays.
