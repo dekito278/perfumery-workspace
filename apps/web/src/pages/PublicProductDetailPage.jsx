@@ -240,10 +240,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 member/tier line are not shown at all: three prices on one screen left the reader to guess
                 which was theirs, which is what Dekito saw on his own phone. */}
             {exportPrice ? (
-              <>
-                <InternationalPrice price={exportPrice} className="hero-animate-text hero-animate-text--d3" />
-                <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-3" />
-              </>
+              <InternationalPrice price={exportPrice} className="hero-animate-text hero-animate-text--d3" />
             ) : (
               <>
                 <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
@@ -261,6 +258,14 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <div data-reveal>
               <ScentPyramid product={{ ...product, ...copy }} />
             </div>
+
+            {/* Under the notes on both pages, for the reason written out on the phone one: the form
+                stood between the price and the first word about the perfume. */}
+            {exportPrice ? (
+              <div data-reveal>
+                <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-4" />
+              </div>
+            ) : null}
 
             {/* Meta details */}
             <div className="pdp-meta" data-reveal>
