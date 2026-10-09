@@ -88,10 +88,27 @@ assert.match(form, /CHANGE THE ONES THAT ARE LATER|ubah yang/i,
   'a blanket year has to say out loud that it is a floor, not a fact about every bottle');
 
 // --- 3. The shop carries it from the row to the page, both ways and both screens ------------------------
+// FOUR hand-written allowlists stand between the database row and the screen, and the field has to be
+// named in every one. It was added to the first, shipped, and never appeared: the column was in the
+// table, in the buyer's view and in fromDatabaseRow, and normalizeProduct — which rebuilds the object
+// from a list of fields it names — dropped it one hop later. Then getPublicFragranceCatalog dropped it
+// again. Each was found by looking at the page and not seeing a year, one hop at a time.
+//
+// So this checks the WHOLE chain rather than its first link. A fifth mapper added later fails here.
+const CHAIN = [
+  ['services/productCatalogService.js', /launchYear: row\.launch_year/,
+    'fromDatabaseRow does not read the column'],
+  ['services/productCatalogService.js', /launchYear: input\.launchYear/,
+    'normalizeProduct rebuilds the product from a named list and drops the year one hop after it is read'],
+  ['services/productCatalogService.js', /launch_year: product\.launchYear/,
+    'a year typed in the studio would be dropped on save — read and never written back'],
+  ['data/publicStorefront.js', /launchYear: product\.launchYear/,
+    'the public mapper the product pages read through does not carry it, so no page can show it'],
+];
+for (const [file, pattern, why] of CHAIN) {
+  assert.match(strip(read(...file.split('/'))), pattern, `${file}: ${why}`);
+}
 const service = strip(read('services', 'productCatalogService.js'));
-assert.match(service, /launchYear: row\.launch_year/, 'the mapper never reads the column');
-assert.match(service, /launch_year: product\.launchYear/,
-  'a year typed in the studio would be dropped on save — the mapper reads it and does not write it back');
 for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
   const source = strip(read(...page));
   assert.match(source, /product\.launchYear \?/,
