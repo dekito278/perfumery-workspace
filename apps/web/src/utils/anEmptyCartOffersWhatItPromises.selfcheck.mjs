@@ -32,8 +32,14 @@ const walk = (dir) => readdirSync(dir).flatMap((entry) => {
   if (statSync(full).isDirectory()) return walk(full);
   return /\.jsx$/.test(entry) ? [full] : [];
 });
-const carts = walk(join(src, 'pages')).filter((file) => /Cart\w*\.jsx$/.test(file));
-assert.ok(carts.length >= 4, `expected the cart pages, found ${carts.length} — the scan is broken`);
+// Carts AND checkouts. This guard walked only Cart*.jsx when it was written, and the very next screen
+// along — mobile checkout — turned out to carry the same shape untouched: "Belum ada item untuk
+// dibayar" with [Buka katalog], then "Keranjang kosong" with a SECOND [Buka katalog] to the same
+// place, over a sentence offering a bespoke request that had no button. A rule about empty states that
+// looks at one kind of empty screen is a rule that gets re-learned on the next one.
+const carts = walk(join(src, 'pages')).filter((file) => /(Cart|Checkout)\w*\.jsx$/.test(file));
+assert.ok(carts.length >= 6,
+  `expected the cart and checkout pages, found ${carts.length} — the scan is broken, not the code`);
 
 // --- 1. A recommendation is a bottle that can be bought -------------------------------------------------
 const recommending = [];
@@ -63,13 +69,17 @@ assert.ok(recommending.length >= 2,
 
 // --- 2. An empty cart offers both doors its own sentence names -----------------------------------------
 // The sentence is ONE key, shared by both shops. A screen that prints it owes the reader both routes.
-const promise = MESSAGES.en['cart.emptyMobileBody'];
-assert.ok(/bespoke/i.test(promise),
-  `cart.emptyMobileBody no longer mentions bespoke ("${promise}") — if the sentence changed, this rule `
-  + 'should change with it rather than being left pointing at nothing');
+// Every sentence an empty screen prints that OFFERS a bespoke request owes the reader the door. Found
+// by reading the strings rather than by listing the screens: a new one inherits the rule.
+const PROMISES_BESPOKE = Object.keys(MESSAGES.en)
+  .filter((key) => /empty|start/i.test(key) && /bespoke/i.test(String(MESSAGES.en[key] || '')));
+assert.ok(PROMISES_BESPOKE.length >= 2,
+  `only ${PROMISES_BESPOKE.length} empty-state string offers a bespoke request; expected the cart's and `
+  + "the checkout's. If the wording changed, change this rule with it rather than leaving it pointing at "
+  + 'nothing');
 for (const file of carts) {
   const source = strip(readFileSync(file, 'utf8'));
-  if (!source.includes('cart.emptyMobileBody')) continue;
+  if (!PROMISES_BESPOKE.some((key) => source.includes(key))) continue;
   assert.match(source, /\/mobile\/bespoke/,
     `${relative(src, file)} prints a sentence offering a bespoke request and gives no way to start one`);
   assert.match(source, /\/mobile\/catalog/, `${relative(src, file)} offers no way to the catalogue`);
@@ -82,7 +92,8 @@ for (const file of carts) {
   // Only the two keys that ARE empty-state headings: "Mulai belanja" / "Start shopping" and
   // "Keranjang kosong" / "Your cart is empty". cart.title is the section label ("Keranjang"), shown in
   // both states, and counting it made this rule fire on a screen that says it exactly once.
-  const headings = ['cart.emptyMobile', 'cart.startShopping']
+  const headings = ['cart.emptyMobile', 'cart.startShopping', 'mcheckout.emptyTitle',
+    'mcheckout.emptyLead', 'checkout.emptyEyebrow', 'checkout.emptyTitle']
     .filter((key) => new RegExp(`'${key.replace('.', '\\.')}'`).test(source));
   assert.ok(headings.length <= 1,
     `${relative(src, file)} renders ${headings.length} empty-state headings (${headings.join(', ')}). `
