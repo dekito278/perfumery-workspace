@@ -67,9 +67,25 @@ assert.deepEqual(derived, [],
 const form = readFileSync(join(root, 'supabase', 'manual', '20261009090100_launch_years_to_fill.sql'), 'utf8');
 const filled = [...form.matchAll(/set launch_year = (\w+)/g)].map((match) => match[1]);
 assert.equal(filled.length, 19, `the fill-in form has ${filled.length} products, expected 19`);
-assert.deepEqual([...new Set(filled)], ['NULL'],
-  'the fill-in form arrives with years already in it. Those can only have been guessed — it is a form '
-  + 'for Dekito to answer, and an unanswered line must stay NULL so the page shows no year at all');
+// The form may carry a year, but only ONE, and only one somebody said out loud.
+//
+// It arrived all-NULL and stayed that way until Dekito answered on 9 Oct 2026 — "Rilis dari 2023" —
+// so every line now reads 2023. That is his blanket answer applied to all nineteen, which is a
+// different thing from nineteen years invented one at a time: the moment two different years appear
+// in this file, somebody has decided per-product what only he can know. NULL stays allowed, because a
+// line he has not settled shows no year at all rather than a guess.
+const years = [...new Set(filled)].filter((value) => value !== 'NULL');
+assert.ok(years.length <= 1,
+  `the form holds ${years.length} different years (${years.join(', ')}). One stated year applied to all `
+  + 'is an answer; several are per-product guesses, and a wrong one is permanent in Fragrantica');
+for (const year of years) {
+  assert.match(year, /^20\d\d$/, `"${year}" is not a year`);
+  assert.ok(form.includes(year) && /Dekito|Rilis dari/.test(form),
+    `the form fills in ${year} without saying whose answer that is — a year in this file has to be `
+    + 'traceable to the person who stated it, or the next reader cannot tell it from a guess');
+}
+assert.match(form, /CHANGE THE ONES THAT ARE LATER|ubah yang/i,
+  'a blanket year has to say out loud that it is a floor, not a fact about every bottle');
 
 // --- 3. The shop carries it from the row to the page, both ways and both screens ------------------------
 const service = strip(read('services', 'productCatalogService.js'));

@@ -20,31 +20,52 @@ import { BRAND_PROFILE, brandOrigin, brandFacts } from '../data/brandProfile.js'
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
 const read = (...parts) => readFileSync(join(src, ...parts), 'utf8');
 
-// --- 1. The facts, run in every state the shop can be in ------------------------------------------------
-assert.equal(brandOrigin(), 'Indonesia', 'with no city stated, the origin is the country alone');
+// --- 1. The facts, run in every state the shop can be in -----------------------------------------------
+// Both states, whichever one is live. The first version of this section asserted that the city was
+// empty and the founding year absent, which was true on the day it was written and became false the
+// moment Dekito answered ("Rilis dari 2023, kota bogor", 9 Oct 2026). A guard that pins today's data
+// fails when the data arrives — which is the one moment it was supposed to be useful.
+const withProfile = (patch, check) => {
+  const saved = { city: BRAND_PROFILE.city, foundedYear: BRAND_PROFILE.foundedYear };
+  Object.assign(BRAND_PROFILE, patch);
+  try {
+    check(Object.fromEntries(brandFacts({ fragranceCount: 19 }).map((fact) => [fact.key, fact.value])));
+  } finally {
+    Object.assign(BRAND_PROFILE, saved);
+  }
+};
+
+// Nothing stated: absent, not blank, and never a stray comma.
+withProfile({ city: '', foundedYear: null }, (facts) => {
+  assert.equal(brandOrigin(), 'Indonesia', 'with no city stated, the origin is the country alone');
+  assert.ok(!('founded' in facts), 'a founding year nobody has stated must not reach the page');
+});
+// Stated: shown, in that order, with no edit to the page or to this guard.
+withProfile({ city: 'Bogor', foundedYear: 2023 }, (facts) => {
+  assert.equal(brandOrigin(), 'Bogor, Indonesia', 'city and country, one comma, in that order');
+  assert.equal(facts.founded, '2023');
+});
+
+// And the state that is actually live, checked for self-consistency rather than for a value: every
+// field the profile holds appears, every field it does not hold is absent.
 const facts = brandFacts({ fragranceCount: 19 });
 const byKey = Object.fromEntries(facts.map((fact) => [fact.key, fact.value]));
 assert.equal(byKey.house, 'SOLIVAGANT');
 assert.equal(byKey.perfumer, 'Dekito');
 assert.equal(byKey.fragrances, '19');
 assert.equal(byKey.size, '30 ml');
-// Absent, not blank, not invented. These are the two Dekito has never stated.
-assert.ok(!('founded' in byKey), 'a founding year nobody has stated must not reach the page');
+assert.equal('founded' in byKey, Boolean(BRAND_PROFILE.foundedYear),
+  'the profile and the page disagree about whether a founding year is known');
+assert.equal(byKey.origin.startsWith(BRAND_PROFILE.city ? `${BRAND_PROFILE.city}, ` : BRAND_PROFILE.country), true,
+  'the origin line does not match the city the profile holds');
 assert.deepEqual(brandFacts().filter((fact) => fact.key === 'fragrances'), [],
   'a catalogue that has not loaded yet shows no count rather than "0 fragrances"');
-
-// The states that come later, so filling them in needs no edit here or on the page.
-{
-  const saved = { city: BRAND_PROFILE.city, foundedYear: BRAND_PROFILE.foundedYear };
-  BRAND_PROFILE.city = 'Bogor';
-  BRAND_PROFILE.foundedYear = 2023;
-  assert.equal(brandOrigin(), 'Bogor, Indonesia', 'city and country, one comma, in that order');
-  const filled = Object.fromEntries(brandFacts({ fragranceCount: 19 }).map((f) => [f.key, f.value]));
-  assert.equal(filled.founded, '2023', 'once stated, the year shows without the page being touched');
-  assert.equal(filled.origin, 'Bogor, Indonesia');
-  Object.assign(BRAND_PROFILE, saved);
+// A year can only be a year. The page has no other defence against a typo here.
+if (BRAND_PROFILE.foundedYear !== null) {
+  assert.ok(Number.isInteger(BRAND_PROFILE.foundedYear)
+    && BRAND_PROFILE.foundedYear >= 1900 && BRAND_PROFILE.foundedYear <= new Date().getFullYear(),
+  `foundedYear is ${BRAND_PROFILE.foundedYear}, which is not a year this atelier could have started in`);
 }
-assert.equal(brandOrigin(), 'Indonesia', 'and the module is left as it was found');
 
 // --- 2. Every fact a reader could meet has a label, in BOTH shops ---------------------------------------
 // Derived from the module: a fact added there renders as a bare key on the page unless its label is

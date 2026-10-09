@@ -6,16 +6,16 @@
 // inferred from a database timestamp. `storefront_products.created_at` is when a row was made in this
 // app, not when a perfume was released; the two are years apart and only one of them is true.
 //
-// EMPTY ON PURPOSE. `foundedYear` and `city` are blank because the shop has never stated either, and a
-// founding year is the kind of fact that is quoted back forever once a public database has it. Fill
-// them when Dekito says them; every line below renders only when it has something to render, so the
-// page is complete and honest without them rather than showing a placeholder to a buyer.
+// STATED, not inferred. `foundedYear` and `city` were blank until 9 Oct 2026, when Dekito answered the
+// question this file was written to ask: "Rilis dari 2023, kota bogor." They are his words and nothing
+// here derives them from anything — a founding year is quoted back forever once a public database has
+// it, which is why it waited for him rather than being read off `created_at`.
 export const BRAND_PROFILE = {
   name: 'SOLIVAGANT',
   perfumer: 'Dekito',
   country: 'Indonesia',
-  city: '',
-  foundedYear: null,
+  city: 'Bogor',
+  foundedYear: 2023,
   concentration: 'Eau de Parfum',
   sizeMl: 30,
   website: 'https://www.solivagantscent.com',
