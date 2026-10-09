@@ -67,9 +67,20 @@ const failFast = [];
 const bulkActions = [];
 for (const rel of screens) {
   const source = strip(readFileSync(join(src, rel), 'utf8'));
-  // A bulk action fans one call out over a selection. Matched on the SHAPE — a map over something
-  // selected — rather than on a list of function names, so a new one is caught by what it does.
-  for (const match of source.matchAll(/(Promise\.all|Promise\.allSettled|settleBulk)\(\s*(selected\w*)\.map\(/g)) {
+  // A bulk action fans one call out over a list. Matched on the SHAPE rather than on a list of function
+  // names, so a new one is caught by what it does.
+  //
+  // It used to require the mapped variable to be named `selected…`, which is a spelling and not a shape.
+  // On 2026-10-09 the fulfillment bulk started filtering its selection down to the orders that have a
+  // waybill — `movable.map(...)` — and this sweep stopped seeing a bulk action that had not moved an
+  // inch. The wrapper is what makes it a fan-out; the variable's name was never the point.
+  // ...and only when the callback WRITES. Dropping the name requirement also caught two fan-outs that
+  // only READ — per-formula metrics on both formula screens, each already wrapped in its own try/catch
+  // or a timeout default. Promise.all is the right call there: nothing is written, so there is no half
+  // of a batch to be honest about. The defect is a fan-out of WRITES reported as all-or-nothing.
+  const WRITES = /\b(?:update|create|delete|remove|save)[A-Z]\w*\s*\(/;
+  for (const match of source.matchAll(/(Promise\.all|Promise\.allSettled|settleBulk)\(\s*([\w.]+)\.map\(/g)) {
+    if (!WRITES.test(source.slice(match.index, match.index + 600))) continue;
     bulkActions.push(`${rel}: ${match[2]}`);
     if (match[1] === 'Promise.all') failFast.push(`${rel}: ${match[1]}(${match[2]}.map(...))`);
   }

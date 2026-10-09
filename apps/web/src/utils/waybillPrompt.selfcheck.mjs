@@ -13,7 +13,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { needsWaybillPrompt } from './waybillPrompt.js';
+import { needsWaybillPrompt, ordersMissingWaybill } from './waybillPrompt.js';
+import { readdirSync, statSync } from 'node:fs';
+import { relative } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -98,3 +100,71 @@ for (const [name, file] of [
 }
 
 console.log('waybillPrompt selfcheck OK (both order screens ask for the waybill where the number is in hand, and the buyer is written to either way)');
+
+
+// --- 4. The question reached the single-order screens and nowhere else ---------------------------------
+// Added 2026-10-09, after measuring production again: seventeen paid orders still had no waybill and
+// eleven of them were already `shipped`. The prompt from #226 was wired into the two order DETAIL
+// pages — and fulfillment can move a whole SELECTION to "Dikirim" from one dropdown, carrying each
+// order's existing tracking number along unchanged. One gesture, any number of orders, no question
+// asked. That is the likeliest way eleven of them got there.
+//
+// So the rule is not "ask on the detail screens". It is: no path marks an order shipped without the
+// waybill being either asked for or required. Found by WALKING every screen that calls
+// updateOrderShipment, so a new one cannot quietly become the eighth path.
+
+assert.deepEqual(ordersMissingWaybill([], 'shipped'), []);
+assert.deepEqual(ordersMissingWaybill([{ orderNumber: 'A' }], 'packing'), [],
+  'only a move to shipped needs a waybill — packing and not_ready are earlier than the number exists');
+assert.deepEqual(
+  ordersMissingWaybill([{ orderNumber: 'A', trackingNumber: 'JX1' }, { orderNumber: 'B' }], 'shipped')
+    .map((order) => order.orderNumber),
+  ['B'], 'the one without a number is the one a buyer could not follow');
+assert.deepEqual(
+  ordersMissingWaybill([{ orderNumber: 'A', trackingNumber: '   ' }], 'shipped').map((o) => o.orderNumber),
+  ['A'], 'whitespace is not a waybill');
+// The fulfillment page reads the row's UNSAVED draft: a number typed a second ago is not missing.
+assert.deepEqual(
+  ordersMissingWaybill([{ orderNumber: 'A' }], 'shipped', () => 'JX-typed-just-now'), [],
+  'reading the stored value instead of the draft would reject a number the operator has just entered');
+for (const notAList of [null, undefined, 'nope', 42]) {
+  assert.deepEqual(ordersMissingWaybill(notAList, 'shipped'), []);
+}
+
+const walk = (dir) => readdirSync(dir).flatMap((entry) => {
+  const full = join(dir, entry);
+  if (statSync(full).isDirectory()) return walk(full);
+  return /\.jsx$/.test(entry) ? [full] : [];
+});
+const root = join(here, '..');
+const screens = walk(join(root, 'pages')).filter((file) => /updateOrderShipment\s*\(|updateOrderStatus\s*\(/
+  .test(readFileSync(file, 'utf8')));
+assert.ok(screens.length >= 5,
+  `expected the screens that move an order, found ${screens.length} — the scan is broken, not the code`);
+
+const asking = [];
+for (const file of screens) {
+  const source = strip(readFileSync(file, 'utf8'));
+  // Can this screen put an order into `shipped` at all? Either by naming it, or by handing the status
+  // through from a control the operator chose it in.
+  const canShip = /'shipped'/.test(source) || /shipmentStatus:\s*\w*[Dd]raft\.shipmentStatus/.test(source);
+  if (!canShip) continue;
+  // The call has to be what DECIDES, not an operand sitting behind something else. `if (false &&
+  // needsWaybillPrompt(...))` keeps the name in the file, reads as guarded, ships every order anyway,
+  // and neither eslint nor a search for the name notices — that sabotage walked past the first version
+  // of this check. So the rule must OPEN its condition or its assignment.
+  const guarded = /(?:if\s*\(\s*|const\s+\w+\s*=\s*)(?:needsWaybillPrompt|ordersMissingWaybill)\s*\(/
+    .test(source);
+  assert.ok(guarded,
+    `${relative(root, file)} can mark an order shipped and never asks for the waybill. A buyer whose `
+    + 'order is shipped with no number sees "belum tersedia" on the tracking page and gets a WhatsApp '
+    + 'message that collapses to one sentence. One of three shapes: ASK, like the two detail screens; '
+    + 'SKIP and name them, like the fulfillment bulk; or REFUSE and point at the order, like the two '
+    + 'list rows, which have nowhere to put the question');
+  asking.push(relative(root, file));
+}
+assert.ok(asking.length >= 3,
+  `only ${asking.length} screen(s) can ship an order; expected at least three to carry the rule`);
+
+console.log(`waybillPrompt selfcheck OK (${asking.length} screens can mark an order shipped, every one of `
+  + `them asks for the waybill or refuses without it: ${asking.join(', ')})`);

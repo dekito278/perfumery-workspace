@@ -16,4 +16,25 @@ export const needsWaybillPrompt = (order, nextStatus) => (
   nextStatus === 'shipped' && !String(order?.trackingNumber || '').trim()
 );
 
+/**
+ * The same question, for a selection rather than an order: which of these would ship untrackable?
+ *
+ * The prompt above only ever reached the two order DETAIL screens. Fulfillment can move a whole
+ * selection to "Dikirim" from one dropdown, carrying each order's existing tracking number along
+ * unchanged — so one gesture could mark any number of orders shipped with nothing for the buyer to
+ * follow, and nobody was asked anything. That is the likeliest way eleven of them got there.
+ *
+ * A single order may still ship without a waybill: Dekito is asked, and "belum ada" is a real answer
+ * when the courier has not handed the number over yet. What cannot happen is answering it for twenty
+ * orders at once by not being asked.
+ *
+ * `waybillFor` reads the number the screen is about to SAVE, which on the fulfillment page is the row's
+ * unsaved draft rather than the stored value — otherwise a number just typed would count as missing.
+ */
+export const ordersMissingWaybill = (orders = [], nextStatus, waybillFor = (order) => order?.trackingNumber) => (
+  nextStatus !== 'shipped'
+    ? []
+    : (Array.isArray(orders) ? orders : []).filter((order) => !String(waybillFor(order) || '').trim())
+);
+
 export default needsWaybillPrompt;
