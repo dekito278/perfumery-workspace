@@ -47,7 +47,10 @@ const CartPage = () => {
     const inCart = new Set(items.map((item) => item.productSlug || item.slug));
     const visible = catalogProducts.filter(isProductVisibleInStorefront);
     return getPublicFragranceCatalog(visible)
-      .filter((product) => !inCart.has(product.slug))
+      // Addable, not merely published. getPublicFragranceCatalog is the mapper that produces
+      // publicStatus, so this page can read it; the phone carts reach the catalogue through a
+      // different mapper that has no such field and count stock instead. Same rule, two shapes.
+      .filter((product) => !inCart.has(product.slug) && product.publicStatus === 'Available')
       .slice(0, 4);
   }, [catalogProducts, items]);
 

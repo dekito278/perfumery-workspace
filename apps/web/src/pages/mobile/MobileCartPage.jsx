@@ -13,7 +13,7 @@ import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
-import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { isProductVisibleInStorefront, getProductStockTotal } from '@/services/productCatalogService.js';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
@@ -49,8 +49,15 @@ const MobileCartPage = () => {
     };
   };
   const featuredCartItems = items.slice(0, 3).map((item) => ({ item, product: getCartItemProduct(item) }));
+  // In stock, counted. The two carts reach the catalogue through DIFFERENT mappers — the Studio one
+  // here, the public one on CatalogPage — and only the public one carries `publicStatus`, so the
+  // obvious-looking predicate silently matched nothing and emptied the whole list. getProductStockTotal
+  // is what publicStatus is itself derived from, and it works on either shape.
+  //
+  // Both carts were offering La Tulipe, which has been at zero for days: the first thing an empty cart
+  // suggests should not be the one bottle the catalogue greys out.
   const recommendedProducts = !items.length
-    ? products.filter(isProductVisibleInStorefront).slice(0, 4)
+    ? products.filter((entry) => isProductVisibleInStorefront(entry) && getProductStockTotal(entry.variants || []) > 0).slice(0, 4)
     : [];
 
   return (
@@ -201,23 +208,11 @@ const MobileCartPage = () => {
           <FreeVialPicker items={items} products={products} onPick={setGift} />
           {!boughtLines.length ? (
             <section style={{ padding: 20, textAlign: 'center' }}>
-              <div style={{ display: 'grid', placeItems: 'center', padding: '24px 0' }}>
-                <ShoppingBag style={{ width: 32, height: 32, color: 'var(--editorial-stone)', marginBottom: 12 }} />
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--editorial-charcoal)', fontFamily: 'Georgia, "Times New Roman", serif' }}>{t('cart.emptyMobile')}</h2>
-                <p style={{ marginTop: 6, fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--editorial-muted)', maxWidth: 260 }}>
-                  {t('cart.emptyOptions')}
-                </p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
-                <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: 'var(--editorial-stone)', color: 'var(--editorial-charcoal)' }} onClick={() => navigate('/mobile/bespoke')}>
-                  <Sparkles className="h-4 w-4" />
-                  {t('mcart.startBespoke')}
-                </Button>
-                <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/catalog')}>
-                  <ShoppingBag className="h-4 w-4" />
-                  {t('mcheckout.openCatalog')}
-                </Button>
-              </div>
+              {/* The heading, the sentence and the two buttons that used to stand here said exactly what
+                  the header above already says, and sent the reader to exactly the same two places:
+                  Belanja = Buka katalog, Aroma bespoke = Mulai bespoke. An empty cart telling you twice
+                  that it is empty, with four buttons for two destinations, reads as unfinished.
+                  What this block actually adds is the recommendations, so that is what is left of it. */}
               {recommendedProducts.length ? (
                 <div style={{ marginTop: 24, textAlign: 'left' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
