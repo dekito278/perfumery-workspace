@@ -1,0 +1,257 @@
+SOLIVAGANT — submission for the Fragrantica Missing Brands thread
+Prepared 9 October 2026. Every line is copy-paste ready.
+
+BRAND
+  House        SOLIVAGANT
+  Perfumer     Dekito
+  Based in     Bogor, Indonesia
+  Founded      2023
+  Website      https://www.solivagantscent.com
+  About        https://www.solivagantscent.com/en/about
+  Fragrances   19, all Eau de Parfum, 30 ml
+
+NOTE ON THE NOTE NAMES
+  The website labels reconstructions as accords — "Animalic Accord", "Oud Accord",
+  "Deer Musk Accord" — because an accord is what they are, and because a bottle
+  crossing a border should not read as an animal product. Fragrantica keeps its own
+  fixed vocabulary, so the names below are those labels mapped to it. The website is
+  not being changed to match: an editor normalises to the Fragrantica list anyway, so
+  changing it would lose the customs clarity and gain nothing.
+
+  Ambrocenide is mapped to Amberwood and NOT to Ambergris. It is a Symrise molecule
+  made from cedarwood terpenes; ambergris comes from the sperm whale, CITES Appendix I.
+
+FRAGRANCES
+
+  .Wayback
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Metallic notes, Almond, Cherry
+    Heart          Ylang-ylang, Nagarmotha
+    Base           Agarwood (Oud), Animal notes
+    Page           https://www.solivagantscent.com/en/catalog/wayback
+
+  Animal Farm
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Green Notes
+    Heart          Leather, Musk
+    Base           Animal notes, Earthy Notes
+    Page           https://www.solivagantscent.com/en/catalog/animal-farm
+
+  Aquilaria tuberosa
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Tuberose Absolute, Orange Flower Absolute
+    Heart          Sandalwood, Orris Root
+    Base           Amberwood, Agarwood (Oud)
+    Page           https://www.solivagantscent.com/en/catalog/aquilaria-tuberosa
+
+  Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Jasmine, Tuberose
+    Heart          Amberwood
+    Base           Musk, Amber
+    Page           https://www.solivagantscent.com/en/catalog/ayang-ayang
+
+  HUG N°1
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Metallic notes
+    Heart          Milk, Powdery Notes
+    Base           Musk, Animal notes
+    Page           https://www.solivagantscent.com/en/catalog/hug-n-1
+
+  J’adore la Vanille
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Boozy Vanilla
+    Heart          Resin, Sandalwood
+    Base           Vanilla, Animal notes
+    Page           https://www.solivagantscent.com/en/catalog/soli-extended-j-adore-la-vanille
+
+  J’adore La Vetiver
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Lime
+    Heart          Amberwood
+    Base           Vetiver
+    Page           https://www.solivagantscent.com/en/catalog/j-adore-la-vetiver
+
+  Jason Voorhees
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Green Notes, Wet Moss
+    Heart          Leather, Smoke
+    Base           Animal notes, Earthy Notes
+    Page           https://www.solivagantscent.com/en/catalog/jason-voorhees
+
+  Jata Bhumi
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Ozonic, Aquatic
+    Heart          Smoke, Leather
+    Base           Animal notes, Geosmin
+    Page           https://www.solivagantscent.com/en/catalog/jata-bhumi
+
+  L’iris
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Iris, Spicy Notes
+    Heart          Leather, Orris
+    Base           Musk, Sandalwood
+    Page           https://www.solivagantscent.com/en/catalog/l-iris
+
+  La Rose
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Honey
+    Heart          Rose
+    Base           Musk
+    Page           https://www.solivagantscent.com/en/catalog/la-rose
+
+  La Tulipe
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Lily-of-the-Valley
+    Heart          Tulip
+    Base           Musk
+    Page           https://www.solivagantscent.com/en/catalog/la-tulipe
+
+  Lintang Asmoro
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Aldehydes
+    Heart          Floral Notes
+    Base           Musk
+    Page           https://www.solivagantscent.com/en/catalog/lintang-asmoro
+
+  Maskumambang
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Jasmine Sambac
+    Heart          Champaca, Olibanum
+    Base           White Musk, Musk
+    Page           https://www.solivagantscent.com/en/catalog/maskumambang
+
+  Pantura
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Orange, Lime, Bergamot, Sea Notes, Green Notes
+    Heart          Solar Notes, Floral Notes
+    Base           Smoke, Amber, Amberwood, Musk
+    Page           https://www.solivagantscent.com/en/catalog/pantura
+
+  Patchouli so sexy
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Patchouli, White Chocolate
+    Heart          Amber, Balsamic
+    Base           Vanilla, Patchouli
+    Page           https://www.solivagantscent.com/en/catalog/patchouli-so-sexy
+
+  Sudra
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Spicy Notes, Green Notes
+    Heart          Rice, Cedarwood
+    Base           Amberwood
+    Page           https://www.solivagantscent.com/en/catalog/sudra
+
+  Vanille Planifolia
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            Spicy Notes, Cream, Rum
+    Heart          Lily of the Valley, Fruity Notes
+    Base           Musk, Vanilla
+    Page           https://www.solivagantscent.com/en/catalog/vanille-planifolia
+
+  Wongka!
+    Concentration  Eau de Parfum
+    Size           30 ml
+    Launched       2023   (ubah kalau produk ini keluar lebih baru)
+    Perfumer       Dekito
+    Top            —
+    Heart          Green Notes
+    Base           Musk
+    Page           https://www.solivagantscent.com/en/catalog/wongka
+
+NAME CHANGES APPLIED (website left as it is)
+  Amberwood F            -> Amberwood
+  Ambrocenide            -> Amberwood
+  Animalic Accord        -> Animal notes
+  Creamy                 -> Cream
+  Deer Musk Accord       -> Musk
+  Earthy Accord          -> Earthy Notes
+  Earthy                 -> Earthy Notes
+  Floral                 -> Floral Notes
+  Fruity Note            -> Fruity Notes
+  Green                  -> Green Notes
+  Leather Accord         -> Leather
+  Metallic Accord        -> Metallic notes
+  Milky                  -> Milk
+  Muguet                 -> Lily-of-the-Valley
+  Musk Accord            -> Musk
+  Nectar                 -> Honey
+  Olibanum Boswellia     -> Olibanum
+  Oud Accord             -> Agarwood (Oud)
+  Powdery                -> Powdery Notes
+  Radiant Musk Accord    -> Musk
+  Rice Note              -> Rice
+  Sandalwood Accord      -> Sandalwood
+  Sea Salt Accord        -> Sea Notes
+  Smoky Accord           -> Smoke
+  Solar Note             -> Solar Notes
+  Spice                  -> Spicy Notes
+  White Musk Accord      -> White Musk
+
+DROPPED — no Fragrantica equivalent, too vague to map, not invented
+  Bitter, Clean Accord, Fresh, Medicinal
+
+BEFORE SENDING — three things only Dekito can settle
+  1. Wongka! has no top note left. Its only one was "Fresh", which Fragrantica has no
+     entry for and which this file refuses to invent a replacement for. Give it a
+     concrete opening note (Citrus, Water Notes, Bergamot...) or send it with none.
+  2. The launch years all say 2023, from "Rilis dari 2023". That is when the house
+     started releasing; change any bottle that came out later before sending, because
+     a wrong year there is permanent.
+  3. "Jason Voorhees" is a trademarked character. Dekito has decided the name stays;
+     this line is here so the decision is visible to whoever reads the file next, not
+     to reopen it.
