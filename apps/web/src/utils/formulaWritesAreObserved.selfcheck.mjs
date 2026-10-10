@@ -87,6 +87,16 @@ assert.match(
   'deleteFormula must stay on the silent-write allowlist with its reason, or be made loud deliberately',
 );
 
+// Pinned from the other side too. The revert that made this exception real was destroyed by a
+// `git checkout` during a sabotage run, and #426 shipped the version I had rejected — leaving this
+// chain and silentWrites both red on main, because the guard expected one exemption and the service
+// had none. Asserting the function's own shape means the two can never drift apart silently again.
+const deleteFormulaBody = source.slice(source.indexOf('export const deleteFormula'), source.indexOf('export const duplicateFormula'));
+assert.ok(
+  !deleteFormulaBody.includes(".select("),
+  'deleteFormula asserts its affected rows again — silentWrites will go red; decide which rule wins before changing it',
+);
+
 // ── 4. Both half-made-copy paths clean up after themselves ────────────────────────────────────────
 // create learned this in round 8; duplicate is the mirror. Held as a property of BOTH, so neither can
 // lose it again.

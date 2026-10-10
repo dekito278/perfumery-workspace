@@ -1155,6 +1155,15 @@ export const getRawMaterialDeletionDependencies = async (id) => {
     ['accord dilution solvents', 'accord_items', 'dilution_solvent_id', null],
     ['batches using it as solvent', 'batches', 'solvent_id', null],
     ['batch usage records', 'batch_usage_records', 'raw_material_id', null],
+    // The seventh reference, and the one this list was missing while its own header claimed "every".
+    // raw_materials.dilution_solvent_id is a foreign key to raw_materials.id — a material diluted with
+    // another material — and mergeRawMaterials repoints it alongside the six above. Left out here, the
+    // confirm dialog would call such a material ready to delete and the database would refuse with a raw
+    // constraint error: exactly the bug audit round 8 fixed for the other five tables.
+    //
+    // Zero rows carry it on production today (measured 2026-10-11), which is the only reason nobody has
+    // met it. The Studio material form offers the field, so one save is all it takes.
+    ['materials diluted with it', 'raw_materials', 'dilution_solvent_id', (q) => q.neq('id', id)],
   ];
 
   const results = await Promise.all(checks.map(([, table, column, extra]) => countRefs(table, column, id, extra)));

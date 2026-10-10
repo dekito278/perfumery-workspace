@@ -297,21 +297,20 @@ export const updateFormulaStatus = async (formulaId, status) => {
 };
 
 export const deleteFormula = async (formulaId) => {
-  // Observed, like every other write in this file: a delete the policies refuse comes back 200 with
-  // error === null, so this reported success and the formula reappeared on the next refresh.
-  const { data, error } = await supabase
+  // Deliberately NOT asserting that a row came back, and silentWrites.selfcheck.mjs holds the reason on
+  // the record: this table is RLS'd on auth.uid() = user_id, so a refusal would mean deleting someone
+  // else's formula — which cannot arise from a list the user is rendering out of their own rows. What
+  // zero rows DOES mean here is that the formula is already gone: a double-tap, or a delete from a list
+  // loaded before someone else removed it. Throwing on that turns an idempotent delete into an error
+  // message about nothing.
+  const { error } = await supabase
     .from('formulas')
     .delete()
-    .eq('id', formulaId)
-    .select('id');
+    .eq('id', formulaId);
 
   if (error) {
     console.error('Error deleting formula:', error);
     throw new Error('Failed to delete formula');
-  }
-
-  if (!(data || []).length) {
-    throw new Error('Formula tidak terhapus. Coba lagi, atau periksa izin akunmu.');
   }
 };
 
