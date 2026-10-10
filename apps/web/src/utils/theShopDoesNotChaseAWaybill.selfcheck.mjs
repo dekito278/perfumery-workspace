@@ -150,7 +150,11 @@ assert.match(
 // ── 6. And no sentence tells a buyer one is coming ────────────────────────────────────────────────
 // storefrontMessages owns the wording; this is the short version, so the decision is checked from the
 // side of the code that implements it too.
-for (const key of ['track.shippedNoWaybill', 'cust.waybillMissing', 'cust.waybillLater', 'inv.waybillMissing', 'inv.waybillLater']) {
+// track.notAvailable is the TABLE cell under "Nomor resi" and "Kurir". It read "Belum tersedia" /
+// "Not available yet" — the same promise in two words, printed on every order, and missed when the five
+// sentences above were rewritten because it is a label rather than a sentence. Found by opening a real
+// order's page rather than by trusting this guard.
+for (const key of ['track.shippedNoWaybill', 'track.notAvailable', 'cust.waybillMissing', 'cust.waybillLater', 'inv.waybillMissing', 'inv.waybillLater']) {
   for (const lang of ['id', 'en']) {
     assert.doesNotMatch(
       MESSAGES[lang][key],

@@ -948,7 +948,7 @@ const walk = (dir, out = []) => {
   // So the earlier honest-but-hopeful wording is now the wrong sentence in the other direction: "resi
   // belum masuk ke sistem" and "Resi akan muncul setelah dikirim" say LATER about something that never
   // happens, on every parcel. These five sentences describe how tracking actually works instead.
-  for (const key of ['track.shippedNoWaybill', 'cust.waybillMissing', 'cust.waybillLater', 'inv.waybillMissing', 'inv.waybillLater']) {
+  for (const key of ['track.shippedNoWaybill', 'track.notAvailable', 'cust.waybillMissing', 'cust.waybillLater', 'inv.waybillMissing', 'inv.waybillLater']) {
     for (const lang of ['id', 'en']) {
       const sentence = MESSAGES[lang][key];
       assert.ok(sentence, `${lang}.${key} is missing`);
@@ -957,11 +957,15 @@ const walk = (dir, out = []) => {
         /belum masuk|akan muncul|not in the system|appears once|not yet/i,
         `${lang}.${key} still tells the buyer a waybill is on its way: "${sentence}"`,
       );
-      assert.match(
-        sentence,
-        /whatsapp/i,
-        `${lang}.${key} must name the way tracking actually reaches the buyer`,
-      );
+      // The five SENTENCES must also say where an answer comes from. track.notAvailable is a two-word
+      // table cell under "Nomor resi" — it only has to stop promising.
+      if (key !== 'track.notAvailable') {
+        assert.match(
+          sentence,
+          /whatsapp/i,
+          `${lang}.${key} must name the way tracking actually reaches the buyer`,
+        );
+      }
     }
   }
 }
