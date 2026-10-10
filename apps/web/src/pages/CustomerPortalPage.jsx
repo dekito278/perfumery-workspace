@@ -516,7 +516,14 @@ const OrderTimeline = ({ order, compact = false }) => {
         ? `${order.courierName || t('cust.courier')} / ${order.trackingNumber}`
         : t(orderHasShipped(order) ? 'cust.waybillMissing' : 'cust.waybillLater');
     }
-    if (step.key === 'completed') detail = order.deliveredAt ? formatDate(order.deliveredAt, t) : t('cust.waitingDelivery');
+    // A TICKED final step captioned "menunggu pengiriman" is the same contradiction one line up, in the
+    // other direction: Studio can set status 'completed' without ever filling delivered_at, and 3 of the
+    // 8 completed orders on production have no date. The caption then argued with the tick above it.
+    if (step.key === 'completed') {
+      detail = order.deliveredAt
+        ? formatDate(order.deliveredAt, t)
+        : t(done ? 'cust.recorded' : 'cust.waitingDelivery');
+    }
 
     return { ...step, done, current, detail };
   });

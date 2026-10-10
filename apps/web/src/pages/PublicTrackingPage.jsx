@@ -1,5 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { describeOrderKey } from '@/utils/trackingLead.js';
+import { describeOrderKey, orderProgressStepCount } from '@/utils/trackingLead.js';
 import { invitesWhatsApp } from '@/utils/contactPrompt.js';
 import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -56,16 +56,6 @@ const formatStatus = (value, t, fallback = '-') => {
   return statusKeys[value] ? t(statusKeys[value]) : String(value).replace(/_/g, ' ');
 };
 
-const completedStepCount = (order) => {
-  if (!order) return 0;
-  if (order.deliveredAt || order.shipmentStatus === 'delivered') return 6;
-  if (order.shippedAt || order.shipmentStatus === 'shipped' || order.status === 'shipped') return 5;
-  if (order.shipmentStatus === 'packing') return 4;
-  if (order.status === 'processing') return 3;
-  if (order.paymentStatus === 'paid' || order.status === 'paid') return 2;
-  return 1;
-};
-
 const PublicTrackingPage = () => {
   const { t } = useTranslate();
   const revealRef = useScrollReveal();
@@ -83,7 +73,7 @@ const PublicTrackingPage = () => {
   const [error, setError] = useState('');
   const isCancelled = order?.status === 'cancelled';
   // A cancelled order must not render as a normal in-progress timeline with a "(saat ini)" step.
-  const completeCount = useMemo(() => (isCancelled ? 0 : completedStepCount(order)), [order, isCancelled]);
+  const completeCount = useMemo(() => (isCancelled ? 0 : orderProgressStepCount(order)), [order, isCancelled]);
   const courierUrl = order?.trackingUrl || buildCourierTrackingSearchUrl(order || {});
 
   // useCallback with [t]: loadOrder writes a translated error message, so it changes when the shop's
