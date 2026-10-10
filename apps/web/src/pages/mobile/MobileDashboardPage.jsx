@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isReadyToPack, isShippedOrder, matchesOrderFilter } from '@/utils/orderWorkflow.js';
+import { materialsWithoutGuidance } from '@/utils/guidanceGap.js';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, ShieldCheck, Sparkles, Truck, UsersRound, WandSparkles, WifiOff } from 'lucide-react';
@@ -26,15 +27,6 @@ import { getProductLowStock } from '@/services/productCatalogService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOpsHealthSnapshot } from '@/services/opsHealthService.js';
 
-const hasGuidanceCoverage = (material) => (
-  Boolean(
-    material?.workbook_code
-    || material?.reference_abc_primary_family
-    || material?.reference_impact !== null && material?.reference_impact !== undefined
-    || material?.reference_life_hours !== null && material?.reference_life_hours !== undefined
-    || material?.ifra_limit !== null && material?.ifra_limit !== undefined
-  )
-);
 
 const runWithTimeout = (loader, label, timeoutMs = 6000) => Promise.race([
   loader(),
@@ -135,12 +127,14 @@ const MobileDashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
-  const { fetchMaterialsSummary } = useRawMaterials();
+  const { fetchMaterialsSummary, fetchMaterialsReferenceSummary } = useRawMaterials();
   const { getFormulas, duplicateFormula, deleteFormula } = useFormulas();
   const { getValidationLogs } = useValidationLogs();
   const { orders } = useOrders();
   const catalogProducts = useCatalogProducts();
   const [materials, setMaterials] = useState([]);
+  // Which materials have a reference profile behind them. The card used to ignore the link entirely.
+  const [matchedReferenceIds, setMatchedReferenceIds] = useState(() => new Set());
   const [formulas, setFormulas] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loadedSections, setLoadedSections] = useState({
@@ -186,9 +180,12 @@ const MobileDashboardPage = () => {
       }])));
       setLoading(false);
 
-      const [materialRows, logRows] = await Promise.all([
+      const [materialRows, logRows, referenceSummary] = await Promise.all([
         runWithFallback(fetchMaterialsSummary, 'Materials summary', snapshot.materials, 4500),
         runWithFallback(getValidationLogs, 'Validation logs', snapshot.logs, 3500),
+        // The gap card links to /mobile/raw-materials, the screen that resolves guidance THROUGH this
+        // link. Without it the card and the screen it opens disagreed about 83 of the 774 materials.
+        runWithFallback(fetchMaterialsReferenceSummary, 'Material references', null, 4500),
       ]);
 
       if (!isActive()) return;
@@ -202,6 +199,7 @@ const MobileDashboardPage = () => {
       }, new Map());
 
       setMaterials(materialRows || []);
+      setMatchedReferenceIds(referenceSummary?.matchedReferenceIds || new Set());
       setLogs(logRows || []);
       setLoadedSections((current) => ({
         ...current,
@@ -217,7 +215,7 @@ const MobileDashboardPage = () => {
       if (isActive()) setLoading(false);
       if (isActive()) setSyncing(false);
     }
-  }, [fetchMaterialsSummary, getFormulas, getValidationLogs]);
+  }, [fetchMaterialsSummary, fetchMaterialsReferenceSummary, getFormulas, getValidationLogs]);
 
   useEffect(() => {
     let active = true;
@@ -228,7 +226,7 @@ const MobileDashboardPage = () => {
   const draftFormulas = useMemo(() => sortByUpdated(formulas.filter((formula) => (formula.status || 'draft') === 'draft')).slice(0, MOBILE_ACTIVITY_LIMIT), [formulas]);
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);
   const actionNeededLogs = useMemo(() => logs.filter((log) => log.status === 'action_needed'), [logs]);
-  const missingGuidanceMaterials = useMemo(() => materials.filter((material) => !hasGuidanceCoverage(material)), [materials]);
+  const missingGuidanceMaterials = useMemo(() => materialsWithoutGuidance(materials, matchedReferenceIds), [materials, matchedReferenceIds]);
   const lowStockProducts = useMemo(() => catalogProducts.filter(getProductLowStock), [catalogProducts]);
   // The same rule the fulfillment screen uses, because this card is a promise about that screen: it used
   // to count bespoke orders still in production and orders already marked shipped, so "3 order siap

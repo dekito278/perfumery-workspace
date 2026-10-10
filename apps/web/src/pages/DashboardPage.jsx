@@ -18,6 +18,7 @@ import RecentActivityList from '@/components/RecentActivityList.jsx';
 import OperationalInsightCard from '@/components/OperationalInsightCard.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { formatStatus } from '@/utils/formatting.js';
+import { materialsWithoutGuidance } from '@/utils/guidanceGap.js';
 import {
   auditChanges,
   auditRowIsImportant,
@@ -78,27 +79,20 @@ const runWithRetry = async (loader, retries = 1) => {
   throw lastError;
 };
 
-const hasGuidanceCoverage = (material) => (
-  Boolean(
-    material?.workbook_code
-    || material?.reference_abc_primary_family
-    || material?.reference_impact !== null && material?.reference_impact !== undefined
-    || material?.reference_life_hours !== null && material?.reference_life_hours !== undefined
-    || material?.ifra_limit !== null && material?.ifra_limit !== undefined
-  )
-);
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
-  const { fetchMaterialsSummary } = useRawMaterials();
+  const { fetchMaterialsSummary, fetchMaterialsReferenceSummary } = useRawMaterials();
   const { getFormulas } = useFormulas();
   const { getValidationLogs } = useValidationLogs();
   const catalogProducts = useCatalogProducts();
   const { orders, summary: orderSummary } = useOrders();
 
   const [materials, setMaterials] = useState([]);
+  // Which materials have a reference profile behind them. The card used to ignore the link entirely.
+  const [matchedReferenceIds, setMatchedReferenceIds] = useState(() => new Set());
   const [formulas, setFormulas] = useState([]);
   const [validationLogs, setValidationLogs] = useState([]);
   const [orderAuditLogs, setOrderAuditLogs] = useState([]);
@@ -119,19 +113,23 @@ const DashboardPage = () => {
     try {
       const results = await Promise.allSettled([
         runWithRetry(() => fetchMaterialsSummary()),
+        runWithRetry(() => fetchMaterialsReferenceSummary()),
         runWithRetry(() => getFormulas()),
         runWithRetry(() => getValidationLogs()),
         runWithRetry(() => getAllOrderAuditLogs()),
         runWithRetry(() => getVouchers()),
       ]);
 
-      const [materialsResult, formulasResult, validationLogsResult, orderAuditLogsResult, vouchersResult] = results;
-      const loaderLabels = ['materials', 'formulas', 'validation logs', 'order audit logs', 'vouchers'];
+      const [materialsResult, referenceSummaryResult, formulasResult, validationLogsResult, orderAuditLogsResult, vouchersResult] = results;
+      const loaderLabels = ['materials', 'material references', 'formulas', 'validation logs', 'order audit logs', 'vouchers'];
       const failedRequests = results
         .map((result, index) => ({ result, label: loaderLabels[index] }))
         .filter(({ result }) => result.status === 'rejected');
 
       setMaterials(materialsResult.status === 'fulfilled' ? materialsResult.value : []);
+      setMatchedReferenceIds(referenceSummaryResult.status === 'fulfilled'
+        ? (referenceSummaryResult.value?.matchedReferenceIds || new Set())
+        : new Set());
       setFormulas(formulasResult.status === 'fulfilled' ? formulasResult.value : []);
       setValidationLogs(validationLogsResult.status === 'fulfilled' ? validationLogsResult.value : []);
       setOrderAuditLogs(orderAuditLogsResult.status === 'fulfilled' ? orderAuditLogsResult.value : []);
@@ -156,15 +154,15 @@ const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchMaterialsSummary, getFormulas, getValidationLogs]);
+  }, [fetchMaterialsSummary, fetchMaterialsReferenceSummary, getFormulas, getValidationLogs]);
 
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
 
   const missingGuidanceMaterials = useMemo(
-    () => materials.filter((material) => !hasGuidanceCoverage(material)),
-    [materials]
+    () => materialsWithoutGuidance(materials, matchedReferenceIds),
+    [materials, matchedReferenceIds]
   );
   const formulasInProgress = useMemo(
     () => formulas.filter((formula) => formula.status === 'draft' || formula.status === 'active'),
