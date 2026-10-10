@@ -238,14 +238,10 @@ const ShipmentsPage = () => {
         });
       }));
       await reload();
-      // Named, not just counted: "3 dilewati" sends him looking through the whole selection for them.
-      const skipped = untrackable.length
-        ? ` ${untrackable.length} dilewati karena belum ada resi: ${untrackable.map((order) => order.orderNumber).join(', ')}.`
-        : '';
+      // Nothing is skipped any more, so there is nothing to name: the three sentences that reported
+      // skipped orders all read a list this function no longer builds.
       if (updated.failed) {
-        toast.error(`${updated.ok} dari ${updated.total} pengiriman diperbarui; ${updated.failed} gagal. ${updated.reason}${skipped}`.trim());
-      } else if (skipped) {
-        toast.warning(`${updated.ok} pengiriman diperbarui.${skipped}`);
+        toast.error(`${updated.ok} dari ${updated.total} pengiriman diperbarui; ${updated.failed} gagal. ${updated.reason}`.trim());
       } else {
         toast.success(`${updated.ok} pengiriman diperbarui`);
       }
