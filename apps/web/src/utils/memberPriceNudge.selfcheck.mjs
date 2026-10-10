@@ -245,8 +245,15 @@ for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx']) {
   const source = read(...page.split('/'));
   assert.match(source, /memberSavingForCart\(items, memberIndex\)/,
     `${page} must compute the real saving from the cart, the same way both checkouts do`);
-  assert.match(source, /memberSaving > 0 \?/,
-    `${page} must stay silent when there is nothing to save — a signed-in member is not nudged`);
+  // Its reason was already half of what Dekito decided on 11 Oct: "a signed-in member is not nudged".
+  // The property now lives in shouldPromptSignInForMemberPrice, which asks BOTH halves — is there
+  // anything to save, and can this viewer still act on it — because 43 of 43 customers on production are
+  // retail, so a signed-in customer was being told to sign in. memberNudgeIsHonest.selfcheck.mjs runs
+  // that predicate over all four states; here the page only has to defer to it.
+  assert.match(source, /offerMemberSignIn \?/,
+    `${page} must stay silent when there is nothing to save, and when the viewer cannot act on it`);
+  assert.match(source, /shouldPromptSignInForMemberPrice\(\{ saving: memberSaving, signedIn: Boolean\(currentUser\) \}\)/,
+    `${page} must ask the shared predicate rather than branching on the raw saving`);
   assert.match(source, /price\.saveShort', \{ amount: formatTotal\(memberSaving\) \}/,
     `${page} must print the actual amount, not a vague promise`);
   assert.match(source, /t\('price\.memberTier'\)/, `${page} must name what the saving is`);

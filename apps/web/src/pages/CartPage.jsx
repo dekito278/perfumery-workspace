@@ -14,9 +14,10 @@ import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
-import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
+import { memberSavingForCart, shouldPromptSignInForMemberPrice } from '@/utils/memberPriceNudge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
@@ -28,7 +29,9 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Numbe
 const CartPage = () => {
   const { items, summary, updateQuantity, removeItem, setGift } = useCart();
   const { index: memberIndex } = useMemberPrices();
+  const { currentUser } = useAuth();
   const memberSaving = memberSavingForCart(items, memberIndex);
+  const offerMemberSignIn = shouldPromptSignInForMemberPrice({ saving: memberSaving, signedIn: Boolean(currentUser) });
   const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const subtotal = summary.subtotal;
@@ -177,7 +180,7 @@ const CartPage = () => {
                   account page — and the checkout one step later names this exact amount. The cart, the
                   one screen that shows the total and asks for a decision, said nothing. Built from the
                   message keys those pages already use, so there is no second wording to keep in step. */}
-              {memberSaving > 0 ? (
+              {offerMemberSignIn ? (
                 <div className="cart-totals__row cart-totals__row--discount">
                   <span>{t('price.memberTier')}</span>
                   <strong>
