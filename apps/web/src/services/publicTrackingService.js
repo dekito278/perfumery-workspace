@@ -1,5 +1,6 @@
 import supabase from '@/lib/supabaseClient.js';
 import { ORDERS_STORAGE_KEY } from '@/services/orderService.js';
+import { routerBasename } from '@/utils/storefrontRegion.js';
 
 const normalizeLookup = (value = '') => String(value || '').trim();
 
@@ -52,10 +53,25 @@ export const buildPublicTrackingPath = (orderNumber = '') => {
   return code ? `/track/${encodeURIComponent(code)}` : '/track';
 };
 
-export const buildPublicTrackingUrl = (orderNumber = '') => {
+/**
+ * The absolute link to a buyer's tracking page — in the shop the reader is standing in.
+ *
+ * It was origin + path, with no basename, so the English shop handed an English customer
+ * solivagantscent.com/track/<code> — a valid route, in Indonesian. /track is one of the storefront
+ * prefixes mounted under /en, so the English page exists and simply was never linked to.
+ *
+ * The default is the reader's own shop, which is what the three buyer-facing callers want: the portal
+ * (twice) and the invoice. In Studio routerBasename() is '' and the default is the Indonesian link —
+ * right for all 35 orders this shop has taken, because all of them came from the Indonesian storefront.
+ *
+ * `basename` is explicit for the day that stops being true: an order carries the shop it came from in
+ * client_context.region, and a link Dekito copies out of Studio should follow the BUYER's shop rather
+ * than his own. Nothing passes it yet; the argument is the hook, not a guess about what it should be.
+ */
+export const buildPublicTrackingUrl = (orderNumber = '', { basename = routerBasename() } = {}) => {
   const path = buildPublicTrackingPath(orderNumber);
-  if (typeof window === 'undefined') return path;
-  return `${window.location.origin}${path}`;
+  if (typeof window === 'undefined') return `${basename}${path}`;
+  return `${window.location.origin}${basename}${path}`;
 };
 
 export const buildCourierTrackingSearchUrl = ({ courierName = '', trackingNumber = '' } = {}) => {
