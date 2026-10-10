@@ -20,6 +20,9 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Buffer } from 'node:buffer';
+// The real predicate looks for 'bespoke_request'. These stubs said 'bespoke', so every bespoke
+// assertion below was being made about an order the shipped code does not consider bespoke at all.
+import { BESPOKE_SOURCE } from './bespokeOrder.js';
 
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -31,9 +34,11 @@ const read = (...parts) => stripComments(readFileSync(join(srcRoot, ...parts), '
 const workflowSource = readFileSync(join(srcRoot, 'utils', 'orderWorkflow.js'), 'utf8')
   .replace(/^import\s[\s\S]*?from\s+'[^']+';\s*$/gm, '');
 const stubs = `
-const isBespokeOrder = (order) => order?.source === 'bespoke' || order?.requestType === 'bespoke'
-  || (Array.isArray(order?.items) && order.items.some((item) => item.type === 'bespoke'));
-const getBespokeItem = (order) => (Array.isArray(order?.items) ? order.items.find((item) => item.type === 'bespoke') : null);
+// Injected rather than retyped: the stub is compiled as its own module, so it cannot import.
+const BESPOKE_SOURCE = ${JSON.stringify(BESPOKE_SOURCE)};
+const isBespokeOrder = (order) => order?.source === BESPOKE_SOURCE || order?.requestType === BESPOKE_SOURCE
+  || (Array.isArray(order?.items) && order.items.some((item) => item.type === BESPOKE_SOURCE));
+const getBespokeItem = (order) => (Array.isArray(order?.items) ? order.items.find((item) => item.type === BESPOKE_SOURCE) : null);
 `;
 const { isBlockedByBespokeProduction, paymentStatusLabels } = await import(
   `data:text/javascript;base64,${Buffer.from(stubs + workflowSource, 'utf8').toString('base64')}`
@@ -41,7 +46,7 @@ const { isBlockedByBespokeProduction, paymentStatusLabels } = await import(
 
 const bespoke = (extra = {}) => ({
   paymentStatus: 'paid',
-  items: [{ name: 'Bespoke perfume: After Rain', type: 'bespoke' }],
+  items: [{ name: 'Bespoke perfume: After Rain', type: BESPOKE_SOURCE }],
   bespokeProductionStatus: 'review_brief',
   ...extra,
 });

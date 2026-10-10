@@ -99,6 +99,72 @@ export const isAwaitingShippingQuote = (order = {}) => {
   return ['unpaid', 'pending'].includes(paymentStatus) && !isArchivedOrder(order);
 };
 
+/**
+ * The ONE next action on an order, for the two Studio order screens.
+ *
+ * Both drew a "what do I do with this order" card and each worked the answer out itself. Read against
+ * the live table on 2026-10-10 they disagreed about real orders:
+ *
+ *   3 orders  status 'shipped' while shipment_status still said not_ready
+ *             the desktop said "Follow-up pengiriman"; the phone said "Mulai packing" — and the phone's
+ *             big button WRITES that status, so one tap moved a parcel already sent back into packing.
+ *             Its getFulfillmentStep read shipment_status alone, while isShippedOrder, the rule the
+ *             rest of the app shares, reads the order status too.
+ *   1 order   completed, shipment_status not_ready
+ *             the desktop said "Lanjutkan produksi bespoke" and the phone said "Mulai packing", for an
+ *             order the shop considers finished and refuses to edit. Neither ladder asked
+ *             isArchivedOrder, which exists for exactly this and is now the first question.
+ *
+ * Not in this ladder: the bespoke production stage. The desktop blocked on it — "Lanjutkan produksi
+ * bespoke" until bespoke_production_status is 'ready' — and on the live table that gate never opens:
+ * all 17 bespoke orders read 'review_brief', 9 of them already shipped or delivered. A task that cannot
+ * be satisfied hides the real next step, and the phone's packing button does not ask about it either,
+ * so blocking here would only put the card and the button back into disagreement. Both screens still
+ * show the bespoke production section itself, and isBlockedByBespokeProduction still labels the
+ * fulfillment rows.
+ */
+export const ORDER_TASKS = {
+  review: { title: 'Tinjau order', helper: 'Buka order dan cek data terbaru.' },
+  done: { title: 'Order selesai', helper: 'Order sudah masuk arsip operasional.' },
+  proof: { title: 'Review bukti transfer', helper: 'Buka bukti, approve atau reject dengan catatan.' },
+  quote: { title: 'Kirim angka ongkir', helper: 'Order ini menunggu ongkir dari kita sebelum bisa dibayar.' },
+  payment: { title: 'Tuntaskan pembayaran', helper: 'Follow-up pembayaran atau sinkron DOKU bila perlu.' },
+  followUp: { title: 'Follow-up pengiriman', helper: 'Pantau tracking dan tutup order setelah delivered.' },
+  waybill: { title: 'Lengkapi nomor resi', helper: 'Scan atau paste resi sebelum order ditandai dikirim.' },
+  ship: { title: 'Packing lalu kirim', helper: 'Simpan kurir/resi dan tandai dikirim setelah paket keluar.' },
+  pack: { title: 'Mulai packing', helper: 'Cetak resi PDF, lalu tandai order masuk packing.' },
+};
+
+export const nextOrderTask = (order) => {
+  if (!order || typeof order !== 'object') return ORDER_TASKS.review;
+  if (isArchivedOrder(order)) return ORDER_TASKS.done;
+  if (order.paymentProofStatus === 'submitted') return ORDER_TASKS.proof;
+  if (isAwaitingShippingQuote(order)) return ORDER_TASKS.quote;
+  if (order.paymentStatus !== 'paid') return ORDER_TASKS.payment;
+  if (isShippedOrder(order)) return ORDER_TASKS.followUp;
+  if (hasShippingLabelPrinted(order)) {
+    return String(order.trackingNumber || '').trim() ? ORDER_TASKS.ship : ORDER_TASKS.waybill;
+  }
+  return ORDER_TASKS.pack;
+};
+
+/**
+ * The shipment write the phone's big button performs, or null when there is nothing to move.
+ *
+ * It asked shipment_status alone, so it offered "Mulai packing" on the 3 orders whose ORDER status is
+ * already 'shipped', and on a completed one. Both questions have shared answers; it asks those now.
+ *
+ * Deliberately NOT gated on bespoke production: that would take the one-tap packing button away from
+ * every bespoke order, which is half of this shop's orders and none of them ever marked Ready.
+ */
+export const nextFulfillmentAction = (order) => {
+  if (!order || order.paymentStatus !== 'paid') return null;
+  if (isShippedOrder(order) || isArchivedOrder(order)) return null;
+  return hasShippingLabelPrinted(order)
+    ? { status: 'shipped', label: 'Tandai dikirim' }
+    : { status: 'packing', label: 'Mulai packing' };
+};
+
 export const isFrontQueueOrder = (order = {}) => (
   !isArchivedOrder(order)
   && !hasShippingLabelPrinted(order)

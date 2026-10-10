@@ -72,8 +72,8 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import {
-  PAYMENT_PROOF_AUDIT_ACTIONS,
   ORDER_AUDIT_LABELS,
+  PAYMENT_PROOF_AUDIT_ACTIONS,
   bespokeBriefRows,
   describeStockReservation,
   getBespokeOrderSummary,
@@ -81,6 +81,7 @@ import {
   hasShippingLabelPrinted,
   isArchivedOrder,
   isShippedOrder,
+  nextOrderTask,
   paymentStatusLabels,
   stockReservationLabel,
   stockReservationTone,
@@ -192,31 +193,6 @@ const getNoteValue = (rows, label) => (
 );
 
 
-const getNextOperationalTask = (order, bespoke) => {
-  if (!order) return { title: 'Review order', helper: 'Buka order dan cek data terbaru.' };
-  if (order.paymentProofStatus === 'submitted') {
-    return { title: 'Review bukti transfer', helper: 'Buka bukti, approve atau reject dengan catatan.' };
-  }
-  if (order.paymentStatus !== 'paid') {
-    return { title: 'Tuntaskan pembayaran', helper: 'Follow-up pembayaran atau sinkron DOKU bila perlu.' };
-  }
-  if (bespoke && order.bespokeProductionStatus !== 'ready') {
-    return { title: 'Lanjutkan produksi bespoke', helper: 'Update brief, formula, sample, sampai status Ready.' };
-  }
-  if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
-    return { title: 'Cetak resi PDF', helper: 'Setelah dicetak, order masuk antrean Label/resi.' };
-  }
-  if (hasShippingLabelPrinted(order) && !order.trackingNumber) {
-    return { title: 'Lengkapi nomor resi', helper: 'Scan atau paste resi sebelum order ditandai dikirim.' };
-  }
-  if (hasShippingLabelPrinted(order)) {
-    return { title: 'Packing lalu kirim', helper: 'Simpan kurir/resi dan tandai dikirim setelah paket keluar.' };
-  }
-  if (isShippedOrder(order) && !isArchivedOrder(order)) {
-    return { title: 'Follow-up pengiriman', helper: 'Pantau tracking dan tutup order setelah delivered.' };
-  }
-  return { title: 'Order selesai', helper: 'Order sudah masuk arsip operasional.' };
-};
 
 
 const OrderDetailPage = () => {
@@ -722,7 +698,7 @@ const OrderDetailPage = () => {
   const bespoke = isBespokeOrder(order);
   const bespokeItem = getBespokeItem(order);
   const bespokeSummary = getBespokeOrderSummary(order);
-  const nextOperationalTask = getNextOperationalTask(order, bespoke);
+  const nextOperationalTask = nextOrderTask(order);
 
   return (
     <AuthenticatedLayout>

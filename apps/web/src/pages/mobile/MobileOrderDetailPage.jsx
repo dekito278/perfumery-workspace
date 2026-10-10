@@ -11,14 +11,16 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
-  PAYMENT_PROOF_AUDIT_ACTIONS,
   ORDER_AUDIT_LABELS,
+  PAYMENT_PROOF_AUDIT_ACTIONS,
   bespokeBriefRows,
   describeStockReservation,
   getNextOrderStatusForPayment,
   hasShippingLabelPrinted,
   isArchivedOrder,
   isShippedOrder,
+  nextFulfillmentAction,
+  nextOrderTask,
   paymentStatusLabels,
   stockReservationLabel,
   stockReservationTone,
@@ -117,32 +119,10 @@ const getPaymentLogTone = (status) => {
   return 'bg-stone-100 text-stone-600';
 };
 
-const getNextOrderTask = (order) => {
-  if (!order) return { label: 'Tinjau order', helper: 'Buka ruang kerja order.' };
-  if (order.paymentStatus !== 'paid') {
-    return { label: 'Selesaikan pembayaran', helper: 'Cek bukti transfer, status DOKU, atau link bayar customer.' };
-  }
-  if (order.shipmentStatus !== 'packing' && !['shipped', 'delivered'].includes(order.shipmentStatus)) {
-    return { label: 'Mulai packing', helper: 'Siapkan paket, lalu tandai masuk packing.' };
-  }
-  if (!['shipped', 'delivered'].includes(order.shipmentStatus)) {
-    return { label: 'Kirim paket', helper: 'Isi resi di tab Kirim, lalu tandai dikirim.' };
-  }
-  if (order.status !== 'completed') {
-    return { label: 'Tutup order', helper: 'Cek timeline, lalu ubah status akhir.' };
-  }
-  return { label: 'Order selesai', helper: 'Semua yang penting sudah beres.' };
-};
 
 // The single fulfillment step an order is at. The task card, its big button and the bottom bar all read
 // this, so the screen never offers "Packing", "Mulai packing" and "Tandai dikirim" at the same time —
 // which it used to, for an order that had only just been paid (UI/UX pass 2026-09-07).
-const getFulfillmentStep = (order) => {
-  if (!order || order.paymentStatus !== 'paid') return null;
-  if (['shipped', 'delivered'].includes(order.shipmentStatus)) return null;
-  if (order.shipmentStatus === 'packing') return { status: 'shipped', label: 'Tandai dikirim' };
-  return { status: 'packing', label: 'Mulai packing' };
-};
 
 
 
@@ -296,7 +276,7 @@ const MobileOrderDetailPage = () => {
   const paymentProofStatus = order?.paymentProofStatus || 'missing';
   const paymentProofIsImage = String(order?.paymentProofContentType || '').startsWith('image/');
   const proofTimeline = useMemo(() => getProofTimeline(auditLogs), [auditLogs]);
-  const nextOrderTask = getNextOrderTask(order);
+  const orderTask = nextOrderTask(order);
   const timeline = order?.statusTimeline?.length
     ? order.statusTimeline
     : [
@@ -681,7 +661,7 @@ const MobileOrderDetailPage = () => {
     if (!order) return;
 
     if (orderSection === 'task') {
-      const step = getFulfillmentStep(order);
+      const step = nextFulfillmentAction(order);
       if (step) {
         quickShipmentUpdate(step.status);
         return;
@@ -708,7 +688,7 @@ const MobileOrderDetailPage = () => {
     copyDraft();
   };
 
-  const fulfillmentStep = getFulfillmentStep(order);
+  const fulfillmentStep = nextFulfillmentAction(order);
   const primaryActionLabel = {
     task: fulfillmentStep ? fulfillmentStep.label : (order?.paymentStatus === 'paid' ? 'Buka tab Kirim' : 'Cek pembayaran'),
     payment: hasPaymentProofPath && paymentProofStatus !== 'approved' ? 'Setujui bukti' : 'Sinkron DOKU',
@@ -833,8 +813,8 @@ const MobileOrderDetailPage = () => {
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase text-amber-700">Tugas berikutnya</div>
-              <h2 className="mt-0.5 text-base font-bold text-editorial-charcoal">{nextOrderTask.label}</h2>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{nextOrderTask.helper}</p>
+              <h2 className="mt-0.5 text-base font-bold text-editorial-charcoal">{orderTask.title}</h2>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{orderTask.helper}</p>
             </div>
           </div>
         </section>

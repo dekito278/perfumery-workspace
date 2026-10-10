@@ -18,6 +18,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Buffer } from 'node:buffer';
+// The real predicate looks for 'bespoke_request'. These stubs said 'bespoke', so every bespoke
+// assertion below was being made about an order the shipped code does not consider bespoke at all.
+import { BESPOKE_SOURCE } from './bespokeOrder.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -29,9 +32,11 @@ const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf
 const workflowSource = readFileSync(join(root, 'utils', 'orderWorkflow.js'), 'utf8')
   .replace(/^import\s[\s\S]*?from\s+'[^']+';\s*$/gm, '');
 const stubs = `
-const isBespokeOrder = (order = {}) => order?.source === 'bespoke' || order?.requestType === 'bespoke'
-  || (Array.isArray(order?.items) && order.items.some((item) => item.type === 'bespoke'));
-const getBespokeItem = (order = {}) => (Array.isArray(order?.items) ? order.items.find((item) => item.type === 'bespoke') : null);
+// Injected rather than retyped: the stub is compiled as its own module, so it cannot import.
+const BESPOKE_SOURCE = ${JSON.stringify(BESPOKE_SOURCE)};
+const isBespokeOrder = (order = {}) => order?.source === BESPOKE_SOURCE || order?.requestType === BESPOKE_SOURCE
+  || (Array.isArray(order?.items) && order.items.some((item) => item.type === BESPOKE_SOURCE));
+const getBespokeItem = (order = {}) => (Array.isArray(order?.items) ? order.items.find((item) => item.type === BESPOKE_SOURCE) : null);
 `;
 const { isReadyToPack } = await import(
   `data:text/javascript;base64,${Buffer.from(stubs + workflowSource, 'utf8').toString('base64')}`
@@ -41,7 +46,7 @@ const { isReadyToPack } = await import(
 const plainPaid = { paymentStatus: 'paid', status: 'processing', shipmentStatus: 'not_ready' };
 assert.equal(isReadyToPack(plainPaid), true, 'a paid storefront order waiting to be packed is ready');
 
-const bespokeInProduction = { paymentStatus: 'paid', status: 'processing', source: 'bespoke', bespokeProductionStatus: 'in_progress' };
+const bespokeInProduction = { paymentStatus: 'paid', status: 'processing', source: BESPOKE_SOURCE, bespokeProductionStatus: 'in_progress' };
 assert.equal(isReadyToPack(bespokeInProduction), false,
   'a bespoke order still in production is NOT packable — the fulfillment screen has always held it back');
 assert.equal(isReadyToPack({ ...bespokeInProduction, bespokeProductionStatus: 'ready' }), true,
