@@ -3,7 +3,7 @@ import { Check, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { productShareUrl } from '@/utils/productShare.js';
-import { routerBasename } from '@/utils/storefrontRegion.js';
+import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
 /**
@@ -19,7 +19,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * exist (most desktop browsers) the link goes to the clipboard instead, which is the same errand.
  */
 const ShareProductButton = ({ product, className = '', compact = false }) => {
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   const [copied, setCopied] = useState(false);
 
   if (!product?.slug || !product?.name) return null;
@@ -27,7 +27,7 @@ const ShareProductButton = ({ product, className = '', compact = false }) => {
   const share = async () => {
     const url = productShareUrl(product.slug, {
       origin: window.location.origin,
-      basename: routerBasename(),
+      basename: shopPrefixForRegion(region),
     });
     const title = `${product.name} — SOLIVAGANT`;
 

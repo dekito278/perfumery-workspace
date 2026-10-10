@@ -93,6 +93,25 @@ export const barePathname = (pathname) => {
 export const routerBasename = (pathname) => (readRegionFromPath(pathname) ? EN_PATH_PREFIX : '');
 
 /**
+ * The shop prefix for a region — for a link handed to a buyer who is BEING SHOWN that region.
+ *
+ * routerBasename above answers from the PATH, which is right for the router: the address decides which
+ * routes are mounted. But the LANGUAGE does not come from the path. resolveRegion reads ?lang, then the
+ * stored choice, then the guess — so /catalog renders in English for anyone who has chosen the English
+ * shop, and routerBasename() answers '' on that very page.
+ *
+ * Measured in the browser panel: localStorage solivagant.storefront.region.v1 = 'en' and the Indonesian
+ * address /catalog served the English catalogue with US$ prices. Every raw absolute link built on that
+ * page from routerBasename() therefore pointed back at the Indonesian shop, which is the wrong half of
+ * the pair to take from the address.
+ *
+ * notificationTemplateService already has the twin of this for the other case — shopPrefix(order), the
+ * shop the ORDER came from, for a link Dekito sends out of Studio. This is the one for the reader in
+ * front of the page.
+ */
+export const shopPrefixForRegion = (region) => (region === REGION_EN ? EN_PATH_PREFIX : '');
+
+/**
  * This same page in the other shop, or null when it is already the address being shown.
  *
  * ?lang is dropped on the way: the path says which shop this is now, and leaving both would let a
