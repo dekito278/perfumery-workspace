@@ -18,6 +18,12 @@ import RecentActivityList from '@/components/RecentActivityList.jsx';
 import OperationalInsightCard from '@/components/OperationalInsightCard.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { formatStatus } from '@/utils/formatting.js';
+import {
+  auditChanges,
+  auditRowIsImportant,
+  auditRowOpensAnOrder,
+  summariseAuditValues,
+} from '@/utils/orderAuditChanges.js';
 import { getProductLowStock } from '@/services/productCatalogService.js';
 import { checkDokuHealth, checkShippingHealth, getOpsHealthSnapshot, runOpsHealthRetry } from '@/services/opsHealthService.js';
 import { getAllOrderAuditLogs, isOrderReservationExpired, ORDER_AUDIT_LOG_PAGE_SIZE } from '@/services/orderService.js';
@@ -48,31 +54,6 @@ const auditActionLabels = {
 // Rendered rows, in one place: the number is printed in the scope line below the list, and two spellings
 // of it would make that line a lie.
 const AUDIT_ROWS_SHOWN = 8;
-
-const importantAuditKeys = ['paymentStatus', 'status', 'paymentProofStatus', 'shipmentStatus', 'trackingNumber', 'payment_status', 'payment_proof_status', 'shipment_status', 'tracking_number'];
-
-const formatAuditValue = (value) => {
-  if (value === '' || value === null || value === undefined) return '-';
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
-};
-
-const formatAuditLabel = (key) => key
-  .replace(/([A-Z])/g, ' $1')
-  .replace(/_/g, ' ')
-  .replace(/^./, (char) => char.toUpperCase());
-
-const getAuditChanges = (previousValues = {}, nextValues = {}) => {
-  const keys = Array.from(new Set([...Object.keys(previousValues || {}), ...Object.keys(nextValues || {})]));
-  return keys
-    .filter((key) => formatAuditValue(previousValues?.[key]) !== formatAuditValue(nextValues?.[key]))
-    .map((key) => ({
-      key,
-      label: formatAuditLabel(key),
-      before: formatAuditValue(previousValues?.[key]),
-      after: formatAuditValue(nextValues?.[key]),
-    }));
-};
 
 const isTransientNetworkError = (error) => {
   const message = String(error?.message || '').toLowerCase();
@@ -743,10 +724,20 @@ const DashboardPage = () => {
             </div>
             <div className="mt-4 grid gap-3">
               {filteredAuditLogs.slice(0, AUDIT_ROWS_SHOWN).map((log) => {
-                const changes = getAuditChanges(log.previousValues, log.nextValues);
-                const important = changes.some((change) => importantAuditKeys.includes(change.key));
+                const changes = auditChanges(log.previousValues, log.nextValues);
+                const important = auditRowIsImportant(changes);
+                // 63 rows record an order being DELETED. Every one of them was a button to a page with
+                // no order and no history on it, because getOrderAuditLogs looks the order up first.
+                const opensAnOrder = auditRowOpensAnOrder(log);
+                const Row = opensAnOrder ? 'button' : 'div';
                 return (
-                  <button key={log.id} type="button" onClick={() => navigate(`/studio/orders/${log.orderId || log.orderNumber}`)} className={`rounded-2xl border p-4 text-left ${important ? 'border-amber-200 bg-amber-50' : 'bg-[#fbfaf7]'}`}>
+                  <Row
+                    key={log.id}
+                    {...(opensAnOrder
+                      ? { type: 'button', onClick: () => navigate(`/studio/orders/${log.orderId || log.orderNumber}`) }
+                      : {})}
+                    className={`rounded-2xl border p-4 text-left ${important ? 'border-amber-200 bg-amber-50' : 'bg-[#fbfaf7]'}`}
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-bold">{log.orderNumber || '-'}</div>
@@ -762,9 +753,10 @@ const DashboardPage = () => {
                           <div className="text-muted-foreground">After: <span className="text-[#1f2937]">{change.after}</span></div>
                         </div>
                       ))}
-                      {!changes.length ? <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-muted-foreground">Tidak ada diff field terdeteksi.</div> : null}
+                      {!changes.length ? <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-muted-foreground">{summariseAuditValues(log.nextValues)}</div> : null}
                     </div>
-                  </button>
+                    {!opensAnOrder ? <div className="mt-2 text-[10px] font-bold uppercase text-muted-foreground">Order sudah dihapus</div> : null}
+                  </Row>
                 );
               })}
               {!filteredAuditLogs.length ? <p className="rounded-2xl border border-dashed bg-[#fbfaf7] px-4 py-5 text-center text-sm font-semibold text-muted-foreground">Belum ada audit log yang cocok dengan filter.</p> : null}

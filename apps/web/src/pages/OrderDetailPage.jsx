@@ -87,6 +87,12 @@ import {
 } from '@/utils/orderWorkflow.js';
 import { formatClientContext } from '@/utils/clientContext.js';
 import { STUDIO_STEP_KEYS, studioActiveStepIndex } from '@/utils/trackingLead.js';
+import {
+  AUDIT_KEYS_THAT_MATTER,
+  auditChanges,
+  auditRowIsImportant,
+  summariseAuditValues,
+} from '@/utils/orderAuditChanges.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -125,37 +131,6 @@ const getLogTone = (status) => {
   return 'bg-stone-100 text-stone-600';
 };
 
-const formatAuditValues = (values = {}) => (
-  Object.entries(values || {})
-    .filter(([, value]) => value !== '' && value !== null && value !== undefined)
-    .map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
-    .join(' / ') || '-'
-);
-
-const formatAuditValue = (value) => {
-  if (value === '' || value === null || value === undefined) return '-';
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
-};
-
-const formatAuditLabel = (key) => key
-  .replace(/([A-Z])/g, ' $1')
-  .replace(/_/g, ' ')
-  .replace(/^./, (char) => char.toUpperCase());
-
-const getAuditChanges = (previousValues = {}, nextValues = {}) => {
-  const keys = Array.from(new Set([...Object.keys(previousValues || {}), ...Object.keys(nextValues || {})]));
-  return keys
-    .filter((key) => formatAuditValue(previousValues?.[key]) !== formatAuditValue(nextValues?.[key]))
-    .map((key) => ({
-      key,
-      label: formatAuditLabel(key),
-      before: formatAuditValue(previousValues?.[key]),
-      after: formatAuditValue(nextValues?.[key]),
-    }));
-};
-
-const importantAuditKeys = ['paymentStatus', 'status', 'shipmentStatus', 'trackingNumber', 'payment_status', 'shipment_status', 'tracking_number'];
 
 const getProofTimeline = (logs = []) => logs
   .filter((log) => PAYMENT_PROOF_AUDIT_ACTIONS.includes(log.action))
@@ -1200,8 +1175,8 @@ const OrderDetailPage = () => {
             {filteredAuditLogs.length ? (
               <div className="grid gap-3">
                 {filteredAuditLogs.map((log) => {
-                  const changes = getAuditChanges(log.previousValues, log.nextValues);
-                  const important = changes.some((change) => importantAuditKeys.includes(change.key));
+                  const changes = auditChanges(log.previousValues, log.nextValues);
+                  const important = auditRowIsImportant(changes);
                   return (
                     <article key={log.id} className={`rounded-2xl p-3 ${important ? 'border border-amber-200 bg-amber-50' : 'bg-[#fbfaf7]'}`}>
                       <div className="flex items-start justify-between gap-3">
@@ -1216,7 +1191,7 @@ const OrderDetailPage = () => {
                       {changes.length ? (
                         <div className="mt-3 grid gap-2">
                           {changes.map((change) => {
-                            const importantChange = importantAuditKeys.includes(change.key);
+                            const importantChange = AUDIT_KEYS_THAT_MATTER.includes(change.key);
                             return (
                             <div key={change.key} className={`rounded-2xl border bg-white px-3 py-2 ${importantChange ? 'border-amber-200 ring-1 ring-amber-100' : 'border-editorial-charcoal/10'}`}>
                               <div className={`text-[10px] font-bold uppercase ${importantChange ? 'text-amber-800' : 'text-editorial-charcoal'}`}>{change.label}</div>
@@ -1230,7 +1205,7 @@ const OrderDetailPage = () => {
                         </div>
                       ) : (
                         <div className="mt-2 text-xs font-semibold text-muted-foreground">
-                          {formatAuditValues(log.nextValues)}
+                          {summariseAuditValues(log.nextValues)}
                         </div>
                       )}
                     </article>
