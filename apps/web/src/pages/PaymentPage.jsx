@@ -673,6 +673,25 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
     }
   };
 
+  // A paid order must never be shown a live payment panel again. Both of this page's other panels
+  // already refuse one — PaymentFrame since audit round 7, when the DOKU return URL landed back here
+  // with the order paid and the iframe invited a second payment for the same invoice, and QrisPanel
+  // from the start. This one, the panel 20 of the shop's 35 orders use, went on handing out the BCA
+  // account number under the sentence "Transfer ke rekening berikut".
+  //
+  // Measured on production 2026-10-10: 14 orders are paid manual transfers. Each one's own payment
+  // link — the link in its notification — offered the account and the total again, and 2 of the 14,
+  // marked paid with no proof on file, were also still asked to upload one.
+  if (session.paymentStatus === 'paid') {
+    return (
+      <PaymentSuccessPanel
+        compact={compact}
+        orderNumber={orderNumber}
+        customerCode={customerCode}
+      />
+    );
+  }
+
   return (
     <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
       <div className={compact ? 'border-b border-editorial-stone/10 bg-editorial-ivory p-4' : 'border-b border-editorial-stone/10 bg-editorial-ivory p-5'}>
@@ -1185,7 +1204,9 @@ const PaymentPageContent = ({ isMobile }) => {
           {(loadingOrder || refreshingStatus) && !session ? <MobilePaymentSkeleton /> : isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
             <ManualTransferPanel session={session} compact onProofSubmitted={setSession} />
           ) : session?.qrContent ? <QrisPanel session={session} compact onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
-          {session && !sessionIsQris ? (
+          {/* The same rule as the panel above: a paid order is not offered a way to pay. The bar
+              would otherwise sit under the success panel with the total and an Upload button. */}
+          {session && !sessionIsQris && session.paymentStatus !== 'paid' ? (
             <StickyBottomActionBar
               fixed
               reserveSpace
