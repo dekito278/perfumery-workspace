@@ -1,4 +1,4 @@
-import { orderHasShipped } from './trackingLead.js';
+import { orderHasShipped, orderIsDelivered } from './trackingLead.js';
 import { isOrderClosedForPayment } from './orderClosed.js';
 
 /**
@@ -22,15 +22,27 @@ import { isOrderClosedForPayment } from './orderClosed.js';
 // word-for-word second copy under a second name.
 export const isClosedOrder = isOrderClosedForPayment;
 
-/** 'closed' | 'shipped' | 'waiting' — the one reading both lines of the block are built from. */
+/**
+ * 'closed' | 'delivered' | 'shipped' | 'waiting' — the one reading every line of the block is built from.
+ *
+ * 'delivered' was missing, and flattening it into 'shipped' put the same contradiction back into the
+ * same card, one pair of lines over: the status badge in the invoice header reads straight from
+ * shipment_status and said "Diterima", while the delivery block headlined the parcel "Dikirim". True of
+ * 5 of the 35 orders on production (2026-10-10), and of the 6th — completed with shipment_status
+ * not_ready — the header showed no badge at all while the block said the parcel was merely on its way.
+ */
 export const invoiceShipmentState = (order = {}) => {
   if (isClosedOrder(order)) return 'closed';
+  if (orderIsDelivered(order)) return 'delivered';
   return orderHasShipped(order) ? 'shipped' : 'waiting';
 };
 
 /** The sentence under the headline, for an order with no waybill yet. */
 export const shipmentNoteKey = (order = {}) => ({
   closed: 'inv.waybillNever',
+  // A delivered parcel with no waybill has the same thing to say as a shipped one: a number was never
+  // recorded. The headline above it already carries the difference.
+  delivered: 'inv.waybillMissing',
   shipped: 'inv.waybillMissing',
   waiting: 'inv.waybillLater',
 }[invoiceShipmentState(order)]);
