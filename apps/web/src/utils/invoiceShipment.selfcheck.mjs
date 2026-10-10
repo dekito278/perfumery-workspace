@@ -38,8 +38,45 @@ assert.equal(shipmentNoteKey(expiredOrder), 'inv.waybillNever');
 const waiting = { paymentStatus: 'paid', status: 'processing', shipmentStatus: 'packing' };
 assert.equal(invoiceShipmentState(waiting), 'waiting', 'an order still being packed is waiting, and says so');
 assert.equal(shipmentNoteKey(waiting), 'inv.waybillLater');
-assert.equal(invoiceShipmentState({ deliveredAt: '2026-09-20T00:00:00Z' }), 'shipped', 'delivered has left');
 assert.equal(invoiceShipmentState({}), 'waiting', 'an empty order promises nothing and claims nothing');
+
+// --- 2b. A parcel that ARRIVED is not merely "on its way" -------------------------------------------------
+// This assertion used to read 'shipped' — "delivered has left" — and pinning that flattening put the
+// original bug back into the same card one pair of lines over: the badge in the invoice header reads
+// shipment_status directly and said "Diterima" while the block below headlined the parcel "Dikirim".
+// Five of the 35 orders on production (2026-10-10) are delivered, and a sixth is completed with
+// shipment_status not_ready — that one got no badge at all beside a block saying it was on its way.
+for (const delivered of [
+  { deliveredAt: '2026-09-20T00:00:00Z' },
+  { paymentStatus: 'paid', status: 'completed', shipmentStatus: 'delivered', deliveredAt: '2026-09-20T00:00:00Z' },
+  { paymentStatus: 'paid', status: 'completed', shipmentStatus: 'not_ready' },
+  { paymentStatus: 'paid', status: 'completed', shipmentStatus: 'packing' },
+]) {
+  assert.equal(invoiceShipmentState(delivered), 'delivered',
+    `an arrived parcel must not be headlined as merely shipped: ${JSON.stringify(delivered)}`);
+}
+assert.notEqual(
+  invoiceShipmentState({ deliveredAt: '2026-09-20T00:00:00Z' }),
+  invoiceShipmentState({ paymentStatus: 'paid', status: 'shipped', shipmentStatus: 'shipped' }),
+  'delivered and shipped must not collapse into one headline',
+);
+// A refund is still the newer fact, even about a parcel that arrived.
+assert.equal(invoiceShipmentState({ status: 'cancelled', deliveredAt: '2026-09-20T00:00:00Z' }), 'closed');
+
+// Every state the reading can return has a sentence. A state added without one printed t(undefined),
+// which React renders as nothing at all.
+for (const order of [
+  {},
+  { paymentStatus: 'paid', status: 'shipped' },
+  { deliveredAt: '2026-09-20T00:00:00Z' },
+  { status: 'cancelled' },
+]) {
+  const key = shipmentNoteKey(order);
+  assert.ok(key, `no sentence for state ${invoiceShipmentState(order)}`);
+  for (const language of ['id', 'en']) {
+    assert.ok(MESSAGES[language][key], `${language}.${key} is missing`);
+  }
+}
 
 // Closed covers every dead payment status, not just the one that was in front of me.
 for (const paymentStatus of ['expired', 'failed', 'refunded']) {
@@ -57,6 +94,15 @@ assert.match(page, /const shipmentState = invoiceShipmentState\(order\);/,
 assert.match(page, /shipmentState === 'closed'\s*\?\s*t\('inv\.shipmentClosed'\)/,
   'the headline must say a closed order was not shipped');
 assert.match(page, /t\(shipmentNoteKey\(order\)\)/, 'and the sentence must come from the same reading');
+// The header badge is a THIRD line of the same document. It read the column itself, so a shipped order
+// whose shipment_status still said not_ready got no badge beside a block that said it had shipped.
+assert.match(page, /\[['"]shipped['"], ['"]delivered['"]\]\.includes\(shipmentState\) \? <ShipmentBadge status=\{shipmentState\}/,
+  'the invoice header badge must come from the same reading as the delivery block');
+assert.doesNotMatch(page, /<ShipmentBadge status=\{order\.shipmentStatus\}/,
+  'the old badge, read straight off the column, must not come back');
+// And the headline must name the state it was given rather than hard-coding one word for two states.
+assert.match(page, /shipmentState === 'waiting' \? order\.shipmentStatus : shipmentState/,
+  'the headline must label the state, not flatten delivered into shipped');
 assert.doesNotMatch(page, /orderHasShipped\(order\) \? 'inv\.waybillMissing' : 'inv\.waybillLater'/,
   'the old two-readings version must not come back');
 assert.match(page, /order\.trackingNumber && shipmentState !== 'closed'/,

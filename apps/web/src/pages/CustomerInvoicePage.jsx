@@ -104,7 +104,10 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           <PaymentBadge status={order.paymentStatus} />
-          {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
+          {/* From shipmentState, not from shipment_status: the badge and the delivery block below are
+              two lines of one document and used to read the column separately. A shipped order whose
+              shipment_status still said not_ready got no badge at all. */}
+          {['shipped', 'delivered'].includes(shipmentState) ? <ShipmentBadge status={shipmentState} /> : null}
         </div>
       </div>
     </div>
@@ -142,9 +145,12 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
             <span className="text-base font-bold text-editorial-charcoal">
               {shipmentState === 'closed'
                 ? t('inv.shipmentClosed')
-                : (shipmentState === 'shipped'
-                  ? (labelFrom(shipmentStatusKeys, shipmentStatusLabels, 'shipped', t) || t('inv.notShipped'))
-                  : (labelFrom(shipmentStatusKeys, shipmentStatusLabels, order.shipmentStatus, t) || t('inv.notShipped')))}
+                : (labelFrom(
+                  shipmentStatusKeys,
+                  shipmentStatusLabels,
+                  shipmentState === 'waiting' ? order.shipmentStatus : shipmentState,
+                  t,
+                ) || t('inv.notShipped'))}
             </span>
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">
