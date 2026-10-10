@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
-import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import { memberSavingForCart, shouldPromptSignInForMemberPrice } from '@/utils/memberPriceNudge.js';
 import { isProductVisibleInStorefront, getProductStockTotal } from '@/services/productCatalogService.js';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
@@ -25,7 +26,9 @@ const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, setGift } = useCart();
   const { index: memberIndex } = useMemberPrices();
+  const { currentUser } = useAuth();
   const memberSaving = memberSavingForCart(items, memberIndex);
+  const offerMemberSignIn = shouldPromptSignInForMemberPrice({ saving: memberSaving, signedIn: Boolean(currentUser) });
   const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
@@ -80,7 +83,7 @@ const MobileCartPage = () => {
               {/* The same saving the checkout names one step later, at the moment the total is being
                   weighed. Built from the keys the other storefront pages already use — no second
                   wording to keep in step, and desktop and phone say the same thing. */}
-              {items.length && memberSaving > 0 ? (
+              {items.length && offerMemberSignIn ? (
                 <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>
                   {t('price.memberTier')}: {t('price.saveShort', { amount: formatTotal(memberSaving) })}
                   {' · '}

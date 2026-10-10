@@ -79,6 +79,30 @@ export const attachMemberPrices = (products = [], index = {}) => {
  * carry member prices) and a cart with no member-priced products both come out at 0 — and 0 means the
  * caller keeps its ordinary copy.
  */
+/**
+ * Should the cart offer "sign in and save" at all?
+ *
+ * The saving above is real arithmetic — the cart's line prices against the member prices on the
+ * products — and all 19 products carry one. What nobody carries is the TIER: measured on production
+ * 2026-10-11, 43 of 43 customers are 'retail', including the 8 who have linked a Google account. The
+ * tier lives on the customer row and only Dekito can grant it.
+ *
+ * So for a customer who has already signed in, the line said "Harga member · hemat Rp X · Masuk" with
+ * a link to the account page they were already signed into. The saving cannot arrive by signing in
+ * again; the only thing that can change it is the tier.
+ *
+ * Dekito's decision, 11 Oct 2026: keep the offer for a visitor who has NOT signed in — there the call
+ * to action is honest — and drop it once they have. The two checkout screens already behaved this way,
+ * because their nudge sits inside the sign-in button itself; the two cart screens showed it to
+ * everyone.
+ *
+ * A signed-in MEMBER needs no special case: their cart lines already carry member prices, so the
+ * saving is 0 and the line was never drawn.
+ */
+export const shouldPromptSignInForMemberPrice = ({ saving = 0, signedIn = false } = {}) => (
+  Number(saving) > 0 && !signedIn
+);
+
 export const memberSavingForCart = (items = [], index = {}) => {
   if (!Array.isArray(items) || !items.length || !index || !Object.keys(index).length) return 0;
   let saving = 0;
