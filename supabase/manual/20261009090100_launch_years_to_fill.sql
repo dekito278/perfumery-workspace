@@ -1,3 +1,10 @@
+-- SUPERSEDED — JANGAN DIJALANKAN LAGI.
+--
+-- Berkas ini menulis 2023 ke kesembilan belas parfum karena saya salah membaca jawaban Dekito pada
+-- 9 Oktober. Yang dia maksud: BRAND-nya berdiri 2023; parfumnya tahunnya berbeda-beda (dia menegaskan
+-- ini pada 11 Oktober 2026). Penggantinya, yang mengosongkan tahun-tahun itu dan menyediakan formulir
+-- per parfum, ada di 20261011080000_launch_years_are_per_perfume.sql.
+--
 -- The launch years.
 --
 -- Dekito, 9 Oct 2026, asked what year to use: "Rilis dari 2023". So every line below says 2023 — his

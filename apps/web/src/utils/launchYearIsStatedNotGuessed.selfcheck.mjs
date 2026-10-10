@@ -64,28 +64,70 @@ const derived = [...walk(src), join(migrationsDir, adders[0]),
 assert.deepEqual(derived, [],
   `a launch year is being derived from created_at in: ${derived.join(', ')}. That column is when the row `
   + 'was made in this app, not when the perfume was released — years apart on the older compositions');
-const form = readFileSync(join(root, 'supabase', 'manual', '20261009090100_launch_years_to_fill.sql'), 'utf8');
-const filled = [...form.matchAll(/set launch_year = (\w+)/g)].map((match) => match[1]);
-assert.equal(filled.length, 19, `the fill-in form has ${filled.length} products, expected 19`);
-// The form may carry a year, but only ONE, and only one somebody said out loud.
+// --- 2b. A brand's founding year is not a perfume's launch year ----------------------------------------
 //
-// It arrived all-NULL and stayed that way until Dekito answered on 9 Oct 2026 — "Rilis dari 2023" —
-// so every line now reads 2023. That is his blanket answer applied to all nineteen, which is a
-// different thing from nineteen years invented one at a time: the moment two different years appear
-// in this file, somebody has decided per-product what only he can know. NULL stays allowed, because a
-// line he has not settled shows no year at all rather than a guess.
-const years = [...new Set(filled)].filter((value) => value !== 'NULL');
-assert.ok(years.length <= 1,
-  `the form holds ${years.length} different years (${years.join(', ')}). One stated year applied to all `
-  + 'is an answer; several are per-product guesses, and a wrong one is permanent in Fragrantica');
-for (const year of years) {
-  assert.match(year, /^20\d\d$/, `"${year}" is not a year`);
-  assert.ok(form.includes(year) && /Dekito|Rilis dari/.test(form),
-    `the form fills in ${year} without saying whose answer that is — a year in this file has to be `
-    + 'traceable to the person who stated it, or the next reader cannot tell it from a guess');
+// I got this wrong and shipped it. Asked on 9 Oct 2026 what year to use, Dekito said "Rilis dari 2023";
+// I read that as a blanket answer about all nineteen releases and wrote 2023 to every row. He corrected
+// it on 11 Oct: "kok rilis parfum saya 2023 semua. Gak gitu loh maksud saya brand yg berdiri sejak 2023.
+// Kalo variannya mah beda2." The house started in 2023; the bottles came out in different years.
+//
+// So the earlier version of this guard had the rule inverted — it allowed at most ONE distinct year and
+// called several "per-product guesses". Several different years is now the only correct state, and the
+// mistake is the blanket one.
+const SUPERSEDED = '20261009090100_launch_years_to_fill.sql';
+const LIVE_FORM = '20261011080000_launch_years_are_per_perfume.sql';
+const manualDir = join(root, 'supabase', 'manual');
+const superseded = readFileSync(join(manualDir, SUPERSEDED), 'utf8');
+assert.match(superseded, /SUPERSEDED/,
+  `${SUPERSEDED} wrote 2023 to all nineteen on a misreading. It has been run; it must stay marked so it `
+  + 'is never run again');
+assert.ok(superseded.includes(LIVE_FORM),
+  `${SUPERSEDED} must point at its replacement, or the next reader fills in the wrong file`);
+
+const form = readFileSync(join(manualDir, LIVE_FORM), 'utf8');
+const statements = [...form.matchAll(/set launch_year = (\w+) where slug = '([^']+)'/g)];
+assert.equal(statements.length, 19, `the fill-in form has ${statements.length} per-product lines, expected 19`);
+// Every per-product line starts at NULL and is commented out: a year in this file has to be typed by
+// the one person who knows it. NULL shows no year at all, which is honest.
+for (const [statement, year, slug] of statements) {
+  const line = form.split('\n').find((text) => text.includes(statement));
+  assert.ok(line.trim().startsWith('--'), `the line for ${slug} is live SQL; the fill-in form must stay commented out`);
+  if (year !== 'NULL') {
+    assert.match(year, /^20\d\d$/, `"${year}" is not a year (${slug})`);
+  }
 }
-assert.match(form, /CHANGE THE ONES THAT ARE LATER|ubah yang/i,
-  'a blanket year has to say out loud that it is a floor, not a fact about every bottle');
+// And the clearing half must really clear all nineteen, or the wrong years stay on the pages.
+const clearing = form.match(/set launch_year = null\s*\nwhere slug in \(([\s\S]*?)\);/);
+assert.ok(clearing, 'the form must still clear the years it exists to undo');
+assert.equal([...clearing[1].matchAll(/'([^']+)'/g)].length, 19,
+  'the clearing statement must name all nineteen products');
+
+// Nothing anywhere may fill a launch year from the BRAND's founding year. They are different facts and
+// they live in different places on purpose: foundedYear in src/data/brandProfile.js, launch_year on the
+// product row.
+const BRAND_LEAK = /launch_?[Yy]ear[^\n;]{0,80}(foundedYear|BRAND_PROFILE)|(foundedYear|BRAND_PROFILE)[^\n;]{0,80}launch_?[Yy]ear/;
+const leaking = walk(src).filter((file) => BRAND_LEAK.test(strip(readFileSync(file, 'utf8'))))
+  .map((file) => file.replace(`${src}/`, ''));
+assert.deepEqual(leaking, [],
+  `a launch year is being taken from the brand's founding year in: ${leaking.join(', ')}. The house `
+  + 'started in 2023; the bottles did not all come out then');
+
+// The Fragrantica submission may not carry one year on every fragrance either — that is the same
+// mistake, in the document that goes somewhere permanent.
+const submission = readFileSync(join(root, 'docs', 'fragrantica-submission.txt'), 'utf8');
+const launched = [...submission.matchAll(/^\s*Launched\s+(.+)$/gm)].map((match) => match[1].trim());
+assert.ok(launched.length >= 19, `the submission lists ${launched.length} launch lines, expected at least 19`);
+const yearCounts = {};
+for (const value of launched) {
+  const year = value.match(/^(20\d\d)$/)?.[1];
+  if (year) yearCounts[year] = (yearCounts[year] || 0) + 1;
+}
+for (const [year, count] of Object.entries(yearCounts)) {
+  assert.ok(count < 10,
+    `${count} of the ${launched.length} fragrances in the submission say they launched in ${year}. That is `
+    + "the brand's founding year applied to every bottle — the exact thing Dekito corrected. A wrong year "
+    + 'in Fragrantica is permanent; leave the line out instead');
+}
 
 // --- 3. The shop carries it from the row to the page, both ways and both screens ------------------------
 // FOUR hand-written allowlists stand between the database row and the screen, and the field has to be

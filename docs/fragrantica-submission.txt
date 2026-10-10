@@ -10,6 +10,16 @@ BRAND
   About        https://www.solivagantscent.com/en/about
   Fragrances   19, all Eau de Parfum, 30 ml
 
+NOTE ON THE LAUNCH YEARS
+  Every "Launched" line below is a placeholder, deliberately. Dekito's answer on 9 October
+  — "Rilis dari 2023" — was about the HOUSE, not the bottles: SOLIVAGANT has released
+  since 2023, and the nineteen compositions came out in different years. He said so again
+  on 11 October: "Gak gitu loh maksud saya brand yg berdiri sejak 2023. Kalo variannya mah
+  beda2."
+  A year that is wrong in Fragrantica is permanent, and nobody but Dekito can tell these
+  apart, so each line is his to fill or to delete. Fragrantica accepts a fragrance with no
+  year; it does not forgive a wrong one. "Founded 2023" above is the brand fact and stays.
+
 NOTE ON THE NOTE NAMES
   The website labels reconstructions as accords — "Animalic Accord", "Oud Accord",
   "Deer Musk Accord" — because an accord is what they are, and because a bottle
@@ -26,7 +36,7 @@ FRAGRANCES
   .Wayback
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Metallic notes, Almond, Cherry
     Heart          Ylang-ylang, Nagarmotha
@@ -36,7 +46,7 @@ FRAGRANCES
   Animal Farm
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Green Notes
     Heart          Leather, Musk
@@ -46,7 +56,7 @@ FRAGRANCES
   Aquilaria tuberosa
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Tuberose Absolute, Orange Flower Absolute
     Heart          Sandalwood, Orris Root
@@ -56,7 +66,7 @@ FRAGRANCES
   Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Jasmine, Tuberose
     Heart          Amberwood
@@ -66,7 +76,7 @@ FRAGRANCES
   HUG N°1
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Metallic notes
     Heart          Milk, Powdery Notes
@@ -76,7 +86,7 @@ FRAGRANCES
   J’adore la Vanille
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Boozy Vanilla
     Heart          Resin, Sandalwood
@@ -86,7 +96,7 @@ FRAGRANCES
   J’adore La Vetiver
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Lime
     Heart          Amberwood
@@ -96,7 +106,7 @@ FRAGRANCES
   Jason Voorhees
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Green Notes, Wet Moss
     Heart          Leather, Smoke
@@ -106,7 +116,7 @@ FRAGRANCES
   Jata Bhumi
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Ozonic, Aquatic
     Heart          Smoke, Leather
@@ -116,7 +126,7 @@ FRAGRANCES
   L’iris
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Iris, Spicy Notes
     Heart          Leather, Orris
@@ -126,7 +136,7 @@ FRAGRANCES
   La Rose
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Honey
     Heart          Rose
@@ -136,7 +146,7 @@ FRAGRANCES
   La Tulipe
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Lily-of-the-Valley
     Heart          Tulip
@@ -146,7 +156,7 @@ FRAGRANCES
   Lintang Asmoro
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Aldehydes
     Heart          Floral Notes
@@ -156,7 +166,7 @@ FRAGRANCES
   Maskumambang
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Jasmine Sambac
     Heart          Champaca, Olibanum
@@ -166,7 +176,7 @@ FRAGRANCES
   Pantura
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Orange, Lime, Bergamot, Sea Notes, Green Notes
     Heart          Solar Notes, Floral Notes
@@ -176,7 +186,7 @@ FRAGRANCES
   Patchouli so sexy
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Patchouli, White Chocolate
     Heart          Amber, Balsamic
@@ -186,7 +196,7 @@ FRAGRANCES
   Sudra
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Spicy Notes, Green Notes
     Heart          Rice, Cedarwood
@@ -196,7 +206,7 @@ FRAGRANCES
   Vanille Planifolia
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            Spicy Notes, Cream, Rum
     Heart          Lily of the Valley, Fruity Notes
@@ -206,7 +216,7 @@ FRAGRANCES
   Wongka!
     Concentration  Eau de Parfum
     Size           30 ml
-    Launched       2023
+    Launched       *** FILL IN OR DELETE THIS LINE — see the note below ***
     Perfumer       Dekito
     Top            *** PICK ONE BEFORE POSTING — see the bottom of this file ***
     Heart          Green Notes
