@@ -67,6 +67,11 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { STUDIO_STEP_KEYS, studioActiveStepIndex } from '@/utils/trackingLead.js';
+import {
+  auditChanges,
+  auditRowIsImportant,
+  summariseAuditValues,
+} from '@/utils/orderAuditChanges.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -1386,6 +1391,48 @@ const MobileOrderDetailPage = () => {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* The audit log, on the screen the shop is actually run from.
+            It was already being fetched here — twice, on load and after a proof review — and spent on
+            the proof timeline alone. Everything else it holds was invisible: measured 2026-10-11, the
+            log has 176 rows for the 35 live orders while status_timeline above has 45 across all of
+            them, and 14 of those orders have an empty status_timeline, which is why the list above
+            falls back to a synthesised history whose every row carries the same updated_at. */}
+        <section className="mobile-card p-4">
+          <h2 className="text-base font-bold text-editorial-charcoal">Riwayat perubahan</h2>
+          <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">
+            {auditLogs.length ? `${auditLogs.length} entri, terbaru dulu` : 'Belum ada perubahan tercatat untuk order ini.'}
+          </p>
+          {auditLogs.length ? (
+            <div className="mt-3 grid gap-2">
+              {auditLogs.map((log) => {
+                const changes = auditChanges(log.previousValues, log.nextValues);
+                const important = auditRowIsImportant(changes);
+                return (
+                  <article key={log.id} className={`rounded-2xl border px-3 py-2 ${important ? 'border-amber-200 bg-amber-50' : 'border-[#e5e7eb] bg-[#f8f7f4]'}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="text-xs font-bold text-editorial-charcoal">{ORDER_AUDIT_LABELS[log.action] || log.action}</div>
+                      <div className="shrink-0 text-[10px] font-semibold text-[#6b7280]">{formatDate(log.createdAt)}</div>
+                    </div>
+                    <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">{log.actorName || log.actorEmail || 'Sistem'}</div>
+                    {changes.length ? (
+                      <div className="mt-2 grid gap-1">
+                        {changes.map((change) => (
+                          <div key={change.key} className="text-[11px] font-semibold text-[#1f2937]">
+                            <span className="text-[#6b7280]">{change.label}: </span>
+                            {change.before} &rarr; {change.after}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-2 break-words text-[11px] font-semibold text-[#6b7280]">{summariseAuditValues(log.nextValues)}</div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          ) : null}
         </section>
 
         <section className="grid grid-cols-2 gap-2">
