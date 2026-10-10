@@ -200,9 +200,12 @@ export const createFormula = async (formulaData, items) => {
       // Roll the formula row back. Without this the failed create left an item-less formula behind, and the
       // perfumer's retry created a second one — updateFormula already rolls its items back, so this only
       // brings create in line with it (audit round 8).
-      const { error: rollbackError } = await supabase.from('formulas').delete().eq('id', formula.id);
-      if (rollbackError) {
-        console.error('Failed to roll back the empty formula row:', rollbackError);
+      // Observed too. A rollback whose whole purpose is cleanup must know whether it cleaned up, and a
+      // refused delete comes back 200 with error === null. Logged rather than thrown: the items error
+      // is what the perfumer needs to see.
+      const { data: rolledBack, error: rollbackError } = await supabase.from('formulas').delete().eq('id', formula.id).select('id');
+      if (rollbackError || !(rolledBack || []).length) {
+        console.error('Failed to roll back the empty formula row:', rollbackError || 'no row was removed');
       }
       throw new Error(itemsError.message || 'Failed to create formula items');
     }
@@ -226,19 +229,36 @@ export const updateFormula = async (formulaId, formulaData, items) => {
 
   // Snapshot existing items so a failed re-insert can be rolled back — Supabase JS has no
   // client-side transaction, and delete-then-insert otherwise loses the whole composition.
-  const { data: previousItems } = await supabase
+  //
+  // The error is READ. Without it a failed snapshot left previousItems undefined and the rollback below
+  // silently impossible — the one path whose whole job is not losing the composition.
+  const { data: previousItems, error: previousItemsError } = await supabase
     .from('formula_items')
     .select('*')
     .eq('formula_id', formulaId);
 
-  const { error: deleteError } = await supabase
+  if (previousItemsError) {
+    console.error('Error reading the formula composition before replacing it:', previousItemsError);
+    throw new Error(previousItemsError.message || 'Failed to read the formula composition');
+  }
+
+  // .select() on the delete, for the reason orderWrites.selfcheck.mjs spells out about the orders
+  // table: PostgREST answers a write the policies refuse with 200 and error === null. Here that is
+  // worse than a no-op — the insert below would then add the new composition ON TOP of the old one, and
+  // the formula would carry both, its percentages summing to 200.
+  const { data: deletedItems, error: deleteError } = await supabase
     .from('formula_items')
     .delete()
-    .eq('formula_id', formulaId);
+    .eq('formula_id', formulaId)
+    .select('id');
 
   if (deleteError) {
     console.error('Error replacing formula items:', deleteError);
     throw new Error(deleteError.message || 'Failed to replace formula items');
+  }
+
+  if (previousItems.length && !(deletedItems || []).length) {
+    throw new Error('Komposisi formula tidak bisa diganti: baris lamanya tidak terhapus. Formula dibiarkan apa adanya.');
   }
 
   if (items?.length) {
@@ -277,14 +297,21 @@ export const updateFormulaStatus = async (formulaId, status) => {
 };
 
 export const deleteFormula = async (formulaId) => {
-  const { error } = await supabase
+  // Observed, like every other write in this file: a delete the policies refuse comes back 200 with
+  // error === null, so this reported success and the formula reappeared on the next refresh.
+  const { data, error } = await supabase
     .from('formulas')
     .delete()
-    .eq('id', formulaId);
+    .eq('id', formulaId)
+    .select('id');
 
   if (error) {
     console.error('Error deleting formula:', error);
     throw new Error('Failed to delete formula');
+  }
+
+  if (!(data || []).length) {
+    throw new Error('Formula tidak terhapus. Coba lagi, atau periksa izin akunmu.');
   }
 };
 
@@ -318,6 +345,13 @@ export const duplicateFormula = async (formulaId) => {
 
     if (itemsError) {
       console.error('Error duplicating formula items:', itemsError);
+      // Roll the copy back. createFormula learned this in audit round 8 — without it a failed copy left
+      // an item-less "Copy of ..." in the list, and the perfumer's retry made a second one. This is the
+      // same mirror, never done.
+      const { data: rolledBack, error: rollbackError } = await supabase.from('formulas').delete().eq('id', duplicate.id).select('id');
+      if (rollbackError || !(rolledBack || []).length) {
+        console.error('Failed to roll back the empty duplicate formula row:', rollbackError || 'no row was removed');
+      }
       throw new Error('Failed to duplicate formula');
     }
   }
