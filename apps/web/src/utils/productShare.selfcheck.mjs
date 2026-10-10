@@ -72,7 +72,14 @@ assert.match(button, /navigator\.share/, 'the native sheet is the whole point on
 assert.match(button, /copyTextToClipboard/, 'and where there is no sheet, the link goes to the clipboard instead');
 assert.match(button, /AbortError/,
   'closing the share sheet must not be reported as a failure — that is someone changing their mind');
-assert.match(button, /routerBasename\(\)/, 'the link is built for the shop being read, not for a fixed one');
+// Its reason stands — "the shop being READ, not a fixed one" — but routerBasename() reads the ADDRESS,
+// and on this shop the address and the language disagree: resolveRegion takes the language from ?lang,
+// then the stored choice, then the guess, so /catalog serves English to anyone who chose the English
+// shop while routerBasename() answers '' there. shopPrefixForRegion(region) is the same intent asked of
+// the right source. See buyerLinksStayInTheirShop.selfcheck.mjs.
+assert.match(button, /shopPrefixForRegion\(region\)/, 'the link is built for the shop being read, not for a fixed one');
+assert.doesNotMatch(button, /routerBasename\(/,
+  'and not off the address, which can say Indonesian on a page rendering in English');
 assert.doesNotMatch(button, /window\.location\.href|location\.pathname/,
   'the address bar is not the link to share: on a phone it is the /mobile duplicate');
 

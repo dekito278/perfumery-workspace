@@ -47,6 +47,7 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
+import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import useTranslate from '@/hooks/useTranslate.js';
 
@@ -690,7 +691,7 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
 };
 
 const ShipmentPanel = ({ order, compact = false }) => {
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   if (!order || order.shipmentStatus === 'not_ready') return null;
   const courierSearchUrl = buildCourierTrackingSearchUrl({
     courierName: order.courierName,
@@ -744,7 +745,7 @@ const ShipmentPanel = ({ order, compact = false }) => {
           {t('cust.searchWaybill')}
         </a>
       ) : null}
-      <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-3 text-xs font-bold text-editorial-charcoal">
+      <a href={buildPublicTrackingUrl(order.orderNumber, { basename: shopPrefixForRegion(region) })} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-3 text-xs font-bold text-editorial-charcoal">
         <ExternalLink className="h-4 w-4" />
         {t('cust.publicTracking')}
       </a>
@@ -761,7 +762,7 @@ const SelfServiceActions = ({
   order,
   refreshing = false,
 }) => {
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   const paymentPath = buildPaymentPath({ isMobileRoute, order });
   // Reorder fills the cart and sends the buyer to it. It was hidden in the English shop until
   // 2026-10-06, when that shop had no cart to fill; Dekito opened it with the cart. What had to change
@@ -814,7 +815,7 @@ const SelfServiceActions = ({
           {t('cust.searchWaybill')}
         </a>
       ) : null}
-      <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className={outlineClass}>
+      <a href={buildPublicTrackingUrl(order.orderNumber, { basename: shopPrefixForRegion(region) })} target="_blank" rel="noreferrer" className={outlineClass}>
         <ExternalLink className="h-4 w-4" />
         {t('cust.publicTracking')}
       </a>

@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Buffer } from 'node:buffer';
-import { EN_PATH_PREFIX, routerBasename } from './storefrontRegion.js';
+import { EN_PATH_PREFIX, REGION_EN, routerBasename, shopPrefixForRegion } from './storefrontRegion.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -92,23 +92,58 @@ assert.ok(
 assert.equal(routerBasename('/en/catalog'), EN_PATH_PREFIX, 'routerBasename must still read the shop off the path');
 assert.equal(routerBasename('/catalog'), '', 'and answer empty for the Indonesian one');
 
-// ── 4. No buyer-facing page may hand out a raw link built without a basename ─────────────────────
-// The subject is read from the code: every raw href/window.open on a buyer's screen whose value comes
-// from a *Url( builder. Each such builder has to be one that takes a basename.
-const BUYER_PAGES = ['pages/CustomerPortalPage.jsx', 'pages/CustomerInvoicePage.jsx', 'pages/PublicProductDetailPage.jsx'];
-const BASENAME_AWARE = ['buildPublicTrackingUrl', 'productShareUrl'];
+// ── 4. A buyer's link follows the shop the buyer is BEING SHOWN ─────────────────────────────────
+//
+// routerBasename() answers from the PATH, which is right for the router. The LANGUAGE does not come
+// from the path: resolveRegion reads ?lang, then the stored choice, then the guess. Measured in the
+// browser panel — localStorage solivagant.storefront.region.v1 = 'en' and the Indonesian address
+// /catalog served the English catalogue with US$ prices, while routerBasename() answered '' on that
+// very page. So a buyer-facing link must take its prefix from the REGION, not the address.
+//
+// This section's first version only scanned href={...Url(, which is why it walked past the Google
+// sign-in redirect two screens over. The subject is now every raw absolute URL on a buyer's screen.
+const BUYER_SCREENS = [
+  'pages/CustomerPortalPage.jsx',
+  'pages/CustomerInvoicePage.jsx',
+  'pages/PublicProductDetailPage.jsx',
+  'components/storefront/ShareProductButton.jsx',
+];
 let rawLinks = 0;
-for (const file of BUYER_PAGES) {
+for (const file of BUYER_SCREENS) {
   const source = read(...file.split('/'));
-  for (const match of source.matchAll(/(?:href=\{|window\.open\()\s*(\w+Url)\(/g)) {
+  for (const match of source.matchAll(/(?:href=\{|window\.open\(|copyTextToClipboard\()\s*(\w+Url)\(/g)) {
     rawLinks += 1;
     assert.ok(
-      BASENAME_AWARE.includes(match[1]),
-      `${file} hands a buyer a raw link from ${match[1]}(), which does not take a basename — an English `
-      + 'customer would be sent to the Indonesian shop',
+      ['buildPublicTrackingUrl', 'productShareUrl'].includes(match[1]),
+      `${file} hands a buyer a raw link from ${match[1]}(), which does not take a basename`,
     );
   }
+  // Every basename handed to such a builder comes from the region, never from the path.
+  for (const match of source.matchAll(/basename:\s*(\w+)\(/g)) {
+    assert.equal(
+      match[1],
+      'shopPrefixForRegion',
+      `${file} takes a link prefix from ${match[1]}(), which reads the ADDRESS. On this shop the address `
+      + 'and the language disagree: /catalog serves English to anyone who chose the English shop',
+    );
+  }
+  assert.ok(
+    !/routerBasename\(/.test(source),
+    `${file} is a buyer's screen and must not read the shop off the address`,
+  );
 }
-assert.ok(rawLinks >= 2, `only ${rawLinks} raw buyer links found — the scan is broken, not the pages`);
+assert.ok(rawLinks >= 3, `only ${rawLinks} raw buyer links found — the scan is broken, not the pages`);
+
+// The region-derived prefix, run.
+assert.equal(shopPrefixForRegion(REGION_EN), EN_PATH_PREFIX, 'the English shop keeps its prefix');
+assert.equal(shopPrefixForRegion('id'), '', 'the Indonesian one has none');
+assert.equal(shopPrefixForRegion(undefined), '', 'and an unknown region is not the English shop');
+
+// The two prefixes are siblings and must agree about the English shop, so a link built from either
+// lands in the same place.
+const notifications = read('services', 'notificationTemplateService.js');
+assert.match(notifications, /const shopPrefix = \(order\) => \(shopOf\(order\) === 'en' \? '\/en' : ''\)/,
+  "the order-derived prefix must still answer '/en' for the English shop — it is the twin of "
+  + 'shopPrefixForRegion, for links Dekito sends out of Studio');
 
 console.log(`buyerLinksStayInTheirShop: ok — ${rawLinks} raw buyer links, every one of them basename-aware`);
