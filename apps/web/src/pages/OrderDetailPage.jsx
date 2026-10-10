@@ -1,6 +1,5 @@
 import BriefText from '@/components/BriefText.jsx';
 import { fromDatetimeLocal, toDatetimeLocal } from '@/utils/datetimeLocalInput.js';
-import { needsWaybillPrompt } from '@/utils/waybillPrompt.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
@@ -222,8 +221,6 @@ const OrderDetailPage = () => {
   // The field already existed in "Pengiriman & fulfillment" with its own save button — a second gesture,
   // in a second place, for the same event. It was skipped eleven times in a row, so the buyer got
   // "Paket sudah dikirim." and nothing else, on the page and in WhatsApp alike.
-  const [waybillAsk, setWaybillAsk] = useState(null);
-  const [waybillDraft, setWaybillDraft] = useState('');
   const [shipmentDraft, setShipmentDraft] = useState({
     shipmentStatus: 'not_ready',
     courierName: '',
@@ -423,13 +420,9 @@ const OrderDetailPage = () => {
       await updateOrderStatus(orderKey, status);
       const nextOrder = await refreshOrder();
       const current = nextOrder || { ...order, status };
-      const missingWaybill = needsWaybillPrompt(current, status);
-      if (missingWaybill) {
-        // The WhatsApp draft carries the waybill, so it waits until the question is answered. Preparing
-        // it now would hand him a message missing the very number he is about to type.
-        setWaybillDraft('');
-        setWaybillAsk(current);
-      } else if (['processing', 'shipped', 'completed'].includes(status)) {
+      // The WhatsApp draft used to WAIT here, for a waybill prompt that fired on every shipped order,
+      // because this shop records no waybills. The message is the tracking now, so it is prepared.
+      if (['processing', 'shipped', 'completed'].includes(status)) {
         await prepareCustomerNotification(current, status);
       }
       toast.success('Status order diperbarui');
@@ -473,16 +466,9 @@ const OrderDetailPage = () => {
       if (shipmentDraft.shipmentStatus === 'shipped' || shipmentDraft.trackingNumber) {
         await prepareCustomerNotification(notificationOrder, 'shipped');
       }
-      // Saved as shipped with the waybill left blank — which is what happened on 10 of the 11 orders in
-      // this shop, with the field sitting right beside the status. Not blocked and not nagged: said once,
-      // in terms of what the BUYER will see, so leaving it empty is a choice rather than an oversight.
-      if (shipmentDraft.shipmentStatus === 'shipped' && !String(shipmentDraft.trackingNumber || '').trim()) {
-        toast.warning('Tersimpan tanpa resi', {
-          description: 'Pembeli akan melihat "Belum tersedia" di halaman lacak, dan pesan WhatsApp-nya tidak membawa nomor apa pun.',
-        });
-      } else {
-        toast.success('Pengiriman tersimpan');
-      }
+      // Said once and then dropped: this warned on every shipment save, because the waybill is always
+      // blank here, and its description — "Pembeli akan melihat Belum tersedia" — is no longer even true.
+      toast.success('Pengiriman tersimpan');
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan pengiriman');
     } finally {
@@ -492,37 +478,7 @@ const OrderDetailPage = () => {
 
   // Answering saves through the SAME path as the shipment form, so there is one way a waybill reaches the
   // order. Skipping is a real answer: the parcel is out, the number simply is not known yet, and the
-  // tracking page already says so honestly.
-  const answerWaybill = async (number) => {
-    const target = waybillAsk;
-    setWaybillAsk(null);
-    if (!target) return;
-    const waybill = String(number || '').trim();
-    if (!waybill) {
-      await prepareCustomerNotification(target, 'shipped');
-      return;
-    }
-    setSavingShipment(true);
-    try {
-      const nextShipment = await updateOrderShipment(orderKey, {
-        ...shipmentDraft,
-        shipmentStatus: 'shipped',
-        trackingNumber: waybill,
-        shippedAt: fromDatetimeLocal(shipmentDraft.shippedAt) || new Date().toISOString(),
-        deliveredAt: fromDatetimeLocal(shipmentDraft.deliveredAt),
-      });
-      setShipmentDraft((currentDraft) => ({ ...currentDraft, shipmentStatus: 'shipped', trackingNumber: waybill }));
-      const fresh = await refreshOrder();
-      await prepareCustomerNotification(fresh || nextShipment || { ...target, trackingNumber: waybill }, 'shipped');
-      toast.success('Resi tersimpan');
-    } catch (error) {
-      // The status change already landed. Say what did not, and leave the number on screen to retry.
-      toast.error(error.message || 'Resi gagal disimpan — order tetap berstatus dikirim');
-      setWaybillAsk(target);
-    } finally {
-      setSavingShipment(false);
-    }
-  };
+
 
   const saveInternalNotes = async () => {
     setSavingNotes(true);
@@ -812,7 +768,7 @@ const OrderDetailPage = () => {
             <div className="text-xs font-bold uppercase text-muted-foreground">Fulfillment</div>
             <div className="mt-2 flex flex-wrap gap-2">
               <StatusChip tone={getShipmentStatusTone(order.shipmentStatus)}>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</StatusChip>
-              {order.trackingNumber ? <StatusChip tone="success">Resi siap</StatusChip> : <StatusChip tone="warning">Butuh resi</StatusChip>}
+              {order.trackingNumber ? <StatusChip tone="success">Resi siap</StatusChip> : null}
             </div>
             <p className="mt-3 truncate text-sm font-bold text-editorial-charcoal">{order.courierName || 'Kurir belum diisi'}</p>
           </div>
@@ -1150,30 +1106,6 @@ const OrderDetailPage = () => {
                 <select value={order.status} onChange={(event) => updateStatus(event.target.value)} disabled={savingStatus} className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
-                {waybillAsk ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-amber-900">Nomor resi?</p>
-                    <p className="mt-1 text-xs font-medium leading-snug text-amber-800">
-                      Pembeli melihat ini di halaman lacak, dan ikut terbawa ke pesan WhatsApp.
-                    </p>
-                    <input
-                      value={waybillDraft}
-                      onChange={(event) => setWaybillDraft(event.target.value)}
-                      onKeyDown={(event) => { if (event.key === 'Enter') answerWaybill(waybillDraft); }}
-                      placeholder="Tempel nomor resi"
-                      autoFocus
-                      className="mt-2 h-11 w-full rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
-                    />
-                    <div className="mt-2 flex gap-2">
-                      <Button type="button" className="h-10 flex-1 rounded-2xl text-xs" onClick={() => answerWaybill(waybillDraft)} disabled={savingShipment || !waybillDraft.trim()}>
-                        Simpan resi
-                      </Button>
-                      <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white text-xs" onClick={() => answerWaybill('')} disabled={savingShipment}>
-                        Belum ada
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
                 <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => copyText(order.checkoutDraft || order.notes, 'Draft order')}>
                   <Copy className="h-4 w-4" />
                   Salin draft order

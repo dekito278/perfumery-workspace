@@ -130,7 +130,6 @@ export const ORDER_TASKS = {
   quote: { title: 'Kirim angka ongkir', helper: 'Order ini menunggu ongkir dari kita sebelum bisa dibayar.' },
   payment: { title: 'Tuntaskan pembayaran', helper: 'Follow-up pembayaran atau sinkron DOKU bila perlu.' },
   followUp: { title: 'Follow-up pengiriman', helper: 'Pantau tracking dan tutup order setelah delivered.' },
-  waybill: { title: 'Lengkapi nomor resi', helper: 'Scan atau paste resi sebelum order ditandai dikirim.' },
   ship: { title: 'Packing lalu kirim', helper: 'Simpan kurir/resi dan tandai dikirim setelah paket keluar.' },
   pack: { title: 'Mulai packing', helper: 'Cetak resi PDF, lalu tandai order masuk packing.' },
 };
@@ -142,9 +141,10 @@ export const nextOrderTask = (order) => {
   if (isAwaitingShippingQuote(order)) return ORDER_TASKS.quote;
   if (order.paymentStatus !== 'paid') return ORDER_TASKS.payment;
   if (isShippedOrder(order)) return ORDER_TASKS.followUp;
-  if (hasShippingLabelPrinted(order)) {
-    return String(order.trackingNumber || '').trim() ? ORDER_TASKS.ship : ORDER_TASKS.waybill;
-  }
+  // No waybill branch. It used to split this into "Lengkapi nomor resi" first and "Packing lalu kirim"
+  // once a number existed — and since this shop records no waybills (Dekito, 2026-10-10), the first half
+  // was the only half anyone ever saw, on every packed order, forever.
+  if (hasShippingLabelPrinted(order)) return ORDER_TASKS.ship;
   return ORDER_TASKS.pack;
 };
 

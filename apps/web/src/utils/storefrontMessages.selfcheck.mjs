@@ -938,6 +938,32 @@ const walk = (dir, out = []) => {
       `the ${lang} no-waybill line must offer the way the buyer can actually get an answer`);
   }
   assert.match(MESSAGES.id['track.shipped'], /di bawah/i, 'the with-waybill line still points at it');
+
+  // --- And no sentence may promise a waybill that is never coming ----------------------------------
+  //
+  // Dekito's decision, 2026-10-10: this shop does not record waybills. Not one of the 35 orders on
+  // production has a tracking_number, 13 of them shipped and 8 completed, and he confirmed that is how
+  // he works — the parcel goes out and the buyer is answered on WhatsApp.
+  //
+  // So the earlier honest-but-hopeful wording is now the wrong sentence in the other direction: "resi
+  // belum masuk ke sistem" and "Resi akan muncul setelah dikirim" say LATER about something that never
+  // happens, on every parcel. These five sentences describe how tracking actually works instead.
+  for (const key of ['track.shippedNoWaybill', 'cust.waybillMissing', 'cust.waybillLater', 'inv.waybillMissing', 'inv.waybillLater']) {
+    for (const lang of ['id', 'en']) {
+      const sentence = MESSAGES[lang][key];
+      assert.ok(sentence, `${lang}.${key} is missing`);
+      assert.doesNotMatch(
+        sentence,
+        /belum masuk|akan muncul|not in the system|appears once|not yet/i,
+        `${lang}.${key} still tells the buyer a waybill is on its way: "${sentence}"`,
+      );
+      assert.match(
+        sentence,
+        /whatsapp/i,
+        `${lang}.${key} must name the way tracking actually reaches the buyer`,
+      );
+    }
+  }
 }
 
 // --- The page where the money moves must offer a way to ask --------------------------------------------

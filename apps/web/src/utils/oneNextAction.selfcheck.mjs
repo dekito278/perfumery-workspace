@@ -67,7 +67,7 @@ const proofStatuses = ['missing', 'submitted', 'approved', 'rejected'];
 const ALLOWED_WITH = new Map([
   [null, [ORDER_TASKS.review, ORDER_TASKS.done, ORDER_TASKS.proof, ORDER_TASKS.quote, ORDER_TASKS.payment, ORDER_TASKS.followUp]],
   ['packing', [ORDER_TASKS.pack, ORDER_TASKS.proof]],
-  ['shipped', [ORDER_TASKS.ship, ORDER_TASKS.waybill, ORDER_TASKS.proof]],
+  ['shipped', [ORDER_TASKS.ship, ORDER_TASKS.proof]],
 ]);
 
 let checked = 0;
@@ -103,11 +103,11 @@ for (const status of orderStatuses) {
           if (isShippedOrder(order)) {
             assert.equal(action, null, `${JSON.stringify(order)} has shipped but was offered ${action?.status}`);
           }
-          // A waybill is asked for before "dikirim", never after.
-          if (task === ORDER_TASKS.waybill) {
-            assert.equal(String(order.trackingNumber || '').trim(), '',
-              `${JSON.stringify(order)} already has a waybill but is being asked for one`);
-          }
+          // And no task asks for a waybill at all: theShopDoesNotChaseAWaybill owns that rule.
+          assert.ok(
+            !/(?:lengkapi|isi|minta|scan|paste)[^'"]{0,24}resi|nomor resi/i.test(task.title),
+            `the task ladder is asking for a waybill again: "${task.title}"`,
+          );
         }
       }
     }

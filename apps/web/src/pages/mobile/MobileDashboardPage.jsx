@@ -254,12 +254,10 @@ const MobileDashboardPage = () => {
     && isShippedOrder(order)
   )), [orders]);
   // The same snapshot the desktop dashboard puts in a red banner. The phone loaded the orders already
-  // and asked none of these questions: a payment window that lapsed, a paid parcel sitting in packing
-  // with no waybill, an order that never reached the server. Three things whose whole value is being
-  // noticed, on the surface the shop is actually run from.
+  // and asked none of these questions: a payment window that lapsed, an order that never reached the
+  // server. Things whose whole value is being noticed, on the surface the shop is actually run from.
   const opsHealth = useMemo(() => getOpsHealthSnapshot(orders), [orders]);
   const opsAttention = opsHealth.dokuWindowLapsedOrders.length
-    + opsHealth.shipmentNeedsResi.length
     + opsHealth.localOrders.length;
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
   const recentActivity = useMemo(() => sortByUpdated([
@@ -370,7 +368,7 @@ const MobileDashboardPage = () => {
                 icon={opsHealth.hasCriticalIssues ? WifiOff : ShieldCheck}
                 label="Kesehatan order"
                 title={opsAttention ? `${opsAttention} hal perlu dicek` : 'Alur order terlihat sehat'}
-                helper={`${opsHealth.dokuWindowLapsedOrders.length} DOKU lewat tempo · ${opsHealth.shipmentNeedsResi.length} tanpa resi · ${opsHealth.localOrders.length} belum tersinkron`}
+                helper={`${opsHealth.dokuWindowLapsedOrders.length} DOKU lewat tempo · ${opsHealth.localOrders.length} belum tersinkron`}
                 tone={opsHealth.hasCriticalIssues ? 'rose' : (opsAttention ? 'amber' : 'emerald')}
                 onClick={() => navigate('/mobile/studio/orders')}
               />

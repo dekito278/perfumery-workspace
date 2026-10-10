@@ -22,7 +22,6 @@ import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
-import { ordersMissingWaybill } from '@/utils/waybillPrompt.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
@@ -50,14 +49,12 @@ const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const isPaid = (order) => order.paymentStatus === 'paid';
 // The shared rule, so the dashboard card that sends Dekito here counts exactly what he will see.
 const isFulfillmentReady = (order) => isReadyToPack(order);
-const isNeedsResi = (order) => isFulfillmentReady(order) && !order.trackingNumber;
 
 const queueFilterOptions = [
   { value: 'paid', label: 'Dibayar' },
   { value: 'packing', label: 'Label/resi' },
   { value: 'shipped', label: 'Dikirim' },
   { value: 'follow_up', label: 'Follow-up' },
-  { value: 'need_resi', label: 'Butuh resi' },
   { value: 'blocked', label: 'Tertahan' },
 ];
 
@@ -142,7 +139,6 @@ const MobileFulfillmentPage = () => {
     if (queueFilter === 'packing') return readyOrders.filter((order) => order.shipmentStatus === 'packing');
     if (queueFilter === 'shipped') return shippedOrders;
     if (queueFilter === 'follow_up') return followUpOrders;
-    if (queueFilter === 'need_resi') return readyOrders.filter(isNeedsResi);
     if (queueFilter === 'blocked') return blockedPaidOrders;
     return paidOrders.filter((order) => !['completed', 'cancelled'].includes(order.status));
   }, [blockedPaidOrders, followUpOrders, paidOrders, queueFilter, readyOrders, shippedOrders]);
@@ -243,14 +239,6 @@ const MobileFulfillmentPage = () => {
   const saveShipment = async (order, shipmentStatus, overrides = {}) => {
     const orderKey = order.id || order.orderNumber;
     const draft = { ...(drafts[orderKey] || {}), ...overrides };
-    // This screen already knows which orders need one — isNeedsResi drives its own "Butuh resi" queue —
-    // and the button that ships them was reading a different list. The field is on the row, two inches
-    // above: "Scan / paste resi kurir".
-    if (ordersMissingWaybill([order], shipmentStatus, () => draft.trackingNumber || order.trackingNumber).length) {
-      toast.error(`${order.orderNumber} belum ada nomor resi. Isi "Scan / paste resi kurir" di baris ini dulu.`);
-      setSavingId('');
-      return;
-    }
     setSavingId(orderKey);
     try {
       await updateOrderShipment(orderKey, {
@@ -558,7 +546,7 @@ const MobileFulfillmentPage = () => {
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   <StatusChip size="xs" tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
                   <StatusChip size="xs" tone={draft.trackingNumber || order.trackingNumber ? 'success' : 'warning'}>
-                    {draft.trackingNumber || order.trackingNumber ? 'Resi siap' : 'Butuh resi'}
+                    {draft.trackingNumber || order.trackingNumber ? 'Resi siap' : 'Tanpa resi'}
                   </StatusChip>
                   {isBespokeOrder(order) ? <StatusChip size="xs" tone="primary">Bespoke</StatusChip> : null}
                 </div>
