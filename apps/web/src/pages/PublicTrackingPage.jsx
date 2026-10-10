@@ -73,7 +73,9 @@ const PublicTrackingPage = () => {
   const [error, setError] = useState('');
   const isCancelled = order?.status === 'cancelled';
   // A cancelled order must not render as a normal in-progress timeline with a "(saat ini)" step.
-  const completeCount = useMemo(() => (isCancelled ? 0 : orderProgressStepCount(order)), [order, isCancelled]);
+  // orderProgressStepCount answers 0 for a cancelled order itself — one ladder, read once, rather than
+  // this page subtracting a case the shared reading already knows about.
+  const completeCount = useMemo(() => orderProgressStepCount(order), [order]);
   const courierUrl = order?.trackingUrl || buildCourierTrackingSearchUrl(order || {});
 
   // useCallback with [t]: loadOrder writes a translated error message, so it changes when the shop's

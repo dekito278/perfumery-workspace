@@ -86,6 +86,7 @@ import {
   stockReservationTone,
 } from '@/utils/orderWorkflow.js';
 import { formatClientContext } from '@/utils/clientContext.js';
+import { STUDIO_STEP_KEYS, studioActiveStepIndex } from '@/utils/trackingLead.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -97,7 +98,7 @@ const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const notificationEventLabels = getNotificationEventLabels();
-const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
+const statusSteps = STUDIO_STEP_KEYS;
 
 const paymentProofStatusLabels = {
   missing: 'Belum upload bukti',
@@ -267,7 +268,10 @@ const OrderDetailPage = () => {
   const hasPaymentProofPath = Boolean(order?.paymentProofUrl);
   const paymentProofStatus = order?.paymentProofStatus || 'missing';
   const paymentProofIsImage = String(order?.paymentProofContentType || '').startsWith('image/');
-  const activeStep = Math.max(0, statusSteps.indexOf(order?.status || 'pending_payment'));
+  // Math.max(0, indexOf(...)) turned the -1 for a status this list does not hold into 0, so every
+  // cancelled order — 6 of the 35 on production — had "Menunggu bayar" ticked as its current step,
+  // while this screen's own phone twin returned -1 and ticked nothing.
+  const activeStep = studioActiveStepIndex(order);
   const timeline = order?.statusTimeline?.length
     ? order.statusTimeline
     : [

@@ -65,6 +65,7 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
+import { STUDIO_STEP_KEYS, studioActiveStepIndex } from '@/utils/trackingLead.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -80,7 +81,7 @@ const formatDate = (value) => (value
 const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
-const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
+const statusSteps = STUDIO_STEP_KEYS;
 
 const orderSections = [
   { value: 'task', label: 'Tugas' },
@@ -103,12 +104,6 @@ const paymentProofToneByStatus = {
   rejected: 'danger',
 };
 const notificationEventLabels = getNotificationEventLabels();
-
-const getActiveStep = (status) => {
-  if (status === 'cancelled') return -1;
-  const index = statusSteps.indexOf(status);
-  return index >= 0 ? index : 0;
-};
 
 const getBespokeProductionStep = (status) => {
   const index = BESPOKE_PRODUCTION_STEPS.indexOf(status || 'review_brief');
@@ -294,7 +289,7 @@ const MobileOrderDetailPage = () => {
   const bespoke = isBespokeOrder(order);
   const bespokeItem = getBespokeItem(order);
   const noteRows = useMemo(() => parseOrderNoteRows(order?.notes), [order?.notes]);
-  const activeStep = getActiveStep(order?.status);
+  const activeStep = studioActiveStepIndex(order);
   const bespokeProductionStatus = order?.bespokeProductionStatus || 'review_brief';
   const bespokeProductionStep = getBespokeProductionStep(bespokeProductionStatus);
   const hasPaymentProofPath = Boolean(order?.paymentProofUrl);

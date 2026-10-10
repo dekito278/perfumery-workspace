@@ -9,7 +9,7 @@ import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
-import { orderHasShipped } from '@/utils/trackingLead.js';
+import { orderHasShipped, portalActiveStepIndex } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -179,12 +179,6 @@ const writeLastCustomerCode = (code) => {
   } catch {
     // Storage can be blocked in private browsing; the portal still works normally.
   }
-};
-
-const getActiveStep = (status) => {
-  if (status === 'cancelled') return -1;
-  const index = progressSteps.findIndex((step) => step.key === status);
-  return index >= 0 ? index : 1;
 };
 
 const getBespokeProductionStep = (status) => {
@@ -499,7 +493,7 @@ const PaymentTaskPanel = ({
 
 const OrderTimeline = ({ order, compact = false }) => {
   const { t } = useTranslate();
-  const activeStep = getActiveStep(order.status);
+  const activeStep = portalActiveStepIndex(order);
   const timeline = progressSteps.map((step, index) => {
     const done = activeStep >= index;
     const current = activeStep === index;
