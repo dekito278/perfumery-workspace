@@ -749,6 +749,7 @@ export const getRawMaterialsReferenceSummary = async () => {
     const [
       { count: matchedReferenceCount, error: matchedError },
       { count: ifraReferenceCount, error: ifraError },
+      { data: matchedRows, error: matchedRowsError },
     ] = await Promise.all([
       supabase
         .from('raw_material_reference_links')
@@ -759,6 +760,14 @@ export const getRawMaterialsReferenceSummary = async () => {
         .select('raw_material_id, material_reference_profiles!inner(id)', { count: 'exact', head: true })
         .eq('is_primary', true)
         .not('material_reference_profiles.ifra_limit_percent', 'is', null),
+      // WHICH materials, not just how many. Both dashboards count a guidance gap over the materials
+      // they already hold, so the count and the three rows previewed under it have to come from the
+      // same answer — and that answer has to know about the link, which is where 83 of the 185 the
+      // card used to count actually have their guidance.
+      supabase
+        .from('raw_material_reference_links')
+        .select('raw_material_id')
+        .eq('is_primary', true),
     ]);
 
     if (matchedError) {
@@ -769,9 +778,14 @@ export const getRawMaterialsReferenceSummary = async () => {
       throw ifraError;
     }
 
+    if (matchedRowsError) {
+      throw matchedRowsError;
+    }
+
     return {
       matchedReferenceCount: Number(matchedReferenceCount || 0),
       ifraReferenceCount: Number(ifraReferenceCount || 0),
+      matchedReferenceIds: new Set((matchedRows || []).map((row) => row.raw_material_id).filter(Boolean)),
     };
   } catch (error) {
     console.error('Error fetching raw material reference summary:', error);
