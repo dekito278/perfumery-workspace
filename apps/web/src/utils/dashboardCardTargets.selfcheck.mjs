@@ -20,6 +20,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Buffer } from 'node:buffer';
+// The real predicate looks for 'bespoke_request'. These stubs said 'bespoke', so every bespoke
+// assertion below was being made about an order the shipped code does not consider bespoke at all.
+import { BESPOKE_SOURCE } from './bespokeOrder.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -83,7 +86,9 @@ assert.match(phone, /helper=\{`\$\{paymentFollowUps\.length\} belum dibayar/,
 const workflowSource = readFileSync(join(root, 'utils', 'orderWorkflow.js'), 'utf8')
   .replace(/^import\s[\s\S]*?from\s+'[^']+';\s*$/gm, '');
 const stubs = `
-const isBespokeOrder = (order = {}) => order?.source === 'bespoke';
+// Injected rather than retyped: the stub is compiled as its own module, so it cannot import.
+const BESPOKE_SOURCE = ${JSON.stringify(BESPOKE_SOURCE)};
+const isBespokeOrder = (order = {}) => order?.source === BESPOKE_SOURCE;
 const getBespokeItem = () => null;
 `;
 const { matchesOrderFilter, isShippedOrder } = await import(
