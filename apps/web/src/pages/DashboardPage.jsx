@@ -826,10 +826,6 @@ const DashboardPage = () => {
                   <div className="text-xs font-bold uppercase text-muted-foreground">DOKU lewat tempo</div>
                   <div className="mt-1 text-2xl font-bold text-rose-700">{opsHealth.dokuWindowLapsedOrders.length}</div>
                 </div>
-                <div className="rounded-2xl bg-white px-4 py-3">
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Butuh resi</div>
-                  <div className="mt-1 text-2xl font-bold text-editorial-charcoal">{opsHealth.shipmentNeedsResi.length}</div>
-                </div>
               </div>
               {opsHealth.syncQueue.length ? (
                 <div className="mt-4 grid gap-2">

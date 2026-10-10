@@ -13,7 +13,6 @@ import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderSe
 import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
-import { ordersMissingWaybill } from '@/utils/waybillPrompt.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
@@ -112,7 +111,6 @@ const ShipmentsPage = () => {
   const activeOrderCount = shipmentOrders.filter((order) => matchesOrderFilter(order, 'active')).length;
   const readyToShipCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && isFrontQueueOrder(order)).length;
   const labelResiCount = shipmentOrders.filter(hasShippingLabelPrinted).length;
-  const missingResiCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && hasShippingLabelPrinted(order) && !order.trackingNumber).length;
   const shippedCount = shipmentOrders.filter((order) => isShippedOrder(order) && !isArchivedOrder(order)).length;
   const filterCounts = {
     ready_to_ship: readyToShipCount,
@@ -223,17 +221,9 @@ const ShipmentsPage = () => {
       shipmentStatus: bulkDraft.shipmentStatus,
       ...(bulkDraft.courierName.trim() ? { courierName: bulkDraft.courierName } : {}),
     };
-    // Moving a selection to "Dikirim" carries each order's existing waybill along unchanged, so an order
-    // without one ships untrackable and nobody is asked — the one-order screens ask, this never did.
-    // Read from the DRAFT: a number typed into the row just now has not been saved yet.
-    const untrackable = ordersMissingWaybill(selectedShipmentOrders, patch.shipmentStatus,
-      (order) => (drafts[order.id || order.orderNumber] || buildShipmentDraft(order)).trackingNumber);
-    const untrackableKeys = new Set(untrackable.map((order) => order.id || order.orderNumber));
-    const movable = selectedShipmentOrders.filter((order) => !untrackableKeys.has(order.id || order.orderNumber));
-    if (untrackable.length && !movable.length) {
-      toast.error(`${untrackable.length} order belum punya nomor resi, jadi tidak ada yang bisa ditandai dikirim. Isi resinya dulu di barisnya masing-masing.`);
-      return;
-    }
+    // Every selected order moves. This used to hold back the ones with no waybill, which on this shop's
+    // data is all of them — Dekito's decision, 2026-10-10: the waybill is not part of how he ships.
+    const movable = selectedShipmentOrders;
     setBulkSaving(true);
     try {
       const updated = await settleBulk(movable.map((order) => {
@@ -475,10 +465,6 @@ const ShipmentsPage = () => {
                 <div className="text-xs font-bold uppercase text-muted-foreground">Label/resi</div>
                 <div className="mt-1 text-2xl font-bold text-amber-700">{labelResiCount}</div>
               </div>
-              <div className="rounded-2xl bg-white px-4 py-3">
-                <div className="text-xs font-bold uppercase text-muted-foreground">Butuh resi</div>
-                <div className="mt-1 text-2xl font-bold text-editorial-charcoal">{missingResiCount}</div>
-              </div>
             </div>
 
             <div className="grid gap-3 border-t pt-3 lg:grid-cols-[auto_1fr_auto]">
@@ -549,9 +535,6 @@ const ShipmentsPage = () => {
                         <StatusChip icon={Truck} tone={getShipmentStatusTone(order.shipmentStatus)}>
                           {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
                         </StatusChip>
-                        {paid && !draft.trackingNumber ? (
-                          <StatusChip tone="warning">Butuh resi</StatusChip>
-                        ) : null}
                       </div>
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">
                         {formatDate(order.createdAt)} / {order.customerName} / {order.contact}

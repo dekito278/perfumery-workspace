@@ -31,18 +31,16 @@ export const getOpsHealthSnapshot = (orders = []) => {
   // manual_transfer_bca and the filter above takes only DOKU. The copy was alive on today's data alone —
   // the first DOKU order to sit past its window with a submitted proof would have been called expired.
   const dokuWindowLapsedOrders = pendingPaymentOrders.filter((order) => isOrderReservationExpired(order, nowDate));
-  const shipmentNeedsResi = orders.filter((order) => (
-    order.paymentStatus === 'paid'
-    && ['packing', 'ready_to_ship', 'shipped'].includes(order.shipmentStatus)
-    && !order.trackingNumber
-  ));
+  // A paid parcel with no waybill was counted here as something to notice. It is not: not one of the
+  // 35 orders on production carries a tracking_number, 13 of them shipped, and Dekito confirmed on
+  // 2026-10-10 that this is how he ships — so the count could only ever be "all of them", on both
+  // dashboards, forever. An alarm that never stops is not an alarm.
   const localOrders = orders.filter((order) => order.persistence === 'local' || order.syncStatus === 'sync_required');
 
   return {
     syncQueue,
     pendingPaymentOrders,
     dokuWindowLapsedOrders,
-    shipmentNeedsResi,
     localOrders,
     hasCriticalIssues: Boolean(syncQueue.some((item) => item.severity === 'critical') || dokuWindowLapsedOrders.length),
   };

@@ -31,7 +31,6 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
-import { needsWaybillPrompt } from '@/utils/waybillPrompt.js';
 import {
   bespokeBriefRows,
   countOrdersByFilter,
@@ -239,13 +238,6 @@ const OrdersPage = () => {
   };
 
   const updateStatusAndNotify = async (order, status) => {
-      // A list row has nowhere to ask: the status select writes immediately and there is no field beside
-      // it. So shipping without a waybill stays possible only on the screen that ASKS about it, where
-      // "belum ada" is a considered answer rather than a side effect of picking from a dropdown.
-      if (needsWaybillPrompt(order, status)) {
-        toast.error(`${order.orderNumber} belum ada nomor resi. Buka ordernya untuk mengisi resi — daftar ini tidak menanyakannya.`);
-        return;
-      }
     try {
       await updateStatus(order.id || order.orderNumber, status);
       if (['processing', 'shipped', 'completed'].includes(status)) {

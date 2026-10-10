@@ -145,8 +145,15 @@ for (const [why, order] of protectedOrders) {
 assert.equal(getOpsHealthSnapshot([lapsed]).dokuWindowLapsedOrders.length, 1);
 assert.equal(getOpsHealthSnapshot([lapsed]).hasCriticalIssues, true);
 
-assert.equal(snapshot.shipmentNeedsResi.length, 1,
-  'a paid parcel in packing with no tracking number needs a waybill; one already posted does not');
+// A paid parcel with no waybill USED to be counted here, and this assertion required it. It is gone:
+// not one of the 35 orders on production carries a tracking_number, 13 of them shipped, and Dekito
+// confirmed on 2026-10-10 that this is how he ships. The count could only ever be "all of them", on
+// both dashboards, forever — an alarm that never stops is not an alarm. So the snapshot must NOT grow
+// it back, and a shop whose parcels carry no number must read clean.
+assert.ok(!('shipmentNeedsResi' in snapshot),
+  'the ops snapshot is counting missing waybills again — this shop does not record them');
+assert.equal(getOpsHealthSnapshot([noWaybill]).hasCriticalIssues, false,
+  'a paid parcel with no waybill is not an ops problem in this shop');
 assert.equal(snapshot.localOrders.length, 1, 'an order that never reached the server counts as one');
 assert.equal(snapshot.hasCriticalIssues, true, 'a lapsed payment is critical');
 assert.equal(getOpsHealthSnapshot([posted]).hasCriticalIssues, false,
@@ -193,7 +200,9 @@ for (const file of dashboards) {
   const answers = Object.entries(getOpsHealthSnapshot([]))
     .filter(([name, value]) => Array.isArray(value) && !NOT_A_CARD[name])
     .map(([name]) => name);
-  assert.ok(answers.length >= 3, `expected the snapshot's answers to be derivable; found ${answers.join(', ')}`);
+  // Two since the missing-waybill count was dropped (see above). The floor is here so a broken parse
+  // cannot pass by finding nothing at all.
+  assert.ok(answers.length >= 2, `expected the snapshot's answers to be derivable; found ${answers.join(', ')}`);
   // Mentioned is not shown. A sabotage that replaced the rendered number with a literal 0 passed a
   // file-wide includes(), because the field was still named in a useMemo above.
   //
