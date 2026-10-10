@@ -19,7 +19,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, '..', 'services', 'orderService.js'), 'utf8');
 
 // --- 1. every mutation of the orders table observes its affected rows ------------------------------
-const mutations = [...source.matchAll(/from\('storefront_orders'\)\s*\n?\s*\.(update|delete|insert)\(/g)];
+// `upsert` was not in this alternation, so the one write that can overwrite a whole row was the one
+// write nobody checked. See section 6.
+const mutations = [...source.matchAll(/from\('storefront_orders'\)\s*\n?\s*\.(update|delete|insert|upsert)\(/g)];
 assert.ok(mutations.length >= 3, `expected the orders table to still be written to, found ${mutations.length}`);
 
 for (const match of mutations) {
@@ -32,6 +34,39 @@ for (const match of mutations) {
     `a .${verb}() on storefront_orders does not .select() its affected rows, so an RLS refusal would look like success:\n${tail}`,
   );
 }
+
+// --- 6. no upsert on storefront_orders may overwrite a row that is already there --------------------
+//
+// retryLocalOrderSync re-sends an order kept in the browser because its insert was BELIEVED to have
+// failed. The way that belief is wrong is a response lost after the row was committed — and then the
+// server has had the order all along, while the DOKU notification may have marked it paid, the buyer
+// may have uploaded a proof through an RPC that writes six columns the retry payload does not carry,
+// and the parcel may already have gone.
+//
+// `upsert(payload, { onConflict: 'order_number' })` is ON CONFLICT DO UPDATE: it answered "Retry sync"
+// by writing a stale browser copy over all of that, payment_status included. There is nothing in a
+// local copy the server does not already have, so the write must never win a conflict.
+const upserts = [...source.matchAll(/from\('storefront_orders'\)\s*\n?\s*\.upsert\(([\s\S]*?)\)\s*\n/g)];
+assert.ok(upserts.length >= 1, `expected the recovery upsert to still exist, found ${upserts.length}`);
+for (const match of upserts) {
+  assert.match(
+    match[1],
+    /ignoreDuplicates:\s*true/,
+    `an upsert on storefront_orders can overwrite a row that is already on the server:\n${match[1]}`,
+  );
+}
+// And the row it ends up with must be read, not assumed: with ignoreDuplicates the insert returns
+// nothing on conflict, and PostgREST answers a refused write with 200 and zero rows either way.
+assert.match(
+  source,
+  /if \(!syncedRow\) \{\s*\n\s*throw new Error\(/,
+  'the retry must refuse to drop the local copy when the row was neither written nor found',
+);
+assert.match(
+  source,
+  /\.eq\('order_number', localOrder\.orderNumber\)\s*\n\s*\.maybeSingle\(\)/,
+  'the retry must read back the authoritative row when its insert hit a conflict',
+);
 
 // --- 2. the old silent-writer fingerprint is gone --------------------------------------------------
 // Every silent writer looked exactly like this: destructure only `error`, and treat "no error" as success.

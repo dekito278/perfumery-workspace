@@ -688,15 +688,44 @@ export const retryLocalOrderSync = async (orderIdOrNumber) => {
 
   try {
     const payload = toOrderDatabasePayload(localOrder);
-    const { data, error } = await supabase
+    // ON CONFLICT DO NOTHING, not DO UPDATE.
+    //
+    // This local copy exists because an insert was BELIEVED to have failed, and the way that belief is
+    // wrong matters: a response lost after the row was already committed. The server then has had the
+    // order all along — and since then the DOKU notification may have marked it paid, the buyer may
+    // have uploaded a proof through an RPC that writes six columns this payload does not carry, and
+    // Dekito may have packed and shipped it.
+    //
+    // A plain upsert answered "Retry sync" by writing the browser's stale copy over all of that,
+    // payment_status included: a paid order back to 'unpaid', status back to 'pending_payment',
+    // doku_response back to null. There is nothing in the local copy the server does not already have,
+    // so when the row is there, the right move is to keep the server's and drop the local one.
+    const { data: inserted, error } = await supabase
       .from('storefront_orders')
-      .upsert(payload, { onConflict: 'order_number' })
-      .select('*')
-      .single();
+      .upsert(payload, { onConflict: 'order_number', ignoreDuplicates: true })
+      .select('*');
 
     if (error) throw error;
 
-    const syncedOrder = normalizeOrder(data);
+    // ignoreDuplicates returns no row when the order was already there, so the authoritative row is
+    // READ rather than assumed.
+    let syncedRow = inserted?.[0] || null;
+    if (!syncedRow) {
+      const { data: existing, error: readError } = await supabase
+        .from('storefront_orders')
+        .select('*')
+        .eq('order_number', localOrder.orderNumber)
+        .maybeSingle();
+      if (readError) throw readError;
+      syncedRow = existing || null;
+    }
+    // Neither written nor found. PostgREST answers a write the policies refuse with 200 and zero rows,
+    // so without this the local copy would be deleted on the strength of nothing having happened.
+    if (!syncedRow) {
+      throw new Error(`Order ${localOrder.orderNumber} tidak tersimpan ke database dan tidak ada di sana. Salinan lokalnya dibiarkan.`);
+    }
+
+    const syncedOrder = normalizeOrder(syncedRow);
     writeOrders(localOrders.filter((order) => order.orderNumber !== localOrder.orderNumber));
     clearOrderSyncIssue(localOrder.orderNumber);
     window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
