@@ -116,7 +116,9 @@ const buildFamilyFallbackDistribution = (referenceProfile) => {
 
 export const getWorkbookAbcClassificationByLetter = (letter) => byLetter.get(normalizeLetter(letter)) || null;
 
-export const getWorkbookAbcClassificationByIndex = (classIndex) => {
+// Not exported: parseRawPayloadDistribution above is the only caller, and an export nothing imports is
+// how 1993 lines of materialCompositionProfile.js came to be unreachable (#442).
+const getWorkbookAbcClassificationByIndex = (classIndex) => {
   const normalizedClassIndex = Number(classIndex);
   return Number.isFinite(normalizedClassIndex) ? byClassIndex.get(normalizedClassIndex) || null : null;
 };
@@ -153,5 +155,4 @@ export const extractWorkbookClassDistribution = (referenceProfile) => {
   return buildFamilyFallbackDistribution(referenceProfile);
 };
 
-export const WORKBOOK_ABC_CLASSIFICATIONS_BY_INDEX = byClassIndex;
 export { WORKBOOK_ABC_CLASSIFICATIONS };
