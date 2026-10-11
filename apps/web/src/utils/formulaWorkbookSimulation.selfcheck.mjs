@@ -25,10 +25,15 @@ const source = readFileSync(join(here, 'formulaWorkbookSimulation.js'), 'utf8')
   .replace(/^import\s[\s\S]*?from\s+'[^']+';\s*$/gm, '');
 assert.ok(!/^import\s/m.test(source), 'an import survived the strip');
 
-// Stubbed: the guidance snapshot, so a fixture controls each material's impact and life outright, and
-// the three advisory/classification helpers, which this rule does not touch. Nothing else.
+// Stubbed: the guidance snapshot, so a fixture controls each material's impact and life outright, and the
+// advisory/classification helpers, which this rule does not touch. Nothing else.
+//
+// Every import the subject gains has to be added here, or it is simply undefined inside the data-URL
+// module and the fixture dies with a ReferenceError rather than a failed assertion. That is how this file
+// greeted ifraLimitIsRecorded the day the simulation started counting unrecorded IFRA limits.
 const stubs = `
 const buildGuidanceLimitAdvisories = () => [];
+const ifraLimitIsRecorded = (profile) => Number(profile?.ifra_limit_percent) > 0;
 const getDilutionFactor = () => 1;
 const resolveEffectiveConcentration = (value) => Number(value || 0);
 const extractWorkbookClassDistribution = () => [];

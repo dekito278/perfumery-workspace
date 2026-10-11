@@ -241,6 +241,13 @@ const FormulaWorkbookSimulationPanel = ({
             value={simulation.missingGuidanceCount}
             toneClass="border-slate-200 bg-slate-50 text-slate-700"
           />
+          {/* Where the panel used to print "Prohibited by IFRA" over materials whose profile simply had
+              no limit recorded (bergamot among them). The gap stays visible; the accusation is gone. */}
+          <SourceBadge
+            label="IFRA not recorded"
+            value={simulation.unknownIfraLimitCount || 0}
+            toneClass={simulation.unknownIfraLimitCount ? 'border-slate-300 bg-slate-100 text-slate-700' : 'border-emerald-200 bg-emerald-50 text-emerald-900'}
+          />
           <SourceBadge
             label="PACE warnings"
             value={simulation.pace.warningCount}

@@ -1,5 +1,5 @@
 import { resolveRawMaterialGuidanceSnapshot } from '@/utils/rawMaterialGuidanceResolver.js';
-import { buildGuidanceLimitAdvisories, getDilutionFactor, resolveEffectiveConcentration } from '@/utils/rawMaterialGuidanceAdvisories.js';
+import { buildGuidanceLimitAdvisories, getDilutionFactor, ifraLimitIsRecorded, resolveEffectiveConcentration } from '@/utils/rawMaterialGuidanceAdvisories.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
 const toFiniteNumber = (value) => {
@@ -672,6 +672,10 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
   const linkedProfileCount = rows.filter((row) => row.guidanceSource === 'linked_profile').length;
   const fallbackGuidanceCount = rows.filter((row) => row.guidanceSource === 'raw_material_fallback').length;
   const missingGuidanceCount = rows.filter((row) => row.guidanceSource === 'none').length;
+  // A guidance-backed row whose profile states no IFRA limit. Not an advisory — an advisory is a problem
+  // with the FORMULA, and this is a hole in the reference data — but not silence either: 0 used to be read
+  // as "prohibited" and the panel has to keep saying something where it used to shout.
+  const unknownIfraLimitCount = guidanceRows.filter((row) => !ifraLimitIsRecorded(row.reference_profile)).length;
   const guidanceSourceCounts = guidanceRows.reduce((counts, row) => ({
     ...counts,
     [row.guidanceSourceKey]: Number(counts[row.guidanceSourceKey] || 0) + 1,
@@ -716,6 +720,7 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
     rows: guidanceRows,
     eligibleItemCount: eligibleItems.length,
     missingGuidanceCount,
+    unknownIfraLimitCount,
     coveragePercent,
     odourWeightedLifeHours,
     topPercent,
@@ -738,6 +743,7 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
     manualGuidanceCount: guidanceSourceCounts.manual || 0,
     referenceGuidanceCount: guidanceSourceCounts.reference || 0,
     missingGuidanceCount,
+    unknownIfraLimitCount,
     hasImpactData,
     hasLifeData,
     coveragePercent,

@@ -7,13 +7,32 @@ const toFiniteNumber = (value) => {
   return Number.isFinite(numericValue) ? numericValue : null;
 };
 
-// A limit of 0 is a real, and the strictest, limit: IFRA uses it for prohibited materials. Folding it into
-// "no limit" meant the one material that must never appear in a formula was the one material that never
-// raised an advisory (audit round 8). null still means "unknown".
+// Zero means NOT RECORDED in this catalogue, not prohibited. Audit round 8 read it the other way, on the
+// correct general principle that IFRA uses 0% for a banned material -- but the studio's own profiles do
+// not follow that convention, and the data says so plainly:
+//
+//   * 76 reference profiles carry ifra_limit_percent = 0;
+//   * 66 of them CONTRADICT THEMSELVES, carrying a positive use level beside it -- Javanol 0% IFRA with a
+//     2% max, Evernyl with 5.9%, Ethyl linalool with 40%, Benzyl Benzoate with 80%;
+//   * the other 10 are zero in all three columns, and they include bergamot.
+//
+// None of the 76 is a plausibly banned material, and 22 of them are in live formulas -- so the workbook
+// was printing "Prohibited by IFRA -- material ini tidak boleh dipakai sama sekali" over bergamot and
+// Javanol, docking smoothness 8 points per row and refusing to let the PACE engine touch them.
+//
+// Dekito's decision, 11 Oct 2026: 0 means not recorded. Rather than falling silent about the gap, the
+// simulation counts these rows separately (unknownIfraLimitCount) and the panel says so -- the same answer
+// round 8 was reaching for, without asserting something untrue. A real prohibition will be marked some
+// other way when there is one to mark.
 const toGuidanceLimit = (value) => {
   const numericValue = toFiniteNumber(value);
-  return numericValue !== null && numericValue >= 0 ? numericValue : null;
+  return numericValue !== null && numericValue > 0 ? numericValue : null;
 };
+
+/** True when a profile exists but states no usable IFRA limit — unknown, not safe. */
+export const ifraLimitIsRecorded = (referenceProfile) => (
+  toGuidanceLimit(referenceProfile?.ifra_limit_percent) !== null
+);
 
 export const getDilutionFactor = (value) => {
   const dilutionPercent = toFiniteNumber(value);
@@ -81,15 +100,7 @@ export const buildGuidanceLimitAdvisories = ({
     });
   }
 
-  if (ifraLimit === 0) {
-    advisories.push({
-      type: 'ifra',
-      severity: 'danger',
-      label: 'Prohibited by IFRA',
-      limit: 0,
-      message: `Reference IFRA limit is 0% — material ini tidak boleh dipakai sama sekali, sekarang terpakai ${normalizedEffectivePercentage.toFixed(2)}%.`,
-    });
-  } else if (ifraLimit !== null && normalizedEffectivePercentage > ifraLimit) {
+  if (ifraLimit !== null && normalizedEffectivePercentage > ifraLimit) {
     advisories.push({
       type: 'ifra',
       severity: 'danger',

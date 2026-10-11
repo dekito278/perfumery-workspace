@@ -51,6 +51,9 @@ const FormulaDetailOverviewTab = ({
             <OverviewStat label="Manual guidance" value={(workbookSimulation.manualGuidanceCount || 0) + (workbookSimulation.referenceGuidanceCount || 0)} />
             <OverviewStat label="Missing guidance" value={workbookSimulation.missingGuidanceCount} />
             <OverviewStat label="IFRA alerts" value={ifraAdvisoryCount} valueClassName={ifraAdvisoryCount > 0 ? 'text-destructive' : ''} />
+            {/* Beside the alert count on purpose: zero alerts does not mean every material was checked.
+                76 of the studio's reference profiles state no IFRA limit at all. */}
+            <OverviewStat label="IFRA not recorded" value={workbookSimulation.unknownIfraLimitCount || 0} />
             <OverviewStat label="Max use alerts" value={maxUseAdvisoryCount} valueClassName={maxUseAdvisoryCount > 0 ? 'text-amber-600' : ''} />
             <OverviewStat label="Typical nudges" value={typicalUseAdvisoryCount} valueClassName={typicalUseAdvisoryCount > 0 ? 'text-blue-600' : ''} />
           </div>
