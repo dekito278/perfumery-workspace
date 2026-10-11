@@ -14,12 +14,14 @@
 // actually reads — would still not carry it. That trap is documented in 20260920170000, where `limited`
 // hit it; this guard makes the next column fail here instead of in production.
 import assert from 'node:assert/strict';
+import { BRAND_PROFILE } from '../data/brandProfile.js';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
 
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
+const FOUNDED_YEAR = BRAND_PROFILE.foundedYear;
 const root = join(src, '..', '..', '..');
 const strip = (text) => text
   .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -87,15 +89,32 @@ assert.ok(superseded.includes(LIVE_FORM),
 const form = readFileSync(join(manualDir, LIVE_FORM), 'utf8');
 const statements = [...form.matchAll(/set launch_year = (\w+) where slug = '([^']+)'/g)];
 assert.equal(statements.length, 19, `the fill-in form has ${statements.length} per-product lines, expected 19`);
-// Every per-product line starts at NULL and is commented out: a year in this file has to be typed by
-// the one person who knows it. NULL shows no year at all, which is honest.
-for (const [statement, year, slug] of statements) {
-  const line = form.split('\n').find((text) => text.includes(statement));
-  assert.ok(line.trim().startsWith('--'), `the line for ${slug} is live SQL; the fill-in form must stay commented out`);
-  if (year !== 'NULL') {
-    assert.match(year, /^20\d\d$/, `"${year}" is not a year (${slug})`);
-  }
+// The years are in, and they are Dekito's own: given per perfume on 11 Oct 2026, eleven from 2025 and
+// eight from 2026. So these lines are live SQL now rather than a blank form — what has to hold is that
+// each one carries a real year or an honest NULL, and that the file says whose answer it is.
+const filledYears = [];
+for (const [, year, slug] of statements) {
+  if (year === 'NULL') continue;
+  assert.match(year, /^20\d\d$/, `"${year}" is not a year (${slug})`);
+  filledYears.push(Number(year));
 }
+assert.ok(filledYears.length >= 1, 'the file sets no year at all — it exists to carry the ones Dekito gave');
+assert.ok(
+  /Dekito/.test(form) && /11 Oktober 2026|2026-10-11/.test(form),
+  'a year in this file has to be traceable to the person who stated it and when, or the next reader '
+  + 'cannot tell it from a guess',
+);
+
+// A BLANKET year is the mistake this guard exists for: one year written across every perfume because
+// somebody read "rilis dari 2023" as an answer about all nineteen. Two or more distinct years is what
+// per-product looks like.
+const distinctYears = [...new Set(filledYears)];
+assert.ok(
+  distinctYears.length >= 2 || filledYears.length < 10,
+  `all ${filledYears.length} perfumes in this file share the year ${distinctYears[0]}. One year applied `
+  + 'to every bottle is the blanket mistake Dekito corrected on 11 Oct 2026 — the perfumes came out in '
+  + 'different years',
+);
 // And the clearing half must really clear all nineteen, or the wrong years stay on the pages.
 const clearing = form.match(/set launch_year = null\s*\nwhere slug in \(([\s\S]*?)\);/);
 assert.ok(clearing, 'the form must still clear the years it exists to undo');
@@ -122,12 +141,28 @@ for (const value of launched) {
   const year = value.match(/^(20\d\d)$/)?.[1];
   if (year) yearCounts[year] = (yearCounts[year] || 0) + 1;
 }
-for (const [year, count] of Object.entries(yearCounts)) {
-  assert.ok(count < 10,
-    `${count} of the ${launched.length} fragrances in the submission say they launched in ${year}. That is `
-    + "the brand's founding year applied to every bottle — the exact thing Dekito corrected. A wrong year "
-    + 'in Fragrantica is permanent; leave the line out instead');
-}
+// Two tests, and neither is "fewer than ten share a year" — eleven of the nineteen really are 2025.
+//
+// What must not happen is ONE year on all of them, which is how the brand's founding year got written
+// nineteen times, and no fragrance may carry the founding year at all: Dekito's perfumes are 2025 and
+// 2026, and 2023 in a Launched line would mean the old mistake came back.
+const submissionYears = [...new Set(Object.keys(yearCounts))];
+assert.ok(
+  submissionYears.length >= 2,
+  `every fragrance in the submission says ${submissionYears[0]}. One year on all nineteen is the blanket `
+  + 'mistake; a wrong year in Fragrantica is permanent',
+);
+assert.ok(
+  !submissionYears.includes(String(FOUNDED_YEAR)),
+  `a fragrance in the submission claims to have launched in ${FOUNDED_YEAR}, which is when the HOUSE `
+  + 'started. That is the mistake Dekito corrected on 11 Oct 2026',
+);
+// And every fragrance has one, so none goes to Fragrantica with a placeholder where a year belongs.
+assert.equal(
+  Object.values(yearCounts).reduce((sum, count) => sum + count, 0),
+  launched.length,
+  'a Launched line in the submission is not a year — fill it in or delete the line before posting',
+);
 
 // --- 3. The shop carries it from the row to the page, both ways and both screens ------------------------
 // FOUR hand-written allowlists stand between the database row and the screen, and the field has to be
@@ -166,4 +201,5 @@ assert.notEqual(MESSAGES.id['pdp.released'], MESSAGES.en['pdp.released'],
   'the English shop is the one a fragrance database reads; it must not be left in Indonesian');
 
 console.log(`launchYearIsStatedNotGuessed selfcheck OK (${adders[0]} adds the column AND recreates the `
-  + 'buyer\'s view, 19 products await a year nobody has guessed, both product pages show it once stated)');
+  + `buyer's view, ${filledYears.length} per-perfume years from Dekito across ${distinctYears.length} `
+  + 'different years, both product pages show it once stated)');
