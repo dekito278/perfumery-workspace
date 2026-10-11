@@ -642,7 +642,6 @@ const CreateFormulaPage = () => {
                         onSelect={(itemId) => handleMobileLibraryPick(itemId)}
                         onDoubleSelect={handleLibraryDoubleClick}
                         onCreateMissingMaterial={handleCreateMissingMaterial}
-                        getDisabledState={({ material, selectedRawMaterialIdsSet: selectedIds }) => selectedIds.has(material.id)}
                         getBadgeLabel={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds, activeRowIndex, mobile }) => {
                           const selectedInFormula = selectedIds.has(material.id);
                           const selectedInActiveRow = currentRowItemId === material.id;
@@ -740,7 +739,6 @@ const CreateFormulaPage = () => {
                       onSelect={(itemId) => handleLibrarySelect(itemId)}
                       onDoubleSelect={handleLibraryDoubleClick}
                       onCreateMissingMaterial={handleCreateMissingMaterial}
-                      getDisabledState={({ material, selectedRawMaterialIdsSet: selectedIds }) => selectedIds.has(material.id)}
                       getBadgeLabel={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds, activeRowIndex, mobile }) => {
                         const selectedInFormula = selectedIds.has(material.id);
                         const selectedInActiveRow = currentRowItemId === material.id;

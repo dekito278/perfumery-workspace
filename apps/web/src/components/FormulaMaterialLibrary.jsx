@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { PlusCircle } from 'lucide-react';
+import { materialIsLockedForRow } from '@/utils/materialLibraryLock.js';
 
 const FormulaMaterialLibrary = ({
   materials,
@@ -11,7 +12,6 @@ const FormulaMaterialLibrary = ({
   onSelect,
   onDoubleSelect,
   onCreateMissingMaterial,
-  getDisabledState,
   getBadgeLabel,
 }) => {
   const [filterMode, setFilterMode] = useState('all');
@@ -72,7 +72,8 @@ const FormulaMaterialLibrary = ({
       </div>
 
       {filteredMaterials.map((material) => {
-      const disabled = getDisabledState({
+      // One rule, not a prop each page fills in for itself — see materialLibraryLock.js.
+      const disabled = materialIsLockedForRow({
         material,
         currentRowItemId,
         selectedRawMaterialIdsSet,

@@ -156,13 +156,18 @@ export const buildCompactCompositionRows = (items, limit = 6) => {
   };
 };
 
+// `itemCount` is gone on purpose. Three surfaces print how many materials have guidance, and the other
+// two -- the workbook panel and the odour panel -- divide by the simulation's own eligibleItemCount, the
+// count the numerator was taken from. This one divided by the number of ROWS the page was handed, which
+// also includes anything the simulation does not consider eligible (a row with no item_id, or the legacy
+// accord type). Those two numbers are equal across all 680 items in the studio today, so nothing on
+// screen was wrong -- but only one of them can be the denominator of guidanceBackedCount.
 export const buildWorkbookBoardStats = ({
-  itemCount,
   totalCost,
   totalReferenceAlertCount,
   workbookSimulation,
 }) => ([
-  { label: 'Guidance-backed', value: `${workbookSimulation.guidanceBackedCount}/${itemCount}` },
+  { label: 'Guidance-backed', value: `${workbookSimulation.guidanceBackedCount}/${workbookSimulation.eligibleItemCount}` },
   { label: 'PerfumersWorld', value: workbookSimulation.perfumersWorldGuidanceCount || 0 },
   { label: 'TGSC / ScenTree', value: (workbookSimulation.tgscGuidanceCount || 0) + (workbookSimulation.scentreeGuidanceCount || 0) },
   { label: 'Manual guidance', value: (workbookSimulation.manualGuidanceCount || 0) + (workbookSimulation.referenceGuidanceCount || 0) },

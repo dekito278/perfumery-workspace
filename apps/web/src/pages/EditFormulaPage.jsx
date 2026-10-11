@@ -631,9 +631,6 @@ const EditFormulaPage = () => {
                         onSelect={(itemId) => handleMobileLibraryPick(itemId)}
                         onDoubleSelect={handleLibraryDoubleClick}
                         onCreateMissingMaterial={handleCreateMissingMaterial}
-                        getDisabledState={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds }) => (
-                          selectedIds.has(material.id) && currentRowItemId !== material.id
-                        )}
                         getBadgeLabel={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds, activeRowIndex, mobile }) => {
                           const alreadyAdded = selectedIds.has(material.id) && currentRowItemId !== material.id;
                           return alreadyAdded ? 'Added' : (mobile ? 'Tap to add' : `Row ${activeRowIndex + 1}`);
@@ -733,9 +730,6 @@ const EditFormulaPage = () => {
                           onSelect={(itemId) => handleLibrarySelect(itemId)}
                           onDoubleSelect={handleLibraryDoubleClick}
                           onCreateMissingMaterial={handleCreateMissingMaterial}
-                          getDisabledState={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds }) => (
-                            selectedIds.has(material.id) && currentRowItemId !== material.id
-                          )}
                           getBadgeLabel={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds, activeRowIndex, mobile }) => {
                             const alreadyAdded = selectedIds.has(material.id) && currentRowItemId !== material.id;
                             return alreadyAdded ? 'Added' : (mobile ? 'Tap to add' : `Row ${activeRowIndex + 1}`);
