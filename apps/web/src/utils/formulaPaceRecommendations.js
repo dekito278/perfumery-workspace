@@ -372,6 +372,10 @@ const getFunctionStrategyLabel = (row, referenceLinksMap) => {
       return 'hero anchor';
     case 'support':
       return 'body support';
+    // Named for what it is. A solvent collects no objective bonus (it is in none of the priority tables),
+    // but if one is ever suggested the card must not call it body support.
+    case 'solvent':
+      return 'diluent';
     default:
       return row.pyramidPlacement === 'base'
         ? 'drydown support'
