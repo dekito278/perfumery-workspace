@@ -196,7 +196,7 @@ const importedSymbols = (() => {
   walk(join(here, '..'));
   return found;
 })();
-for (const file of ['materialCompositionProfile.js', 'formulaPipeline.js']) {
+for (const file of ['materialCompositionProfile.js', 'formulaPipeline.js', 'workbookAbcClassification.js']) {
   const exported = [...readFileSync(join(here, file), 'utf8').matchAll(/^export const (\w+)/gm)].map((m) => m[1]);
   assert.ok(exported.length, `${file} exports nothing — this guard's parse is broken`);
   for (const name of exported) {
