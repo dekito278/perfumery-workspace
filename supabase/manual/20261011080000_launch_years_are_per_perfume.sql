@@ -14,9 +14,7 @@
 -- BAGIAN 1 mengosongkan semuanya. Jalankan apa adanya — setelah itu halaman produk tidak memasang
 -- tahun apa pun, yang jujur.
 --
--- BAGIAN 2 adalah formulir isian per parfum. Buka komentarnya untuk baris yang tahunnya Anda tahu,
--- ganti NULL dengan tahunnya, lalu jalankan lagi. Baris yang dibiarkan NULL tidak menampilkan apa pun.
--- Tidak perlu sekaligus; bisa dicicil.
+-- BAGIAN 2 memasang tahun rilis sungguhan, yang Dekito beri per parfum pada 11 Oktober 2026.
 --
 -- Komentar di kanan adalah kapan BARIS-nya dibuat di aplikasi ini. Itu PETUNJUK mana produk yang mana,
 -- BUKAN tahun rilis: rentangnya 2026-05 sampai 2026-09, bertahun-tahun setelah komposisi yang lama.
@@ -52,29 +50,31 @@ where slug in (
 
 commit;
 
--- ======================= BAGIAN 2: isi yang Anda tahu, buka komentarnya =======================
+-- ===================== BAGIAN 2: tahun rilis sungguhan, dari Dekito sendiri =====================
 --
--- begin;
---
--- update public.storefront_products set launch_year = NULL where slug = 'wayback';                 -- .Wayback (baris dibuat 2026-08-24)
--- update public.storefront_products set launch_year = NULL where slug = 'animal-farm';             -- Animal Farm (baris dibuat 2026-05-19)
--- update public.storefront_products set launch_year = NULL where slug = 'aquilaria-tuberosa';      -- Aquilaria tuberosa (baris dibuat 2026-05-19)
--- update public.storefront_products set launch_year = NULL where slug = 'ayang-ayang';             -- Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀) (baris dibuat 2026-05-12)
--- update public.storefront_products set launch_year = NULL where slug = 'hug-n-1';                 -- HUG N°1 (baris dibuat 2026-05-19)
--- update public.storefront_products set launch_year = NULL where slug = 'soli-extended-j-adore-la-vanille'; -- J’adore la Vanille (baris dibuat 2026-05-07)
--- update public.storefront_products set launch_year = NULL where slug = 'j-adore-la-vetiver';      -- J’adore La Vetiver (baris dibuat 2026-05-12)
--- update public.storefront_products set launch_year = NULL where slug = 'jason-voorhees';          -- Jason Voorhees (baris dibuat 2026-05-19)
--- update public.storefront_products set launch_year = NULL where slug = 'jata-bhumi';              -- Jata Bhumi (baris dibuat 2026-05-12)
--- update public.storefront_products set launch_year = NULL where slug = 'l-iris';                  -- L’iris (baris dibuat 2026-09-20)
--- update public.storefront_products set launch_year = NULL where slug = 'la-rose';                 -- La Rose (baris dibuat 2026-08-24)
--- update public.storefront_products set launch_year = NULL where slug = 'la-tulipe';               -- La Tulipe (baris dibuat 2026-08-24)
--- update public.storefront_products set launch_year = NULL where slug = 'lintang-asmoro';          -- Lintang Asmoro (baris dibuat 2026-05-10)
--- update public.storefront_products set launch_year = NULL where slug = 'maskumambang';            -- Maskumambang (baris dibuat 2026-08-24)
--- update public.storefront_products set launch_year = NULL where slug = 'pantura';                 -- Pantura (baris dibuat 2026-05-12)
--- update public.storefront_products set launch_year = NULL where slug = 'patchouli-so-sexy';       -- Patchouli so sexy (baris dibuat 2026-07-28)
--- update public.storefront_products set launch_year = NULL where slug = 'sudra';                   -- Sudra (baris dibuat 2026-05-19)
--- update public.storefront_products set launch_year = NULL where slug = 'vanille-planifolia';      -- Vanille Planifolia (baris dibuat 2026-05-10)
--- update public.storefront_products set launch_year = NULL where slug = 'wongka';                  -- Wongka! (baris dibuat 2026-05-19)
---
--- commit;
+-- Dekito, 11 Oktober 2026, per parfum: 11 dari 2025 dan 8 dari 2026. Bukan satu tahun untuk semuanya —
+-- itu justru kekeliruan yang dia koreksi. Sudah dijalankan pada tanggal itu.
+
+begin;
+update public.storefront_products set launch_year = 2026 where slug = 'wayback';                 -- .Wayback (baris dibuat 2026-08-24)
+update public.storefront_products set launch_year = 2025 where slug = 'animal-farm';             -- Animal Farm (baris dibuat 2026-05-19)
+update public.storefront_products set launch_year = 2025 where slug = 'aquilaria-tuberosa';      -- Aquilaria tuberosa (baris dibuat 2026-05-19)
+update public.storefront_products set launch_year = 2025 where slug = 'ayang-ayang';             -- Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀) (baris dibuat 2026-05-12)
+update public.storefront_products set launch_year = 2025 where slug = 'hug-n-1';                 -- HUG N°1 (baris dibuat 2026-05-19)
+update public.storefront_products set launch_year = 2025 where slug = 'soli-extended-j-adore-la-vanille'; -- J’adore la Vanille (baris dibuat 2026-05-07)
+update public.storefront_products set launch_year = 2025 where slug = 'j-adore-la-vetiver';      -- J’adore La Vetiver (baris dibuat 2026-05-12)
+update public.storefront_products set launch_year = 2025 where slug = 'jason-voorhees';          -- Jason Voorhees (baris dibuat 2026-05-19)
+update public.storefront_products set launch_year = 2025 where slug = 'jata-bhumi';              -- Jata Bhumi (baris dibuat 2026-05-12)
+update public.storefront_products set launch_year = 2026 where slug = 'l-iris';                  -- L’iris (baris dibuat 2026-09-20)
+update public.storefront_products set launch_year = 2026 where slug = 'la-rose';                 -- La Rose (baris dibuat 2026-08-24)
+update public.storefront_products set launch_year = 2026 where slug = 'la-tulipe';               -- La Tulipe (baris dibuat 2026-08-24)
+update public.storefront_products set launch_year = 2026 where slug = 'lintang-asmoro';          -- Lintang Asmoro (baris dibuat 2026-05-10)
+update public.storefront_products set launch_year = 2026 where slug = 'maskumambang';            -- Maskumambang (baris dibuat 2026-08-24)
+update public.storefront_products set launch_year = 2026 where slug = 'pantura';                 -- Pantura (baris dibuat 2026-05-12)
+update public.storefront_products set launch_year = 2026 where slug = 'patchouli-so-sexy';       -- Patchouli so sexy (baris dibuat 2026-07-28)
+update public.storefront_products set launch_year = 2025 where slug = 'sudra';                   -- Sudra (baris dibuat 2026-05-19)
+update public.storefront_products set launch_year = 2025 where slug = 'vanille-planifolia';      -- Vanille Planifolia (baris dibuat 2026-05-10)
+update public.storefront_products set launch_year = 2025 where slug = 'wongka';                  -- Wongka! (baris dibuat 2026-05-19)
+
+commit;
 
