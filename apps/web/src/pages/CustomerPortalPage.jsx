@@ -9,7 +9,7 @@ import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
-import { orderHasShipped, portalActiveStepIndex } from '@/utils/trackingLead.js';
+import { PORTAL_STEP_KEYS, orderHasShipped, portalActiveStepIndex } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -111,14 +111,22 @@ const paymentProofToneByStatus = {
   rejected: 'danger',
 };
 
-const progressSteps = [
-  { key: 'created', labelKey: 'cust.orderCreated' },
-  { key: 'pending_payment', labelKey: 'cust.awaitingPayment' },
-  { key: 'paid', labelKey: 'cust.paid' },
-  { key: 'processing', labelKey: 'cust.processing' },
-  { key: 'shipped', labelKey: 'cust.shipped' },
-  { key: 'completed', labelKey: 'cust.done' },
-];
+// The ORDER and the COUNT come from PORTAL_STEP_KEYS, the list portalActiveStepIndex is bounded by; only
+// the wording is this screen's. Both Studio order screens already read the shared list directly
+// (`const statusSteps = STUDIO_STEP_KEYS`); this one held a second copy that agreed with it only because
+// a guard parsed this file's source and compared the two key by key. That rule worked, and it was the
+// fragile kind -- a regex over `const progressSteps = [` that any reformat would have broken. Derived
+// here instead, the two cannot differ, and what the guard now checks is the part that can still go
+// wrong: every key having a caption, in both shops.
+const progressStepLabelKeys = {
+  created: 'cust.orderCreated',
+  pending_payment: 'cust.awaitingPayment',
+  paid: 'cust.paid',
+  processing: 'cust.processing',
+  shipped: 'cust.shipped',
+  completed: 'cust.done',
+};
+const progressSteps = PORTAL_STEP_KEYS.map((key) => ({ key, labelKey: progressStepLabelKeys[key] }));
 
 const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
 const CUSTOMER_CODE_LAST_STORAGE_KEY = 'dekito.storefront.customerCode.last.v1';
