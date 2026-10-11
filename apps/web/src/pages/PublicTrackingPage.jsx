@@ -213,7 +213,7 @@ const PublicTrackingPage = () => {
                     <span>{t('track.shipment')}</span><strong>{formatStatus(order.shipmentStatus, t, t('track.notShipped'))}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>Item</span><strong>{order.itemCount || '-'}</strong>
+                    <span>{t('track.itemCount')}</span><strong>{order.itemCount || '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
                     <span>{t('track.created')}</span><strong>{order.createdAt ? formatDate(order.createdAt, t('fmt.dateLocale')) : '-'}</strong>
