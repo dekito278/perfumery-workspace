@@ -118,9 +118,25 @@ export const resolveMaterialCompositionProfile = (material, referenceLink = null
   ].filter(Boolean).join(' | ')));
   const stageScores = guidance.stageScores;
 
-  const normalizedFunctions = functionSignals.length
+  // A row the catalogue DECLARES a solvent is a solvent, whatever its prose says. The functions above are
+  // read out of free text -- function_labels, perfume_uses, notes, description -- and that text describes
+  // what a material does in a blend, so a diluent whose datasheet mentions "fixative" or "blending" came
+  // back as one. Measured over the studio's own rows: of the 23 with type 'solvent', only 4 were called
+  // solvent; the rest were support (11), fixative (5) and blender (3), and three of them sit in live
+  // formulas -- Benzyl Benzoate as a fixative, Triethyl Citrate and Benzyl Alcohol as blenders.
+  //
+  // That is not cosmetic. primary_function has two readers and both are in the PACE engine:
+  // FUNCTION_PRIORITY_BY_OBJECTIVE pays a fixative +8 towards longevity and a blender +7 towards
+  // balance, so a diluent was being ranked as the material most worth adding to make a perfume last.
+  // The text-derived role is kept as the secondary, where it is description rather than priority.
+  const declaredSolvent = [material?.type, material?.item_type]
+    .some((value) => normalizeText(value) === 'solvent');
+  const textFunctions = functionSignals.length
     ? functionSignals
     : inferFallbackFunctions(stageScores, combinedText, impact, lifeHours);
+  const normalizedFunctions = declaredSolvent
+    ? ['solvent', ...textFunctions.filter((entry) => entry !== 'solvent')]
+    : textFunctions;
 
   const sourceConfidence = [
     referenceProfile?.reference_code ? 1 : 0,
