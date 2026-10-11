@@ -13,7 +13,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { buildLineageChain, diffFormulaItems, groupFormulasByLineage, nextRevisionVersion } from './formulaRevisionLineage.js';
+import {
+  buildLineageChain,
+  diffFormulaItems,
+  groupFormulasByLineage,
+  nextRevisionCode,
+  nextRevisionName,
+  nextRevisionVersion,
+} from './formulaRevisionLineage.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -34,6 +41,53 @@ assert.equal(nextRevisionVersion(null), 'PACED');
 assert.equal(nextRevisionVersion('   '), 'PACED', 'whitespace is not a version');
 assert.equal(nextRevisionVersion('2.3'), '2.3-PACED', 'an ordinary version is preserved in front');
 assert.equal(nextRevisionVersion('1.0-R9'), '1.0-R10', 'counting must not stop at one digit');
+
+// --- 1b. The name and the code count with it ----------------------------------------------------------
+// The version column counted and these two did not, which is the half nobody sees until the fourth
+// revision: `v1-PACED-R4` beside a formula calling itself "Vanille PACED PACED PACED PACED". The formula
+// list shows the name and the code; it does not show the version.
+const labelChain = (next, start) => {
+  const out = [];
+  let current = start;
+  for (let step = 0; step < 4; step += 1) {
+    current = next(current);
+    out.push(current);
+  }
+  return out;
+};
+assert.deepEqual(
+  labelChain(nextRevisionName, 'Vanille Planifolia'),
+  ['Vanille Planifolia PACED', 'Vanille Planifolia PACED R2', 'Vanille Planifolia PACED R3',
+    'Vanille Planifolia PACED R4'],
+  'the name must count, not grow a tail of PACEDs -- it is what the formula list shows',
+);
+assert.deepEqual(
+  labelChain(nextRevisionCode, 'FORMULA-1778'),
+  ['FORMULA-1778-PACED', 'FORMULA-1778-PACED-R2', 'FORMULA-1778-PACED-R3', 'FORMULA-1778-PACED-R4'],
+  'and so must the code',
+);
+// A formula with no code keeps the FORMULA default the hook used to apply inline, so the revision is
+// never created with a bare "PACED" for a code.
+assert.equal(nextRevisionCode(''), 'FORMULA-PACED', 'a formula with no code still gets a usable one');
+assert.equal(nextRevisionCode(null), 'FORMULA-PACED');
+assert.equal(nextRevisionName(''), 'PACED', 'and a nameless formula is not given the code default');
+assert.equal(nextRevisionName('Vanille PACED R9'), 'Vanille PACED R10',
+  'counting must not stop at one digit here either');
+// R9 -> R10 passes even if the counter only ever reads ONE digit. R10 is the case that catches it, and a
+// formula taken past nine revisions would otherwise be renamed "... R10 R2" and start again.
+assert.equal(nextRevisionName('Vanille PACED R10'), 'Vanille PACED R11', 'and must read two digits back');
+assert.equal(nextRevisionCode('FORMULA-1778-PACED-R10'), 'FORMULA-1778-PACED-R11');
+assert.equal(nextRevisionVersion('1.0-R10'), '1.0-R11', 'the version has the same ceiling');
+// All three labels share one counter, so a chain can never disagree with itself about which revision it is.
+const revisionNumber = (label) => Number(String(label).match(/R(\d+)$/i)?.[1] || 1);
+let [vName, vCode, vVersion] = ['Vanille', 'FORMULA-1778', 'v1'];
+for (let step = 0; step < 4; step += 1) {
+  [vName, vCode, vVersion] = [nextRevisionName(vName), nextRevisionCode(vCode), nextRevisionVersion(vVersion)];
+  assert.equal(revisionNumber(vName), revisionNumber(vVersion),
+    `revision ${step + 1}: the name says R${revisionNumber(vName)} and the version says R${revisionNumber(vVersion)}`);
+  assert.equal(revisionNumber(vCode), revisionNumber(vVersion),
+    `revision ${step + 1}: the code and the version disagree`);
+}
 
 // --- 2. The chain, and what happens when an ancestor is missing ----------------------------------------
 const formulas = [
@@ -96,6 +150,15 @@ assert.equal(diffFormulaItems(null, null).totalDelta, 0);
 const hook = read('hooks', 'useFormulaDetailPage.js');
 assert.match(hook, /parent_formula_id: formula\.id/, 'a PACED revision must record which formula it came from');
 assert.match(hook, /version: nextRevisionVersion\(formula\.version\)/, 'and must use the counting version');
+// The name and the code too, and these are the ones that matter on screen: the formula list shows them
+// and does not show the version. Both were built inline with a template string here while the version
+// counted properly one line below, so a guard that only exercised the helpers would have passed for as
+// long as the bug shipped.
+assert.match(hook, /name: nextRevisionName\(formula\.name\)/,
+  'the revision name is being built here again instead of by the counter');
+assert.match(hook, /code: nextRevisionCode\(formula\.code\)/,
+  'the revision code is being built here again instead of by the counter');
+assert.ok(!/\$\{formula\.name\} PACED/.test(hook), 'the inline name template is back, and it grows a tail');
 
 // --- 5. It must still work with the migration unapplied ------------------------------------------------
 // This is the half that decides whether the feature is safe to merge before Dekito runs the SQL.

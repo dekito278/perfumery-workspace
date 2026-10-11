@@ -27,7 +27,13 @@ import {
   buildFormulaReferenceAdvisorySummary,
   buildWorkbookBoardStats,
 } from '@/utils/formulaDetailData.js';
-import { buildLineageChain, diffFormulaItems, nextRevisionVersion } from '@/utils/formulaRevisionLineage.js';
+import {
+  buildLineageChain,
+  diffFormulaItems,
+  nextRevisionCode,
+  nextRevisionName,
+  nextRevisionVersion,
+} from '@/utils/formulaRevisionLineage.js';
 
 export const useFormulaDetailPage = (id) => {
   const navigate = useNavigate();
@@ -186,8 +192,8 @@ export const useFormulaDetailPage = (id) => {
       const priorityModeMeta = getPacePriorityModeMeta(priorityMode);
       const pacedItems = buildPacedRevisionItems(items, recommendations);
       const pacedFormula = await createFormula({
-        name: `${formula.name} PACED`,
-        code: `${formula.code || 'FORMULA'}-PACED`,
+        name: nextRevisionName(formula.name),
+        code: nextRevisionCode(formula.code),
         author_name: formula.author_name || null,
         notes: [
           formula.notes ? String(formula.notes).trim() : null,

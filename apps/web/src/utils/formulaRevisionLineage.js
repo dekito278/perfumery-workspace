@@ -13,21 +13,35 @@
 // The old rule returned `${version}-R2` for anything already containing "paced", so the chain went
 // 1.0 -> 1.0-PACED -> 1.0-PACED-R2 -> 1.0-PACED-R2-R2 -> 1.0-PACED-R2-R2-R2. It never reached R3, and it
 // grew a tail instead. Revision four called itself R2, same as revision three.
-const REVISION_SUFFIX = /-R(\d+)$/i;
+const REVISION_SUFFIX = /[-\s]R(\d+)$/i;
 
-export const nextRevisionVersion = (currentVersion) => {
-  const normalized = String(currentVersion || '').trim();
+// The same counter for all three labels a revision carries. The version column was taught to count and
+// the NAME and CODE were not, so revision four of a formula read version `v1-PACED-R4` -- correct -- while
+// calling itself "Vanille Planifolia PACED PACED PACED PACED" with the code to match. Those two are what
+// the formula list shows; the version column is not on it.
+const bumpRevisionLabel = (label, separator) => {
+  const normalized = String(label || '').trim();
   if (!normalized) {
     return 'PACED';
   }
 
   const counted = normalized.match(REVISION_SUFFIX);
   if (counted) {
-    return `${normalized.slice(0, counted.index)}-R${Number(counted[1]) + 1}`;
+    return `${normalized.slice(0, counted.index)}${separator}R${Number(counted[1]) + 1}`;
   }
 
-  return /paced/i.test(normalized) ? `${normalized}-R2` : `${normalized}-PACED`;
+  return /paced/i.test(normalized)
+    ? `${normalized}${separator}R2`
+    : `${normalized}${separator}PACED`;
 };
+
+export const nextRevisionVersion = (currentVersion) => bumpRevisionLabel(currentVersion, '-');
+
+/** "Vanille" -> "Vanille PACED" -> "Vanille PACED R2". What the formula list is sorted and read by. */
+export const nextRevisionName = (currentName) => bumpRevisionLabel(currentName, ' ');
+
+/** The code travels with a hyphen, like the version: FORMULA-1778-PACED-R2. */
+export const nextRevisionCode = (currentCode) => bumpRevisionLabel(currentCode || 'FORMULA', '-');
 
 // --- Lineage -----------------------------------------------------------------------------------------
 
