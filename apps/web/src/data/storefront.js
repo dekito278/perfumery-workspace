@@ -242,15 +242,6 @@ export const catalogSortOptions = [
 
 export const getProductBySlug = (slug) => featuredProducts.find((product) => product.slug === slug);
 
-export const bespokeMoodOptions = [
-  'Bersih dan segar',
-  'Floral lembut',
-  'Woody hangat',
-  'Gourmand manis',
-  'Gelap dan sensual',
-  'Harian profesional',
-];
-
 // `value` is what gets written into the bespoke request and read in Studio, so it must never change.
 // `labelKey` is what the buyer reads. Same split as WEAR_FACETS, for the same reason.
 export const bespokeOccasionOptions = [
@@ -261,27 +252,6 @@ export const bespokeOccasionOptions = [
   { value: 'Hadiah', labelKey: 'bsp.occ.hadiah' },
   { value: 'Aroma khas', labelKey: 'bsp.occ.khas' },
 ];
-
-export const bespokeBottleSizeOptions = [
-  { value: '30 ml', label: '30 ml', price: 350000 },
-  { value: '50 ml', label: '50 ml', price: 500000 },
-];
-
-export const bespokeCapDesignOptions = [
-  { value: 'Cap biasa', label: 'Cap biasa', price: 0, description: 'Simple, clean, ready stock.' },
-  { value: 'Cap batu', label: 'Cap batu', price: 75000, description: 'Statement cap dengan feel natural stone.' },
-  { value: 'Cap custom akrilik', label: 'Cap custom akrilik', price: 125000, description: 'Custom color/form acrylic look.' },
-];
-
-export const bespokeExoticMaterialOptions = [];
-
-export const bespokeBudgetOptions = [
-  'Budget otomatis mengikuti ukuran, cap, dan material tambahan.',
-];
-
-export const bespokeSizeOptions = bespokeBottleSizeOptions.map((option) => option.value);
-
-export const bespokeCapOptions = bespokeCapDesignOptions.map((option) => option.value);
 
 export const paymentProviderOptions = [
   {
