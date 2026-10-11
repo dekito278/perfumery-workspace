@@ -264,13 +264,26 @@ for (const file of ['pages/OrderDetailPage.jsx', 'pages/mobile/MobileOrderDetail
     `${file} must share the Studio step list rather than writing it out again`);
 }
 
-// And the portal's own list — labels and all — must still be the one its table was built for.
-const portalSteps = read('pages', 'CustomerPortalPage.jsx').match(/const progressSteps = \[([\s\S]*?)\n\];/);
-assert.ok(portalSteps, "could not find the portal's step list — this guard's parse is broken, not the portal");
-assert.deepEqual(
-  [...portalSteps[1].matchAll(/key: '(\w+)'/g)].map((m) => m[1]),
-  PORTAL_STEP_KEYS,
-  "the portal draws a different step list than portalActiveStepIndex indexes into",
-);
+// The portal's strip is BUILT from PORTAL_STEP_KEYS now, so it cannot draw a different list than
+// portalActiveStepIndex indexes into — the rule that used to be enforced by parsing this file's source
+// for `const progressSteps = [` and comparing the keys one by one.
+//
+// What the derivation can still get wrong is the wording: a key added to PORTAL_STEP_KEYS with no entry
+// in the page's label map renders a step with no caption, and the old deepEqual would have caught that
+// as a mismatch. So that is what is checked here, in both shops — the portal is the buyer's screen.
+const portalSource = read('pages', 'CustomerPortalPage.jsx');
+assert.match(portalSource, /const progressSteps = PORTAL_STEP_KEYS\.map\(/,
+  'the portal is building its own step list again instead of deriving it from PORTAL_STEP_KEYS');
+const portalLabels = portalSource.match(/const progressStepLabelKeys = \{([\s\S]*?)\n\};/);
+assert.ok(portalLabels, "could not find the portal's step captions — this guard's parse is broken, not the portal");
+const labelByKey = Object.fromEntries([...portalLabels[1].matchAll(/(\w+): '([\w.]+)'/g)].map((m) => [m[1], m[2]]));
+for (const key of PORTAL_STEP_KEYS) {
+  const labelKey = labelByKey[key];
+  assert.ok(labelKey, `the portal step "${key}" has no caption, so it would render as a blank tick`);
+  for (const shop of ['id', 'en']) {
+    assert.ok(MESSAGES[shop]?.[labelKey],
+      `${labelKey} is missing from the ${shop} shop, and the portal is a buyer's screen`);
+  }
+}
 
 console.log(`trackingTellsOneStory: ok — ${checked} status combinations; the sentence and the timeline agree, and ${SCREENS.length} screens read one phase from one ladder`);
