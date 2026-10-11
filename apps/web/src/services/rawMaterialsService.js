@@ -1,6 +1,7 @@
 
 import supabase from '@/lib/supabaseClient.js';
 import { sanitizeOrFilterSearch } from '@/utils/likePattern.js';
+import { MATERIAL_SEARCH_FIELDS } from '@/utils/materialSearch.js';
 import { deriveScentFamilyFromCategory, inferRawMaterialTypeFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 import {
   getPrimaryReferenceRawMaterialIds,
@@ -550,14 +551,9 @@ export const getRawMaterialsPage = async ({
 
     if (normalizedSearch) {
       const escapedQuery = sanitizeOrFilterSearch(normalizedSearch);
-      const searchConditions = [
-        `name.ilike.%${escapedQuery}%`,
-        `category.ilike.%${escapedQuery}%`,
-        `vendor.ilike.%${escapedQuery}%`,
-        `cas_number.ilike.%${escapedQuery}%`,
-        `workbook_code.ilike.%${escapedQuery}%`,
-        `scent_family.ilike.%${escapedQuery}%`,
-      ];
+      // The same field list the composer's library matches against, so the two screens cannot drift apart
+      // on what counts as finding a material.
+      const searchConditions = MATERIAL_SEARCH_FIELDS.map((field) => `${field}.ilike.%${escapedQuery}%`);
 
       if (referenceScope.hasFilteredIds && referenceScope.filteredIds.length <= 80) {
         searchConditions.push(`id.in.${referenceScope.formatPostgrestInList(referenceScope.filteredIds)}`);

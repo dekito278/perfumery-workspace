@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculatePercentages, validateFormulaItems } from '@/utils/formulaCalculations.js';
+import { searchMaterials } from '@/utils/materialSearch.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
@@ -419,18 +420,11 @@ export const useFormulaComposer = ({
     () => new Set(selectedRawMaterialIds),
     [selectedRawMaterialIds]
   );
-  const filteredLibraryMaterials = useMemo(() => {
-    const normalizedQuery = materialLibraryQuery.trim().toLowerCase();
-    const sortedRawMaterials = [...rawMaterials].sort((a, b) => a.name.localeCompare(b.name));
-
-    if (!normalizedQuery) {
-      return sortedRawMaterials;
-    }
-
-    return sortedRawMaterials.filter((material) =>
-      material.name.toLowerCase().includes(normalizedQuery)
-    );
-  }, [materialLibraryQuery, rawMaterials]);
+  // Searched across the same fields as the raw-materials list, not by name alone — see materialSearch.js.
+  const filteredLibraryMaterials = useMemo(
+    () => searchMaterials(rawMaterials, materialLibraryQuery),
+    [materialLibraryQuery, rawMaterials],
+  );
 
   useEffect(() => {
     let active = true;
