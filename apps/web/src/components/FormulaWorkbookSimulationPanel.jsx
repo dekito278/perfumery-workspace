@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.jsx';
 import { formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
+import { pyramidPlacementBlindSpot } from '@/utils/pyramidPlacementConfidence.js';
 import {
   buildFrameworkObjectives,
   buildPaceRecommendations,
@@ -17,6 +18,7 @@ import {
   normalizePacePriorityMode,
 } from '@/utils/pacePriority.js';
 import FormulaSensoryChartLayer from '@/components/FormulaSensoryChartLayer.jsx';
+import FormulaPlacementBlindSpotNotice from '@/components/FormulaPlacementBlindSpotNotice.jsx';
 import { SCORE_BANDS, getScoreBand } from '@/utils/paceScoreBands.js';
 
 const formatHours = (value) => {
@@ -171,6 +173,9 @@ const FormulaWorkbookSimulationPanel = ({
     referenceLinksMap,
   }), [items, rawMaterialsById, referenceLinksMap]);
   const objectives = useMemo(() => buildFrameworkObjectives(simulation), [simulation]);
+  // The top/middle/base bars below are sums over per-material placements, and 223 of the studio's 774
+  // materials have no stated placement — see pyramidPlacementConfidence.js.
+  const placementBlindSpot = useMemo(() => pyramidPlacementBlindSpot(simulation.rows), [simulation.rows]);
   const simulationWithContext = useMemo(() => ({
     ...simulation,
     referenceLinksMap,
@@ -586,6 +591,7 @@ const FormulaWorkbookSimulationPanel = ({
           <div className="text-sm font-semibold">Top / middle / base balance</div>
           <TimerReset className="h-4 w-4 text-muted-foreground" />
         </div>
+        <FormulaPlacementBlindSpotNotice blindSpot={placementBlindSpot} className="mb-3" />
         <div className="grid gap-3 md:grid-cols-3">
           <BalanceBar label="Top" percentage={simulation.topPercent} amount={simulation.topAmount} toneClass="bg-sky-500" />
           <BalanceBar label="Middle" percentage={simulation.middlePercent} amount={simulation.middleAmount} toneClass="bg-amber-500" />

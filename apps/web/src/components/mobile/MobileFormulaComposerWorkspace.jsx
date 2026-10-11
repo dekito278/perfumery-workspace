@@ -26,6 +26,8 @@ import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { filterByText, getVisibleItems } from '@/pages/mobile/mobilePageUtils.js';
 import { buildWorkbookSimulation, getFormulaItemDilutionFactor } from '@/utils/formulaWorkbookSimulation.js';
+import { pyramidPlacementBlindSpot } from '@/utils/pyramidPlacementConfidence.js';
+import FormulaPlacementBlindSpotNotice from '@/components/FormulaPlacementBlindSpotNotice.jsx';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import {
   buildFormulaInsight,
@@ -629,6 +631,9 @@ const MobileFormulaComposerWorkspace = ({
     base: workbookSimulation.basePercent || 0,
   };
   const dominantPhase = Object.entries(topMiddleBaseDistribution).sort((left, right) => right[1] - left[1])[0] || ['base', 0];
+  // The same blind spot the desktop panel announces: these three percentages are sums over per-material
+  // placements, and a fifth of the studio's formula rows are placed by inference.
+  const placementBlindSpot = pyramidPlacementBlindSpot(workbookSimulation.rows);
   const workbookBalanceStatus = !composition.length
     ? 'Needs adjustment'
     : dominantPhase[1] > 55
@@ -904,6 +909,7 @@ const MobileFormulaComposerWorkspace = ({
 
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle title="Balance Preview" subtitle={`${formatPercent(topMiddleBaseDistribution.top, 0)} top - ${formatPercent(topMiddleBaseDistribution.middle, 0)} middle - ${formatPercent(topMiddleBaseDistribution.base, 0)} base`} />
+            <FormulaPlacementBlindSpotNotice blindSpot={placementBlindSpot} className="mt-3" />
             <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#ece8df]">
               <div className="inline-block h-full bg-amber-300" style={{ width: `${topMiddleBaseDistribution.top}%` }} />
               <div className="inline-block h-full bg-amber-500" style={{ width: `${topMiddleBaseDistribution.middle}%` }} />
