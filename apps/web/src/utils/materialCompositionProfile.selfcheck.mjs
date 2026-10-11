@@ -17,7 +17,7 @@
 // Both files are loaded as one module so the engine calls the REAL resolver rather than a stand-in: the
 // consequence, not just the classification, is what has to stay fixed.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Buffer } from 'node:buffer';
@@ -170,6 +170,41 @@ assert.ok(solventPick, 'with one safe base row and drydown at 20, there must be 
 assert.equal(solventPick.itemId, 'only-solvent');
 assert.equal(solventPick.strategyLabel, 'diluent',
   `the card calls the solvent "${solventPick.strategyLabel}" — a diluent must not be offered as body support`);
+
+// --- 5. Nothing in here is unreachable ----------------------------------------------------------------
+// This file was 2120 lines and 15 exports, of which ONE could be called from the app: 1993 lines were a
+// recommendation system that was never wired up -- stage scoring, a theme-recipe library, feedback
+// contexts, architecture roles -- reachable only through buildComposerItemsFromProjectStageItems in
+// formulaPipeline.js, which nothing imported either. Dekito's decision, 11 Oct 2026: delete it; git keeps
+// it if it is ever revived.
+//
+// So the rule is that it cannot grow back unnoticed: every export of these two modules has to be imported
+// by something that is not a guard. A symbol only a selfcheck uses is a symbol only a selfcheck needs.
+const importedSymbols = (() => {
+  const found = new Set();
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) return walk(full);
+    if (!/\.(js|jsx)$/.test(entry.name) || entry.name.includes('.selfcheck.')) return;
+    for (const block of readFileSync(full, 'utf8').matchAll(/import\s*\{([^}]*)\}\s*from/g)) {
+      block[1].split(',').forEach((symbol) => {
+        const name = symbol.trim().split(' as ')[0].trim();
+        if (name) found.add(name);
+      });
+    }
+  });
+  walk(join(here, '..'));
+  return found;
+})();
+for (const file of ['materialCompositionProfile.js', 'formulaPipeline.js']) {
+  const exported = [...readFileSync(join(here, file), 'utf8').matchAll(/^export const (\w+)/gm)].map((m) => m[1]);
+  assert.ok(exported.length, `${file} exports nothing — this guard's parse is broken`);
+  for (const name of exported) {
+    assert.ok(importedSymbols.has(name),
+      `${file} exports ${name} and nothing in the app imports it. That is how 1993 lines of this file `
+      + 'came to be unreachable — either wire it up or leave it out');
+  }
+}
 
 console.log('materialCompositionProfile selfcheck OK (a declared solvent stays a solvent through the '
   + 'resolver and through the PACE engine that reads it)');
