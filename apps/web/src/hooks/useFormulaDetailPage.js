@@ -155,11 +155,10 @@ export const useFormulaDetailPage = (id) => {
     [items]
   );
   const workbookBoardStats = useMemo(() => buildWorkbookBoardStats({
-    itemCount: items.length,
     totalCost,
     totalReferenceAlertCount,
     workbookSimulation,
-  }), [items.length, totalCost, totalReferenceAlertCount, workbookSimulation]);
+  }), [totalCost, totalReferenceAlertCount, workbookSimulation]);
 
   const handlePrint = async () => {
     try {
