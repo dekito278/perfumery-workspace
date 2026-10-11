@@ -53,7 +53,11 @@ commit;
 -- ===================== BAGIAN 2: tahun rilis sungguhan, dari Dekito sendiri =====================
 --
 -- Dekito, 11 Oktober 2026, per parfum: 11 dari 2025 dan 8 dari 2026. Bukan satu tahun untuk semuanya —
--- itu justru kekeliruan yang dia koreksi. Sudah dijalankan pada tanggal itu.
+-- itu justru kekeliruan yang dia koreksi.
+--
+-- BELUM DIJALANKAN per 11 Oktober 2026: dicek lewat service-role, ke-20 baris storefront_products masih
+-- launch_year = null. Jadi BAGIAN 1 sudah jalan dan BAGIAN 2 belum, dan ke-19 halaman produk sekarang
+-- tidak memasang tahun apa pun. Itu jujur, tapi bukan yang diinginkan.
 
 begin;
 update public.storefront_products set launch_year = 2026 where slug = 'wayback';                 -- .Wayback (baris dibuat 2026-08-24)
