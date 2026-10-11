@@ -1,4 +1,4 @@
-import { resolvePyramidPlacement, resolveRawMaterialGuidanceSnapshot } from '@/utils/rawMaterialGuidanceResolver.js';
+import { resolveRawMaterialGuidanceSnapshot } from '@/utils/rawMaterialGuidanceResolver.js';
 import { buildGuidanceLimitAdvisories, getDilutionFactor, resolveEffectiveConcentration } from '@/utils/rawMaterialGuidanceAdvisories.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
@@ -82,12 +82,6 @@ const getGuidanceSourceLabel = (sourceKey) => ({
   manual: 'Manual',
   missing: 'Missing',
 }[sourceKey] || 'Guidance');
-
-export const inferReferencePyramidPlacement = (lifeHours) => {
-  return resolvePyramidPlacement({
-    lifeHours: toFiniteNumber(lifeHours),
-  });
-};
 
 export const getFormulaItemDilutionFactor = (item) => {
   return getDilutionFactor(item?.dilution_percent ?? item?.dilution_percentage);
@@ -416,7 +410,6 @@ const buildPaceAnalysis = ({
   eligibleItemCount,
   missingGuidanceCount,
   coveragePercent,
-  impactEstimate,
   odourWeightedLifeHours,
   topPercent,
   middlePercent,
@@ -431,7 +424,21 @@ const buildPaceAnalysis = ({
   const totalImpactContribution = allRows.reduce((sum, row) => sum + Number(row.impactContribution || 0), 0);
   const topImpactContribution = topRows.reduce((sum, row) => sum + Number(row.impactContribution || 0), 0);
   const openingImpactShare = totalImpactContribution > 0 ? (topImpactContribution / totalImpactContribution) * 100 : topPercent;
-  const impactSignal = toScore(impactEstimate, 0, 12);
+  // Per contributor, not the total. impactEstimate is a SUM over every row, so it grows with the number
+  // of materials: measured over the studio's 27 formulas it runs 5.8 to 285.8, and 26 of the 27 are
+  // already past this scale's ceiling of 12 -- impactSignal read 100 for all of them. The 0..12 band is
+  // the per-MATERIAL magnitude, which runs 0.29 to 12.42 across the same formulas and fits it almost
+  // exactly, so the constant was right and the quantity fed to it was not.
+  //
+  // It matters twice over: impactSignal is 45% of diffusionScore, which is why no formula in the studio
+  // could score below 45 for diffusion however thin its opening was.
+  //
+  // impactEstimate itself is left alone -- it is printed as a total on four screens and is the
+  // denominator every row's impact share is taken against.
+  //
+  // No separate guard for "no impact figures at all": every impactContribution is null in that case, so
+  // the sum is already 0 and the signal is already 0. A branch for it would be one nothing can reach.
+  const impactSignal = toScore(allRows.length ? totalImpactContribution / allRows.length : 0, 0, 12);
   const lifeSignal = toScore(odourWeightedLifeHours, 0, 240);
   const contributorDiversityScore = buildContributorDiversityScore(allRows);
   const topMiddleBridgeScore = buildBridgeScore(topRows, middleRows);
@@ -710,7 +717,6 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
     eligibleItemCount: eligibleItems.length,
     missingGuidanceCount,
     coveragePercent,
-    impactEstimate,
     odourWeightedLifeHours,
     topPercent,
     middlePercent,
