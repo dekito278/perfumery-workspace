@@ -23,6 +23,11 @@ export const createInitialRawMaterialFormData = () => ({
   category: '',
   type: 'material',
   scent_family: '',
+  // Dekito's own answer to where this material sits in the pyramid. Until now nothing in the app could
+  // set it: the column was read by three utils and written by no screen and no service payload, so the
+  // 551 materials that have one got it from an import and the other 223 were stuck being guessed -- and
+  // that guess disagrees with his own answers 46% of the time (#445).
+  pyramid_placement: '',
   unit: 'ml',
   stock_quantity: '',
   minimum_stock: '',
@@ -75,6 +80,7 @@ const createFormDataFromMaterial = (material) => {
     category: normalizeCategoryValue(material.category),
     type: material.type || 'material',
     scent_family: material.scent_family || '',
+    pyramid_placement: material.pyramid_placement || '',
     unit: material.unit || 'ml',
     stock_quantity: material.stock_quantity?.toString() || '',
     minimum_stock: material.minimum_stock?.toString() || '',
