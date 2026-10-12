@@ -403,15 +403,44 @@ const normalizeSourceSnapshots = (sourceSnapshots = {}) => Object.fromEntries(
     .filter(([, value]) => value)
 );
 
+/** Fitted, not chosen — see the measurement above deriveTopMiddleBaseTendency. */
+export const TOP_LIFE_HOURS_CEILING = 10;
+export const BASE_LIFE_HOURS_FLOOR = 120;
+export const CLASS_LEAD_MARGIN = 60;
+
+// Where a material sits in the pyramid when nobody has said. Only reached for materials with no stated
+// pyramid_placement -- 223 of the studio's 774 -- and those feed the Top / Middle / Base percentages that
+// Opening, Heart, Drydown and Tenacity are built from.
+//
+// The thresholds below are not taste. They were fitted against the 551 materials where Dekito HAS stated
+// an answer, which is the only ground truth this catalogue has, and the old ones were close to a coin
+// flip. Measured per branch:
+//
+//   life <= 8  -> top    139 materials,   1 wrong  (1%)   <- was already right
+//   life >= 36 -> base   260 materials, 149 wrong  (57%)  <- a coin flip, applied to half the catalogue
+//   distribution         152 materials, 106 wrong  (70%)
+//
+// 251 of the 256 errors were the same mistake in two directions: Dekito says MIDDLE and the code says
+// anything else. A 36-hour cutoff calls most hearts a base note, and a 20-point lead is too small a margin
+// to leave room for middle at all.
+//
+// Refitted: 8/36/20 -> 10/120/60, which takes agreement from 54% to 78%. Checked out-of-sample rather than
+// trusted: splitting those 551 materials in half by id, fitting on one half and testing on the other picks
+// these SAME three numbers from either half and scores 77-79% on the half it never saw, against 51-56% for
+// the old ones. canonicalTendency.selfcheck.mjs holds the shape that follows from those measurements.
+//
+// On the 27 formulas as they stand this moves 10 of 680 rows, no score by more than 5 points, and 3 of 81
+// PACE suggestions -- because the 536 rows Dekito has answered himself are untouched. The gain is for the
+// materials nobody has answered yet, and any single one can be overridden in the material form (#449).
 export const deriveTopMiddleBaseTendency = ({ lifeHours, distribution }) => {
   const woodyBaseLetters = new Set(['Q', 'T', 'U', 'V', 'W', 'X', 'Y']);
   const volatileTopLetters = new Set(['A', 'B', 'C', 'F', 'G', 'H', 'K']);
 
   if (lifeHours !== null) {
-    if (lifeHours <= 8) {
+    if (lifeHours <= TOP_LIFE_HOURS_CEILING) {
       return 'top';
     }
-    if (lifeHours >= 36) {
+    if (lifeHours >= BASE_LIFE_HOURS_FLOOR) {
       return 'base';
     }
   }
@@ -423,10 +452,10 @@ export const deriveTopMiddleBaseTendency = ({ lifeHours, distribution }) => {
     .filter((entry) => woodyBaseLetters.has(entry.letter))
     .reduce((sum, entry) => sum + Number(entry.share || 0), 0);
 
-  if (topWeight >= baseWeight + 20) {
+  if (topWeight >= baseWeight + CLASS_LEAD_MARGIN) {
     return 'top';
   }
-  if (baseWeight >= topWeight + 20) {
+  if (baseWeight >= topWeight + CLASS_LEAD_MARGIN) {
     return 'base';
   }
   return 'middle';
