@@ -6,6 +6,13 @@
  * @param {number} dilutedMaterialPrice - Price per 10ml of the diluted mixture
  * @param {number} dilutionPercentage - Percentage of active material (0-100)
  * @returns {Object} { totalCost, activeAmount, solventAmount }
+ *
+ * NOTE: dilutionPercentage does NOT affect totalCost. The cost is amount x (price / 10), because the
+ * price already belongs to the diluted mixture as it sits on the shelf -- the percentage only splits that
+ * amount into active and solvent for display. So this is the same arithmetic as calculateIngredientCost
+ * with its base quantity of 10, and that is why calculateTotalCost's two branches agree to the cent.
+ * Anything that makes the percentage reach the cost makes them disagree, and pricingUtils.selfcheck.mjs
+ * fails on purpose if it does.
  */
 export const calculateDilutionCost = (usedAmount, dilutedMaterialPrice, dilutionPercentage) => {
   const amount = Number(usedAmount) || 0;
