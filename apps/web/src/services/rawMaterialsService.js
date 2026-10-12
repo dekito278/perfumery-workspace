@@ -122,6 +122,13 @@ const withCreationResolution = (record, solventMap, resolution = null) => {
   return resolution ? { ...mapped, _creationResolution: resolution } : mapped;
 };
 
+const PYRAMID_PLACEMENTS = ['top', 'middle', 'base'];
+
+const normalizePyramidPlacement = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return PYRAMID_PLACEMENTS.includes(normalized) ? normalized : null;
+};
+
 const buildRawMaterialPayload = (data) => {
   const normalizedCategory = data.category || null;
   const normalizedType = inferRawMaterialTypeFromCategory(normalizedCategory, data.type || 'material');
@@ -146,6 +153,10 @@ const buildRawMaterialPayload = (data) => {
     notes: normalizeOptionalText(data.notes),
     workbook_code: normalizeOptionalText(data.workbook_code),
     scent_family: normalizedFamily || null,
+    // One of top / middle / base, or null. The resolver prefers this over its own inference, and the
+    // inference is wrong 46% of the time where it can be checked — so an empty one is a real gap, not a
+    // harmless blank. Normalised here because a stray 'Top ' would be read as no answer at all.
+    pyramid_placement: normalizePyramidPlacement(data.pyramid_placement),
     supplier_name: normalizeOptionalText(data.supplier_name),
     vendor: normalizeOptionalText(data.vendor),
     cas_number: normalizeOptionalText(data.cas_number),

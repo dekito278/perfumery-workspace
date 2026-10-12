@@ -23,6 +23,10 @@ const createEmptyMaterialForm = () => ({
   name: '',
   type: 'material',
   category: '',
+  // Added with the desktop control, not after it. Before either existed the column could not be set from
+  // anywhere in the app (#445 asked Dekito to fill 223 of them), and a field that only the desktop could
+  // set would be the same gap for anyone working on a phone.
+  pyramid_placement: '',
   unit: 'g',
   vendor: '',
   cas_number: '',
@@ -71,6 +75,7 @@ const mapMaterialToForm = (material) => {
     name: material.name || '',
     type: material.type || 'material',
     category: material.category || '',
+    pyramid_placement: material.pyramid_placement || '',
     unit: material.unit || 'g',
     vendor: material.vendor || '',
     cas_number: resolvedValues.cas_number || material.cas_number || '',
@@ -95,6 +100,7 @@ const buildPayload = (formState, material = {}) => ({
   name: formState.name.trim(),
   type: formState.type || 'material',
   category: formState.category.trim() || null,
+  pyramid_placement: formState.pyramid_placement || null,
   unit: formState.unit.trim() || 'g',
   vendor: formState.vendor.trim() || null,
   cas_number: formState.cas_number.trim() || null,
@@ -215,6 +221,24 @@ const MobileRawMaterialEditorPage = () => {
           <div className="grid gap-4">
             <MaterialField label="Material name">
               <Input value={formState.name} onChange={(event) => setField('name', event.target.value)} className="h-10 rounded-2xl bg-white text-xs" autoFocus={!isEditing} />
+            </MaterialField>
+            <MaterialField
+              label="Pyramid placement"
+              helper="Decides this material's share of Top / Middle / Base, and the Opening, Heart, Drydown and Tenacity scores built on it. Auto lets the workbook infer it."
+            >
+              <MobileSegmentedControl
+                // 'auto' rather than '': MobileSegmentedControl drops any option whose value is empty, so
+                // an empty-valued Auto button would never render — the placement would be unclearable once
+                // set, and an unanswered material would show no selected segment at all.
+                options={[
+                  { value: 'auto', label: 'Auto' },
+                  { value: 'top', label: 'Top' },
+                  { value: 'middle', label: 'Middle' },
+                  { value: 'base', label: 'Base' },
+                ]}
+                value={formState.pyramid_placement || 'auto'}
+                onChange={(placement) => setField('pyramid_placement', placement === 'auto' ? '' : placement)}
+              />
             </MaterialField>
             <div className="grid grid-cols-2 gap-3">
               <MaterialField label="Type">
