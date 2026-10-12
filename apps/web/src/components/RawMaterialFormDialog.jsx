@@ -20,6 +20,17 @@ const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
   label: `${entry.letter} - ${entry.familyName}`,
 }));
 
+// Top / middle / base, Dekito's own answer. The workbook's resolver prefers this over its own inference
+// from class distribution and life hours, and that inference disagrees with his stated answers on 256 of
+// the 551 materials that have one -- 46%. Before this select existed the column could not be set from
+// anywhere in the app, so the remaining 223 materials had no way to stop being guessed (#445).
+const pyramidPlacementOptions = [
+  { value: '', label: 'Not set (let the workbook infer it)' },
+  { value: 'top', label: 'Top' },
+  { value: 'middle', label: 'Middle' },
+  { value: 'base', label: 'Base' },
+];
+
 const dataStatusOptions = [
   { value: 'active', label: 'Active' },
   { value: 'needs_review', label: 'Needs review' },
@@ -244,6 +255,13 @@ const RawMaterialFormDialog = ({
           ) : null}
 
           <div className="border-t pt-3 space-y-3">
+            <FormSelect
+              label="Pyramid placement"
+              value={form.formData.pyramid_placement || ''}
+              onChange={(value) => form.handleChange('pyramid_placement', value)}
+              options={pyramidPlacementOptions}
+              helperText="Decides this material's share of the Top / Middle / Base balance, and the Opening, Heart, Drydown and Tenacity scores built on it. Left unset, the workbook infers it."
+            />
             <div className="grid grid-cols-2 gap-3">
               <FormSelect
                 label="Unit"
