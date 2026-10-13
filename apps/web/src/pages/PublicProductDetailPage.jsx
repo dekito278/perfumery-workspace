@@ -292,7 +292,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
             {product.materialHighlights?.length ? (
               <div className="pdp-materials" data-reveal>
-                <p className="editorial-eyebrow">RAW MATERIAL HIGHLIGHTS</p>
+                <p className="editorial-eyebrow">{t('pdp.rawMaterials')}</p>
                 <div className="pdp-meta">
                   {product.materialHighlights.map((m) => <span key={m}>{m}</span>)}
                 </div>

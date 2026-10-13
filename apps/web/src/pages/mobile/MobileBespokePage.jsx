@@ -702,7 +702,7 @@ const MobileBespokePage = () => {
             </div>
             {discountAmount ? (
               <div className="mt-1 flex justify-between gap-3 text-[11px] text-emerald-700">
-                <span>Voucher</span>
+                <span>{t('bsp.voucher')}</span>
                 <span>-{formatRupiah(discountAmount)}</span>
               </div>
             ) : null}

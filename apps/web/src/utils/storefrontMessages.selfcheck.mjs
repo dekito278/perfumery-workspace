@@ -1069,4 +1069,54 @@ const walk = (dir, out = []) => {
     'the English line must not quote rupiah at all — it is a different, true sentence');
 }
 
-console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');
+// --- A SIXTH way to leak: a key nothing reads, beside a page that prints its words by hand ------------
+// The opposite of the FOURTH check. A key no screen asks for is not harmless: eleven of them were still
+// here, and three were the words a page had hard-coded next to them. pdp.rawMaterials held "RAW MATERIAL
+// HIGHLIGHTS" and sat on the identical-on-purpose list above WITH ITS REASON, while the product page
+// printed the same sentence as a literal — so the decision was written down in one place and the text
+// lived in another. checkout.eyebrow and checkout.title were the same story on two checkouts.
+//
+// THE TRAP, which hid seven of the eleven: the allowlists in THESE FILES mention keys by name. A scan
+// that reads the guards counts `IDENTICAL_ON_PURPOSE` as a reader and reports the key as alive. So the
+// scan is app code only — which is what walk() already excludes selfchecks from.
+//
+// Keys built from a variable are declared here, with the file that builds them. The declaration is
+// checked too: a family whose construction site no longer holds the template is as stale as the keys.
+const DYNAMIC_KEY_FAMILIES = [
+  ['intlQuote.region.', ['components', 'storefront', 'InternationalShippingQuote.jsx'], 'intlQuote.region.${'],
+  ['intlQuote.onRequest.', ['components', 'storefront', 'InternationalShippingQuote.jsx'], 'intlQuote.onRequest.${'],
+  ['about.fact.', ['pages', 'AboutPage.jsx'], 'about.fact.${'],
+];
+// Every source file under src, not a list of directories: naming them missed data/, where the bespoke
+// occasions and the why-direct reasons keep their keys, and reported twenty live keys as dead.
+const appSource = walk([])
+  .filter((file) => join(...file) !== join('i18n', 'messages.js'))
+  .map((file) => read(...file))
+  .join('\n');
+const referencedKeys = new Set();
+for (const match of appSource.matchAll(/['"`]([a-zA-Z][\w]*\.[\w.]+)['"`]/g)) referencedKeys.add(match[1]);
+for (const [prefix, file, template] of DYNAMIC_KEY_FAMILIES) {
+  assert.ok(read(...file).includes(template),
+    `${join(...file)} no longer builds ${prefix}* keys from a variable, so that exemption is stale: `
+    + 'either the template moved, or those keys are now dead and should go');
+  assert.ok(idKeys.some((key) => key.startsWith(prefix)),
+    `nothing in the message file starts with ${prefix}, so this exemption covers nothing`);
+}
+const deadKeys = idKeys.filter((key) => !referencedKeys.has(key)
+  && !DYNAMIC_KEY_FAMILIES.some(([prefix]) => key.startsWith(prefix)));
+assert.deepEqual(deadKeys, [],
+  'these keys are in the message file and no screen asks for them. Either a page is printing the words '
+  + 'by hand beside the key that holds them, or the copy they belonged to is gone and they should be '
+  + `deleted — the message file is not an archive:\n  ${deadKeys.join('\n  ')}`);
+// And the scan must prove it can see a key at all: a regex that stopped matching would report every key
+// as dead, which the assertion above would catch — but one that matched everything would report none.
+assert.ok(!referencedKeys.has('pdp.thisKeyDoesNotExist'),
+  'the reference scan is matching strings that are not in any file — it cannot tell alive from dead');
+assert.ok(referencedKeys.has('pdp.rawMaterials'),
+  'the product page no longer reads pdp.rawMaterials, so either it prints those words by hand again or '
+  + 'the scan has stopped seeing single-quoted keys');
+assert.ok(referencedKeys.has('why.atelier.title'),
+  'the why-direct reasons are not being seen, so the scan is no longer reading data/ — that omission '
+  + 'reported twenty live keys as dead');
+
+console.log(`storefrontMessages selfcheck OK (two languages out of one object, all ${idKeys.length} keys paired and read by a screen, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)`);
