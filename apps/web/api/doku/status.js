@@ -1,7 +1,8 @@
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import process from 'node:process';
-import { checkDokuOrderTransition, isTerminalCancelStatus, mapDokuStatus } from '../../src/utils/dokuOrderGuards.js';
+import { checkDokuOrderTransition, isTerminalCancelStatus, mapDokuStatus, orderBecomesPaid } from '../../src/utils/dokuOrderGuards.js';
+import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 
 const STATUS_TARGET_PREFIX = '/orders/v1/status';
 
@@ -143,6 +144,8 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
 
   const incomingStatus = statusPatch.paymentStatus;
   const isTerminalCancel = isTerminalCancelStatus(incomingStatus);
+  // Read before the patch, for the same reason the webhook does: afterwards the row is paid either way.
+  const becomesPaid = orderBecomesPaid({ currentOrder, incomingStatus });
 
   const verdict = checkDokuOrderTransition({ currentOrder, incomingStatus, paidAmount });
   if (verdict?.skip) return { skipped: verdict.skip };
@@ -176,6 +179,19 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
 
   if (isTerminalCancel) {
     await releaseVoucherUsageForOrder(currentOrder);
+  }
+
+  // This path flips orders to paid as often as the webhook does — the browser polls it while the buyer
+  // pays, so it frequently gets there first — and it had no alert at all. Four paid orders in the live
+  // log were flipped here with no webhook row behind them, so nothing ever told Dekito the money had
+  // arrived. sendOrderAlert is silent when unconfigured and swallows its own failures, so a dead
+  // notification endpoint cannot turn a successful status read into an error for the buyer's browser.
+  if (becomesPaid) {
+    await sendOrderAlert({
+      order: { ...currentOrder, payment_provider: 'doku' },
+      event: 'paid',
+      env: process.env,
+    });
   }
 };
 
@@ -341,13 +357,14 @@ export default async function handler(request, response) {
 
     let syncApplied = true;
     let syncWarning = '';
+    let syncSkipped = null;
     try {
-      await updateOrder({
+      syncSkipped = (await updateOrder({
         invoiceNumber,
         statusPatch,
         paymentReference: dokuData?.transaction?.original_request_id || requestId,
         paidAmount: Number(dokuData?.order?.amount || dokuData?.transaction?.amount || 0),
-      });
+      }))?.skipped || null;
     } catch (syncError) {
       syncApplied = false;
       syncWarning = syncError.message || 'DOKU status read succeeded, but order sync failed';
@@ -358,14 +375,17 @@ export default async function handler(request, response) {
       requestId,
       payload: dokuData,
       statusPatch,
-      processingStatus: syncApplied ? 'applied' : 'error',
+      // A refused transition changed nothing, and the log has always said "applied" for it. One order in
+      // the live log carries nine 'applied' rows from this path alone.
+      processingStatus: syncApplied ? (syncSkipped ? 'ignored' : 'applied') : 'error',
       httpStatus: 200,
-      errorMessage: syncWarning,
+      errorMessage: syncWarning || (syncSkipped ? `Skipped: ${syncSkipped}` : ''),
     });
 
     return jsonResponse(response, 200, {
       acknowledged: true,
       syncApplied,
+      syncSkipped,
       syncWarning,
       orderStatus: statusPatch.orderStatus,
       paymentStatus: statusPatch.paymentStatus,
