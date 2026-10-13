@@ -17,6 +17,8 @@
 
 export const MESSAGES = {
   id: {
+    "a11y.breadcrumb": "Jejak navigasi",
+    "bsp.contactPlaceholder": "nama@email.com / +62...",
     "a11y.backToTop": "Kembali ke atas",
     "a11y.galleryPrevImage": "Foto produk sebelumnya",
     "a11y.galleryNextImage": "Foto produk berikutnya",
@@ -1256,6 +1258,8 @@ export const MESSAGES = {
     'pwa.offline': 'Kamu sedang offline. Data terbaru akan dimuat kembali saat koneksi pulih.',
   },
   en: {
+    "a11y.breadcrumb": "Breadcrumb",
+    "bsp.contactPlaceholder": "name@email.com / phone number",
     "a11y.backToTop": "Back to top",
     "a11y.galleryPrevImage": "Previous product image",
     "a11y.galleryNextImage": "Next product image",

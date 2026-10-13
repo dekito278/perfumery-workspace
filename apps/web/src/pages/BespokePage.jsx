@@ -886,7 +886,7 @@ const BespokePage = () => {
                     </div>
                   </label>
                   <label>{t('bsp.name')}<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} /></label>
-                  <label>{t('bsp.contact')}<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="nama@email.com / +62..." /></label>
+                  <label>{t('bsp.contact')}<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} /></label>
                   <label>{t('bsp.address')}<textarea rows="4" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} /></label>
                 </div>
                 <div className="editorial-voucher-panel">

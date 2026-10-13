@@ -222,7 +222,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         <PublicHeader />
 
         {/* Breadcrumb */}
-        <nav className="pdp-breadcrumb hero-animate-fade" aria-label="Breadcrumb">
+        <nav className="pdp-breadcrumb hero-animate-fade" aria-label={t('a11y.breadcrumb')}>
           <Link to="/catalog">{t('pdp.collection')}</Link>
           <ChevronRight className="h-3 w-3" />
           <span>{product.name}</span>
