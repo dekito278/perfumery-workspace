@@ -173,7 +173,7 @@ const MobileCheckoutPage = () => {
     <MobileCommerceLayout>
         <main className="mobile-page">
         <section className="mobile-soft-card p-4">
-          <div className="text-[10px] font-bold uppercase text-amber-700">Checkout</div>
+          <div className="text-[10px] font-bold uppercase text-amber-700">{t('checkout.title')}</div>
           <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">{t('mcheckout.emptyLead')}</h1>
           <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{t('mcheckout.emptyBody')}</p>
           {/* Two buttons, because mcheckout.emptyBody offers two things — "add a bottle in stock, or

@@ -127,8 +127,8 @@ const CheckoutPage = () => {
         <main className="solivagant-editorial-home">
           <PublicHeader />
           <section className="cart-hero">
-            <p className="editorial-eyebrow">CHECKOUT</p>
-            <h1>Checkout</h1>
+            <p className="editorial-eyebrow">{t('checkout.eyebrow')}</p>
+            <h1>{t('checkout.title')}</h1>
             <p>{t('checkout.emptyTitle')}</p>
           </section>
           <section className="checkout-layout">
@@ -156,8 +156,8 @@ const CheckoutPage = () => {
         <PublicHeader />
 
         <section className="cart-hero">
-          <p className="editorial-eyebrow">CHECKOUT</p>
-          <h1>Checkout</h1>
+          <p className="editorial-eyebrow">{t('checkout.eyebrow')}</p>
+          <h1>{t('checkout.title')}</h1>
           <p>{t('checkout.lead')}</p>
         </section>
 
@@ -302,7 +302,7 @@ const CheckoutPage = () => {
 
             {/* Voucher */}
             <fieldset className="checkout-fieldset">
-              <legend className="editorial-eyebrow">VOUCHER</legend>
+              <legend className="editorial-eyebrow">{t('cart.voucher')}</legend>
               <div className="cart-voucher" style={{ marginTop: 0, paddingTop: 0, border: 'none' }}>
                 <label className="cart-voucher__label">
                   {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('checkout.voucherEnter')}

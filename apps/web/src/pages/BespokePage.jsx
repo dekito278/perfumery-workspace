@@ -859,7 +859,7 @@ const BespokePage = () => {
             {checkoutOpen && bespokeTakesPayment(isInternational) ? (
               <div className="editorial-bespoke-checkout" data-reveal>
                 <div className="editorial-bespoke-stage__head">
-                  <p className="editorial-eyebrow">CHECKOUT</p>
+                  <p className="editorial-eyebrow">{t('checkout.eyebrow')}</p>
                   <h2>{t('bsp.contactSection')}</h2>
                   <p>{t('bsp.contactSectionBody')}</p>
                 </div>
@@ -957,7 +957,7 @@ const BespokePage = () => {
                 </div>
                 <div className="editorial-voucher-panel">
                   <div>
-                    <p className="editorial-eyebrow">VOUCHER</p>
+                    <p className="editorial-eyebrow">{t('bsp.voucher')}</p>
                     <strong>{voucher.appliedVoucher ? t('bsp.voucherApplied', { code: voucher.appliedVoucher.code }) : t('bsp.voucherEnter')}</strong>
                   </div>
                   <div className="editorial-inline-field">
@@ -986,7 +986,7 @@ const BespokePage = () => {
                 </div>
                 <div className="editorial-cart-summary">
                   <div className="editorial-cart-summary__row"><span>{t('bsp.subtotal')}</span><strong>{priceReady ? formatRupiah(estimatedTotal) : '—'}</strong></div>
-                  {discountAmount ? <div className="editorial-cart-summary__row"><span>Voucher</span><strong>-{formatRupiah(discountAmount)}</strong></div> : null}
+                  {discountAmount ? <div className="editorial-cart-summary__row"><span>{t('bsp.voucher')}</span><strong>-{formatRupiah(discountAmount)}</strong></div> : null}
                   <div className="editorial-cart-summary__row"><span>{t('bsp.shipping')}</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
                   <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>{t('bsp.transferTotal')}</span><strong>{priceReady ? formatRupiah(totalDue) : '—'}</strong></div>
                 </div>

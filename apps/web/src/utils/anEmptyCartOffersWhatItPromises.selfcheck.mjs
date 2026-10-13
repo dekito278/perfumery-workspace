@@ -92,8 +92,9 @@ for (const file of carts) {
   // Only the two keys that ARE empty-state headings: "Mulai belanja" / "Start shopping" and
   // "Keranjang kosong" / "Your cart is empty". cart.title is the section label ("Keranjang"), shown in
   // both states, and counting it made this rule fire on a screen that says it exactly once.
-  const headings = ['cart.emptyMobile', 'cart.startShopping', 'mcheckout.emptyTitle',
-    'mcheckout.emptyLead', 'checkout.emptyEyebrow', 'checkout.emptyTitle']
+  // Three of the six keys this list once named were dead: no screen printed them, and the message file
+  // kept them anyway. They are gone, so the list names only headings a screen can actually render.
+  const headings = ['cart.startShopping', 'mcheckout.emptyLead', 'checkout.emptyTitle']
     .filter((key) => new RegExp(`'${key.replace('.', '\\.')}'`).test(source));
   assert.ok(headings.length <= 1,
     `${relative(src, file)} renders ${headings.length} empty-state headings (${headings.join(', ')}). `
