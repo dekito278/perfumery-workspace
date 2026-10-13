@@ -907,6 +907,63 @@ const walk = (dir, out = []) => {
   }
 }
 
+// --- A SIXTH way: the components that wrap the ROUTER, which the shell slice starts after -------------
+//
+// The check above slices App.jsx from </Routes> to </Router>, so by construction it cannot see what is
+// OUTSIDE the router. Two components are: AuthProvider, and AppErrorBoundary — and the boundary is the
+// one component in the whole app that speaks to a buyer at the worst possible moment, when the page has
+// just crashed. It had been showing everybody, in both shops, "App failed to render", a raw stack trace,
+// a JSON diagnostics dump, "Missing capabilities:", a "Clear diagnostics" button, and one Indonesian
+// paragraph under an English heading.
+//
+// It cannot call useTranslate: it wraps AuthProvider, so the tree that crashed may be the provider tree,
+// and the one screen that must survive that cannot need a working provider to say so. It reads
+// <html lang> instead, which useStorefrontRegion writes on every region change.
+{
+  const app = read('App.jsx');
+  const appBody = app.slice(app.indexOf('function App()'));
+  const wrappers = [...new Set((appBody.match(/<([A-Z]\w+)>/g) || []).map((tag) => tag.slice(1, -1)))];
+  assert.ok(wrappers.includes('AppErrorBoundary'),
+    `the crash screen is no longer wrapping the app (found: ${wrappers.join(', ')}) — either it moved, in `
+    + 'which case this check must follow it, or buyers now see React\'s own blank page instead');
+
+  const PROVIDERS_WITH_NO_COPY = {
+    // Renders its children and nothing else. Its many string literals are console messages and auth
+    // internals, never words on a screen — which is what the check below actually verifies.
+    AuthProvider: ['contexts', 'AuthContext.jsx'],
+  };
+  for (const [name, file] of Object.entries(PROVIDERS_WITH_NO_COPY)) {
+    if (!wrappers.includes(name)) continue;
+    assert.doesNotMatch(read(...file), />\s*[A-Za-z][^<>{}]{3,}</,
+      `${name} is exempt because it renders no words, and it now renders some`);
+  }
+
+  const crash = read('components', 'AppErrorBoundary.jsx');
+  assert.match(crash, /document\.documentElement\.lang === 'en'/,
+    'the crash screen no longer takes its language from <html lang>. It cannot use useTranslate — it '
+    + 'wraps AuthProvider — and any second way of deciding the shop would disagree with the shop');
+  assert.match(crash, /translate\(region, key\)/,
+    'the crash screen must look its words up in MESSAGES, in the region it just resolved');
+  // Above the fold is copy and comes from the message file; below it, inside the collapsed block, is a
+  // stack trace and a capability list, which are not copy and stay in developer English.
+  const foldAt = crash.indexOf('<details');
+  assert.ok(foldAt > 0,
+    'the crash screen no longer collapses its diagnostics, so a buyer reads the stack trace first');
+  const buyerHalf = crash.slice(crash.indexOf('return ('), foldAt);
+  const sentences = (buyerHalf
+    .replace(/\bclassName=(?:"[^"]*"|\{[^}]*\})/g, '')
+    .match(/'[^'\n]*'|"[^"\n]*"/g) || [])
+    .filter((literal) => / /.test(literal) && /[A-Za-zÀ-ÿ]{2}/.test(literal));
+  assert.deepEqual(sentences, [],
+    `the crash screen writes copy a buyer reads straight into the file: ${sentences.join(' | ')}`);
+  assert.doesNotMatch(buyerHalf, />\s*[A-Za-z][^<>{}]{3,}</,
+    'the crash screen prints a bare sentence above its collapsed diagnostics');
+  for (const owned of ['Missing capabilities', 'Clear diagnostics', 'JSON.stringify(latestMobileError']) {
+    assert.ok(crash.indexOf(owned) > foldAt,
+      `"${owned}" is above the collapsed block, which puts a debugging tool in front of a shopper`);
+  }
+}
+
 // --- The tracking page may not promise a waybill it does not have ------------------------------------
 //
 // "Paket sudah dikirim. Resi tersedia di bawah." sat directly above a row reading "Belum tersedia".
