@@ -157,6 +157,7 @@ export const MobileArticlesContent = ({ active = true }) => {
               value={query}
               onChange={setQuery}
               placeholder={t("journal.searchPlaceholder")}
+              clearLabel={t("a11y.clearSearch")}
               disabled={loading}
             />
             <div className="mt-2">

@@ -2,7 +2,17 @@ import React from 'react';
 import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 
-const MobileSearchBar = ({ value, onChange, placeholder = 'Search...', disabled = false }) => (
+// Both strings a user hears here come from the caller. The shop is bilingual and Studio is not, so a
+// default baked in below would be read out in the wrong language on one side or the other; the defaults
+// that remain are Studio's, and buyerTextComesFromTheMessageFile.selfcheck.mjs makes every buyer-facing
+// caller override them.
+const MobileSearchBar = ({
+  value,
+  onChange,
+  placeholder = 'Search...',
+  clearLabel = 'Clear search',
+  disabled = false,
+}) => (
   <div className="relative">
     <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7280]" />
     <input
@@ -19,7 +29,7 @@ const MobileSearchBar = ({ value, onChange, placeholder = 'Search...', disabled 
         size="icon"
         onClick={() => onChange('')}
         className="absolute right-1.5 top-1/2 h-9 w-9 -translate-y-1/2 rounded-xl"
-        aria-label="Clear search"
+        aria-label={clearLabel}
       >
         <X className="h-4 w-4" />
       </Button>

@@ -33,7 +33,7 @@ const StorefrontLoadingState = ({
       <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start lg:px-8">
         <div className="rounded-[28px] border border-editorial-stone/12 bg-white/86 p-5 shadow-sm">
           <div className="inline-flex items-center gap-2 rounded-full border border-editorial-stone/15 bg-editorial-ivory px-3 py-1 text-xs font-bold uppercase text-editorial-charcoal">
-            <Spinner className="h-4 w-4" />
+            <Spinner className="h-4 w-4" aria-hidden="true" />
             {t('pdp.loading')}
           </div>
           <h1 className="mt-5 text-4xl font-bold leading-none sm:text-5xl">{heading}</h1>
