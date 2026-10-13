@@ -9,8 +9,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { applyTierPrices } from './tierPricedCatalog.js';
+import { buyerSurfaces } from './buyerSurfaces.mjs';
 
 const src = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...parts) => readFileSync(join(src, ...parts), 'utf8');
@@ -124,23 +125,22 @@ const FLOOR = [
   ['pages', 'mobile', 'MobileProductDetailPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
 ];
 
-// A page a stranger can open, named by the router, that asks the catalogue anything.
-const app = readFileSync(join(src, 'App.jsx'), 'utf8');
-const importedFrom = new Map([...app.matchAll(/(?:import\s+(\w+)\s+from|const\s+(\w+)\s*=\s*lazyRoute\(\(\)\s*=>\s*import\()\s*'@\/pages\/([^']+)'/g)]
-  .map((m) => [m[1] || m[2], m[3]]));
-const routedBuyerPages = new Set();
-for (const [, path, outer, inner] of app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)(?:><(\w+))?/g)) {
-  if (/^\/(?:studio|mobile\/studio)/.test(path)) continue;
-  const file = importedFrom.get(inner || outer);
-  if (file) routedBuyerPages.add(file);
-}
-assert.ok(routedBuyerPages.size >= 15, `only ${routedBuyerPages.size} buyer pages parsed from the router`);
+// Every surface a stranger can reach that asks the catalogue anything — pages AND components, from
+// buyerSurfaces.mjs, which three guards share. Pages only was the old subject, and it left out the two
+// COMPONENTS that show a price: the journal's related-product card and the free-vial prompt. Both read
+// the tier-priced catalogue today, so nothing was wrong; nothing was watching either, and the failure
+// this guard exists to catch — a member shown the retail price — does not care which kind of file it
+// happens in.
+const { files: surfaces, routed, appSource } = buyerSurfaces({ src });
+assert.ok(routed.length >= 15, `only ${routed.length} buyer pages parsed from the router`);
+assert.ok(surfaces.length >= 60, `only ${surfaces.length} buyer surfaces reached — the walk is broken`);
+assert.ok(appSource.includes('lazyRoute('), 'the route table no longer uses lazyRoute — check the parse');
 
 // The bespoke pages ask the catalogue for ONE product by slug, and read its notes, name and slug —
 // never its price. A tier price on a reference perfume would mean nothing, so the raw catalogue is the
 // right thing for them to hold.
 const REFERENCE_ONLY = new Set([
-  'BespokePage.jsx', 'mobile/MobileBespokePage.jsx',
+  'BespokePage', 'MobileBespokePage',
   // Counts how many fragrances are published, for the brand details an outside database transcribes.
   // The file contains the word "price" nowhere at all, so the tier-priced catalogue would tell it
   // nothing it asks about.
@@ -149,24 +149,31 @@ const REFERENCE_ONLY = new Set([
   // "reads no price" matched the bespoke pages too, whose `.price` reads are on their OWN options —
   // size, bottle, cap, label, material — and have nothing to do with a catalogue product. A check that
   // misfires on a correct entry gets loosened later, which is worse than a short list with reasons.
-  'AboutPage.jsx',
+  'AboutPage',
 ]);
 const CALLS_A_CATALOG = /use(?:Storefront|Catalog)Products\(/;
 
-const subjects = [...FLOOR];
-for (const file of [...routedBuyerPages].sort()) {
-  if (REFERENCE_ONLY.has(file)) continue;
-  if (!CALLS_A_CATALOG.test(read('pages', ...file.split('/')))) continue;
-  const parts = ['pages', ...file.split('/')];
-  if (!subjects.some((entry) => entry.join('/') === parts.join('/'))) subjects.push(parts);
+const subjects = [...FLOOR.map((parts) => join(src, ...parts))];
+for (const file of surfaces.sort()) {
+  if (REFERENCE_ONLY.has(basename(file, '.jsx'))) continue;
+  if (!CALLS_A_CATALOG.test(readFileSync(file, 'utf8'))) continue;
+  if (!subjects.includes(file)) subjects.push(file);
 }
 assert.ok(subjects.length >= FLOOR.length,
   'the union came back smaller than the floor, which means the walk dropped something');
+// The two components are the point of widening this, so they are named: if either stops being reached,
+// the widening has quietly undone itself.
+for (const name of ['JournalRelatedProduct', 'FreeVialPrompt']) {
+  assert.ok(subjects.some((file) => basename(file, '.jsx') === name),
+    `${name} shows a product price and is no longer in the subject — the sweep has narrowed back to `
+    + 'pages, where it started');
+}
 
 for (const file of subjects) {
-  const source = read(...file);
-  assert.match(source, /useStorefrontProducts/, `${file.join('/')} must read the tier-priced catalog`);
-  assert.doesNotMatch(source, /useCatalogProducts\(/, `${file.join('/')} must not also read the raw catalog`);
+  const source = readFileSync(file, 'utf8');
+  const name = file.replace(`${src}/`, '');
+  assert.match(source, /useStorefrontProducts/, `${name} must read the tier-priced catalog`);
+  assert.doesNotMatch(source, /useCatalogProducts\(/, `${name} must not also read the raw catalog`);
 }
 
 // The product form is the counter-example: it edits retail, so it must never see a tiered price or the

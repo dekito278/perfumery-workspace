@@ -21,10 +21,11 @@
 // are not swept here, because no rule separates them from Studio pages by name -- MobileCustomersPage is
 // Studio. Widening it means naming them, and a named list is the thing this guard exists to avoid.
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { basename, dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
+import { buyerSurfaces } from './buyerSurfaces.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..');
@@ -60,106 +61,32 @@ const ALLOWED = new Map([
   ['123456', 'a six-digit code example'],
 ]);
 
-const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-  const full = join(dir, entry.name);
-  if (entry.isDirectory()) return walk(full);
-  return /\.jsx$/.test(entry.name) ? [full] : [];
+// The file set comes from buyerSurfaces.mjs, which three guards now share. Every trap that cost a leak
+// is recorded there once: the lazyRoute convention, the route block that must end at the next <Route,
+// and the fact that the routed file is not the screen.
+const { files, routed, depthOf, resolve: resolveComponent } = buyerSurfaces({
+  src,
+  exclude: new Set([...OWNER_DOOR, ...SELF_GATED]),
 });
-
-// The PAGES come from the route table, not from a list anybody maintains. Every <Route> whose element is
-// not wrapped in <ProtectedRoute> is reachable without signing in, which is the only definition of
-// "buyer-facing" the app actually enforces — and it means a new public page is swept the day it is routed.
-//
-// Two traps, both hit while writing this:
-//   * the import convention is lazyRoute(() => import('@/...')), not lazy(...), so a narrower pattern
-//     resolved 9 of 24 components and silently skipped the rest;
-//   * a route block must be cut at the next <Route, not at the first "/>" — `element={<ByShop a={<X />}
-//     b={<Y />} />}` ends at X's slash, which dropped InternationalCartPage from the sweep entirely.
-const app = readFileSync(join(src, 'App.jsx'), 'utf8');
-const imports = new Map();
-for (const m of app.matchAll(/import\s+(\w+)\s+from\s+'@\/([^']+)'/g)) imports.set(m[1], m[2]);
-for (const m of app.matchAll(/const\s+(\w+)\s*=\s*\w*[Ll]azy\w*\(\s*\(\)\s*=>\s*import\('@\/([^']+)'\)/g)) imports.set(m[1], m[2]);
-const routeBlocks = app.split(/(?=<Route\b)/).slice(1).map((part) => {
-  const next = part.slice(1).search(/<Route\b/);
-  return next === -1 ? part : part.slice(0, next + 1);
-});
-const publicNames = new Set();
-const protectedNames = new Set();
-const STRUCTURAL = ['Route', 'ProtectedRoute', 'Navigate', 'ByShop', 'DomesticOnly'];
-for (const block of routeBlocks) {
-  const target = /<ProtectedRoute/.test(block) ? protectedNames : publicNames;
-  for (const m of block.matchAll(/<([A-Z]\w+)/g)) {
-    if (!STRUCTURAL.includes(m[1])) target.add(m[1]);
-  }
-}
-// Reachable without signing in, and never also mounted behind the gate.
-const resolveComponent = (name) => {
-  const rel = imports.get(name);
-  if (!rel) return null;
-  for (const candidate of [rel, `${rel}.jsx`]) {
-    if (existsSync(join(src, candidate))) return join(src, candidate);
-  }
-  return null;
-};
-const routedBuyerFiles = [...publicNames]
-  .filter((name) => !protectedNames.has(name) && !OWNER_DOOR.has(name) && !SELF_GATED.has(name))
-  .map(resolveComponent)
-  .filter(Boolean);
-assert.ok(routedBuyerFiles.length >= 20,
-  `only ${routedBuyerFiles.length} public pages resolved from the route table — the derivation is broken, `
-  + 'not the shop. The lazyRoute trap produces exactly this symptom');
-// A count floor does NOT catch the truncation trap: cutting each route at its first "/>" still leaves
-// twenty-odd pages, it just loses the ones nested inside another element. So the pages that can only be
-// reached THROUGH a wrapper are named. Both of these are mounted as <ByShop domestic={...}
-// international={...} />, and a naive cut drops whichever comes second.
+assert.ok(routed.length >= 20,
+  `only ${routed.length} public pages resolved from the route table — the derivation is broken, not the `
+  + 'shop. The lazyRoute trap produces exactly this symptom');
 for (const name of ['InternationalCartPage', 'MobileInternationalCartPage']) {
-  const file = resolveComponent(name);
-  assert.ok(file && routedBuyerFiles.includes(file),
+  assert.ok(routed.some((file) => file.endsWith(`${name}.jsx`)),
     `${name} is routed for the English shop but fell out of the sweep — it is nested inside another `
     + 'element, which is exactly what a route block cut at its first "/>" loses');
 }
-
-// Buyer-reachable means reachable BY IMPORT from one of those pages — not "lives in a buyer folder".
-// Stopping at the routed file missed two whole layers: the route table mounts MobileCommerceTabsPage and
-// the catalog, storefront and articles screens are its children, and every shared control the buyer
-// screens render (the search bar, the sticky action bar, the top bar) lives under components/mobile-ui
-// next to Studio's. Following the imports needs no list and no naming convention.
-const resolveModule = (rel) => {
-  for (const candidate of [rel, `${rel}.jsx`]) {
-    if (existsSync(join(src, candidate))) return join(src, candidate);
-  }
-  return null;
-};
-const reachable = new Set([
-  ...walk(join(src, 'components', 'storefront')),
-  join(src, 'layouts', 'MobileCommerceLayout.jsx'),
-  ...routedBuyerFiles,
-]);
-const queue = [...reachable];
-while (queue.length) {
-  const file = queue.pop();
-  for (const match of readFileSync(file, 'utf8').matchAll(/from\s+'@\/((?:pages|components|layouts)\/[^']+)'/g)) {
-    const next = resolveModule(match[1]);
-    // A self-gated component stays out however it is reached: the gate is inside it, so a buyer never
-    // hears its words no matter which buyer file imports it.
-    if (!next || reachable.has(next) || SELF_GATED.has(basename(next, '.jsx'))) continue;
-    reachable.add(next);
-    queue.push(next);
-  }
-}
-const files = [...reachable].filter((file) => file.endsWith('.jsx'));
-assert.ok(files.length >= 60,
-  `only ${files.length} buyer files found — this guard's file set is broken, not the shop. The closure `
-  + 'reached 74 when it was written; a number near the routed-page count means the import walk died');
-assert.ok(files.some((file) => file.endsWith('MobileCatalogPage.jsx')),
-  'the mobile catalog is not in the sweep — it is mounted as a child of MobileCommerceTabsPage, so only '
-  + 'the import walk can find it, and that is the hole this closure exists to close');
-// One level is not enough, and a count floor cannot tell the difference: the tabs page reaches the
-// articles screen, which reaches the search bar. A walk that forgot to queue what it found still
-// collected enough files to pass every count here.
 assert.ok(files.some((file) => file.endsWith(join('mobile-ui', 'MobileSearchBar.jsx'))),
   'the shared search bar is not in the sweep, so the walk is only going one level deep: it is reached '
   + 'through MobileCommerceTabsPage -> MobileArticlesPage -> MobileSearchBar');
+assert.ok(depthOf('MobileSearchBar') >= 3,
+  'the search bar is reachable in fewer than three steps, so either the router changed or the walk is '
+  + 'no longer measuring depth — the named file above stops proving anything');
+assert.ok(files.length >= 60,
+  `only ${files.length} buyer files found — this guard's file set is broken, not the shop`);
+assert.ok(files.some((file) => file.endsWith('MobileCatalogPage.jsx')),
+  'the mobile catalog is not in the sweep — it is mounted as a child of MobileCommerceTabsPage, so only '
+  + 'the import walk can find it, and that is the hole this closure exists to close');
 
 const leaks = [];
 const seen = new Set();
@@ -226,7 +153,7 @@ for (const file of files) {
   // them — removing the storefront spinner's aria-hidden walked straight past it.
   const rendered = new Map();
   for (const match of text.matchAll(/import\s+([^;]*?)\s+from\s+'@\/([^']+)'/g)) {
-    const target = resolveModule(match[2]);
+    const target = resolveComponent(match[2]);
     if (!target || !spokenDefaults.has(target)) continue;
     for (const name of match[1].match(/[A-Z]\w+/g) || []) rendered.set(name, target);
   }
