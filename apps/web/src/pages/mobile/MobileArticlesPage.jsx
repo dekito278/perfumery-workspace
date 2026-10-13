@@ -22,6 +22,7 @@ import {
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { articleExcerpt, stripMarkdown } from '@/utils/articleExcerpt.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 // Takes the translator: this is a module-level helper, so it cannot call a hook, and returning an
 // Indonesian fallback would put "Belum ada tanggal" under an English article.
@@ -64,7 +65,7 @@ export const MobileArticlesContent = ({ active = true }) => {
       const rows = await getPublishedJournalPosts();
       setPosts(rows);
     } catch (err) {
-      setError(err.message || t("journal.loadFailedMobile"));
+      setError(publicErrorMessage(err, t("journal.loadFailedMobile")));
     } finally {
       setLoading(false);
     }
