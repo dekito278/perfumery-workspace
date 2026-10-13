@@ -3,6 +3,7 @@ import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
 import { routerBasename } from '@/utils/storefrontRegion.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import FreeVialPrompt from '@/components/storefront/FreeVialPrompt.jsx';
@@ -208,33 +209,39 @@ const storefrontRoutePrefixes = [
   '/not-found',
 ];
 
+// Reached by someone who tried a protected route and was bounced here, or who followed a password-reset
+// mail. One reader, who is the owner, so the studio loading state is the honest one.
+// The phone pair is listed for the same reason, although the branch that reads this list has already
+// excluded /mobile by hand: the list is the answer to "whose screen is this", and the guard asks it of
+// every public route, phone ones included.
+const OWNER_DOOR_ROUTES = ['/login', '/reset-password', '/mobile/login', '/mobile/reset-password'];
+
 const isStorefrontRoute = (pathname) => (
   !pathname.startsWith('/mobile')
   && storefrontRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 );
 
-const HomeRouteFallback = () => (
-  <main className="min-h-screen bg-editorial-ivory text-editorial-charcoal">
-    <StorefrontHeader
-      className="border-editorial-charcoal/10 bg-editorial-ivory text-editorial-charcoal"
-      actions={[
-        { to: '/catalog', label: 'Collection' },
-        { to: '/bespoke', label: 'Bespoke' },
-        { to: '/journal', label: 'Journal' },
-        { to: '/cart', label: 'Cart', icon: 'cart' },
-      ]}
-    />
-    <section className="mx-auto grid min-h-[68vh] max-w-6xl content-center px-6 py-16">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#b08b4f]">ARTISAN PERFUMERY ATELIER</p>
-      <h1 className="mt-4 max-w-3xl font-serif text-6xl font-medium leading-none text-editorial-charcoal">
-        Fragrance as a memory object.
-      </h1>
-      <p className="mt-6 max-w-2xl text-lg leading-8 text-editorial-muted">
-        SOLIVAGANT is an artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.
-      </p>
-    </section>
-  </main>
-);
+// The hero the real page is about to render, in the language it is about to render it in. It used to
+// hold its own English copy -- a third wording of the eyebrow, the headline and the brand sentence --
+// so an Indonesian visitor opening the home page read English for as long as the chunk took, and then
+// watched it change. The keys are the hero's own, and the header's default action list is already
+// translated, so there is nothing to pass it.
+const HomeRouteFallback = () => {
+  const { t } = useTranslate();
+
+  return (
+    <main className="min-h-screen bg-editorial-ivory text-editorial-charcoal">
+      <StorefrontHeader className="border-editorial-charcoal/10 bg-editorial-ivory text-editorial-charcoal" />
+      <section className="mx-auto grid min-h-[68vh] max-w-6xl content-center px-6 py-16">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#b08b4f]">{t('home.eyebrow')}</p>
+        <h1 className="mt-4 max-w-3xl font-serif text-6xl font-medium leading-none text-editorial-charcoal">
+          {t('home.heroTitle').split('\n').join(' ')}
+        </h1>
+        <p className="mt-6 max-w-2xl text-lg leading-8 text-editorial-muted">{t('home.lead')}</p>
+      </section>
+    </main>
+  );
+};
 
 const RouteFallback = () => {
   const { pathname } = useLocation();
@@ -258,11 +265,10 @@ const RouteFallback = () => {
 
   if (isStorefrontRoute(pathname)) {
     return (
-      <StorefrontLoadingState
-        title="Preparing storefront"
-        description="Menjaga header dan konten tetap terlihat saat halaman web berpindah."
-        mode={pathname.startsWith('/products/') ? 'product' : 'page'}
-      />
+      // No title or description: StorefrontLoadingState reads both from the message file, and the pair
+      // that used to be passed here ("Preparing storefront" over an Indonesian sentence) overrode them
+      // on all 25 storefront routes.
+      <StorefrontLoadingState mode={pathname.startsWith('/products/') ? 'product' : 'page'} />
     );
   }
 
@@ -280,6 +286,13 @@ const RouteFallback = () => {
         className="min-h-screen"
       />
     );
+  }
+
+  // Everything left on a desktop address is either the owner's door or an address nobody has: the
+  // catch-all route renders NotFoundPage, which is a shop page, so it gets the shop's skeleton rather
+  // than "App initialization".
+  if (!pathname.startsWith('/mobile') && !OWNER_DOOR_ROUTES.includes(pathname)) {
+    return <StorefrontLoadingState mode="page" />;
   }
 
   return (

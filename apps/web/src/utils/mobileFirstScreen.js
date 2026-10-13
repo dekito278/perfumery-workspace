@@ -11,7 +11,8 @@
 // loading state — "Loading workspace" is honest there. Derived from the route table in App.jsx.
 export const MOBILE_COMMERCE_PREFIXES = [
   '/mobile/home', '/mobile/dashboard', '/mobile/catalog', '/mobile/articles', '/mobile/products',
-  '/mobile/bespoke', '/mobile/cart', '/mobile/checkout', '/mobile/payment', '/mobile/customer', '/mobile/welcome',
+  '/mobile/about', '/mobile/bespoke', '/mobile/cart', '/mobile/checkout', '/mobile/payment',
+  '/mobile/customer', '/mobile/welcome',
 ];
 
 export const isMobileCommercePath = (pathname = '') => {
