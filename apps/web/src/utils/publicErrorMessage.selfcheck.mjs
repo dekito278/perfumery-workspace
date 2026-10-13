@@ -7,10 +7,11 @@
 // The two ways this can go wrong are opposite, so both are held: leaking machinery to a buyer, and
 // swallowing a curated sentence that was more useful than the fallback.
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { basename, dirname, join } from 'node:path';
 import { isInternalErrorMessage, publicErrorMessage } from './publicErrorMessage.js';
+import { buyerSurfaces } from './buyerSurfaces.mjs';
 
 const src = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...parts) => readFileSync(join(src, ...parts), 'utf8');
@@ -80,69 +81,23 @@ assert.ok(publicErrorMessage(new Error('Failed to fetch')).length > 0, 'there is
 //     message in place of the translated sentence sitting right next to it as the fallback.
 //
 // So the subject is every file a stranger can reach: the public routes, and everything they import.
-const app = read('App.jsx');
-const importedFrom = new Map();
-for (const match of app.matchAll(/(?:import\s+(\w+)\s+from|const\s+(\w+)\s*=\s*\w*[Ll]azy\w*\(\(\)\s*=>\s*import\()\s*'@\/([^']+)'/g)) {
-  importedFrom.set(match[1] || match[2], match[3]);
-}
-assert.ok([...importedFrom.values()].filter((file) => file.startsWith('pages/')).length >= 30,
-  'fewer than 30 page imports parsed from App.jsx — the parse is broken, and note the convention is '
-  + 'lazyRoute(), not lazy()');
-
-const resolveModule = (rel) => {
-  for (const candidate of [rel, `${rel}.jsx`]) {
-    if (existsSync(join(src, candidate))) return join(src, candidate);
-  }
-  return null;
-};
-// Every capitalised tag in the route block, and the block ends at the NEXT <Route — not at the first
-// "/>", which is where the nested cart pages were being lost.
-const routeBlocks = app.split(/(?=<Route\b)/).slice(1).map((part) => {
-  const next = part.slice(1).search(/<Route\b/);
-  return next === -1 ? part : part.slice(0, next + 1);
-});
-const publicNames = new Set();
-const gatedNames = new Set();
-for (const block of routeBlocks) {
-  const path = (block.match(/path="([^"]+)"/) || [])[1] || '';
-  const target = /<ProtectedRoute/.test(block) || /^\/(?:studio|mobile\/studio)/.test(path)
-    ? gatedNames
-    : publicNames;
-  for (const match of block.matchAll(/<([A-Z]\w+)/g)) target.add(match[1]);
-}
-
-// Not buyer surfaces, each for a stated reason — never "it was failing".
+// Not a buyer surface, each for a stated reason — never "it was failing".
 const NOT_A_BUYER_SURFACE = new Map([
   ['LoginPage', 'studio sign-in; "Invalid login credentials" is exactly what Dekito needs to read'],
   ['MobileLoginPage', 'studio sign-in on the phone, same reason'],
   ['ResetPasswordPage', 'reached from a studio password-reset mail, not from the shop'],
 ]);
 
-const roots = [...publicNames]
-  .filter((name) => !gatedNames.has(name) && !NOT_A_BUYER_SURFACE.has(name))
-  .map((name) => importedFrom.get(name))
-  .filter(Boolean)
-  .map(resolveModule)
-  .filter(Boolean);
-// Plus components/storefront, which is buyer-facing by construction and holds the files App.jsx renders
-// as Suspense fallbacks — reached from the router, not from any page, so the closure alone misses them.
-const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-  const full = join(dir, entry.name);
-  if (entry.isDirectory()) return walk(full);
-  return /\.jsx$/.test(entry.name) ? [full] : [];
+// The file set comes from buyerSurfaces.mjs, shared with two other guards; the traps that cost a leak
+// are recorded there once.
+const { files: surfaces, routed, depthOf, appSource } = buyerSurfaces({
+  src,
+  exclude: new Set(NOT_A_BUYER_SURFACE.keys()),
 });
-const reachable = new Set([...roots, ...walk(join(src, 'components', 'storefront'))]);
-const queue = [...reachable];
-while (queue.length) {
-  const file = queue.pop();
-  for (const match of readFileSync(file, 'utf8').matchAll(/from\s+'@\/((?:pages|components|layouts)\/[^']+)'/g)) {
-    const next = resolveModule(match[1]);
-    if (!next || reachable.has(next) || NOT_A_BUYER_SURFACE.has(basename(next, '.jsx'))) continue;
-    reachable.add(next);
-    queue.push(next);
-  }
-}
-const surfaces = [...reachable].filter((file) => file.endsWith('.jsx'));
+assert.ok([...appSource.matchAll(/'@\/pages\/[^']+'/g)].length >= 30,
+  'fewer than 30 page imports found in App.jsx — the parse is broken, and note the convention is '
+  + 'lazyRoute(), not lazy()');
+assert.ok(routed.length >= 20, `only ${routed.length} public routes resolved — the parse is broken`);
 assert.ok(surfaces.length >= 60,
   `only ${surfaces.length} buyer-facing files reached — the derivation lost most of them`);
 for (const name of ['MobileArticlesPage', 'InternationalCartPage']) {
@@ -152,12 +107,11 @@ for (const name of ['MobileArticlesPage', 'InternationalCartPage']) {
     + 'derivation lost');
 }
 // And the walk must keep queueing what it finds. A walk that stopped one level in still reached 67
-// files and still found the articles screen, so neither the count nor the names above can tell. This
-// one is three levels down — route -> tabs page -> articles screen -> MobileStatePanel — and it is the
-// component that actually PRINTS the error text those screens set.
-assert.ok(surfaces.some((file) => basename(file, '.jsx') === 'MobileStatePanel'),
-  'MobileStatePanel is missing, so the walk is not following imports all the way: it is the panel the '
-  + 'phone screens hand their error message to, three levels from the route');
+// files and still found the articles screen, so neither the count nor the names above can tell. The
+// panel those screens hand their error message to is three levels from the route.
+assert.ok(depthOf('MobileStatePanel') >= 3,
+  'MobileStatePanel is reachable in fewer than three steps, so the walk is not following imports all '
+  + 'the way: it is the panel the phone screens print their error message in');
 
 // Showing a caught error means putting its .message where a reader can see it: a state setter, a toast,
 // or interpolated into a sentence. console.* is not showing it to anybody, so it is removed first —
