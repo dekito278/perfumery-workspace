@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -15,6 +16,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
     const rawImages = Array.isArray(product?.images) ? product.images : [];
     return [...new Set([...rawImages, product?.imageUrl].map((item) => String(item || '').trim()).filter(Boolean))];
   }, [product]);
+  const { t } = useTranslate();
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxScale, setLightboxScale] = useState(1);
@@ -144,10 +146,10 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
           ) : null}
           {hasMultipleImages ? (
             <>
-              <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(-1); }} className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/88 text-editorial-charcoal shadow-sm backdrop-blur" aria-label="Previous product image">
+              <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(-1); }} className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/88 text-editorial-charcoal shadow-sm backdrop-blur" aria-label={t('a11y.galleryPrevImage')}>
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(1); }} className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/88 text-editorial-charcoal shadow-sm backdrop-blur" aria-label="Next product image">
+              <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(1); }} className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/88 text-editorial-charcoal shadow-sm backdrop-blur" aria-label={t('a11y.galleryNextImage')}>
                 <ChevronRight className="h-5 w-5" />
               </button>
               <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/30 px-2 py-1 backdrop-blur">
@@ -185,15 +187,15 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
       {/* Zoom Lightbox */}
       {lightboxOpen ? (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/92" onClick={closeLightbox}>
-          <button type="button" onClick={closeLightbox} className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/12 text-white backdrop-blur" aria-label="Close zoom">
+          <button type="button" onClick={closeLightbox} className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/12 text-white backdrop-blur" aria-label={t('a11y.galleryCloseZoom')}>
             <X className="h-5 w-5" />
           </button>
           {hasMultipleImages ? (
             <>
-              <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(-1); setLightboxScale(1); setLightboxPos({ x: 0, y: 0 }); }} className="absolute left-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/12 text-white backdrop-blur" aria-label="Previous">
+              <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(-1); setLightboxScale(1); setLightboxPos({ x: 0, y: 0 }); }} className="absolute left-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/12 text-white backdrop-blur" aria-label={t('a11y.galleryPrev')}>
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(1); setLightboxScale(1); setLightboxPos({ x: 0, y: 0 }); }} className="absolute right-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/12 text-white backdrop-blur" aria-label="Next">
+              <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(1); setLightboxScale(1); setLightboxPos({ x: 0, y: 0 }); }} className="absolute right-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/12 text-white backdrop-blur" aria-label={t('a11y.galleryNext')}>
                 <ChevronRight className="h-5 w-5" />
               </button>
               <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold text-white/80 backdrop-blur">

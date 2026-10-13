@@ -1,0 +1,160 @@
+DAFTAR ISIAN SOLIVAGANT — dibuat 14 Oktober 2026 dari data produksi
+
+Angka di depan = berapa FORMULA yang memakai bahan itu. Kerjakan dari atas;
+yang di bawah garis tidak dipakai formula mana pun, jadi boleh ditunda tanpa akibat.
+
+==============================================================================
+A. POSISI PIRAMIDA (Top / Middle / Base)   —   56 dipakai formula, 167 tidak
+==============================================================================
+Diisi di: form bahan baku, kolom 'Pyramid placement' (desktop atau HP).
+Kosong = ditebak kode, dan tebakan itu benar ~78% sejak PR #450.
+
+  [ ] 10 formula  Evernyl                                        Yy
+  [ ]  7 formula  Liffarome                                      -
+  [ ]  7 formula  Javanol                                        Wd
+  [ ]  7 formula  Damascenone                                    IF
+  [ ]  6 formula  Suederal                                       Up
+  [ ]  6 formula  Helvetolide                                    3XD17215
+  [ ]  6 formula  Galaxolide 100 (Undiluted)                     XA
+  [ ]  5 formula  Manzanate                                      FG
+  [ ]  5 formula  Pink Pepper Essential Oil                      Sc
+  [ ]  5 formula  bergamot                                       -
+  [ ]  4 formula  isoraldeine95                                  -
+  [ ]  4 formula  animalis-1745-03                               -
+  [ ]  4 formula  Patchouli Light                                MAN-8272023D8751
+  [ ]  3 formula  Methyl Pample Mousse                           Fc
+  [ ]  3 formula  Geosmin                                        5YW13682
+  [ ]  3 formula  Cassis Base 345B (Firmenich)                   MAN-4C5F80C2E0DA
+  [ ]  3 formula  Ambrocenide Crystal pure                       1WU21632
+  [ ]  2 formula  mocanol                                        -
+  [ ]  2 formula  Styrallyl acetate                              -
+  [ ]  2 formula  Rosalis                                        -
+  [ ]  2 formula  Plum Accord                                    RM13
+  [ ]  2 formula  Piperonyl Acetone                              -
+  [ ]  2 formula  Molecule 10                                    -
+  [ ]  2 formula  Methyl Cedryl Ketone / Vertofix Coeur          -
+  [ ]  2 formula  Magnolan                                       3MN13569
+  [ ]  2 formula  Linalool                                       MAN-40C610793B7E
+  [ ]  2 formula  Furaneol                                       -
+  [ ]  2 formula  Floral Ozone 10% in Triethyl Citrate (TEC)     4YM0
+  [ ]  2 formula  Cinnamic Alcohol 10% in Triethyl Citrate (TEC) RM10
+  [ ]  2 formula  Benzaldehyde 10% in Triethyl Citrate (TEC)     4FN0
+  [ ]  1 formula  sandalwood kupang                              -
+  [ ]  1 formula  orris givco                                    -
+  [ ]  1 formula  molecule 100B                                  -
+  [ ]  1 formula  molecule 100A                                  -
+  [ ]  1 formula  malinau resin oud 50%                          -
+  [ ]  1 formula  kemungkus/cabeb                                -
+  [ ]  1 formula  kaffir lime                                    -
+  [ ]  1 formula  indocolone                                     -
+  [ ]  1 formula  hindinol                                       -
+  [ ]  1 formula  hexyl cinnamaldehyde                           -
+  [ ]  1 formula  florohydral                                    -
+  [ ]  1 formula  Saffranal                                      ES
+  [ ]  1 formula  Phenylacetaldehyde 85 / PEA                    -
+  [ ]  1 formula  Para Anisic Aldehyde                           -
+  [ ]  1 formula  Iso Amyl Iso Valerate                          -
+  [ ]  1 formula  Indolene 50 BB                                 -
+  [ ]  1 formula  Damascone Delta                                -
+  [ ]  1 formula  DPG                                            -
+  [ ]  1 formula  Clausena/ klausena EO                          -
+  [ ]  1 formula  Cedarwood texas                                -
+  [ ]  1 formula  Blackcurrant Fleuressence                      Fb
+  [ ]  1 formula  Benzyl Benzoate (BB)                           Zn
+  [ ]  1 formula  Benzyl Alcohol (BA)                            Zj
+  [ ]  1 formula  BENZOIN F-TEC                                  Qv
+  [ ]  1 formula  Amber Accord                                   -
+  [ ]  1 formula  1-Octen 3-One 1-TEC                            -
+
+  (+ 167 bahan lain tanpa posisi, tidak dipakai formula mana pun)
+
+==============================================================================
+B. HARGA BAHAN (cost_per_unit)   —   60 dipakai formula, 340 tidak
+==============================================================================
+Diisi di: form bahan baku, 'Unit price (per 10 ml/g)'.
+Kosong = dihitung Rp 0, jadi COGS dan harga jual di halaman produksi LEBIH RENDAH
+dari yang sebenarnya. 22 dari 27 formula memuat bahan tanpa harga.
+
+  [ ]  5 formula  bergamot                                       -
+  [ ]  5 formula  Patchouli Light Essential Oil                  7WB13670
+  [ ]  4 formula  isoraldeine95                                  -
+  [ ]  4 formula  animalis-1745-03                               -
+  [ ]  4 formula  Vertofix Couer                                 3WY00465
+  [ ]  4 formula  Linalool Synthetic                             3LL00278
+  [ ]  3 formula  Peppermint Essential Oil                       7BB00360
+  [ ]  3 formula  Lavender Essential Oil                         7HL00267
+  [ ]  3 formula  Labdanum Absolute                              8UQ08219
+  [ ]  3 formula  Geosmin                                        5YW13682
+  [ ]  3 formula  Civet Art                                      3UU07513
+  [ ]  3 formula  Cassis Base 345B (Firmenich)                   MAN-4C5F80C2E0DA
+  [ ]  2 formula  mocanol                                        -
+  [ ]  2 formula  Styrallyl acetate                              -
+  [ ]  2 formula  Plum Accord                                    RM13
+  [ ]  2 formula  Patchouli Essential Oil                        7WB00357
+  [ ]  2 formula  Neroli Essential Oil                           7CN00318
+  [ ]  2 formula  N-methyl ionone                                6II13551
+  [ ]  2 formula  Molecule 10                                    -
+  [ ]  2 formula  Heliotrope Base (Heliotropin Replacement)      2VN10848
+  [ ]  2 formula  Floral Ozone 10% in Triethyl Citrate (TEC)     4YM0
+  [ ]  2 formula  Clove Bud Essential Oil                        7SP00122
+  [ ]  2 formula  Cinnamic Alcohol 10% in Triethyl Citrate (TEC) RM10
+  [ ]  2 formula  Cedarwood Virginian Essential Oil              7WW00095
+  [ ]  2 formula  Benzaldehyde 10% in Triethyl Citrate (TEC)     4FN0
+  [ ]  1 formula  sandalwood kupang                              -
+  [ ]  1 formula  orris givco                                    -
+  [ ]  1 formula  molecule 100B                                  -
+  [ ]  1 formula  molecule 100A                                  -
+  [ ]  1 formula  malinau resin oud 50%                          -
+  [ ]  1 formula  kemungkus/cabeb                                -
+  [ ]  1 formula  kaffir lime                                    -
+  [ ]  1 formula  indocolone                                     -
+  [ ]  1 formula  hindinol                                       -
+  [ ]  1 formula  hexyl cinnamaldehyde                           -
+  [ ]  1 formula  Saffranal                                      ES
+  [ ]  1 formula  Rosone Rose Crystals                           1RP05672
+  [ ]  1 formula  Rosalva                                        4RA00394
+  [ ]  1 formula  Pyralone                                       9UY19188
+  [ ]  1 formula  Pine Essential Oil                             7KQ07511
+  [ ]  1 formula  Phenyl Ethyl Acetate                           3RP00371
+  [ ]  1 formula  Opoponax Resinoid                              2QC00337
+  [ ]  1 formula  Oakmoss Absolute (IFRA Low Atranol)            8YH00328
+  [ ]  1 formula  Mandarin Essential Oil                         7CA00285
+  [ ]  1 formula  Lavandin Super                                 7HB08129
+  [ ]  1 formula  Isobutyl Quinoline                             9UP00247
+  [ ]  1 formula  Indolene                                       4NU04558
+  [ ]  1 formula  Hercolyn D                                     2QZ00223
+  [ ]  1 formula  HELIOTROPAL                                    6VN21924
+  [ ]  1 formula  Gamma Decalactone                              4DD01639
+  [ ]  1 formula  Galbanum Essential Oil                         7GQ00200
+  [ ]  1 formula  Galaxolide 50 DEP                              3XA00199
+  [ ]  1 formula  Dimethyl Benzyl Carbinyl Acetate               3LF00157
+  [ ]  1 formula  Clausena/ klausena EO                          -
+  [ ]  1 formula  Citronellyl Acetate                            3RL00118
+  [ ]  1 formula  Cedarwood texas                                -
+  [ ]  1 formula  Blackcurrant Fleuressence                      Fb
+  [ ]  1 formula  Benzyl Benzoate (BB)                           Zn
+  [ ]  1 formula  Benzyl Alcohol (BA)                            Zj
+  [ ]  1 formula  BENZOIN F-TEC                                  Qv
+
+  (+ 340 bahan lain tanpa harga, tidak dipakai formula mana pun)
+
+==============================================================================
+C. SATU KALI JALAN, BUKAN DAFTAR
+==============================================================================
+1. Kirim pengajuan Fragrantica — docs/fragrantica-submission.txt sudah lengkap,
+   19 tahun rilis asli, top note Wongka! = Water Notes, tidak ada yang kosong.
+2. Jalankan SQL perapian batas IFRA (76 profil bernilai 0 -> NULL). SQL-nya ada di
+   bagian bawah berkas ini.
+3. Tambahkan /en/customer dan /en/mobile/customer ke daftar Redirect URL Supabase.
+4. Login Studio di panel Browser kalau mau saya uji layar-layar Studio langsung.
+
+==============================================================================
+SQL: batas IFRA 0 -> NULL (76 profil)
+==============================================================================
+-- 0 di kolom ini berarti 'belum terdata', bukan 'dilarang IFRA' (keputusan 11 Okt).
+-- Kodenya sudah membacanya begitu sejak PR #446; ini merapikan datanya supaya
+-- niatnya jelas bagi siapa pun yang membacanya nanti. Aman dijalankan berulang.
+begin;
+update public.material_reference_profiles set ifra_limit_percent = null
+where ifra_limit_percent = 0;
+commit;

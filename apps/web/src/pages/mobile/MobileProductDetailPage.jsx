@@ -297,7 +297,7 @@ const MobileProductDetailPage = () => {
         <StickyBottomActionBar
           fixed
           reserveSpace
-          aria-label="Product action"
+          aria-label={t('a11y.productAction')}
           className="m-editorial-pdp__sticky-bar"
           contentClassName="m-editorial-pdp__sticky-content"
         >
