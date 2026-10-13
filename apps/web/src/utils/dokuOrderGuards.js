@@ -45,6 +45,25 @@ export const mapDokuStatus = ({ transactionStatus, orderStatus } = {}) => {
   return null;
 };
 
+/**
+ * Is THIS call the one that turns the order paid?
+ *
+ * Both DOKU paths write the same row, and both ask "is the verdict paid?" before telling Dekito money
+ * landed. That is not the same question. The browser on the payment page polls /api/doku/status while the
+ * buyer pays, so whichever of the two sees SUCCESS first is the one that flips the row — and only the
+ * webhook ever sent the alert. Measured against the live payment log on 14 Oct 2026: of the DOKU orders
+ * that reached paid, FOUR were flipped by the poll with no webhook row at all, so no "PEMBAYARAN MASUK"
+ * was ever sent for them. The same reading shows 13 repeat 'paid' verdicts on orders already paid, each
+ * of which would alert again if it arrived through the webhook.
+ *
+ * So the rule is about the TRANSITION, not the verdict: alert when the row was not paid before this call
+ * and is paid after it. Shared here for the same reason the rest of this file is: the two paths had
+ * already drifted once.
+ */
+export const orderBecomesPaid = ({ currentOrder, incomingStatus } = {}) => (
+  incomingStatus === 'paid' && currentOrder?.payment_status !== 'paid'
+);
+
 // Returns null when the transition may proceed, { skip } when it must be ignored, or { error } when it
 // must fail loudly. Callers decide how to surface each.
 export const checkDokuOrderTransition = ({ currentOrder, incomingStatus, paidAmount = 0 }) => {

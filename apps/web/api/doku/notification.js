@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import process from 'node:process';
-import { checkDokuOrderTransition, isTerminalCancelStatus, mapDokuStatus } from '../../src/utils/dokuOrderGuards.js';
+import { checkDokuOrderTransition, isTerminalCancelStatus, mapDokuStatus, orderBecomesPaid } from '../../src/utils/dokuOrderGuards.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 
 const NOTIFICATION_TARGET = '/api/doku/notification';
@@ -172,6 +172,9 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
 
   const incomingStatus = statusPatch.paymentStatus;
   const isTerminalCancel = isTerminalCancelStatus(incomingStatus);
+  // Read BEFORE the patch: afterwards the row is paid either way, and "was it already paid" is the
+  // whole question the alert turns on.
+  const becomesPaid = orderBecomesPaid({ currentOrder, incomingStatus });
 
   const verdict = checkDokuOrderTransition({ currentOrder, incomingStatus, paidAmount });
   if (verdict?.skip) return { skipped: verdict.skip };
@@ -210,8 +213,10 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
     await releaseVoucherUsageForOrder(currentOrder);
   }
 
-  // Money actually landed — this is the alert worth interrupting someone for.
-  if (incomingStatus === 'paid') {
+  // Money actually landed — this is the alert worth interrupting someone for. On the TRANSITION, not on
+  // the verdict: a repeat 'paid' notification for an order that was already paid is not news, and the
+  // poll may well have been the one that flipped it (see orderBecomesPaid).
+  if (becomesPaid) {
     await sendOrderAlert({
       order: { ...currentOrder, payment_provider: 'doku' },
       event: 'paid',
@@ -356,7 +361,12 @@ export default async function handler(request, response) {
       });
     }
 
-    await updateOrder({
+    // updateOrder answers { skipped } when the transition guard refused the verdict — a late expiry on a
+    // paid order, a late payment on a closed one. That answer was being thrown away and the log recorded
+    // "applied", so the one guard standing between a paid order and a released stock reservation could
+    // fire in production and leave no trace of it. 'ignored' is the word this table already uses for a
+    // verdict that changed nothing.
+    const result = await updateOrder({
       invoiceNumber,
       statusPatch,
       paymentReference: payload?.transaction?.original_request_id || requestId,
@@ -368,12 +378,13 @@ export default async function handler(request, response) {
       rawBody,
       payload,
       statusPatch,
-      processingStatus: 'applied',
+      processingStatus: result?.skipped ? 'ignored' : 'applied',
       httpStatus: 200,
       signatureValid: true,
+      errorMessage: result?.skipped ? `Skipped: ${result.skipped}` : '',
     });
 
-    return jsonResponse(response, 200, { acknowledged: true });
+    return jsonResponse(response, 200, { acknowledged: true, skipped: result?.skipped || null });
   } catch (error) {
     await insertPaymentLog({
       request,
