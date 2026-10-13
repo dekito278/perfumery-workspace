@@ -21,7 +21,7 @@
 // are not swept here, because no rule separates them from Studio pages by name -- MobileCustomersPage is
 // Studio. Widening it means naming them, and a named list is the thing this guard exists to avoid.
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -35,12 +35,23 @@ const strip = (text) => text
 const SPOKEN_PROPS = /\b(aria-label|alt|title|placeholder)="([^"{}]{2,})"/g;
 
 // Each exemption carries its reason, because an allowlist without one becomes a dumping ground.
+// Public, but not the buyer's: reached only by someone who tried a protected route and was bounced to
+// sign in. One reader, who speaks Indonesian — the same reason Studio stays out of MESSAGES.
+const OWNER_DOOR = new Set(['LoginPage', 'MobileLoginPage', 'ResetPasswordPage']);
+
+// Mounted in the buyer shell but gated on isAdmin inside, so a buyer never sees the words.
+// storefrontMessages.selfcheck.mjs owns that rule and asserts each gate still exists; duplicating the
+// assertion here would mean two places to update when a gate moves.
+const SELF_GATED = new Set(['PwaUpdatePrompt', 'ConfirmHost', 'Toaster']);
+
 const ALLOWED = new Map([
   ['SOLIVAGANT', 'the brand name, which is the same word in both shops and must not be translated'],
   ['Solivagant', 'the brand name on the desktop header logo'],
   ['Kembali ke dashboard Studio', 'rendered only inside {isAdmin ? ...} — Studio is Indonesian, and a '
     + 'buyer never sees this control'],
   ['081234567890', 'an Indonesian phone-number example on a checkout that is domestic-only; not prose'],
+  ['SOLI09232', 'an order-code example — a code format, the same characters in either language'],
+  ['123456', 'a six-digit code example'],
 ]);
 
 const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -49,9 +60,66 @@ const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) 
   return /\.jsx$/.test(entry.name) ? [full] : [];
 });
 
-const files = [...walk(join(src, 'components', 'storefront')), join(src, 'layouts', 'MobileCommerceLayout.jsx')];
-assert.ok(files.length >= 10,
-  `only ${files.length} buyer files found — this guard's directory walk is broken, not the shop`);
+// The PAGES come from the route table, not from a list anybody maintains. Every <Route> whose element is
+// not wrapped in <ProtectedRoute> is reachable without signing in, which is the only definition of
+// "buyer-facing" the app actually enforces — and it means a new public page is swept the day it is routed.
+//
+// Two traps, both hit while writing this:
+//   * the import convention is lazyRoute(() => import('@/...')), not lazy(...), so a narrower pattern
+//     resolved 9 of 24 components and silently skipped the rest;
+//   * a route block must be cut at the next <Route, not at the first "/>" — `element={<ByShop a={<X />}
+//     b={<Y />} />}` ends at X's slash, which dropped InternationalCartPage from the sweep entirely.
+const app = readFileSync(join(src, 'App.jsx'), 'utf8');
+const imports = new Map();
+for (const m of app.matchAll(/import\s+(\w+)\s+from\s+'@\/([^']+)'/g)) imports.set(m[1], m[2]);
+for (const m of app.matchAll(/const\s+(\w+)\s*=\s*\w*[Ll]azy\w*\(\s*\(\)\s*=>\s*import\('@\/([^']+)'\)/g)) imports.set(m[1], m[2]);
+const routeBlocks = app.split(/(?=<Route\b)/).slice(1).map((part) => {
+  const next = part.slice(1).search(/<Route\b/);
+  return next === -1 ? part : part.slice(0, next + 1);
+});
+const publicNames = new Set();
+const protectedNames = new Set();
+const STRUCTURAL = ['Route', 'ProtectedRoute', 'Navigate', 'ByShop', 'DomesticOnly'];
+for (const block of routeBlocks) {
+  const target = /<ProtectedRoute/.test(block) ? protectedNames : publicNames;
+  for (const m of block.matchAll(/<([A-Z]\w+)/g)) {
+    if (!STRUCTURAL.includes(m[1])) target.add(m[1]);
+  }
+}
+// Reachable without signing in, and never also mounted behind the gate.
+const resolveComponent = (name) => {
+  const rel = imports.get(name);
+  if (!rel) return null;
+  for (const candidate of [rel, `${rel}.jsx`]) {
+    if (existsSync(join(src, candidate))) return join(src, candidate);
+  }
+  return null;
+};
+const routedBuyerFiles = [...publicNames]
+  .filter((name) => !protectedNames.has(name) && !OWNER_DOOR.has(name) && !SELF_GATED.has(name))
+  .map(resolveComponent)
+  .filter(Boolean);
+assert.ok(routedBuyerFiles.length >= 20,
+  `only ${routedBuyerFiles.length} public pages resolved from the route table — the derivation is broken, `
+  + 'not the shop. The lazyRoute trap produces exactly this symptom');
+// A count floor does NOT catch the truncation trap: cutting each route at its first "/>" still leaves
+// twenty-odd pages, it just loses the ones nested inside another element. So the pages that can only be
+// reached THROUGH a wrapper are named. Both of these are mounted as <ByShop domestic={...}
+// international={...} />, and a naive cut drops whichever comes second.
+for (const name of ['InternationalCartPage', 'MobileInternationalCartPage']) {
+  const file = resolveComponent(name);
+  assert.ok(file && routedBuyerFiles.includes(file),
+    `${name} is routed for the English shop but fell out of the sweep — it is nested inside another `
+    + 'element, which is exactly what a route block cut at its first "/>" loses');
+}
+
+const files = [
+  ...walk(join(src, 'components', 'storefront')),
+  join(src, 'layouts', 'MobileCommerceLayout.jsx'),
+  ...routedBuyerFiles,
+];
+assert.ok(files.length >= 30,
+  `only ${files.length} buyer files found — this guard's file set is broken, not the shop`);
 
 const leaks = [];
 const seen = new Set();
