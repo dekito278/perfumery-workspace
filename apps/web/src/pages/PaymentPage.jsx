@@ -1196,9 +1196,10 @@ const PaymentPageContent = ({ isMobile }) => {
         <main className="mobile-page mobile-payment-page space-y-4">
           <MobileTopBar
             title={t('mcheckout.title')}
-            subtitle={session?.orderNumber || orderNumber || 'Solivagant checkout'}
-            eyebrow="Secure"
+            subtitle={session?.orderNumber || orderNumber || 'SOLIVAGANT'}
+            eyebrow={t('pay.secureEyebrow')}
             onBack={() => navigate('/mobile/cart')}
+            backLabel={t('a11y.back')}
             action={<CreditCard className="h-5 w-5 text-amber-700" />}
           />
           {(loadingOrder || refreshingStatus) && !session ? <MobilePaymentSkeleton /> : isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
