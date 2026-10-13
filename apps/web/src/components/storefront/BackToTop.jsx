@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
 const BackToTop = () => {
+  const { t } = useTranslate();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -21,7 +23,7 @@ const BackToTop = () => {
       type="button"
       className={`back-to-top${visible ? ' is-visible' : ''}`}
       onClick={scrollUp}
-      aria-label="Kembali ke atas"
+      aria-label={t('a11y.backToTop')}
       tabIndex={visible ? 0 : -1}
     >
       <ArrowUp className="h-4 w-4" />

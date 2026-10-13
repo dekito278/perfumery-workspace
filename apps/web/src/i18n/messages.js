@@ -17,6 +17,13 @@
 
 export const MESSAGES = {
   id: {
+    "a11y.backToTop": "Kembali ke atas",
+    "a11y.galleryPrevImage": "Foto produk sebelumnya",
+    "a11y.galleryNextImage": "Foto produk berikutnya",
+    "a11y.galleryCloseZoom": "Tutup perbesaran",
+    "a11y.galleryPrev": "Sebelumnya",
+    "a11y.galleryNext": "Berikutnya",
+    "a11y.productAction": "Tindakan produk",
     'welcome.title': 'Selamat datang - Solivagant',
     'welcome.meta': 'Terima kasih sudah memilih Solivagant. Masuk dengan Google untuk harga member di seluruh katalog.',
     'welcome.eyebrow': 'DARI KARTU DI PAKETMU',
@@ -1249,6 +1256,13 @@ export const MESSAGES = {
     'pwa.offline': 'Kamu sedang offline. Data terbaru akan dimuat kembali saat koneksi pulih.',
   },
   en: {
+    "a11y.backToTop": "Back to top",
+    "a11y.galleryPrevImage": "Previous product image",
+    "a11y.galleryNextImage": "Next product image",
+    "a11y.galleryCloseZoom": "Close zoom",
+    "a11y.galleryPrev": "Previous",
+    "a11y.galleryNext": "Next",
+    "a11y.productAction": "Product action",
     'welcome.title': 'Welcome - Solivagant',
     'welcome.meta': 'Thank you for choosing Solivagant. The atelier behind the bottle in your parcel.',
     'welcome.eyebrow': 'FROM THE CARD IN YOUR PARCEL',

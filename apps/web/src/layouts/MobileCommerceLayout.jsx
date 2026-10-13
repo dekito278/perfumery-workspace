@@ -80,7 +80,10 @@ const MobileCommerceLayout = ({ children }) => {
     <div className={cn('mobile-app mobile-commerce-app', keyboardActive && 'mobile-keyboard-active')}>
       <div className="mobile-app-shell" data-mobile-primary-scroller="true">
         <header className="mobile-commerce-header">
-          <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand m-editorial-brand" aria-label="Solivagant owner access">
+          {/* The wordmark, not the door behind it. Three taps here is the OWNER's way in, and a label
+              saying so announced that hidden affordance to every buyer using a screen reader — in
+              English, in both shops. The brand name needs no translation and keeps the gesture quiet. */}
+          <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand m-editorial-brand" aria-label="SOLIVAGANT">
             <span className="m-editorial-wordmark">SOLIVAGANT</span>
           </button>
           <RegionSwitch />
