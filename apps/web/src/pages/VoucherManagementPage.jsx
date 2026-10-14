@@ -21,9 +21,9 @@ import {
   VOUCHER_UPDATED_EVENT,
 } from '@/services/voucherService.js';
 import { buildVoucherPreview } from '@/utils/voucherPreview.js';
-import { getExpiryTime } from '@/utils/voucherValidation.js';
 import { buildVoucherAnalytics, buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
 import { confirmAction } from '@/utils/confirmAction.js';
+import { voucherAccountLimitLabel, voucherRestrictionLabel, voucherStatus } from '@/utils/voucherSummary.js';
 
 const emptyDraft = {
   id: '',
@@ -48,20 +48,6 @@ const formatDateTime = (value) => (value
   ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
   : '-');
 
-const getVoucherStatus = (voucher) => {
-  if (!voucher.active) return { label: 'Nonaktif', className: 'bg-stone-100 text-stone-700' };
-  // The same parser the checkout validates against. Read in the reader's own zone, this badge said
-  // "Aktif" on a code the checkout had already refused, for the whole of the expiry day.
-  const expiryTime = getExpiryTime(voucher.expiresAt);
-  if (expiryTime && expiryTime < Date.now()) {
-    return { label: 'Expired', className: 'bg-rose-50 text-rose-700' };
-  }
-  if (voucher.usageLimitTotal > 0 && voucher.usageCount >= voucher.usageLimitTotal) {
-    return { label: 'Limit habis', className: 'bg-amber-50 text-amber-800' };
-  }
-  return { label: 'Aktif', className: 'bg-emerald-50 text-emerald-700' };
-};
-
 const toDraft = (voucher) => ({
   id: voucher?.id || '',
   code: voucher?.code || '',
@@ -76,16 +62,6 @@ const toDraft = (voucher) => ({
   eligibleProductSlugs: (voucher?.eligibleProductSlugs || []).join(', '),
   eligibleCategories: (voucher?.eligibleCategories || []).join(', '),
 });
-
-const getVoucherRestrictionLabel = (voucher) => {
-  const products = voucher.eligibleProductSlugs || [];
-  const categories = voucher.eligibleCategories || [];
-  if (!products.length && !categories.length) return 'Semua produk';
-  return [
-    products.length ? `${products.length} produk` : '',
-    categories.length ? `${categories.length} kategori` : '',
-  ].filter(Boolean).join(' / ');
-};
 
 const VoucherManagementPage = () => {
   const [vouchers, setVouchers] = useState([]);
@@ -120,7 +96,7 @@ const VoucherManagementPage = () => {
 
   const stats = useMemo(() => ({
     total: vouchers.length,
-    active: vouchers.filter((voucher) => getVoucherStatus(voucher).label === 'Aktif').length,
+    active: vouchers.filter((voucher) => voucherStatus(voucher).label === 'Aktif').length,
     limited: vouchers.filter((voucher) => Number(voucher.usageLimitTotal || 0) > 0).length,
   }), [vouchers]);
 
@@ -437,7 +413,7 @@ const VoucherManagementPage = () => {
 
             <div className="mt-5 grid gap-3">
               {filteredVouchers.map((voucher) => {
-                const status = getVoucherStatus(voucher);
+                const status = voucherStatus(voucher);
                 const limitLabel = voucher.usageLimitTotal
                   ? `${voucher.usageCount}/${voucher.usageLimitTotal} dipakai`
                   : `${voucher.usageCount || 0} dipakai`;
@@ -471,9 +447,13 @@ const VoucherManagementPage = () => {
                             <span className="block text-[10px] font-bold uppercase text-muted-foreground">Pemakaian</span>
                             {limitLabel}
                           </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <span className="block text-[10px] font-bold uppercase text-muted-foreground">Limit per akun</span>
+                            {voucherAccountLimitLabel(voucher)}
+                          </div>
                           <div className="rounded-2xl bg-white px-3 py-2 sm:col-span-2">
                             <span className="block text-[10px] font-bold uppercase text-muted-foreground">Berlaku untuk</span>
-                            {getVoucherRestrictionLabel(voucher)}
+                            {voucherRestrictionLabel(voucher)}
                           </div>
                         </div>
                       </div>
