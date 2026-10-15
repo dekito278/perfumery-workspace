@@ -175,10 +175,21 @@ const drawShippingLabel = async (doc, order) => {
   y += 8;
   const leftWidth = 43;
   const rightX = MARGIN + leftWidth + 5;
-  y = Math.max(
-    drawLabelValue(doc, 'Kurir', order.courierName || shipping || 'Belum dipilih', MARGIN, y, leftWidth),
-    drawLabelValue(doc, 'Nomor resi', order.trackingNumber || 'Belum ada resi', rightX, y, CONTENT_WIDTH - leftWidth - 5),
-  );
+  const courier = order.courierName || shipping || 'Belum dipilih';
+  // The waybill row is printed only when there is a waybill. This shop does not record one — Dekito's
+  // decision, 2026-10-10, and the data has always agreed: 0 of 35 orders carry a tracking_number, so all
+  // 24 printable labels were coming off the printer with "NOMOR RESI / Belum ada resi" on them. That is
+  // the same nagging theShopDoesNotChaseAWaybill took off nine screens, printed and stuck to a parcel.
+  //
+  // The field is NOT taken away, which is the other half of that rule: fill tracking_number and it
+  // prints, in its own column, exactly as before. With nothing to print, the courier takes the width.
+  const waybill = String(order.trackingNumber || '').trim();
+  y = waybill
+    ? Math.max(
+      drawLabelValue(doc, 'Kurir', courier, MARGIN, y, leftWidth),
+      drawLabelValue(doc, 'Nomor resi', waybill, rightX, y, CONTENT_WIDTH - leftWidth - 5),
+    )
+    : drawLabelValue(doc, 'Kurir', courier, MARGIN, y, CONTENT_WIDTH);
 
   y += 2;
   drawDivider(doc, y);
