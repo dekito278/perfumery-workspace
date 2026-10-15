@@ -36,7 +36,7 @@ for (const [file, why] of MUST_NOT_BE_INDEXED) {
 // The real subject is derivable: a page a stranger can open, that the build does not advertise and
 // robots.txt does not close, has to say what it is.
 const app = read('src/App.jsx');
-const importedFrom = new Map([...app.matchAll(/(?:import\s+(\w+)\s+from|const\s+(\w+)\s*=\s*lazyRoute\(\(\)\s*=>\s*import\()\s*'@\/pages\/([^']+)'/g)]
+const importedFrom = new Map([...app.matchAll(/(?:import\s+(\w+)\s+from|const\s+(\w+)\s*=\s*\w*[Ll]azy\w*\(\(\)\s*=>\s*import\()\s*'@\/pages\/([^']+)'/g)]
   .map((m) => [m[1] || m[2], m[3]]));
 assert.ok(importedFrom.size >= 30, `only ${importedFrom.size} page imports parsed from App.jsx`);
 
@@ -52,29 +52,65 @@ const advertised = new Set([...read('tools/seo-artifacts.mjs')
   .matchAll(/'([^']+)'/g)].map((m) => m[1]));
 assert.ok(advertised.size >= 3, `only ${advertised.size} advertised routes parsed from seo-artifacts.mjs`);
 
+// Two narrowings of this rule, both of the kind this repo keeps paying for. Widened after measuring
+// that neither was leaking today, and the two halves are NOT equally proven:
+//
+//   * PARAMETERISED ROUTES were skipped, because "those pages are already named in the list above" —
+//     which is a hand list, the thing the paragraph above this one warns about. Six public routes were
+//     taken on trust that way: /catalog/:slug, /products/:slug, /articles/:slug, /track/:code,
+//     /track-order/:code and the catch-all. All six do say something about themselves; now they are
+//     asked rather than assumed. TESTED: removing the product page's canonical fails this guard, and
+//     did not before — that page is reached by no route the old rule looked at.
+//   * THE ELEMENT was read as `element={<Outer>` plus at most ONE nested tag, so a route whose page sits
+//     inside <ByShop> or <DomesticOnly> resolved to the wrapper and fell out. Three other guards really
+//     did lose pages to that this month (#456, #458). Here it is INSURANCE, not a tested rule: no public
+//     route nests its page today (the only ones that do are closed in robots.txt), so narrowing this
+//     back still passes. The same goes for reading lazyRoute() through a pattern rather than by name.
+//
+// A route block ends at the NEXT <Route, so each one carries its own element and no other.
+const routeBlocks = app.split(/(?=<Route\b)/).slice(1).map((part) => {
+  const next = part.slice(1).search(/<Route\b/);
+  return next === -1 ? part : part.slice(0, next + 1);
+});
 let openPages = 0;
-for (const [, path, outer, inner] of app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)(?:><(\w+))?/g)) {
+for (const block of routeBlocks) {
+  const path = (block.match(/path="([^"]+)"/) || [])[1];
+  if (!path) continue;
+  if (/<ProtectedRoute/.test(block)) continue;
   if (/^\/(?:studio|mobile\/studio)/.test(path)) continue;
-  // A parameterised route is one of many URLs; those pages are already named in the list above, where
-  // the reason can say which branch of them matters.
-  if (path.includes(':') || path.includes('*')) continue;
-  const file = importedFrom.get(inner || outer);
-  if (!file) continue; // a redirect or an inline component, not a page with a head of its own
+  // A <Navigate> route is a redirect, not a page with a head of its own.
+  if (/element=\{<Navigate/.test(block)) continue;
   if (advertised.has(path)) continue;
   if (disallowed.some((prefix) => path.startsWith(prefix))) continue;
-  openPages += 1;
-  // Two ways to say what you are, and the first run of this rule only accepted one. /hug is a vanity
-  // address for one bottle: it renders the ordinary product page, which declares
-  // rel="canonical" -> /catalog/hug-n-1 — a page that IS advertised and prerendered. That is the right
-  // answer for a second address, and a noindex there would be wrong, because the same component serves
-  // /catalog/:slug. So a canonical counts as saying it.
-  const source = read(`src/pages/${file}`);
-  assert.ok(NOINDEX.test(source) || /rel="canonical"/.test(source),
-    `${path} (${file}) is routed and open: the build does not advertise it and robots.txt does not close `
-    + 'it, and it neither refuses indexing nor names a canonical. So the shell answers for it, and a '
-    + 'search engine cannot tell it from a page that matters.');
+
+  // Every capitalised tag in the block that resolves to a page file: the page may be nested inside a
+  // wrapper, and a <ByShop> route has TWO of them, one per shop.
+  const files = [...new Set([...block.matchAll(/<([A-Z]\w+)/g)]
+    .map((match) => importedFrom.get(match[1]))
+    .filter(Boolean))];
+  for (const file of files) {
+    openPages += 1;
+    // Two ways to say what you are, and the first run of this rule only accepted one. /hug is a vanity
+    // address for one bottle: it renders the ordinary product page, which declares
+    // rel="canonical" -> /catalog/hug-n-1 — a page that IS advertised and prerendered. That is the right
+    // answer for a second address, and a noindex there would be wrong, because the same component serves
+    // /catalog/:slug. So a canonical counts as saying it.
+    const source = read(`src/pages/${file}`);
+    assert.ok(NOINDEX.test(source) || /rel="canonical"/.test(source),
+      `${path} (${file}) is routed and open: the build does not advertise it and robots.txt does not close `
+      + 'it, and it neither refuses indexing nor names a canonical. So the shell answers for it, and a '
+      + 'search engine cannot tell it from a page that matters.');
+  }
 }
-assert.ok(openPages >= 2, `only ${openPages} open pages checked — the derivation lost them`);
+// The old rule reached six routes and skipped the parameterised ones; this reaches every page file
+// behind every open route. The floor is the old count, so a "widening" cannot quietly narrow.
+assert.ok(openPages >= 10, `only ${openPages} open page(s) checked — the derivation lost them`);
+// And the routes that used to be taken on trust are really in scope now.
+for (const route of ['/articles/:slug', '/track/:code', '*']) {
+  assert.ok(routeBlocks.some((block) => block.includes(`path="${route}"`)),
+    `the route ${route} has disappeared from App.jsx — it was one of the six this rule used to skip, so `
+    + 'either it moved or this check is now blind to it');
+}
 
 // Both invoice branches (mobile and desktop) render their own head, so both have to say it.
 assert.equal(
