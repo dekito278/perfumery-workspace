@@ -245,4 +245,47 @@ assert.ok(giftText.includes(`V2 x1 / Maskumambang (${FREE_VIAL_PRICE_LABEL})`),
 assert.ok(giftText.includes('HUG N°1 x2 / 30 ml') && !giftText.includes(`HUG N°1 x2 / 30 ml (${FREE_VIAL_PRICE_LABEL})`),
   'and a bottle that was paid for is not marked as one');
 
+// --- The waybill row prints only when there IS a waybill ---------------------------------------------
+// 0 of the 35 orders on production carries a tracking_number, and 24 of them are printable, so every
+// label this shop has ever printed said "NOMOR RESI / Belum ada resi". Dekito decided on 2026-10-10 that
+// the shop does not record waybills; theShopDoesNotChaseAWaybill took the nagging off nine screens and
+// left it on the one document that gets stuck to a parcel.
+//
+// Both halves are checked here, because the same decision says the FIELD must not be taken away either.
+const BARE_ORDER = {
+  orderNumber: 'DKT-RESI-TEST',
+  customerName: 'Pembeli Uji',
+  contact: '085200000000',
+  courierName: 'JnT Reguler / Rp 9.000',
+  updatedAt: '2026-10-16T09:00:00+07:00',
+  items: [{ name: 'HUG N°1', quantity: 1, size: '30 ml' }],
+};
+// MARGIN + leftWidth + the gap, from the module: where the waybill column starts.
+const WAYBILL_COLUMN_X = MARGIN_MM + 43 + 5;
+const inWaybillColumn = (parsed) => parsed.placed
+  .filter((run) => Math.abs(run.xMm - WAYBILL_COLUMN_X) < 1 && run.text.trim())
+  .map((run) => run.text.trim());
+
+const withoutWaybill = await readLabel(BARE_ORDER);
+const withoutText = withoutWaybill.placed.map((run) => run.text).join('\n');
+assert.doesNotMatch(withoutText, /NOMOR RESI/i,
+  'an order with no waybill still prints the waybill heading, so every label carries a field that is '
+  + 'empty on all 35 orders this shop has taken');
+assert.doesNotMatch(withoutText, /Belum ada resi/i,
+  'the label still prints "Belum ada resi" — the printed form of the nagging that was removed from the '
+  + 'screens');
+assert.match(withoutText, /KURIR/i, 'the courier row must still be there');
+assert.ok(withoutText.includes('JnT Reguler'), 'and must still name the courier');
+assert.deepEqual(inWaybillColumn(withoutWaybill), [],
+  'nothing may be drawn in the waybill column when there is no waybill: the courier takes the width');
+
+const withWaybill = await readLabel({ ...BARE_ORDER, trackingNumber: 'JP1234567890' });
+const withText = withWaybill.placed.map((run) => run.text).join('\n');
+assert.match(withText, /NOMOR RESI/i,
+  'a waybill he DID fill in must still print — the decision was that the shop never demands one, not '
+  + 'that the field is gone');
+assert.ok(withText.includes('JP1234567890'), 'and the number itself must be on the label');
+assert.ok(inWaybillColumn(withWaybill).includes('JP1234567890'),
+  'the waybill belongs in its own column beside the courier, where it was');
+
 console.log(`shippingLabelLayout selfcheck OK (${placed.length} text runs clear of the QR block, and no divider struck through a wrapped block)`);
