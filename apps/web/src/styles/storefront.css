@@ -6223,7 +6223,9 @@ main :is(a, figure, picture, div, span):has(> img) {
   flex-shrink: 0;
   border: none;
   background: var(--editorial-charcoal, #1b1a16);
-  padding: 12px 20px;
+  /* 14px, not 12px: measured at 40px tall on the live phone page, against the 44px minimum mobile.css
+     sets for every button in the app. This is the primary action of the whole shop. */
+  padding: 14px 20px;
   font-family: var(--font-body, "DM Sans", sans-serif);
   font-size: 0.68rem;
   font-weight: 500;
