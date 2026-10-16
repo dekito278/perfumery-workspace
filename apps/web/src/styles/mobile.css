@@ -816,6 +816,19 @@ body:has([contenteditable="true"]:focus) .mobile-fixed-action {
   --mobile-action-bar-spacer-height: 118px;
 }
 
+/* The fixed bar is portaled to document.body, so it hangs OUTSIDE .mobile-app and NONE of the rules
+   scoped to that class reach it — including the 44px minimum at the top of this file. It carries the
+   primary action of every phone screen, which is the one control that cannot afford to be small.
+   Measured on the live phone shop before this rule: the bespoke wizard's Kembali and Lanjut were 36px
+   tall, and the product page's "Tambah ke keranjang" 40px.
+   Only the tap size is borrowed, not the whole mobile rulebook: `.mobile-app * { letter-spacing: 0 }`
+   would flatten the tracking these uppercase labels are set in. */
+.mobile-action-bar button,
+.mobile-action-bar a,
+.mobile-action-bar [role='button'] {
+  min-height: 44px;
+}
+
 .mobile-action-bar-surface {
   box-shadow: 0 18px 40px -24px rgba(38, 61, 39, 0.42);
 }
