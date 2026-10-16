@@ -37,6 +37,12 @@ const strip = (text) => text
 // guessed: across every buyer-reachable file these are the only text-bearing props that are ever given a
 // literal, and `eyebrow` joined it because PaymentPage labelled its header "Secure" in English.
 const SPOKEN_PROPS = /\b(aria-label|alt|title|subtitle|placeholder|eyebrow|\w*[Ll]abel)="([^"{}]{2,})"/g;
+// And the same prop written as a TEMPLATE LITERAL, which the scan above cannot see because there is no
+// double quote in it. Found on the live phone product page: the gallery's dots and thumbnails announced
+// `Show product image ${index + 1}` and `Select product image ${index + 1}` — English, in the Indonesian
+// shop, in a file this guard already swept. Only a template carrying WORDS counts; `${slug}-${id}` and
+// the like are keys and ids, not speech.
+const SPOKEN_TEMPLATES = /\b(aria-label|alt|title|subtitle|placeholder|eyebrow|\w*[Ll]abel)=\{`([^`]*[A-Za-z]{3,}[^`]*)`\}/g;
 // The same question asked of a prop DEFAULT. A default is invisible to the scan above, which is how
 // aria-label="Clear search" survived inside a search bar the shop and Studio share.
 const SPOKEN_PROP_NAME = /^(?:aria-label|alt|title|subtitle|placeholder|eyebrow)$|[Ll]abel$/;
@@ -91,11 +97,20 @@ assert.ok(files.some((file) => file.endsWith('MobileCatalogPage.jsx')),
 const leaks = [];
 const seen = new Set();
 for (const file of files) {
-  for (const match of strip(readFileSync(file, 'utf8')).matchAll(SPOKEN_PROPS)) {
+  const source = strip(readFileSync(file, 'utf8'));
+  for (const match of source.matchAll(SPOKEN_PROPS)) {
     const [, prop, value] = match;
     seen.add(value.trim());
     if (ALLOWED.has(value.trim())) continue;
     leaks.push(`${file.replace(`${src}/`, '')}  ${prop}="${value.trim()}"`);
+  }
+  for (const match of source.matchAll(SPOKEN_TEMPLATES)) {
+    const [, prop, value] = match;
+    // A template made only of interpolations and punctuation is an id, not a sentence. What is left
+    // after the ${...} holes are removed has to contain a word before this complains.
+    const spoken = value.replace(/\$\{[^}]*\}/g, ' ').trim();
+    if (!/[A-Za-z]{3,}/.test(spoken)) continue;
+    leaks.push(`${file.replace(`${src}/`, '')}  ${prop}={\`${value.trim()}\`}`);
   }
 }
 assert.deepEqual(leaks, [],
@@ -192,11 +207,13 @@ for (const value of MUST_BE_SEEN) {
 
 // --- The keys the fixed labels now use must exist in BOTH shops --------------------------------------
 // A missing key renders the key itself, which is worse than either language.
-for (const key of [
+const PAIRED_KEYS = [
   'a11y.backToTop', 'a11y.galleryPrevImage', 'a11y.galleryNextImage',
   'a11y.galleryCloseZoom', 'a11y.galleryPrev', 'a11y.galleryNext', 'a11y.productAction',
   'a11y.breadcrumb', 'a11y.back', 'a11y.clearSearch', 'bsp.contactPlaceholder', 'pay.secureEyebrow',
-]) {
+  'a11y.galleryShowImage', 'a11y.gallerySelectImage',
+];
+for (const key of PAIRED_KEYS) {
   for (const shop of ['id', 'en']) {
     assert.ok(MESSAGES[shop]?.[key], `${key} is missing from the ${shop} shop`);
   }
@@ -212,4 +229,4 @@ assert.ok(!/aria-label="[^"]*owner access"/i.test(layout),
 
 console.log(`buyerTextComesFromTheMessageFile selfcheck OK (${files.length} buyer-facing files, every `
   + `spoken string from the message file, ${spokenDefaults.size} shared controls with a spoken default, `
-  + '12 keys paired across both shops)');
+  + `${PAIRED_KEYS.length} keys paired across both shops)`);

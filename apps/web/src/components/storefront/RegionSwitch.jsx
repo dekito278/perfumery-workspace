@@ -35,7 +35,12 @@ const RegionSwitch = ({ className = '' }) => {
           onClick={() => setRegion(option.value)}
           aria-pressed={region === option.value}
           title={option.title}
-          className={`rounded-full px-2.5 py-1 transition ${
+          // min-w-[44px]: mobile.css has set `min-height: 44px` on every button in the app since the
+          // mobile UI audit, and never the other axis. Measured on the live phone shop, these two were
+          // 31 and 35 CSS px wide with a 1px overlap between them — two adjacent targets, both under
+          // the minimum, whose effect is to switch the whole shop into a language the reader may not
+          // read. The header has 68px of free space at 375px, so the pair can afford it.
+          className={`inline-flex min-w-[44px] items-center justify-center rounded-full px-2.5 py-1 transition ${
             region === option.value
               ? 'bg-editorial-charcoal text-white'
               : 'text-editorial-charcoal/60'
