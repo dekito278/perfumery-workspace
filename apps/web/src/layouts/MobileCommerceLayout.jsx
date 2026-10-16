@@ -124,7 +124,10 @@ const MobileCommerceLayout = ({ children }) => {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'relative flex h-[52px] flex-col items-center justify-center gap-0.5 rounded-[14px] text-[9.5px] font-bold transition',
-                active ? 'bg-editorial-ivory text-editorial-charcoal' : 'text-[#8b949e]'
+                // #6b7280, not #8b949e: measured on the live phone shop, the five inactive labels read
+                // 3.08:1 against the bar's rgba(255,255,255,0.98) at 9px bold, where WCAG AA asks 4.5.
+                // This grey is already used elsewhere in the phone UI and lands at 4.9:1.
+                active ? 'bg-editorial-ivory text-editorial-charcoal' : 'text-[#6b7280]'
               )}
             >
               <Icon className="h-[19px] w-[19px]" />
