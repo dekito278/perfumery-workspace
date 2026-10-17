@@ -197,5 +197,53 @@ for (const key of [...askKeys, 'track.lead']) {
   }
 }
 
+// ── 8. Every sentence that NAMES a waybill is shown only when there IS one ───────────────────────
+// Sections 6 and 7 each hold a hand-written list of keys, and a hand-written list is where this kept
+// leaking: six rewrites in, two sentences were still telling buyers about a number this shop has never
+// recorded.
+//
+//   pay.orderMissing       "...atau lacak pesanan dengan nomor order atau resi."   not gated at all
+//   cust.checkPayProdBody  "...custom progress, dan resi tampil di satu tempat."   the portal's own pitch
+//
+// So the subject is derived from the message file instead: EVERY message naming a waybill, found by
+// reading the words rather than by listing the keys. Each one has to be rendered beside something that
+// tests for a waybill — `trackingUrl`, `trackingNumber`, `courierSearchUrl`, `canTrackShipment`. That is
+// how the four courier buttons are already right (none of them has ever rendered, because
+// buildCourierTrackingSearchUrl answers '' without a number), and how the table's own "Nomor resi" row
+// label stays: it sits on the line that reads order.trackingNumber.
+const NAMES_A_WAYBILL = /\bresi\b|tracking number/i;
+const waybillKeys = [...new Set(
+  ['id', 'en'].flatMap((lang) => Object.entries(MESSAGES[lang])
+    .filter(([, value]) => typeof value === 'string' && NAMES_A_WAYBILL.test(value))
+    .map(([key]) => key)),
+)];
+assert.ok(waybillKeys.length >= 6,
+  `only ${waybillKeys.length} messages name a waybill — the message file is not being read, and this `
+  + 'check would then pass anything');
+// The window is 500 characters, which proves the key is rendered AMONG code that tests for a waybill
+// — not that this exact branch does. Tightening it to the enclosing JSX expression was tried and is
+// worse: `{t('inv.trackParcel')}` is its own expression, so every correctly-gated label failed. The
+// window catches a sentence that names a waybill with no such code anywhere near it, which is the
+// shape both leaks had; a gate deleted from a branch whose sibling still names trackingUrl is NOT
+// caught, and is left stated rather than claimed.
+const GATED_ON_ONE = /trackingUrl|trackingNumber|courierSearchUrl|canTrackShipment|waybill/i;
+for (const key of waybillKeys) {
+  const quoted = new RegExp(`['"]${key.replace('.', '\\.')}['"]`, 'g');
+  let sites = 0;
+  for (const file of files) {
+    const source = stripComments(readFileSync(file, 'utf8'));
+    for (const match of source.matchAll(quoted)) {
+      sites += 1;
+      assert.match(source.slice(Math.max(0, match.index - 500), match.index + 200), GATED_ON_ONE,
+        `${file.slice(root.length + 1)} shows ${key} — "${MESSAGES.id[key] || MESSAGES.en[key]}" — without `
+        + 'testing whether there is a waybill. This shop has never recorded one');
+    }
+  }
+  assert.ok(sites > 0,
+    `${key} names a waybill and nothing renders it at a readable call site, so no gate can be proven. `
+    + 'Either drop the word or render the key by name');
+}
+
 console.log(`theShopDoesNotChaseAWaybill: ok — ${files.length} files scanned, ${emptyTests} empty-waybill `
-  + `tests and not one of them refuses, ${askKeys.length + 1} lookup strings and not one of them asks for a waybill`);
+  + `tests and not one of them refuses, ${askKeys.length + 1} lookup strings and not one of them asks `
+  + `for a waybill, ${waybillKeys.length} messages that name one and every one shown only when there is one`);
