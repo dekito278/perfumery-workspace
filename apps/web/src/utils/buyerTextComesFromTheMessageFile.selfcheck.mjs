@@ -221,6 +221,53 @@ for (const key of PAIRED_KEYS) {
     `${key} reads the same in both shops — one of them has not been translated`);
 }
 
+// --- A sentence written straight into the JSX, that the message file already translates ---------------
+// Everything above reads PROPS. A string written as a text CHILD — `<div>{code} diterapkan</div>` — is
+// invisible to that scan, and four were sitting in the shop:
+//
+//   MobileBespokePage   "{code} diterapkan"   the English bespoke form said it in Indonesian
+//   MobileCartPage      "{n} item"            the English cart said "2 item"
+//   MobileCheckoutPage  "{n} item"            same
+//   MobileArticlesPage  "Journal"             the INDONESIAN journal badge said JOURNAL, not JURNAL
+//
+// Every one of the four had a key already sitting in the message file, translated, unused. So the
+// subject is derived from the message file rather than from a list of phrases: a text child that
+// matches a message WHOSE TWO SHOPS DISAGREE has to come from t(), because that is exactly the string
+// that leaks. A child matching a message that reads the same in both — "Total", "Voucher" — cannot leak
+// and is left alone, which also keeps this from dragging a cart into an invoice's namespace to satisfy
+// a rule.
+const normalise = (text) => text.replace(/\{[^}]*\}/g, '{}').replace(/\s+/g, ' ').trim().toLowerCase();
+const translatedDifferently = new Map();
+for (const [key, indonesian] of Object.entries(MESSAGES.id)) {
+  const english = MESSAGES.en[key];
+  if (typeof indonesian !== 'string' || typeof english !== 'string') continue;
+  if (normalise(indonesian) === normalise(english)) continue;
+  for (const value of [indonesian, english]) {
+    const text = normalise(value);
+    if (text.length > 2) translatedDifferently.set(text, key);
+  }
+}
+assert.ok(translatedDifferently.size > 1000,
+  `only ${translatedDifferently.size} messages differ between the shops — the message file is not being `
+  + 'read, and this check would then pass anything');
+
+// A text child, expression children and all: `>{code} diterapkan<`. Anything with JavaScript in it is a
+// ternary or an arrow the brace-matching walked into, not a sentence.
+let childrenChecked = 0;
+for (const file of files) {
+  const source = strip(readFileSync(file, 'utf8'));
+  for (const match of source.matchAll(/>((?:[^<>]|\{[^{}]*\})+)</g)) {
+    const raw = match[1];
+    if (!/[A-Za-z]{3}/.test(raw)) continue;
+    if (/=>|;|\breturn\b/.test(raw)) continue;
+    childrenChecked += 1;
+    const key = translatedDifferently.get(normalise(raw));
+    if (!key) continue;
+    assert.fail(`${basename(file)} writes "${raw.replace(/\s+/g, ' ').trim().slice(0, 60)}" straight into `
+      + `the JSX, and the message file already translates it as ${key}. One shop is reading the other `
+      + "shop's words");
+  }
+}
 // --- And the wordmark must not advertise the owner's door --------------------------------------------
 const layout = readFileSync(join(src, 'layouts', 'MobileCommerceLayout.jsx'), 'utf8');
 assert.ok(!/aria-label="[^"]*owner access"/i.test(layout),
@@ -229,4 +276,5 @@ assert.ok(!/aria-label="[^"]*owner access"/i.test(layout),
 
 console.log(`buyerTextComesFromTheMessageFile selfcheck OK (${files.length} buyer-facing files, every `
   + `spoken string from the message file, ${spokenDefaults.size} shared controls with a spoken default, `
-  + `${PAIRED_KEYS.length} keys paired across both shops)`);
+  + `${PAIRED_KEYS.length} keys paired across both shops, ${childrenChecked} text children checked against `
+  + `${translatedDifferently.size} messages the two shops disagree on)`);

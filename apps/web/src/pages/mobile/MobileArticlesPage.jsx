@@ -141,7 +141,7 @@ export const MobileArticlesContent = ({ active = true }) => {
           <div className="p-4">
             <div className="inline-flex min-h-[28px] items-center gap-1.5 rounded-full bg-white/85 px-3 py-1 text-[10px] font-bold uppercase text-editorial-charcoal shadow-sm">
               <BookOpenText className="h-3.5 w-3.5" />
-              Journal
+              {t('journal.eyebrowWord')}
             </div>
             <h1 className="mt-3 text-[24px] font-black leading-tight text-editorial-charcoal">
               {t('journal.leadMobile')}

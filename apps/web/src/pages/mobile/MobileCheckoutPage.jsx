@@ -467,7 +467,7 @@ const MobileCheckoutPage = () => {
             title={t('mcheckout.summary')}
             description={t('mcheckout.stepReviewBody')}
             complete={Boolean(paymentComplete && items.length)}
-            action={<span className="shrink-0 text-xs font-bold text-amber-700">{summary.boughtQuantity} item</span>}
+            action={<span className="shrink-0 text-xs font-bold text-amber-700">{t('cust.itemCount', { count: summary.boughtQuantity })}</span>}
           >
             {items.map((item) => {
               const discountedLine = discountedLineMap.get(item.slug);
