@@ -164,4 +164,38 @@ for (const key of ['track.shippedNoWaybill', 'track.notAvailable', 'cust.waybill
   }
 }
 
-console.log(`theShopDoesNotChaseAWaybill: ok — ${files.length} files scanned, ${emptyTests} empty-waybill tests and not one of them refuses`);
+// ── 7. And the shop does not ASK THE BUYER for one either ─────────────────────────────────────────
+// Section 6 reads the sentences that PROMISE a waybill. These are the ones that REQUEST it: the public
+// tracking form offered "Masukkan nomor order atau resi", "Nomor order (DKT-XXXXX) atau nomor resi",
+// and told a buyer whose lookup failed to "pastikan nomor order atau resi sudah benar". That is the
+// same chase pointed at the buyer instead of at Dekito, and on this data it could only ever end one
+// way: tracking_number is empty on all 35 orders, so a courier's number can never match a row.
+//
+// The key list is READ OFF THE FORM rather than written here, so a sixth string in the search box
+// inherits the rule.
+const trackingPage = stripComments(readFileSync(join(root, 'pages', 'PublicTrackingPage.jsx'), 'utf8'));
+const formStart = trackingPage.indexOf('<form className="tracking-search"');
+assert.ok(formStart > 0, 'cannot find the tracking form — this check reads its keys out of the page');
+const emptyState = trackingPage.indexOf('tracking-card__empty');
+assert.ok(emptyState > formStart, 'cannot find the tracking empty state, which carries the hint text');
+// Two slices, not one: the detail table sits BETWEEN them and legitimately labels a row "Nomor resi" —
+// the field stays, section 5 holds that. What may not ask for one is the box a buyer types into and the
+// hint under it.
+const lookupCopy = trackingPage.slice(formStart, trackingPage.indexOf('</form>', formStart))
+  + trackingPage.slice(emptyState, trackingPage.indexOf('</div>', emptyState));
+const askKeys = [...new Set([...lookupCopy.matchAll(/t\(\s*["']((?:track|a11y)\.[\w.]+)["']/g)].map((m) => m[1]))];
+assert.ok(askKeys.length >= 5,
+  `only ${askKeys.length} strings read out of the lookup form — the parse is broken, not the copy`);
+// track.lead sits above the form rather than inside it, and is the first thing a buyer reads.
+for (const key of [...askKeys, 'track.lead']) {
+  for (const lang of ['id', 'en']) {
+    const sentence = MESSAGES[lang][key];
+    if (typeof sentence !== 'string') continue;
+    assert.doesNotMatch(sentence, /\bresi\b|tracking number/i,
+      `${lang}.${key} asks the buyer for a waybill ("${sentence}"), and this shop has never recorded one — `
+      + 'a buyer who types a courier number gets "not found"');
+  }
+}
+
+console.log(`theShopDoesNotChaseAWaybill: ok — ${files.length} files scanned, ${emptyTests} empty-waybill `
+  + `tests and not one of them refuses, ${askKeys.length + 1} lookup strings and not one of them asks for a waybill`);

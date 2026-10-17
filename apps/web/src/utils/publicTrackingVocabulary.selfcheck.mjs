@@ -102,7 +102,12 @@ const entryFor = (route) => {
 
 const trackEntry = entryFor('/track-order');
 const formAccepts = `${MESSAGES.id['track.placeholderLong']} ${MESSAGES.en['track.placeholderLong']}`.toLowerCase();
-const LOOKUP_NOUNS = ['email', 'phone', 'telepon', 'whatsapp', 'customer code', 'kode customer'];
+// 'tracking number' joined the list on 2026-10-17. It was the one lookup the boot screen named that
+// nobody had checked against the form, because the form named it too — and neither of them had been
+// checked against the DATA. Not one of the 35 orders on production carries a tracking_number, and none
+// ever has, so that way in could never find anything. Both ends say order number now.
+const LOOKUP_NOUNS = ['email', 'phone', 'telepon', 'whatsapp', 'customer code', 'kode customer',
+  'tracking number', 'nomor resi'];
 for (const noun of LOOKUP_NOUNS) {
   if (!trackEntry.toLowerCase().includes(noun)) continue;
   assert.ok(formAccepts.includes(noun),
