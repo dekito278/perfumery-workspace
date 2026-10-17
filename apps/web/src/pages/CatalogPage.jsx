@@ -114,13 +114,13 @@ const CatalogPage = () => {
     <>
       <Helmet>
         <title>{t('catalog.tab')}</title>
-        <meta name="description" content="Explore the SOLIVAGANT fragrance collection by perfumer Dekito." />
+        <meta name="description" content={t('catalog.meta')} />
         <link rel="canonical" href={catalogCanonical} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="SOLIVAGANT" />
         <meta property="og:url" content={catalogCanonical} />
-        <meta property="og:title" content="Fragrance Collection - SOLIVAGANT" />
-        <meta property="og:description" content="Public SOLIVAGANT fragrance objects with notes, sizes, and pricing." />
+        <meta property="og:title" content={t('catalog.tab')} />
+        <meta property="og:description" content={t('catalog.meta')} />
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify(catalogBreadcrumb)}</script>
       </Helmet>

@@ -70,7 +70,7 @@ export const MobileCatalogContent = ({ active = true }) => {
         <Helmet>
           <title>{t('catalog.tab')}</title>
           <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/catalog'))} />
-          <meta name="description" content="Jelajahi koleksi fragrance SOLIVAGANT." />
+          <meta name="description" content={t('catalog.meta')} />
         </Helmet>
       ) : null}
 
