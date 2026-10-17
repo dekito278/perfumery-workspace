@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
 /**
  * Signing out, once, for every screen that offers it.
@@ -26,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
  */
 export const useSignOut = (redirectTo = '/login') => {
   const { logout } = useAuth();
+  const { t } = useTranslate();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -33,12 +35,12 @@ export const useSignOut = (redirectTo = '/login') => {
     setSigningOut(true);
     try {
       await logout();
-      toast.success('Berhasil keluar');
+      toast.success(t('auth.signedOut'));
       if (redirectTo) navigate(redirectTo, { replace: true });
     } catch (error) {
       // Deliberately NOT navigating: the session is still live, and a login screen over a live session
       // is the one outcome this must never produce.
-      toast.error(error?.message || 'Gagal keluar');
+      toast.error(error?.message || t('auth.signOutFailed'));
       setSigningOut(false);
     }
   };

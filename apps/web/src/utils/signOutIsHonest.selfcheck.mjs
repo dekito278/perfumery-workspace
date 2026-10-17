@@ -12,6 +12,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
+import { MESSAGES } from '../i18n/messages.js';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -37,7 +38,7 @@ const hook = read('hooks', 'useSignOut.js');
 const signOutBody = hook.match(/const signOut = async \(\) => \{[\s\S]*?\n  \};/)?.[0];
 assert.ok(signOutBody, 'could not lift signOut to run it — update this guard');
 const buildSignOut = new Function(
-  'logout', 'toast', 'navigate', 'setSigningOut', 'redirectTo',
+  'logout', 'toast', 'navigate', 'setSigningOut', 'redirectTo', 't',
   `${signOutBody}\nreturn signOut;`,
 );
 
@@ -49,6 +50,10 @@ const attempt = async ({ failWith }) => {
     (to, options) => calls.navigated.push([to, options]),
     (value) => calls.signingOut.push(value),
     '/login',
+    // The hook speaks from the message file now. Handing back the KEY makes the assertions below read
+    // what it asked for rather than one shop's wording — the toast said 'Berhasil keluar' under a button
+    // labelled t('cust.signOut'), so the English portal confirmed an English action in Indonesian.
+    (key) => key,
   );
   await signOut();
   return calls;
@@ -65,7 +70,14 @@ assert.deepEqual(failed.signingOut, [true, false], 'the button comes back, or it
 const succeeded = await attempt({ failWith: null });
 assert.deepEqual(succeeded.navigated, [['/login', { replace: true }]],
   'a sign-out that worked goes to the login screen, and replaces the entry so Back cannot return');
-assert.deepEqual(succeeded.success, ['Berhasil keluar']);
+assert.deepEqual(succeeded.success, ['auth.signedOut']);
+for (const key of ['auth.signedOut', 'auth.signOutFailed']) {
+  for (const language of ['id', 'en']) {
+    assert.ok(MESSAGES[language][key], `${language}.${key} must exist — the hook asks for it by name`);
+  }
+}
+assert.notEqual(MESSAGES.id['auth.signedOut'], MESSAGES.en['auth.signedOut'],
+  'the two shops must not confirm a sign-out with the same sentence — that is the bug this replaced');
 assert.deepEqual(succeeded.error, []);
 
 // --- 3. Every screen that signs out goes through it ----------------------------------------------------
