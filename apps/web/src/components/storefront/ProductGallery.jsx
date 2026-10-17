@@ -162,7 +162,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
     <>
       <div className={cn('space-y-3', className)}>
         <div className="group relative cursor-zoom-in" ref={galleryRef} onClick={activeImage ? openLightbox : undefined}>
-          <ProductVisual product={previewProduct} className={visualClassName || 'aspect-square'} priority={priority} sizes="(max-width: 767px) 100vw, 520px" />
+          <ProductVisual product={previewProduct} className={visualClassName || 'aspect-square'} priority={priority} sizes="(max-width: 767px) 100vw, 520px" soldOut={false} />
           {activeImage ? (
             // A real button, not the div this used to be. The whole image opens the zoom on click, but a
             // div with an onClick is reachable by mouse and touch only: a keyboard never lands on it and

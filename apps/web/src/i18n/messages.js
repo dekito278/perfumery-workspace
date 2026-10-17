@@ -163,7 +163,7 @@ export const MESSAGES = {
     'catalog.searchPlaceholder': 'Cari notes, mood, atau nama...',
     'catalog.searchLabel': 'Cari fragrance berdasarkan nama, notes, atau mood',
     'catalog.all': 'Semua',
-    'catalog.soldOutShort': 'Habis',
+    'catalog.soldOutShort': 'Stok habis',
     'catalog.outOfStockToast': '{name} sedang habis',
     'catalog.addAria': 'Tambah {name} ke keranjang',
     'catalog.soldOutAria': '{name} stok habis',

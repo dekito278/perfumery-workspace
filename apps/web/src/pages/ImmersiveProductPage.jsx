@@ -190,7 +190,7 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
         {/* ── Hero ── */}
         <section className="imm-hero">
           <div className="imm-hero__visual">
-            <ProductVisual product={product} className="imm-hero__image" imageFit="cover" priority label={false} />
+            <ProductVisual product={product} className="imm-hero__image" imageFit="cover" priority label={false} soldOut={false} />
             <div className="imm-hero__overlay" />
           </div>
           <div className="imm-hero__content">

@@ -4792,6 +4792,16 @@ main :is(a, figure, picture, div, span):has(> img) {
   }
 }
 
+/* "Stok habis" is not an affordance, so it must not wait for the pointer. Hidden until hover, the
+   desktop grid showed a sold-out bottle as an ordinary card — the whole point of listing it is that
+   the customer reads the state before clicking. Disabled stays on screen. */
+.catalog-card__quick-add:disabled {
+  opacity: 1;
+  transform: translateY(0);
+  cursor: default;
+  background: rgba(26, 24, 20, 0.86);
+}
+
 .catalog-card__visual img,
 .catalog-card__visual > div {
   width: 100%;
