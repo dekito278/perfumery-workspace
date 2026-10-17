@@ -141,6 +141,7 @@ const CartPage = () => {
                   type="text"
                   value={voucher.inputCode}
                   onChange={(event) => voucher.setInputCode(event.target.value)}
+                  aria-label={t('cart.voucherPlaceholder')}
                   placeholder={t('cart.voucherPlaceholder')}
                   disabled={!items.length || voucher.loading}
                 />

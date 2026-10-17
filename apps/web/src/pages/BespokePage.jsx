@@ -965,6 +965,7 @@ const BespokePage = () => {
                       type="text"
                       value={voucher.inputCode}
                       onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                      aria-label={t('bsp.voucherPlaceholder')}
                       placeholder={t('bsp.voucherPlaceholder')}
                     />
                     <button type="button" className="editorial-button" onClick={voucher.applyVoucher} disabled={voucher.loading}>
