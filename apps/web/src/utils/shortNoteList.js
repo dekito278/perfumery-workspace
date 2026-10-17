@@ -8,6 +8,23 @@
 // Indonesian phone cart clamped it to two lines in CSS, and the English phone cart showed nothing.
 // One rule instead, so a fifth cart cannot invent a fourth way.
 
+/**
+ * The notes field without the heading the field itself carries.
+ *
+ * All 19 perfumes store `notes` as "Fragrance Notes: Metallic Accord, Medicinal, Milky, …", in the
+ * Indonesian column and the English one alike — the heading came in with the material list on
+ * 2026-10-07 and nothing has taken it off since. Measured on production: 38 of the 39 filled values
+ * begin with it; the one that does not is the gift vial, whose notes are a sentence.
+ *
+ * Nothing wants to read it. The product page builds its own pyramid, the cart wants a short list, and
+ * the catalogue search wants terms — and with the heading indexed, "fragrance" and "notes" each matched
+ * all 19 products. "notes" is the word the search box's own placeholder suggests.
+ *
+ * So it comes off once, where the row is mapped, and the cart line, the search index and the bespoke
+ * reference all get the notes rather than a label glued to the first one.
+ */
+export const withoutNotesHeading = (notes) => String(notes ?? '').replace(/^\s*fragrance\s+notes\s*:\s*/i, '');
+
 /** How many notes a cart line shows before it trails off. Three reads as a scent, not a spec. */
 export const CART_LINE_NOTE_LIMIT = 3;
 
