@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
-import { shortNoteList, CART_LINE_NOTE_LIMIT } from './shortNoteList.js';
+import { shortNoteList, CART_LINE_NOTE_LIMIT, withoutNotesHeading } from './shortNoteList.js';
 
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
 const stripComments = (source) => source
@@ -79,6 +79,40 @@ for (const file of carts) {
 }
 assert.ok(showing.length >= 3,
   `only ${showing.length} cart page(s) show notes at all; expected the rule to bind on at least three`);
+
+// --- 3. THE FIELD AS IT ACTUALLY ARRIVES ---------------------------------------------------------------
+// Every fixture above is a bare list — which is what the field was ASSUMED to hold. Production holds a
+// heading: 38 of the 39 filled values read "Fragrance Notes: Green, Wet Moss, …", in both language
+// columns. Split on the comma, the heading is glued to the first note and takes one of the three slots,
+// so the Indonesian cart line read "Fragrance Notes: Metallic Accord, Medicinal, Milky…" — an English
+// label standing where a note should be. Indexed, it made "fragrance" and "notes" match all 19
+// perfumes, and "notes" is the word the search box's own placeholder suggests.
+assert.equal(withoutNotesHeading('Fragrance Notes: Metallic Accord, Medicinal, Milky, Powdery, Musk Accord'),
+  'Metallic Accord, Medicinal, Milky, Powdery, Musk Accord');
+assert.equal(shortNoteList(withoutNotesHeading('Fragrance Notes: Metallic Accord, Medicinal, Milky, Powdery, Musk Accord')),
+  'Metallic Accord, Medicinal, Milky…', 'three notes, none of them a label');
+// Case and spacing as a human would type them, and the heading only at the START.
+assert.equal(withoutNotesHeading('fragrance notes:Green, Moss'), 'Green, Moss');
+assert.equal(withoutNotesHeading('  Fragrance   Notes :  Green'), 'Green');
+assert.equal(withoutNotesHeading('Green, Fragrance Notes: Moss'), 'Green, Fragrance Notes: Moss',
+  'only a leading heading is a heading — a note that happens to contain the words is a note');
+// The one row in the shop without the heading is the gift vial, whose notes are a sentence. It must
+// come back untouched.
+assert.equal(withoutNotesHeading('Vial 2 ml hadiah, satu per order, dipilih pembeli'),
+  'Vial 2 ml hadiah, satu per order, dipilih pembeli');
+for (const empty of ['', null, undefined]) assert.equal(withoutNotesHeading(empty), '');
+
+// It comes off ONCE, where the database row is mapped, so the cart line, the catalogue search index and
+// the bespoke reference all get the notes rather than a label glued to the first one. A fix in the cart
+// alone would have left the search matching everything.
+const mapper = stripComments(readFileSync(join(src, 'services', 'productCatalogService.js'), 'utf8'));
+const rowMap = mapper.slice(mapper.indexOf('const fromDatabaseRow'));
+for (const [field, column] of [['notes', 'row.notes'], ['notesEn', 'row.notes_en']]) {
+  const line = rowMap.match(new RegExp(`\\b${field}:\\s*([^,\\n]+)`));
+  assert.ok(line, `fromDatabaseRow no longer maps ${field} — this check reads it out of the mapper`);
+  assert.match(line[1], /withoutNotesHeading\(/,
+    `fromDatabaseRow passes ${column} through as-is, so the heading reaches the cart line AND the search index`);
+}
 
 console.log(`oneCartLineRule selfcheck OK (${CART_LINE_NOTE_LIMIT} notes per line, ${showing.length} of `
   + `${carts.length} cart pages show them, all through one helper: ${showing.join(', ')})`);

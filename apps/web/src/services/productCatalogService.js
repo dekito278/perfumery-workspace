@@ -7,6 +7,7 @@ import { normalizeWear } from '@/utils/productWear.js';
 import { listTierPricesForProduct, saveTierPrice } from '@/services/tierPricingService.js';
 import { planAutoTierPrices } from '@/utils/autoTierPrices.js';
 import { isFreeVialProduct } from '@/utils/freeVial.js';
+import { withoutNotesHeading } from '@/utils/shortNoteList.js';
 import { deleteProductImages } from '@/services/productImageStorageService.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
@@ -618,7 +619,7 @@ const fromDatabaseRow = (row) => normalizeProduct({
   category: row.category,
   priceNumber: row.price_number,
   size: row.size,
-  notes: row.notes,
+  notes: withoutNotesHeading(row.notes),
   topNotes: row.top_notes,
   heartNotes: row.heart_notes,
   baseNotes: row.base_notes,
@@ -628,7 +629,7 @@ const fromDatabaseRow = (row) => normalizeProduct({
   // English copy. Named explicitly because this list is hand-written: a field not named here simply does
   // not exist downstream, which is how the member price nudge shipped invisible in #147.
   descriptionEn: row.description_en || '',
-  notesEn: row.notes_en || '',
+  notesEn: withoutNotesHeading(row.notes_en),
   topNotesEn: row.top_notes_en || [],
   heartNotesEn: row.heart_notes_en || [],
   baseNotesEn: row.base_notes_en || [],
