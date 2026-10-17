@@ -94,6 +94,40 @@ for (const file of pages) {
   }
 }
 
+// --- 3. AND EVERY OTHER NOTICE ON THOSE SCREENS -------------------------------------------------------
+// The voucher answer was not the only silent one. Typing a destination into the bespoke flow and
+// pressing "Cari" put this on screen with nothing announced:
+//
+//   "Layanan ongkir belum bisa dihubungi. Coba lagi beberapa saat."
+//
+// Same shape, same file, a few hundred lines from the voucher fix — missed because section 1's subject
+// is vouchers. Ten of them in all, across the checkout and bespoke screens: the shipping search, its
+// result, its error, "pick a rate", and the sentence on the desktop checkout that says WHY the submit
+// button will not move.
+//
+// Three in the same files already carried the role. Nobody chose which: the convention existed and was
+// applied where someone happened to think of it.
+//
+// So the subject is the repo's own notice STYLING rather than a list of states: a paragraph wearing
+// `checkout-notice`, the amber pill, or the editorial warning is a notice by construction, and a notice
+// a screen reader never reports is not one.
+const NOTICE_PILL = /className="(?:[^"]*\b(?:checkout-notice|bg-amber-50)\b[^"]*|[^"]*editorial-helper-text--warning[^"]*)"/;
+let notices = 0;
+for (const file of walk(join(src, 'pages')).filter((f) => BUYER.test(relative(src, f)))) {
+  const source = stripComments(readFileSync(file, 'utf8'));
+  const name = relative(src, file);
+  for (const match of source.matchAll(/<p\b[^>]*>/g)) {
+    const tag = match[0];
+    if (!NOTICE_PILL.test(tag)) continue;
+    notices += 1;
+    assert.ok(ANNOUNCED.test(tag),
+      `${name} shows a notice a screen reader never reports:\n  ${tag.trim().slice(0, 150)}\n  `
+      + 'A buyer pressed something and the page answered where they could not hear it');
+  }
+}
+assert.ok(notices >= 8,
+  `only ${notices} notices found on the six surfaces — the scan is broken, not the pages`);
+
 // The reader must actually be reading tags. A node with the role removed has to fail, or the walk above
 // is matching something that is always true.
 const sample = '<p className={`cart-voucher__msg${x ? \' is-success\' : \'\'}`}>{voucher.message}</p>';
@@ -102,4 +136,5 @@ assert.ok(!ANNOUNCED.test(tagHolding(sample, sample.indexOf('{voucher.message}')
 assert.ok(ANNOUNCED.test(tagHolding(sample.replace('<p ', '<p role="status" '), sample.indexOf('{voucher.message}') + 14)),
   'the tag reader cannot see a role it is given, so this check would fail everything');
 
-console.log(`voucherAnswerIsAnnounced selfcheck OK (${checked.length} voucher answers on ${pages.length} buyer surfaces, every one announced)`);
+console.log(`voucherAnswerIsAnnounced selfcheck OK (${checked.length} voucher answers and ${notices} other `
+  + `notices on ${pages.length} buyer surfaces, every one announced)`);

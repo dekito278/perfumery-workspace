@@ -953,7 +953,7 @@ const BespokePage = () => {
                     </div>
                   ) : null}
                   {selectedShipping?.promotionApplied ? <p className="editorial-helper-text">{selectedShipping.promotionLabel}</p> : null}
-                  {shippingError ? <p className="editorial-helper-text editorial-helper-text--warning">{shippingError}</p> : null}
+                  {shippingError ? <p role="status" className="editorial-helper-text editorial-helper-text--warning">{shippingError}</p> : null}
                 </div>
                 <div className="editorial-voucher-panel">
                   <div>

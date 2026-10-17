@@ -258,9 +258,9 @@ const CheckoutPage = () => {
                   </div>
                 </label>
               ) : null}
-              {shippingLoading ? <p className="checkout-notice">{t('checkout.searchingRates')}</p> : null}
-              {shippingNotice ? <p className="checkout-notice is-success">{shippingNotice}</p> : null}
-              {shippingError ? <p className="checkout-notice is-error">{shippingError}</p> : null}
+              {shippingLoading ? <p role="status" className="checkout-notice">{t('checkout.searchingRates')}</p> : null}
+              {shippingNotice ? <p role="status" className="checkout-notice is-success">{shippingNotice}</p> : null}
+              {shippingError ? <p role="status" className="checkout-notice is-error">{shippingError}</p> : null}
               {destinationOptions.length ? (
                 <div className="checkout-options">
                   {destinationOptions.slice(0, 4).map((destination) => (
@@ -295,9 +295,9 @@ const CheckoutPage = () => {
                 </div>
               ) : null}
               {selectedShipping?.promotionApplied && selectedShipping.promotionLabel ? (
-                <p className="checkout-notice is-success">{selectedShipping.promotionLabel}</p>
+                <p role="status" className="checkout-notice is-success">{selectedShipping.promotionLabel}</p>
               ) : null}
-              {selectedDestination ? <p className="checkout-notice is-success">{t('ship.area', { area: selectedDestination.label })}</p> : null}
+              {selectedDestination ? <p role="status" className="checkout-notice is-success">{t('ship.area', { area: selectedDestination.label })}</p> : null}
             </fieldset>
 
             {/* Voucher */}
@@ -356,7 +356,7 @@ const CheckoutPage = () => {
             {items.some((item) => item.priceChanged) ? (
               <p className="checkout-notice" role="status">{t('checkout.pricesUpdated')}</p>
             ) : null}
-            {!canSubmitCheckout && items.length ? <p className="checkout-notice is-error">{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
+            {!canSubmitCheckout && items.length ? <p role="status" className="checkout-notice is-error">{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
             <button type="submit" className="checkout-submit" disabled={!items.length || saving}>
               <CreditCard className="h-4 w-4" />
               {saving ? t('checkout.processing') : t('checkout.placeOrder')}
