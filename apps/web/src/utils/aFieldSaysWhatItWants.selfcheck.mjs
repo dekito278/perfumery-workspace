@@ -79,5 +79,40 @@ assert.match(emailTag, /type="email"/, 'the first field in the footer is no long
 assert.match(emailTag, NAMED,
   'the newsletter field in the footer has no name of its own, and that footer is on every buyer page');
 
-console.log(`aFieldSaysWhatItWants selfcheck OK (${codeFields} customer-code fields and the footer's email `
-  + 'field each carry their own name)');
+// 3. A field whose name comes from a <label> WRAPPING it, where that label holds more than the label.
+// Measured on the two bespoke forms, same two fields:
+//
+//   /mobile/bespoke   "Nama parfum"   "Arah aroma"
+//   /bespoke          "NAMA PARFUM Nama bisa sementara, nanti masih bisa …"
+//                     "ARAH AROMA Woody Floral Fresh Gourmand Smoky Clean musk …"
+//
+// The desktop label wraps the field, its hint, AND six mood buttons, so all of it became the field's
+// name: a reader heard six words that are really separate controls. The phone had it right — the same
+// keys, on the field itself. This is the shop's commonest defect, one side fixed and not the other.
+//
+// The rule: a label that wraps a field may hold only the label. If it also holds a control or a hint,
+// the field carries its own name.
+const labelBlock = (source, at) => {
+  const close = source.indexOf('</label>', at);
+  return close === -1 ? source.slice(at) : source.slice(at, close);
+};
+let wrapped = 0;
+for (const file of files) {
+  const source = strip(readFileSync(file, 'utf8'));
+  for (const match of source.matchAll(/<label\b/g)) {
+    const block = labelBlock(source, match.index);
+    const fieldAt = block.search(/<(input|textarea)\b/);
+    if (fieldAt === -1) continue;
+    const tag = openingTag(block, fieldAt);
+    if (NAMED.test(tag)) { wrapped += 1; continue; }
+    const extras = [/<button\b/.test(block) && 'a button', /<small\b/.test(block) && 'a hint']
+      .filter(Boolean);
+    if (!extras.length) { wrapped += 1; continue; }
+    assert.fail(`${file} wraps a field in a label that also holds ${extras.join(' and ')}, so all of that `
+      + "becomes the field's name. Give the field its own aria-label, the way the phone does");
+  }
+}
+assert.ok(wrapped >= 5, `only ${wrapped} wrapped fields found — the scan is broken, not the pages`);
+
+console.log(`aFieldSaysWhatItWants selfcheck OK (${codeFields} customer-code fields, the footer's email `
+  + `field, and ${wrapped} fields inside a label each carry a name of their own)`);
