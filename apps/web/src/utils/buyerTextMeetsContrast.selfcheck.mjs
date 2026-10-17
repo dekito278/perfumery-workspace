@@ -1,6 +1,9 @@
-// `node src/utils/bottomNavIsReadable.selfcheck.mjs`
+// `node src/utils/buyerTextMeetsContrast.selfcheck.mjs`
 //
-// The bar at the bottom of the phone shop is on every buyer screen, and five of its six labels were
+// Small text on a brand colour, where the two halves live in different files and neither is wrong on
+// its own. Each pair below was measured on the live phone shop before it was fixed.
+//
+// 1. THE BOTTOM NAVIGATION. The bar at the bottom of the phone shop is on every buyer screen, and five of its six labels were
 // grey #8b949e on a 98%-white bar at 9px bold: a contrast ratio of 3.08:1, where WCAG AA asks 4.5 for
 // text that size. Measured on the live shop, not estimated. The sixth — the active one — is near-black
 // and reads 17.41.
@@ -59,5 +62,23 @@ assert.ok(contrastRatio(hex('#8b949e'), [255, 255, 255]) < 4.5,
 assert.equal(Math.round(contrastRatio(hex('#8b949e'), [255, 255, 255]) * 100) / 100, 3.08);
 assert.equal(Math.round(contrastRatio(hex('#000000'), [255, 255, 255]) * 100) / 100, 21);
 
-console.log(`bottomNavIsReadable selfcheck OK (${inactive[1]} on rgb(${backgroundRgb.join(', ')}) = `
-  + `${ratio.toFixed(2)}:1, AA for 9px text needs 4.5)`);
+// 2. THE SELECTED FILTER CHIP, on the catalogue and the articles screens. White on the decorative
+// brass #b08b4f read 3.16:1 at 11px bold. The palette already carries a darker brass for small text —
+// storefront.css names it --editorial-brass-text and says why — and white on that reads 5.08. The rule
+// here is the ratio, so swapping either colour is checked rather than trusted.
+const chips = read('components', 'mobile-ui', 'MobileFilterChips.jsx');
+const selected = chips.match(/active\s*\n?\s*\?\s*'[^']*bg-\[(#[0-9a-fA-F]{3,6})\][^']*text-(\w+)/);
+assert.ok(selected, 'cannot read the selected chip colours out of MobileFilterChips — this check reads '
+  + 'the class list, so a refactor has to update it here too');
+assert.equal(selected[2], 'white', 'the selected chip label is no longer white; re-measure the pair');
+const chipRatio = contrastRatio([255, 255, 255], hex(selected[1]));
+assert.ok(chipRatio >= 4.5,
+  `the selected filter chip reads ${chipRatio.toFixed(2)}:1 (white on ${selected[1]}) at 11px, and WCAG `
+  + 'AA asks 4.5. It is the control that says which category the buyer is looking at');
+
+// The decorative brass must still be refused, or this rule has stopped meaning anything.
+assert.ok(contrastRatio([255, 255, 255], hex('#b08b4f')) < 4.5,
+  'white on the decorative brass has stopped failing, so the arithmetic is wrong');
+
+console.log(`buyerTextMeetsContrast selfcheck OK (bottom nav ${inactive[1]} = ${ratio.toFixed(2)}:1, `
+  + `selected chip white on ${selected[1]} = ${chipRatio.toFixed(2)}:1; AA needs 4.5)`);

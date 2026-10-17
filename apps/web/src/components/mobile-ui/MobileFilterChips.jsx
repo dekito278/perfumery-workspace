@@ -12,8 +12,12 @@ const MobileFilterChips = ({ options = [], value, onChange, className }) => (
           onClick={() => onChange(option.value)}
           className={cn(
             'mobile-interactive mobile-pressable h-8 shrink-0 whitespace-nowrap rounded-full border px-3 text-[11px] font-bold transition',
+            // #8a6a35, not #b08b4f: white on the decorative brass is 3.16:1 at 11px, measured on the
+            // live catalogue, where WCAG AA asks 4.5. The palette already carries a darker brass for
+            // exactly this reason — storefront.css calls it --editorial-brass-text — and white on it
+            // reads 5.08:1. The lighter brass stays where it belongs, on the border and the shadow.
             active
-              ? 'mobile-selected border-[#b08b4f] bg-[#b08b4f] text-white shadow-lg shadow-[#b08b4f]/20'
+              ? 'mobile-selected border-[#b08b4f] bg-[#8a6a35] text-white shadow-lg shadow-[#b08b4f]/20'
               : 'border-editorial-stone bg-white text-editorial-muted'
           )}
         >
