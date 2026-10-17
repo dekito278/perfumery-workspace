@@ -721,12 +721,12 @@ const BespokePage = () => {
               <div className="editorial-bespoke-brief-grid">
                 <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--name">
                   <span>{t('bsp.perfumeName')}</span>
-                  <input type="text" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} />
+                  <input type="text" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} aria-label={t('bsp.perfumeName')} />
                   <small>{t('bsp.perfumeNameHint')}</small>
                 </label>
                 <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--scent">
                   <span>{t('bsp.scentDirection')}</span>
-                  <textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} />
+                  <textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} aria-label={t('bsp.scentDirection')} />
                   <div className="editorial-bespoke-prompt-chips" aria-label={t('bsp.scentShortcuts')}>
                     {scentDirectionPrompts.map((prompt) => (
                       <button
