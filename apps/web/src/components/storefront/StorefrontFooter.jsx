@@ -92,6 +92,7 @@ const StorefrontFooter = () => {
             <form onSubmit={handleSubscribe} className="sf-footer__newsletter-form" noValidate>
               <input
                 type="email"
+                aria-label={t('nav.emailPlaceholder')}
                 placeholder={t('nav.emailPlaceholder')}
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}

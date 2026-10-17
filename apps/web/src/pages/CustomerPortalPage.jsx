@@ -1075,7 +1075,7 @@ const CustomerPortalPage = () => {
 
         <form onSubmit={submitClaim} className="mt-4 grid gap-2 border-t border-[#e5e7eb] pt-3">
           <div className="text-[11px] font-bold uppercase text-[#6b7280]">{t('cust.haveOldCode')}</div>
-          <input value={claimCodeValue} onChange={(e) => setClaimCodeValue(e.target.value.toUpperCase())} placeholder="SOLI09232" className={`${inputClass} uppercase tracking-[0.08em]`} />
+          <input value={claimCodeValue} onChange={(e) => setClaimCodeValue(e.target.value.toUpperCase())} aria-label={t('cust.customerCode')} placeholder="SOLI09232" className={`${inputClass} uppercase tracking-[0.08em]`} />
           <input value={claimAnswer} onChange={(e) => setClaimAnswer(e.target.value)} placeholder={t('cust.answerIfAny')} className={inputClass} />
           <Button type="submit" variant="outline" disabled={claimLoading} className="h-11 rounded-2xl gap-2 bg-white">
             {claimLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
@@ -1365,6 +1365,7 @@ const CustomerPortalPage = () => {
                     <input
                       value={customerCode}
                       onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
+                      aria-label={t('cust.customerCode')}
                       placeholder="SOLI09232"
                       className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
                     />
@@ -1617,6 +1618,7 @@ const CustomerPortalPage = () => {
                 <input
                   value={customerCode}
                   onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
+                  aria-label={t('cust.customerCode')}
                   placeholder="SOLI09232"
                   className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
                 />
