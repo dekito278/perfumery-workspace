@@ -6,6 +6,8 @@ import {
 } from '@/services/productImageStorageService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 import { LineVessel } from '@/components/line/LineArt.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
+import { showsSoldOutBadge } from '@/utils/soldOutBadge.js';
 
 const fallbackGradients = [
   'linear-gradient(135deg,#f5d78f 0%,#f8efe1 52%,#d7b98b 100%)',
@@ -30,16 +32,27 @@ const ProductVisual = ({
   bottleClassName = '',
   imageClassName = '',
   label = true,
+  // Sold out is information the GRID has to carry, not only the product page. The catalogue said
+  // nothing: the only "Stok habis" on a card was the quick-add pill, which is opacity 0 until the
+  // pointer hovers it — and the phone grids have no pill at all. Three bottles were out of stock and
+  // looked like every other card until the customer had opened one. Keeping the card listed is the
+  // decision (Dekito, 17 Okt 2026); saying nothing on it was not.
+  //
+  // Only the PUBLIC catalogue shape carries publicStatus, so Studio rows and cart lines (which carry
+  // maxStock instead) can never trip this — the badge is inert wherever the field is absent.
+  soldOut = true,
   priority = false,
   sizes = '(max-width: 767px) 46vw, 320px',
   imageFit = 'contain',
 }) => {
+  const { t } = useTranslate();
   const [imageFailed, setImageFailed] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const imageUrl = String(product?.images?.[0] || product?.imageUrl || '').trim();
   const optimizedImageUrl = getOptimizedProductImageUrl(imageUrl, priority ? 720 : 520);
   const imageSrcSet = getProductImageSrcSet(imageUrl);
   const hasImage = Boolean(imageUrl) && !imageFailed;
+  const showSoldOut = showsSoldOutBadge(product, soldOut);
   void bottleClassName;
 
   useEffect(() => {
@@ -114,6 +127,13 @@ const ProductVisual = ({
           <div className="text-[10px] font-bold uppercase text-[#b7c6b1]">{product?.category}</div>
           <div className="text-xs font-bold">{product?.size}</div>
         </div>
+      ) : null}
+      {/* A span, not a div: both card stylesheets carry `.<card>__visual > div { width: 100%; height: 100% }`
+          for the image layers, and a div here was stretched by it to cover the whole photo. */}
+      {showSoldOut ? (
+        <span className="absolute left-3 top-3 rounded-full bg-black/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-editorial-paper backdrop-blur">
+          {t('catalog.soldOutShort')}
+        </span>
       ) : null}
     </div>
   );

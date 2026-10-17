@@ -231,7 +231,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         {/* Product detail — large image + info */}
         <section className="pdp-main">
           <div className="pdp-gallery img-hover-zoom hero-animate-image">
-            <ProductVisual product={product} className="pdp-gallery__image" imageFit="cover" priority label={false} />
+            <ProductVisual product={product} className="pdp-gallery__image" imageFit="cover" priority label={false} soldOut={false} />
           </div>
           <div className="pdp-info">
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{cardLabels(product).join(' · ')}</p>
@@ -371,7 +371,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         <div className="pdp-sticky-bar__inner">
           <div className="pdp-sticky-bar__product">
             <div className="pdp-sticky-bar__thumb">
-              <ProductVisual product={product} imageFit="cover" label={false} />
+              <ProductVisual product={product} imageFit="cover" label={false} soldOut={false} />
             </div>
             <div className="pdp-sticky-bar__text">
               <span className="pdp-sticky-bar__name">{product.name}</span>

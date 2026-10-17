@@ -192,6 +192,7 @@ const CatalogPage = () => {
                       imageFit="cover"
                       priority={index < 4}
                       label={false}
+                      soldOut={false}
                     />
                     {/* Quick-add in both shops since 2026-10-06. It once added the bottle at the DOMESTIC
                         price into a cart the English shop could not open — La Tulipe at Rp 260.000 under
