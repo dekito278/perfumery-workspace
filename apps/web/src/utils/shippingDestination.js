@@ -16,6 +16,7 @@
 // it themselves.
 
 import { SHIPPING_RATE_REGIONS } from '@/data/internationalShippingRates.js';
+import { NON_ISO_NAMES } from '@/data/exportZones.js';
 
 export const DESTINATION_STORAGE_KEY = 'solivagant.storefront.destination.v1';
 export const DESTINATION_QUERY_KEY = 'dest';
@@ -56,10 +57,16 @@ export const isValidDestination = (countryCode) => {
  * step with the card, in two languages, and every browser already ships both. Falling back to the code
  * keeps the picker usable on a browser without it (Safari below 14) — "DE" is worse than "Germany" and
  * far better than an empty option.
+ *
+ * The carrier's eight non-ISO codes are asked of the zone sheet first, because that is where their names
+ * are written. Intl has no country behind them, and for one of the eight it does not say so: XB is
+ * reserved by CLDR for a pseudo-locale, so it answers "Pseudo-Bidi" — a name, just not a place. Asking
+ * Intl first put that in the live picker, between Burundi and Réunion, for every buyer abroad.
  */
 export const countryNameFor = (countryCode, locale = 'en') => {
   const code = String(countryCode || '').trim().toUpperCase();
   if (!code) return '';
+  if (NON_ISO_NAMES[code]) return NON_ISO_NAMES[code];
   try {
     return new Intl.DisplayNames([locale], { type: 'region' }).of(code) || code;
   } catch {
@@ -71,11 +78,10 @@ export const countryNameFor = (countryCode, locale = 'en') => {
  * The picker's options, grouped as the rate groups are, A-Z by LOCALISED name inside each — a reader
  * scanning for "Germany" is scanning an alphabet, and the Indonesian shop reads Jerman under J.
  *
- * Only destinations the platform can NAME. The carrier's sheet carries a handful of codes that are not
- * ISO 3166 — Bonaire as XB, Curaçao as XC, Kosovo as KV, the Canaries as IC — and Intl.DisplayNames has
- * no word for them, so they would appear in the list as their bare code between "Bolivia" and "Brazil".
- * A buyer there can still choose "another country"; a dropdown that shows "XB" looks broken to everyone
- * else.
+ * Only destinations the platform can NAME — a dropdown that shows "XB" looks broken to everyone. That
+ * used to drop the carrier's eight non-ISO codes, because Intl has no word for Bonaire as XB or Kosovo
+ * as KV; now that the zone sheet's own names are read first, all eight are named and all eight are
+ * offered. Whatever is left unnamed is still left to "another country".
  */
 export const destinationOptions = (locale = 'en') => SHIPPING_RATE_REGIONS.map((region) => ({
   key: region.key,
