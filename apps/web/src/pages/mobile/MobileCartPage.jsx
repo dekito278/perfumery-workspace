@@ -135,6 +135,7 @@ const MobileCartPage = () => {
               <input
                 value={voucher.inputCode}
                 onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                aria-label={t('cart.voucherPlaceholder')}
                 placeholder={t('cart.voucherPlaceholder')}
                 style={{ height: 48, padding: '0 12px', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', border: '1px solid var(--editorial-stone)', borderRadius: 10, background: 'var(--editorial-ivory)', color: 'var(--editorial-charcoal)', outline: 'none' }}
               />

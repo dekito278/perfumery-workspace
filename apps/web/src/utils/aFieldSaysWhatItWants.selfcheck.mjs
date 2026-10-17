@@ -114,5 +114,27 @@ for (const file of files) {
 }
 assert.ok(wrapped >= 5, `only ${wrapped} wrapped fields found — the scan is broken, not the pages`);
 
+// 4. The voucher box, which is the same control on six screens.
+// Three of the six named it and three did not, and the split was not desktop-against-phone — it was
+// wherever someone happened to think of it. The checkout had it on both, the phone bespoke had it, the
+// two carts and the desktop bespoke did not. A buyer who cannot see the page reached a field whose only
+// name was its placeholder, and a placeholder goes away as soon as a code is typed into it.
+//
+// Found by what the field is BOUND to, so a seventh voucher box inherits the rule.
+let voucherFields = 0;
+for (const file of files) {
+  const source = strip(readFileSync(file, 'utf8'));
+  for (const match of source.matchAll(/<input\b/g)) {
+    const tag = openingTag(source, match.index);
+    if (!/voucher\.inputCode/.test(tag)) continue;
+    voucherFields += 1;
+    assert.match(tag, NAMED,
+      `${file} asks for a voucher code in a field with no name of its own — its placeholder is the only `
+      + 'one, and that disappears as soon as a code is typed');
+  }
+}
+assert.ok(voucherFields >= 6,
+  `only ${voucherFields} voucher fields found — the scan is broken, not the screens`);
+
 console.log(`aFieldSaysWhatItWants selfcheck OK (${codeFields} customer-code fields, the footer's email `
-  + `field, and ${wrapped} fields inside a label each carry a name of their own)`);
+  + `field, ${voucherFields} voucher boxes, and ${wrapped} fields inside a label each carry a name of their own)`);
