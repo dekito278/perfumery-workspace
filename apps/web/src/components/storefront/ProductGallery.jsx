@@ -9,6 +9,7 @@ import { lockBodyScroll } from '@/utils/bodyScrollLock.js';
 // 64 CSS px on screen, so 192 covers a 3x phone. Capped deliberately — an uncapped list would hand a
 // high-DPR phone a candidate far larger than a thumbnail needs.
 const THUMB_WIDTHS = [96, 192];
+const FOCUSABLE = 'a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])';
 import { cn } from '@/lib/utils.js';
 
 const ProductGallery = ({ product, className = '', visualClassName = '', compact = false, priority = false }) => {
@@ -23,6 +24,11 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
   const [lightboxPos, setLightboxPos] = useState({ x: 0, y: 0 });
   const touchRef = useRef({ startX: 0, startY: 0, lastDist: 0, dragging: false, pinching: false, startScale: 1, startPos: { x: 0, y: 0 } });
   const galleryRef = useRef(null);
+  // The zoom overlay is a dialog: focus goes into it, stays in it, and comes back to the button that
+  // opened it. Without these a keyboard reader opened a full-screen overlay and went on tabbing
+  // through the page UNDERNEATH it, which they cannot see.
+  const lightboxRef = useRef(null);
+  const zoomButtonRef = useRef(null);
 
   useEffect(() => { setActiveIndex(0); }, [product?.id, product?.slug]);
   useEffect(() => { if (activeIndex >= images.length) setActiveIndex(0); }, [activeIndex, images.length]);
@@ -70,12 +76,30 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
       if (e.key === 'Escape') closeLightbox();
       if (e.key === 'ArrowLeft') goToImage(-1);
       if (e.key === 'ArrowRight') goToImage(1);
+      if (e.key !== 'Tab') return;
+      // Keep Tab inside the overlay. The page behind is still in the document — making it inert would
+      // reach outside this component — so the wrap is done here, where the overlay already owns the key.
+      const inside = lightboxRef.current?.querySelectorAll(FOCUSABLE);
+      if (!inside?.length) return;
+      const first = inside[0];
+      const last = inside[inside.length - 1];
+      const active = document.activeElement;
+      if (!lightboxRef.current.contains(active)) { e.preventDefault(); first.focus(); return; }
+      if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
     };
+    // Into the overlay on open, back to the button that opened it on close.
+    const opener = zoomButtonRef.current;
+    lightboxRef.current?.querySelector(FOCUSABLE)?.focus();
     document.addEventListener('keydown', onKey);
     // Restores whatever was there, instead of writing ''. See utils/bodyScrollLock.js: this used to clear
     // the lock an enclosing overlay had set.
     const releaseScroll = lockBodyScroll();
-    return () => { document.removeEventListener('keydown', onKey); releaseScroll(); };
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      releaseScroll();
+      opener?.focus();
+    };
   }, [lightboxOpen, goToImage]);
 
   // Lightbox pinch-zoom + drag
@@ -149,6 +173,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
             // thumb can use it too.
             <button
               type="button"
+              ref={zoomButtonRef}
               onClick={(event) => { event.stopPropagation(); openLightbox(); }}
               aria-label={t('a11y.galleryZoom')}
               className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-black/30 text-white opacity-0 backdrop-blur transition-opacity focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
@@ -198,7 +223,14 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
 
       {/* Zoom Lightbox */}
       {lightboxOpen ? (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/92" onClick={closeLightbox}>
+        <div
+          ref={lightboxRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('a11y.galleryZoom')}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/92"
+          onClick={closeLightbox}
+        >
           <button type="button" onClick={closeLightbox} className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/12 text-white backdrop-blur" aria-label={t('a11y.galleryCloseZoom')}>
             <X className="h-5 w-5" />
           </button>
