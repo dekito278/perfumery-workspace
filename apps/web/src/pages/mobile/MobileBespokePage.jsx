@@ -727,7 +727,7 @@ const MobileBespokePage = () => {
             {voucher.appliedVoucher ? (
               <div className="mt-2 flex items-center justify-between gap-2 rounded-2xl border border-editorial-stone/15 bg-editorial-ivory px-3 py-2">
                 <div role="status" className="min-w-0">
-                  <div className="truncate text-xs font-bold text-editorial-charcoal">{voucher.appliedVoucher.code} diterapkan</div>
+                  <div className="truncate text-xs font-bold text-editorial-charcoal">{t('bsp.voucherApplied', { code: voucher.appliedVoucher.code })}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-editorial-muted">{t('bsp.voucherAdjusted')}</div>
                 </div>
                 <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-editorial-charcoal tap-44" onClick={voucher.removeVoucher} aria-label={t('bsp.voucherRemove')}>
