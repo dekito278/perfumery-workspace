@@ -8,8 +8,10 @@ import {
   setAppliedVoucherCode,
   VOUCHER_UPDATED_EVENT,
 } from '@/services/voucherService.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
 export const useAppliedVoucher = (subtotal = 0, items = []) => {
+  const { t } = useTranslate();
   const [voucherCode, setVoucherCode] = useState(getAppliedVoucherCode);
   const [inputCode, setInputCode] = useState(getAppliedVoucherCode);
   const [message, setMessage] = useState('');
@@ -69,7 +71,7 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
             discountAmount: 0,
             subtotal: Number(subtotal || 0),
             subtotalAfterDiscount: Number(subtotal || 0),
-            message: error.message || 'Voucher belum bisa dicek',
+            message: error.message || t('voucher.checkFailed'),
           });
         }
       } finally {
@@ -81,7 +83,7 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
     return () => {
       cancelled = true;
     };
-  }, [items, subtotal, voucherCode]);
+  }, [items, subtotal, t, voucherCode]);
 
   useEffect(() => {
     if (voucherCode && !result.valid) {
@@ -109,7 +111,7 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
         discountAmount: 0,
         subtotal: Number(subtotal || 0),
         subtotalAfterDiscount: Number(subtotal || 0),
-        message: error.message || 'Voucher belum bisa dicek',
+        message: error.message || t('voucher.checkFailed'),
       };
       setMessage(nextResult.message);
       setResult(nextResult);

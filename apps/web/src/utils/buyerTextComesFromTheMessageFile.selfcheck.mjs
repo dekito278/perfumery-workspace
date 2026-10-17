@@ -21,7 +21,7 @@
 // are not swept here, because no rule separates them from Studio pages by name -- MobileCustomersPage is
 // Studio. Widening it means naming them, and a named list is the thing this guard exists to avoid.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { basename, dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -70,7 +70,7 @@ const ALLOWED = new Map([
 // The file set comes from buyerSurfaces.mjs, which three guards now share. Every trap that cost a leak
 // is recorded there once: the lazyRoute convention, the route block that must end at the next <Route,
 // and the fact that the routed file is not the screen.
-const { files, routed, depthOf, resolve: resolveComponent } = buyerSurfaces({
+const { files, routed, depthOf, resolve: resolveComponent, appSource } = buyerSurfaces({
   src,
   exclude: new Set([...OWNER_DOOR, ...SELF_GATED]),
 });
@@ -357,6 +357,76 @@ for (const file of files) {
   }
 }
 
+// --- And the HOOKS, which no scan in this file could see --------------------------------------------
+// buyerSurfaces follows imports from pages, components and layouts. It does NOT follow hooks/ — so every
+// string inside a hook was invisible to all three scans above, and the hooks are where the toasts live.
+// useSignOut said toast.success('Berhasil keluar') under a button labelled t('cust.signOut'): the English
+// customer portal offered "Sign out" and then confirmed it in Indonesian.
+//
+// Most hook strings are CORRECT, though, and the exemption has to be sound rather than convenient:
+// useCheckoutFlow holds 32 Indonesian sentences and every one belongs there, because /checkout and
+// /mobile/checkout are wrapped in <DomesticOnly> and an international visitor is redirected away before
+// the hook ever runs. A route gate is absolute, so that is the only proof accepted here.
+//
+// Two things this derivation deliberately does NOT accept:
+//   - A PAGE that merely mentions isInternational. CustomerPortalPage reads it five times and is still
+//     where the sign-out leak lived, because the toast sits outside every one of those branches.
+//   - An import of some OTHER name from the module. CustomerPortalPage imports seedCheckoutDraft out of
+//     useCheckoutFlow.js, which is a pure function that says nothing; following the module rather than
+//     the `use*` binding reported all 32 checkout strings as reachable from the portal.
+// A gate INSIDE a page (bespokeTakesPayment) is invisible here on purpose: it cannot be proved from
+// App.jsx, so a hook reached that way must speak from the message file like everything else.
+const routeGated = new Set();
+for (const match of appSource.matchAll(/<DomesticOnly>\s*<(\w+)/g)) routeGated.add(match[1]);
+for (const match of appSource.matchAll(/domestic=\{<(\w+)/g)) routeGated.add(match[1]);
+// The self-proof must not name a page whose gate is itself the subject: naming CheckoutPage here meant
+// that REMOVING its <DomesticOnly> failed this line instead of the per-hook check below, reporting "the
+// scan stopped reading App.jsx" for a change that left the scan working perfectly. So it proves the two
+// SHAPES — the wrapper and the ByShop prop — on whatever still uses them.
+assert.ok([...appSource.matchAll(/<DomesticOnly>\s*<\w+/g)].length >= 1,
+  'no <DomesticOnly><Page> pair left in App.jsx for the wrapper pattern to match — the scan has gone '
+  + 'blind and every hook would look domestic');
+assert.ok([...appSource.matchAll(/domestic=\{<\w+/g)].length >= 1,
+  'no domestic={<Page …>} prop left in App.jsx for the ByShop pattern to match — same blindness, and the '
+  + 'cart hooks would stop being recognised as domestic');
+
+const hookReach = new Map();
+for (const file of files) {
+  const source = strip(readFileSync(file, 'utf8'));
+  const page = basename(file, '.jsx');
+  for (const match of source.matchAll(/import\s*(?:\{([^}]*)\}|(use[A-Z]\w*))\s*from\s*'@\/(hooks\/[^']+)'/g)) {
+    const names = (match[1] || match[2] || '').split(',').map((name) => name.trim().split(/\s+as\s+/)[0]);
+    if (!names.some((name) => /^use[A-Z]/.test(name))) continue;
+    const hook = join(src, match[3].replace(/\.js$/, ''));
+    if (!hookReach.has(hook)) hookReach.set(hook, new Set());
+    hookReach.get(hook).add(page);
+  }
+}
+assert.ok(hookReach.size >= 15, `only ${hookReach.size} hooks were traced from buyer surfaces`);
+
+let hookLiterals = 0;
+let domesticHooks = 0;
+for (const [hook, pages] of hookReach) {
+  const path = existsSync(`${hook}.js`) ? `${hook}.js` : `${hook}.jsx`;
+  if (!existsSync(path)) continue;
+  if ([...pages].every((page) => routeGated.has(page))) { domesticHooks += 1; continue; }
+  const source = strip(readFileSync(path, 'utf8'));
+  for (const match of source.matchAll(/'((?:[^'\\\n]|\\.){2,160})'|"((?:[^"\\\n]|\\.){2,160})"/g)) {
+    const literal = match[1] ?? match[2];
+    if (/^[a-z][a-z0-9]*$/.test(literal.trim())) continue;
+    hookLiterals += 1;
+    const indonesian = idWords(literal).filter((word) => indonesianVocabulary.has(word));
+    if (!indonesian.length) continue;
+    const line = source.slice(0, match.index).split('\n').length;
+    assert.fail(`${basename(path)}:${line} speaks Indonesian — "${literal.trim().slice(0, 44)}" — and is `
+      + `reached from ${[...pages].filter((page) => !routeGated.has(page)).join(', ')}, whose route is not `
+      + 'DomesticOnly, so the English shop runs it too');
+  }
+}
+assert.ok(domesticHooks >= 1,
+  'no hook qualified as domestic-only, so the route-gate exemption is doing nothing and useCheckoutFlow '
+  + 'would be failing this check');
+
 // --- Every buyer page's own description, from the message file ---------------------------------------
 // A meta description is the one sentence a search result and a shared link show, and it is the easiest
 // string in the shop to hardcode because nothing on screen ever reveals it. Fourteen buyer pages read
@@ -404,4 +474,5 @@ console.log(`buyerTextComesFromTheMessageFile selfcheck OK (${files.length} buye
   + `spoken string from the message file, ${spokenDefaults.size} shared controls with a spoken default, `
   + `${PAIRED_KEYS.length} keys paired across both shops, ${childrenChecked} text children checked against `
   + `${translatedDifferently.size} messages the two shops disagree on, ${literalsChecked} string literals `
-  + `against ${indonesianVocabulary.size} Indonesian words, ${describedPages} page descriptions)`);
+  + `against ${indonesianVocabulary.size} Indonesian words, ${describedPages} page descriptions, `
+  + `${hookLiterals} literals in ${hookReach.size - domesticHooks} hooks the English shop can reach)`);

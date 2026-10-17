@@ -671,6 +671,14 @@ export const MESSAGES = {
     "cust.checkProgress": "Cek progress pesanan.",
     "cust.oneplace": "Status pembayaran, proses produksi, dan pengiriman dalam satu tempat.",
     "cust.signOut": "Keluar",
+    // Spoken by useSignOut, which every screen that offers a sign-out shares. The BUTTON was always
+    // t('cust.signOut'), so the English portal said "Sign out" and then confirmed it in Indonesian.
+    'auth.signedOut': 'Berhasil keluar',
+    'auth.signOutFailed': 'Gagal keluar',
+    // useAppliedVoucher's fallback when the voucher lookup itself fails. Gated out of the English shop
+    // today (bespokeTakesPayment, and the English cart is a different page), but a string that can only
+    // be reached through a gate somebody could move is a string waiting to leak.
+    'voucher.checkFailed': 'Voucher belum bisa dicek',
     "cust.signInMember": "Masuk dengan Google — harga member",
     "cust.signInGoogle": "Masuk dengan Google",
     "cust.googleFail": "Gagal masuk dengan Google",
@@ -1920,6 +1928,9 @@ export const MESSAGES = {
     "cust.checkProgress": "Check where your order is.",
     "cust.oneplace": "Payment, production and delivery, all in one place.",
     "cust.signOut": "Sign out",
+    'auth.signedOut': 'Signed out',
+    'auth.signOutFailed': 'Could not sign out',
+    'voucher.checkFailed': 'The voucher could not be checked',
     "cust.signInMember": "Sign in with Google",
     "cust.signInGoogle": "Sign in with Google",
     "cust.googleFail": "Could not sign in with Google",
