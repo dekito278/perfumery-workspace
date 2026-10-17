@@ -306,6 +306,13 @@ export const MESSAGES = {
     'home.atelier': 'ATELIER',
     'home.shopMood': 'Belanja {mood}',
     'home.metaMobile': 'SOLIVAGANT, atelier parfum artisan oleh Dekito. Karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi.',
+    // Desktop's own sentence, moved out of HomePage.jsx where it was hardcoded — the English shop's
+    // home page was describing itself in Indonesian to every search engine and link preview.
+    'home.meta': 'SOLIVAGANT adalah atelier parfum artisan oleh Dekito — merakit karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi.',
+    // One sentence per shop for BOTH catalogue pages. The desktop page hardcoded the English one and
+    // the phone page hardcoded the Indonesian one, so each shop was served the other's language half
+    // the time. Both sentences below are the ones that were already in the code.
+    'catalog.meta': 'Jelajahi koleksi fragrance SOLIVAGANT.',
     'home.atelierHeading': 'Aroma sebagai atmosfer pribadi.',
     'home.bespokeCta': 'Konsultasi bespoke',
     'home.journalHeading': 'Catatan lapangan',
@@ -1542,6 +1549,8 @@ export const MESSAGES = {
     'home.atelier': 'ATELIER',
     'home.shopMood': 'Shop {mood}',
     'home.metaMobile': 'SOLIVAGANT, an artisan perfume atelier by Dekito. Quiet olfactory work made from raw materials, memory, and private ritual.',
+    'home.meta': 'SOLIVAGANT, an artisan perfume atelier by Dekito. Quiet olfactory work made from raw materials, memory, and private ritual.',
+    'catalog.meta': 'Explore the SOLIVAGANT fragrance collection by perfumer Dekito.',
     'home.atelierHeading': 'Scent as a private atmosphere.',
     'home.bespokeCta': 'Bespoke consultation',
     'home.journalHeading': 'Field notes',

@@ -87,17 +87,17 @@ const HomePage = () => {
     <>
       <Helmet>
         <title>{t('home.tab')}</title>
-        <meta name="description" content="SOLIVAGANT adalah atelier parfum artisan oleh Dekito — merakit karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi." />
+        <meta name="description" content={t('home.meta')} />
         <link rel="canonical" href={homeCanonical} />
-        <meta property="og:title" content="SOLIVAGANT - Artisan Perfumery Atelier" />
-        <meta property="og:description" content="Rumah parfum editorial oleh perfumer Dekito." />
+        <meta property="og:title" content={t('home.tab')} />
+        <meta property="og:description" content={t('home.meta')} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="SOLIVAGANT" />
         <meta property="og:url" content={homeCanonical} />
         <meta property="og:image" content={homeShareImage} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="SOLIVAGANT - Artisan Perfumery Atelier" />
-        <meta name="twitter:description" content="Rumah parfum editorial oleh perfumer Dekito." />
+        <meta name="twitter:title" content={t('home.tab')} />
+        <meta name="twitter:description" content={t('home.meta')} />
         <meta name="twitter:image" content={homeShareImage} />
         <script type="application/ld+json">{JSON.stringify(buildOrganizationJsonLd(siteOrigin))}</script>
         <script type="application/ld+json">{JSON.stringify(buildWebSiteJsonLd(siteOrigin))}</script>

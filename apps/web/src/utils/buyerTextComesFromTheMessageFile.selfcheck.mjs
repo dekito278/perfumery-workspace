@@ -154,6 +154,7 @@ for (const file of files) {
   }
 }
 const defaultedProps = [...spokenDefaults.values()].flat().map((entry) => entry.prop);
+const declaredDefaults = new Set([...spokenDefaults.values()].flat().map((entry) => entry.value));
 for (const prop of ['clearLabel', 'backLabel']) {
   assert.ok(defaultedProps.includes(prop),
     `the default scan never found ${prop}, which is declared with a string default in a file in scope — `
@@ -268,6 +269,131 @@ for (const file of files) {
       + "shop's words");
   }
 }
+// --- A string in a JSX EXPRESSION, which neither scan above can see ----------------------------------
+// The section above reads text CHILDREN. `{v.availability !== 'Available' ? ' (Habis)' : ''}` is not a
+// child, it is a literal inside a ternary — and the desktop product page had exactly that, marking a
+// sold-out bottle size "(Habis)" in the English shop, while the phone page and the immersive page both
+// said t('pdp.soldOutOption') two lines from the same spot. Three pages, one control, one of them
+// speaking for itself.
+//
+// Matching whole sentences cannot catch it: "(Habis)" is not any message's value. So the subject is the
+// message file's own Indonesian VOCABULARY — every word that appears in an Indonesian message and not in
+// its English twin, minus every word English uses anywhere (which keeps the loanwords the shop says in
+// both languages: member, voucher, bespoke, total).
+const idWords = (text) => String(text).toLowerCase().match(/[a-zà-ÿ]{4,}/g) || [];
+const indonesianVocabulary = new Set();
+for (const [key, indonesian] of Object.entries(MESSAGES.id)) {
+  const english = MESSAGES.en[key];
+  if (typeof indonesian !== 'string' || typeof english !== 'string') continue;
+  const inEnglish = new Set(idWords(english));
+  for (const word of idWords(indonesian)) if (!inEnglish.has(word)) indonesianVocabulary.add(word);
+}
+for (const english of Object.values(MESSAGES.en)) for (const word of idWords(english)) indonesianVocabulary.delete(word);
+assert.ok(indonesianVocabulary.size > 300,
+  `only ${indonesianVocabulary.size} Indonesian words were derived from the message file — the derivation `
+  + 'broke, and this check would then pass anything');
+assert.ok(indonesianVocabulary.has('habis'), 'the vocabulary holds the word that was found hardcoded');
+assert.ok(!indonesianVocabulary.has('member') && !indonesianVocabulary.has('voucher'),
+  'a word the shop says in both languages is not Indonesian for this purpose');
+
+// THE OWNER'S DOOR IS NOT A BUYER SURFACE. These three are reachable by URL, so buyerSurfaces finds
+// them, but they are the Studio sign-in — Indonesian-only is Dekito's decision, not an oversight, and
+// translating them was explicitly out of scope. Every other file on the list must speak from the
+// message file.
+const OWNERS_DOOR = new Set(['LoginPage.jsx', 'MobileLoginPage.jsx', 'ResetPasswordPage.jsx']);
+
+// AND SO IS ANYTHING BEHIND isAdmin. The phone layout's floating Studio link is labelled "Kembali ke
+// dashboard Studio" and the PWA update prompt is written in Indonesian throughout — both correct, both
+// rendered only for Dekito. That exemption is derived from the GATE in the code, not from a list of
+// files: a layout can hold buyer chrome and an owner's button in the same file, and a file-level skip
+// would blind this scan to the buyer half.
+const adminOnlyRanges = (source) => {
+  const ranges = [];
+  for (const match of source.matchAll(/\{\s*isAdmin\s*(?:\?|&&)/g)) {
+    let depth = 0;
+    for (let i = match.index; i < source.length; i += 1) {
+      if (source[i] === '{') depth += 1;
+      else if (source[i] === '}') {
+        depth -= 1;
+        if (depth === 0) { ranges.push([match.index, i]); break; }
+      }
+    }
+  }
+  return ranges;
+};
+// There is deliberately no whole-component form of this: PwaUpdatePrompt returns null unless isAdmin,
+// and SELF_GATED at the top of this file already keeps it out of `files`. A second derivation for it
+// measured zero hits, so it is not written here.
+let literalsChecked = 0;
+for (const file of files) {
+  if (OWNERS_DOOR.has(basename(file))) continue;
+  // og:type is "website", twitter:card is "summary_large_image", og:locale is "id_ID": Open Graph
+  // ENUMS, fixed by the protocol, not sentences anyone reads. "website" lands in the vocabulary above
+  // because an Indonesian message happens to use the word and no English one does — so these tags come
+  // out before the scan, by the attribute that makes them enums, not by whitelisting the word.
+  const source = strip(readFileSync(file, 'utf8'))
+    .replace(/<meta\s+(?:property|name)="(?:og:type|og:locale|twitter:card)"[^>]*\/>/g, '');
+  const adminOnly = adminOnlyRanges(source);
+  for (const match of source.matchAll(/'((?:[^'\\\n]|\\.){2,120})'|"((?:[^"\\\n]|\\.){2,120})"/g)) {
+    if (adminOnly.some(([from, to]) => match.index > from && match.index < to)) continue;
+    const literal = match[1] ?? match[2];
+    // An IDENTIFIER is not a sentence. `key: 'aroma'` names a bespoke step whose visible label is
+    // t('bsp.stepScent') two lines below it, and `'website'` is an og:type. In this codebase a bare
+    // lowercase word with no space and no punctuation is always code — a string a buyer reads is
+    // capitalised, spaced or punctuated. " (Habis)" is all three, which is why it is caught.
+    if (/^[a-z][a-z0-9]*$/.test(literal.trim())) continue;
+    // A SPOKEN DEFAULT is already governed, by the section above: a shared control may keep a Studio
+    // default as long as every buyer-facing caller overrides it, and MobileTopBar's backLabel="Kembali"
+    // is exactly that — the one buyer page that renders it passes t('a11y.back'). Flagging it here would
+    // contradict an assertion in this same file, which is worse than missing it.
+    if (declaredDefaults.has(literal)) continue;
+    literalsChecked += 1;
+    const indonesian = idWords(literal).filter((word) => indonesianVocabulary.has(word));
+    if (!indonesian.length) continue;
+    const line = source.slice(0, match.index).split('\n').length;
+    assert.fail(`${basename(file)}:${line} writes the Indonesian word${indonesian.length > 1 ? 's' : ''} `
+      + `${indonesian.join(', ')} into the code as "${literal.trim().slice(0, 48)}" — the English shop `
+      + 'renders this file too, so it has to come from the message file');
+  }
+}
+
+// --- Every buyer page's own description, from the message file ---------------------------------------
+// A meta description is the one sentence a search result and a shared link show, and it is the easiest
+// string in the shop to hardcode because nothing on screen ever reveals it. Fourteen buyer pages read
+// theirs through t(). Three did not, and they disagreed with each other: the desktop home page described
+// itself in Indonesian, the desktop catalogue in English, and the phone catalogue in Indonesian — so
+// whichever shop a visitor was in, some page answered in the other language.
+// THE SCAN PROVES ITSELF FIRST. A count floor cannot defend this one: narrowing the pattern so it only
+// matches a short content still matches all fourteen `content={t('...')}` tags and keeps the count up,
+// while skipping exactly the thing being looked for — a long sentence written in. So the pattern is run
+// against a hardcoded description as long as the one that was actually found, and against a t() one.
+const DESCRIPTION = /<meta\s+name="description"\s+content=(.{0,200}?)\/>/gs;
+const findsDescription = (markup) => [...markup.matchAll(new RegExp(DESCRIPTION.source, 'gs'))].map((m) => m[1].trim());
+assert.deepEqual(
+  findsDescription('<meta name="description" content="SOLIVAGANT adalah atelier parfum artisan oleh Dekito '
+    + '— merakit karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi." />'),
+  ['"SOLIVAGANT adalah atelier parfum artisan oleh Dekito — merakit karya olfaktori yang tenang dari raw '
+    + 'material, kenangan, dan ritual pribadi."'],
+  'the description pattern must still see a long hardcoded sentence — that is the whole subject');
+assert.deepEqual(findsDescription("<meta name=\"description\" content={t('home.meta')} />"), ["{t('home.meta')}"],
+  'and a translated one, so the check below is comparing like with like');
+
+let describedPages = 0;
+for (const file of files) {
+  if (OWNERS_DOOR.has(basename(file))) continue;
+  const source = strip(readFileSync(file, 'utf8'));
+  for (const match of source.matchAll(new RegExp(DESCRIPTION.source, 'gs'))) {
+    const content = match[1].trim();
+    describedPages += 1;
+    assert.ok(!/^["']/.test(content),
+      `${basename(file)} hardcodes its meta description — ${content.slice(0, 60)}. One of the two shops `
+      + 'will be described in the other shop\'s language');
+  }
+}
+assert.ok(describedPages >= 14,
+  `only ${describedPages} buyer pages were checked for a description — the sweep used to find 17, so it `
+  + 'has gone blind');
+
 // --- And the wordmark must not advertise the owner's door --------------------------------------------
 const layout = readFileSync(join(src, 'layouts', 'MobileCommerceLayout.jsx'), 'utf8');
 assert.ok(!/aria-label="[^"]*owner access"/i.test(layout),
@@ -277,4 +403,5 @@ assert.ok(!/aria-label="[^"]*owner access"/i.test(layout),
 console.log(`buyerTextComesFromTheMessageFile selfcheck OK (${files.length} buyer-facing files, every `
   + `spoken string from the message file, ${spokenDefaults.size} shared controls with a spoken default, `
   + `${PAIRED_KEYS.length} keys paired across both shops, ${childrenChecked} text children checked against `
-  + `${translatedDifferently.size} messages the two shops disagree on)`);
+  + `${translatedDifferently.size} messages the two shops disagree on, ${literalsChecked} string literals `
+  + `against ${indonesianVocabulary.size} Indonesian words, ${describedPages} page descriptions)`);

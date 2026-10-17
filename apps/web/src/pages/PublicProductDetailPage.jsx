@@ -312,7 +312,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                     const key = v.id || v.size;
                     return (
                       <option key={key} value={key}>
-                        {v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? ' (Habis)' : ''}
+                        {v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? t('pdp.soldOutOption') : ''}
                       </option>
                     );
                   })}
