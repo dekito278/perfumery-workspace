@@ -211,7 +211,7 @@ const PAIRED_KEYS = [
   'a11y.backToTop', 'a11y.galleryPrevImage', 'a11y.galleryNextImage',
   'a11y.galleryCloseZoom', 'a11y.galleryPrev', 'a11y.galleryNext', 'a11y.productAction',
   'a11y.breadcrumb', 'a11y.back', 'a11y.clearSearch', 'bsp.contactPlaceholder', 'pay.secureEyebrow',
-  'a11y.galleryShowImage', 'a11y.gallerySelectImage',
+  'a11y.galleryShowImage', 'a11y.gallerySelectImage', 'a11y.galleryZoom',
 ];
 for (const key of PAIRED_KEYS) {
   for (const shop of ['id', 'en']) {

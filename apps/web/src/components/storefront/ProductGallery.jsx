@@ -140,9 +140,21 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
         <div className="group relative cursor-zoom-in" ref={galleryRef} onClick={activeImage ? openLightbox : undefined}>
           <ProductVisual product={previewProduct} className={visualClassName || 'aspect-square'} priority={priority} sizes="(max-width: 767px) 100vw, 520px" />
           {activeImage ? (
-            <div className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/30 text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+            // A real button, not the div this used to be. The whole image opens the zoom on click, but a
+            // div with an onClick is reachable by mouse and touch only: a keyboard never lands on it and
+            // a screen reader never announces it, so the zoom did not exist for either. The wrapper
+            // cannot BE the button — it contains the gallery's own arrows and dots, and a button inside
+            // a button is invalid — so the affordance that was already drawn here becomes the control.
+            // It stays hidden until hover or focus, which is how it looked before, and it is 44px so a
+            // thumb can use it too.
+            <button
+              type="button"
+              onClick={(event) => { event.stopPropagation(); openLightbox(); }}
+              aria-label={t('a11y.galleryZoom')}
+              className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-black/30 text-white opacity-0 backdrop-blur transition-opacity focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+            >
               <ZoomIn className="h-4 w-4" />
-            </div>
+            </button>
           ) : null}
           {hasMultipleImages ? (
             <>
