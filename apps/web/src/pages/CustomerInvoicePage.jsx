@@ -420,6 +420,7 @@ const CustomerInvoicePage = () => {
             <input
               value={customerCode}
               onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
+              aria-label={t('cust.customerCode')}
               placeholder="SOLI09232"
               className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
             />
