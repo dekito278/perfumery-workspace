@@ -10,6 +10,14 @@
 -- Jadi sisi TULIS harus dibaca dari dalam, di SQL Editor. Ini blok itu.
 --
 -- Cara pakai: Supabase -> SQL Editor -> tempel seluruh berkas ini -> Run. Lalu baca tiga jawabannya.
+--
+-- DIJALANKAN 17 Okt 2026, dan jawabannya: BLOK 1 nol baris, BLOK 2 nol baris. Tidak ada jalur tulis
+-- yang tidak bergerbang, dan tidak ada tabel `public` yang RLS-nya mati — jadi 195 kebijakan itu
+-- memang berlaku, bukan hiasan. BLOK 3 memperlihatkan 58 kebijakan tulis: seluruh `storefront_*`
+-- bergerbang `is_admin()`, seluruh tabel Studio bergerbang `auth.uid() = user_id` atau lewat tabel
+-- induknya, dan `journal_posts` menuntut keduanya. `storefront_customers` tidak punya kebijakan INSERT
+-- dan `storefront_doku_payment_logs` tidak punya kebijakan tulis sama sekali: order dan customer
+-- dibuat dari server lewat service role, yang memang bentuk paling aman.
 
 -- ============================================================
 -- BLOK 1 — PERTANYAAN UTAMA: ada tulisan yang terbuka untuk anonim?
@@ -24,19 +32,27 @@
 --
 -- `with_check = 'true'` ikut dicari karena kebijakan yang tidak memeriksa apa pun sama terbukanya
 -- dengan yang menyebut anon secara eksplisit.
+--
+-- DIPERBAIKI 17 Okt 2026. Versi pertama blok ini juga mencari `roles = '{public}'` dan karena itu
+-- memberi ALARM PALSU berisi puluhan baris: `{public}` bukan "terbuka", itu cakupan role — ia memang
+-- mencakup anon, tetapi yang menolak adalah EKSPRESINYA. Untuk anon `auth.uid()` bernilai NULL,
+-- sehingga `auth.uid() = user_id` menghasilkan NULL dan tulisannya ditolak. Hampir seluruh tabel Studio
+-- memakai bentuk itu. Jadi yang dicari sekarang adalah gerbangnya, bukan nama role-nya: kebijakan yang
+-- menyebut anon, yang tidak memeriksa apa pun, atau yang syaratnya tidak menyinggung `is_admin()`
+-- maupun `auth.uid()` sama sekali.
 -- ============================================================
 select tablename,
-       policyname,
        cmd,
+       policyname,
        roles::text as untuk_role,
-       with_check
+       coalesce(with_check, qual) as syarat
 from pg_policies
 where schemaname = 'public'
   and cmd in ('INSERT', 'UPDATE', 'DELETE', 'ALL')
   and (
     roles::text like '%anon%'
-    or roles::text = '{public}'
-    or coalesce(with_check, 'true') = 'true'
+    or coalesce(with_check, qual, 'true') = 'true'
+    or coalesce(with_check, qual) !~* 'is_admin|auth\.uid'
   )
 order by tablename, cmd;
 
