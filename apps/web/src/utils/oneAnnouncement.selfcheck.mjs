@@ -42,6 +42,38 @@ for (const [, name, body] of openers) {
   assert.match(body, /toast\.error\(/, `${name}() must still tell a buyer when the add did not happen`);
 }
 
+// --- 1b. And the app-wide gift prompt is not the second announcement either ---------------------------
+// Measured on the phone product page, 2026-10-17: ONE "Tambah ke keranjang" left two modals open, and
+// they stayed open.
+//
+//   .free-vial-prompt   role=dialog  z-index 70  top 0 -> 812   aria-hidden="true"
+//   the added-to-cart sheet          z-index 50  top 584        aria-hidden=null
+//
+// The full-screen gift prompt sat ON TOP of the sheet, covering the "Lanjut belanja" and "Lihat
+// keranjang" the comment above fought to keep clear — and the sheet's own modal machinery had marked the
+// prompt aria-hidden, so a screen reader was told the thing covering the screen was not there. Neither
+// held focus. On a phone this is not an edge case: the product page is the only place a phone can add to
+// the cart at all.
+//
+// So a screen that opens its own sheet says so when it adds, and the prompt stands down for that one
+// event. Everywhere else — the desktop catalogue's quick add, the cart page — the prompt is unchanged.
+const cart = read('hooks', 'useCart.js');
+assert.match(cart, /addItem: \(product, quantity, \{ announcedByScreen = false \} = \{\}\) =>/,
+  'addItem no longer lets a screen say it is announcing the add itself');
+assert.match(cart, /CART_ITEM_ADDED_EVENT, \{ detail: \{ announcedByScreen \} \}/,
+  'the flag is not carried on the event, so nothing downstream can read it');
+
+const prompt = read('components', 'storefront', 'FreeVialPrompt.jsx');
+assert.match(prompt, /if \(event\.detail\?\.announcedByScreen\) return;/,
+  'the gift prompt opens even when the screen has already announced the add — two modals for one event');
+
+// The page that opens a sheet passes it. Derived from the sheet, not from a list of pages: any screen
+// that opens the added-to-cart sheet must also tell addItem it is doing so.
+for (const [, name, body] of openers) {
+  assert.match(body, /announcedByScreen: true/,
+    `${name}() opens the added-to-cart sheet but still lets the app-wide gift prompt open over it`);
+}
+
 // --- 2. The sheet carries what the toast used to say ------------------------------------------------------
 // HELD AS THE RULE — the item carries a name, a size and a price — not as the one spelling of the price.
 // Pinned to `price: formatRupiah(selectedPrice)`, this failed the day the price learned to be the dollar

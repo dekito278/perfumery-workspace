@@ -149,7 +149,7 @@ const MobileProductDetailPage = () => {
       size: selectedSize,
       price: formatRupiah(selectedPrice),
       priceNumber: selectedPrice,
-    }, 1);
+    }, 1, { announcedByScreen: true });
     // The dollar in the English shop. Dekito found this one on his phone the hour the English cart went
     // live: "Added to cart — 30 ml — Rp 323.000" — the MEMBER price, because he was signed in — over a
     // page that had just said US$80. The sheet had been unreachable from the English shop until then.

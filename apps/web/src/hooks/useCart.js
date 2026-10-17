@@ -46,9 +46,14 @@ export const useCart = () => {
     // Announced here rather than inside addCartItem: the customer portal's "Pesan lagi" calls that
     // writer directly, in a loop, and then navigates — a gift prompt popping up mid-reorder would be
     // asking about a basket the buyer is already being carried away from.
-    addItem: (product, quantity) => {
+    // `announcedByScreen` is the screen saying "I am opening my own sheet for this one". The phone product
+    // page does; the app-wide gift prompt stands down for it, because the two were landing on top of each
+    // other — the full-screen prompt over the sheet's own "Lanjut belanja"/"Lihat keranjang", with the
+    // prompt marked aria-hidden by the sheet's modal machinery, so a reader was told the thing covering
+    // their screen was not there. Same rule the toast lost to in 2026-09-21: one event, one announcement.
+    addItem: (product, quantity, { announcedByScreen = false } = {}) => {
       setStoredItems(addCartItem(product, quantity));
-      window.dispatchEvent(new CustomEvent(CART_ITEM_ADDED_EVENT));
+      window.dispatchEvent(new CustomEvent(CART_ITEM_ADDED_EVENT, { detail: { announcedByScreen } }));
     },
     updateQuantity: (slug, quantity) => setStoredItems(updateCartQuantity(slug, quantity)),
     removeItem: (slug) => setStoredItems(removeCartItem(slug)),
