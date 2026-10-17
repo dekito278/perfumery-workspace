@@ -49,9 +49,9 @@ ${inline('data', 'exportZones.js')}
 ${inline('data', 'exportRates.js')}
 ${inline('data', 'internationalShippingRates.js')}
 ${inline('utils', 'internationalShippingPrice.js')}
-export { quoteInternationalShippingPrice, SHIPPING_RATE_REGIONS, SHIPPING_RATE_MAX_BOTTLES, EXPORT_ZONE_BY_COUNTRY };
+export { quoteInternationalShippingPrice, SHIPPING_RATE_REGIONS, SHIPPING_RATE_MAX_BOTTLES, EXPORT_ZONE_BY_COUNTRY, NON_ISO_NAMES };
 `);
-const { quoteInternationalShippingPrice, SHIPPING_RATE_REGIONS, SHIPPING_RATE_MAX_BOTTLES, EXPORT_ZONE_BY_COUNTRY } = rates;
+const { quoteInternationalShippingPrice, SHIPPING_RATE_REGIONS, SHIPPING_RATE_MAX_BOTTLES, EXPORT_ZONE_BY_COUNTRY, NON_ISO_NAMES } = rates;
 
 // --- 1. THE SPLIT IS GONE, AND ITS ABSENCE IS THE RULE ----------------------------------------------
 // From 19 Sep to 6 Oct 2026 the neighbours paid 2.2x retail and everyone else the hand-set price, decided
@@ -88,23 +88,40 @@ console.log('  the Asia split is retired: no exported helper, no region in the p
 // a number — run through the REAL quote function, not a description of it.
 const destination = await run(`
 const SHIPPING_RATE_REGIONS = ${asJs(SHIPPING_RATE_REGIONS)};
+const NON_ISO_NAMES = ${asJs(NON_ISO_NAMES)};
 ${inline('utils', 'shippingDestination.js').replace(/^const SHIPPING_RATE_REGIONS[^\n]*\n/m, '')}
-export { destinationOptions, DESTINATION_OTHER, isValidDestination, CARD_COUNTRIES };
+export { destinationOptions, DESTINATION_OTHER, isValidDestination, CARD_COUNTRIES, countryNameFor };
 `);
-const { destinationOptions, DESTINATION_OTHER, isValidDestination, CARD_COUNTRIES } = destination;
+const { destinationOptions, DESTINATION_OTHER, isValidDestination, CARD_COUNTRIES, countryNameFor } = destination;
 
 const offered = destinationOptions('en').flatMap((group) => group.countries.map((item) => item.code));
 assert.ok(offered.length >= 200,
   `the picker offers ${offered.length} destinations — the carrier sheet names ${Object.keys(EXPORT_ZONE_BY_COUNTRY).length}, and the picker used to offer 57`);
 for (const code of offered) assert.ok(CARD_COUNTRIES.includes(code), `${code} is offered but is not on the carrier sheet`);
-// Only NAMED destinations: the sheet carries a few non-ISO codes (Bonaire XB, Kosovo KV) that no browser
-// can put a word to, and "XB" in a dropdown between Bolivia and Brazil looks broken to everyone else.
+// Only destinations with a PLACE for a name. "Intl returned something" is not the same test: XB is the
+// carrier's code for Bonaire and CLDR's code for a pseudo-locale, so Intl answers 'Pseudo-Bidi' — a
+// name, just not a place — and the weaker test shipped it live, between Burundi and Réunion, in both
+// languages. The sheet's own names are read first now, so this asks both halves of the question.
 const names = new Intl.DisplayNames(['en'], { type: 'region' });
 for (const code of offered) {
-  let name = code;
-  try { name = names.of(code) || code; } catch { /* unnamed */ }
-  assert.notEqual(name, code, `${code} is offered with no name — the picker must leave such codes to "another country"`);
+  for (const locale of ['en', 'id']) {
+    const name = countryNameFor(code, locale);
+    assert.ok(name && name !== code,
+      `${code} is offered in ${locale} with no name — the picker must leave such codes to "another country"`);
+    assert.doesNotMatch(name, /pseudo/i,
+      `${code} is offered as "${name}" in ${locale}: that is a CLDR pseudo-locale, not a place. Its name belongs in NON_ISO_NAMES on the zone sheet`);
+  }
 }
+// The eight codes the sheet names itself are all offered, and none of them is left to Intl.
+for (const code of Object.keys(NON_ISO_NAMES)) {
+  assert.ok(offered.includes(code), `${code} is on the carrier sheet and has a name, so the picker must offer it`);
+  assert.equal(countryNameFor(code, 'en'), NON_ISO_NAMES[code],
+    `${code} must be named by the zone sheet, not by Intl`);
+}
+// And the trap itself, so this check cannot quietly stop meaning anything: Intl must still be answering
+// 'Pseudo-Bidi' for XB. If a browser ever stops, the rule above is simply no longer load-bearing.
+assert.match(names.of('XB'), /pseudo/i,
+  'Intl no longer answers a pseudo-locale name for XB, so the trap this check guards has changed shape');
 let quoted = 0;
 for (const code of offered) {
   for (let bottles = 1; bottles <= SHIPPING_RATE_MAX_BOTTLES; bottles += 1) {

@@ -41,7 +41,7 @@ export const EXPORT_ZONES = [1, 2, 3, 4, 5, 6, 7, 8];
 // Intl.DisplayNames turns an ISO code into an Indonesian country name, so the 233 names do not have to be
 // transcribed and kept in step with it. These seven are the carrier's own codes rather than ISO regions,
 // and Intl hands them straight back — so they are the only ones written out.
-const NON_ISO_NAMES = {
+export const NON_ISO_NAMES = {
   // XA and XB are reserved by CLDR for pseudo-locales, so Intl answers 'Pseudo-Bidi' for the
   // carrier's Bonaire code instead of a country. It resolves to *something*, which is why it slipped
   // past the check for codes Intl cannot name at all.
