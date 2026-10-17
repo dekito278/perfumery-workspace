@@ -4,8 +4,11 @@
 // that thanks the buyer, says what signing in gives them, and offers the way in — on desktop and on the
 // phone, which is where most cards get opened.
 //
-// Its copy claims exactly one thing about price: the member price. Whether the shop is cheaper than the
-// marketplace has not been checked, and a landing page that lies once is not believed twice.
+// Its copy claims two things about price, and both are held below: the member price, and that the shop
+// is already under the marketplace. The second one was checked — Dekito confirmed on 2026-09-15 that his
+// marketplace listings sit above the shop's retail — and it stays a statement of policy rather than a
+// number or a name, for the reasons written beside the assertion. A landing page that lies once is not
+// believed twice, so what it may say is pinned rather than trusted.
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
