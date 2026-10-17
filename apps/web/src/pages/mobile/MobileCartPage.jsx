@@ -142,7 +142,7 @@ const MobileCartPage = () => {
             </div>
             {voucher.appliedVoucher ? (
               <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderRadius: 10, border: '1px solid var(--editorial-stone)', background: 'var(--editorial-ivory)', padding: '8px 12px' }}>
-                <div style={{ minWidth: 0 }}>
+                <div role="status" style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('cart.voucherApplied', { code: voucher.appliedVoucher.code })}</div>
                   <div style={{ marginTop: 2, fontSize: '0.72rem', fontWeight: 500, color: 'var(--editorial-charcoal)' }}>{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</div>
                 </div>
@@ -151,7 +151,7 @@ const MobileCartPage = () => {
                 </Button>
               </div>
             ) : voucher.message ? (
-              <p style={{ marginTop: 8, borderRadius: 10, background: 'var(--editorial-ivory)', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-brass)' }}>{voucher.message}</p>
+              <p role="status" style={{ marginTop: 8, borderRadius: 10, background: 'var(--editorial-ivory)', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-brass)' }}>{voucher.message}</p>
             ) : null}
           </section>
         ) : null}
