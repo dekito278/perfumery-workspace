@@ -80,5 +80,37 @@ assert.ok(chipRatio >= 4.5,
 assert.ok(contrastRatio([255, 255, 255], hex('#b08b4f')) < 4.5,
   'white on the decorative brass has stopped failing, so the arithmetic is wrong');
 
-console.log(`buyerTextMeetsContrast selfcheck OK (bottom nav ${inactive[1]} = ${ratio.toFixed(2)}:1, `
+// 3. THE SMALL-TEXT BRASS, AGAINST THE BACKGROUND IT IS ACTUALLY ON.
+// The token carried its own claim — "WCAG AA ~4.6:1 on ivory" — and the colour did not reach it:
+// #8a6a35 on --editorial-ivory reads 4.45, under the 4.5 that 11px text needs. It cleared on paper
+// (4.81) and on white (5.01), which is where the number must have come from; the home page's own
+// background is the ivory, and every `.editorial-eyebrow` on it sat at 4.45.
+//
+// Read out of the stylesheet so the claim cannot drift from the colour again: whatever the token is,
+// it is measured against the background the storefront actually paints behind it.
+const storefront = read('styles', 'storefront.css');
+const tokenValue = (name) => {
+  const match = storefront.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{3,6})`));
+  assert.ok(match, `--${name} is no longer a hex in storefront.css — this check reads it from there`);
+  return match[1];
+};
+const brassText = tokenValue('editorial-brass-text');
+const ivory = tokenValue('editorial-ivory');
+const paper = tokenValue('editorial-paper');
+assert.match(storefront, /\.editorial-eyebrow \{[\s\S]{0,160}?color: var\(--editorial-brass-text\)/,
+  'the eyebrow no longer takes its colour from the small-text brass — re-measure the pair this check holds');
+for (const [name, background] of [['ivory', ivory], ['paper', paper]]) {
+  const value = contrastRatio(hex(brassText), hex(background));
+  assert.ok(value >= 4.5,
+    `the small-text brass ${brassText} reads ${value.toFixed(2)}:1 on the ${name} ${background}, and the `
+    + 'eyebrows it paints are 11px. WCAG AA asks 4.5 for text that size');
+}
+// And the decorative brass stays decorative: it is NOT good enough for small text, which is the whole
+// reason there are two of them.
+assert.ok(contrastRatio(hex(tokenValue('editorial-brass')), hex(ivory)) < 4.5,
+  'the decorative brass now passes for small text, so the two tokens have collapsed into one and the '
+  + 'distinction this pair exists for is gone');
+
+console.log(`buyerTextMeetsContrast selfcheck OK (small-text brass ${brassText} clears AA on both `
+  + `storefront backgrounds, bottom nav ${inactive[1]} = ${ratio.toFixed(2)}:1, `
   + `selected chip white on ${selected[1]} = ${chipRatio.toFixed(2)}:1; AA needs 4.5)`);

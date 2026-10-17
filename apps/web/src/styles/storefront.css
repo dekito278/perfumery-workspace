@@ -16,9 +16,12 @@
   --editorial-muted: #6f695f;
   --editorial-forest: #1e3a2a;
   --editorial-brass: #b08b4f;
-  /* Darker brass for small text on light backgrounds (WCAG AA ~4.6:1 on ivory);
-     the lighter --editorial-brass stays for decorative fills/borders. */
-  --editorial-brass-text: #8a6a35;
+  /* Darker brass for small text on light backgrounds; the lighter --editorial-brass stays for
+     decorative fills/borders. MEASURED, not estimated — #8a6a35 was written here as "~4.6:1 on ivory"
+     and reads 4.45 against --editorial-ivory #f7f1e5, which is under the 4.5 AA asks for 11px text.
+     It cleared on paper (4.81) and on white (5.01), which is probably where the number came from, but
+     the home page's own background is the ivory. #866633 reads 4.71 ivory / 5.09 paper / 5.30 white. */
+  --editorial-brass-text: #866633;
   --editorial-border: rgba(27, 26, 22, 0.13);
 
   /* Radius system — one scale for the whole storefront so controls/cards/pills
