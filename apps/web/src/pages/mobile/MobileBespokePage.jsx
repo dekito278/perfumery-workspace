@@ -1034,7 +1034,7 @@ const MobileBespokePage = () => {
               ))}
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-editorial-ivory">
-              <div className="h-full rounded-full bg-editorial-charcoal" style={{ width: `${((step + 1) / flowSteps.length) * 100}%` }} />
+              <div className="h-full rounded-full bg-editorial-charcoal" style={{ width: `${completion}%` }} />
             </div>
           </header>
 
