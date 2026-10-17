@@ -973,7 +973,7 @@ const BespokePage = () => {
                     </button>
                   </div>
                   {voucher.appliedVoucher ? (
-                    <div className="editorial-voucher-applied">
+                    <div role="status" className="editorial-voucher-applied">
                       <span>{t('bsp.voucherDiscount')}</span>
                       <strong>-{formatRupiah(discountAmount)}</strong>
                       <button type="button" className="editorial-icon-button" onClick={voucher.removeVoucher} aria-label={t('bsp.voucherRemove')}>
@@ -981,7 +981,7 @@ const BespokePage = () => {
                       </button>
                     </div>
                   ) : voucher.message ? (
-                    <p className="editorial-helper-text editorial-helper-text--warning">{voucher.message}</p>
+                    <p role="status" className="editorial-helper-text editorial-helper-text--warning">{voucher.message}</p>
                   ) : null}
                 </div>
                 <div className="editorial-cart-summary">

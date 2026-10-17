@@ -149,7 +149,7 @@ const CartPage = () => {
                   {voucher.loading ? t('cart.voucherChecking') : t('cart.voucherApply')}
                 </button>
               </div>
-              {voucher.message ? <p className={`cart-voucher__msg${voucher.appliedVoucher ? ' is-success' : ''}`}>{voucher.message}</p> : null}
+              {voucher.message ? <p role="status" className={`cart-voucher__msg${voucher.appliedVoucher ? ' is-success' : ''}`}>{voucher.message}</p> : null}
               {voucher.appliedVoucher ? (
                 <button type="button" className="cart-voucher__remove" onClick={voucher.removeVoucher}>
                   <X className="h-3.5 w-3.5" /> {t('cart.voucherRemove')}

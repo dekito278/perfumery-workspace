@@ -416,7 +416,7 @@ const MobileCheckoutPage = () => {
             </div>
             {voucher.appliedVoucher ? (
               <div className="flex items-center justify-between gap-3 rounded-2xl border border-editorial-stone/14 bg-editorial-ivory px-3 py-2">
-                <div className="min-w-0">
+                <div role="status" className="min-w-0">
                   <div className="truncate text-xs font-bold text-editorial-charcoal">{t('cart.voucherApplied', { code: voucher.appliedVoucher.code })}</div>
                   <div className="mt-0.5 text-[11px] font-semibold text-editorial-muted">{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</div>
                 </div>
@@ -425,7 +425,7 @@ const MobileCheckoutPage = () => {
                 </Button>
               </div>
             ) : voucher.message ? (
-              <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{voucher.message}</p>
+              <p role="status" className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{voucher.message}</p>
             ) : null}
         </CheckoutSection>
         <div>
