@@ -43,7 +43,11 @@ const FreeVialPrompt = () => {
   const { gift } = splitFreeVialLines(items);
 
   useEffect(() => {
-    const onAdded = () => setOpen(true);
+    // A screen that opens its own sheet for this add says so, and this prompt stands down: two modals for
+    // one event put a full-screen panel over the sheet's way forward, and the sheet's own modal machinery
+    // marked this one aria-hidden, so a screen reader was never told about the thing covering the screen.
+    // The cart page still offers the same aromas, which is where a dismissed prompt sends everyone anyway.
+    const onAdded = (event) => { if (event.detail?.announcedByScreen) return; setOpen(true); };
     window.addEventListener(CART_ITEM_ADDED_EVENT, onAdded);
     return () => window.removeEventListener(CART_ITEM_ADDED_EVENT, onAdded);
   }, []);
