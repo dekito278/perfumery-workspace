@@ -87,7 +87,11 @@ const CONFLICT_THRESHOLDS = {
   reference_use_level_max_percent: 10,
 };
 
+// Not recorded is not zero — the twin of normalizeNumber in referenceGuidance.js, and the reason that
+// fix alone was not enough: the fallback profile returns `canonicalProfile?.impact ?? fallbackProfile.impact`,
+// so this function was still handing back 0 for every blank. See unrecordedIsNotZero.selfcheck.mjs.
 const toNumber = (value) => {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
 };
