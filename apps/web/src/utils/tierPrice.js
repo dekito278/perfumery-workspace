@@ -2,7 +2,6 @@
 // node) can share it — the same reason schemaAvailability.js is shaped this way. Two implementations of
 // one answer is how the availability and og:image bugs happened; pricing is the last place to repeat it.
 
-export const PRICE_TIERS = ['retail', 'member', 'reseller'];
 export const OVERSEAS_TIER = 'overseas';
 
 // What a buyer on each tier may fall back to, best first. A reseller never pays more than a member:

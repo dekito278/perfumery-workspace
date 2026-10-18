@@ -54,10 +54,6 @@ export const getDiscountedCartLines = (items = [], discountAmount = 0) => {
   });
 };
 
-export const getDiscountedCartLineMap = (items = [], discountAmount = 0) => new Map(
-  getDiscountedCartLines(items, discountAmount).map((line) => [line.item.slug, line])
-);
-
 export const getVoucherDiscountEligibleItems = (items = [], voucher = {}) => (
   (items || []).filter((item) => isVoucherEligibleCartItem(voucher, item))
 );

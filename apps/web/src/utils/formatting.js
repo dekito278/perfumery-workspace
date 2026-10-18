@@ -4,11 +4,6 @@ export const formatName = (value) => {
   return String(value).trim();
 };
 
-export const formatCode = (value) => {
-  if (value === null || value === undefined) return '';
-  return String(value).trim().toUpperCase();
-};
-
 export const formatQuantity = (value, decimals = null) => {
   if (value === null || value === undefined) return '0';
   const numValue = Number(value);
@@ -47,12 +42,6 @@ export const formatGramAmount = (value) => {
   // Use smart decimal handling
   const formatted = formatQuantity(numValue);
   return `${formatted} g`;
-};
-
-export const formatAmountWithUnit = (value, unit = '') => {
-  const formatted = formatQuantity(value);
-  const normalizedUnit = formatUnit(unit);
-  return normalizedUnit ? `${formatted} ${normalizedUnit}` : formatted;
 };
 
 export const formatPercentage = (value, decimals = 1) => {
@@ -112,11 +101,6 @@ export const formatDate = (value, locale = 'id-ID') => {
   } catch {
     return 'N/A';
   }
-};
-
-export const formatUnit = (value) => {
-  if (value === null || value === undefined) return '';
-  return String(value).toLowerCase();
 };
 
 export const formatStatus = (value) => {

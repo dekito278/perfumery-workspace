@@ -5,8 +5,6 @@ const parseNumber = (value) => {
   return Number.isFinite(number) ? number : 0;
 };
 
-export const formatOrderTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(parseNumber(value))}`;
-
 export const BESPOKE_REQUEST_ITEM_TYPE = 'bespoke_request';
 
 /**

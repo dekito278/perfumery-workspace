@@ -166,8 +166,6 @@ export const getBespokeSettingsAsync = async () => {
   }
 };
 
-export const getActiveBespokeOptions = (key) => getBespokeSettings()[key].filter((option) => option.enabled);
-
 export const saveBespokeOption = async (collectionKey, option) => {
   const settings = getBespokeSettings();
   const normalizedOption = normalizeOption({ ...option, collectionKey });

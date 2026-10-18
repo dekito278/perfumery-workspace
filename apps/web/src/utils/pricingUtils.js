@@ -63,48 +63,6 @@ export const calculateIngredientCost = (amount, unitPrice, baseQuantity = DEFAUL
 };
 
 /**
- * Calculate ingredient cost with dilution support
- * @param {Object} ingredient - Ingredient object with gram_amount
- * @param {Object} rawMaterial - Raw material object with cost_per_unit, is_diluted, dilution_percentage
- * @returns {Object} { cost, activeAmount, solventAmount, dilutionInfo }
- */
-export const calculateIngredientCostWithDilution = (ingredient, rawMaterial) => {
-  const gramAmount = ingredient.gram_amount || ingredient.grams || 0;
-  const unitPrice = rawMaterial.cost_per_unit || 0;
-
-  if (rawMaterial.is_diluted && rawMaterial.dilution_percentage) {
-    // Diluted material: calculate breakdown
-    const breakdown = calculateDilutionCost(
-      gramAmount,
-      unitPrice,
-      rawMaterial.dilution_percentage
-    );
-
-    return {
-      cost: breakdown.totalCost,
-      activeAmount: breakdown.activeAmount,
-      solventAmount: breakdown.solventAmount,
-      dilutionInfo: {
-        isDiluted: true,
-        percentage: rawMaterial.dilution_percentage,
-        solventId: rawMaterial.dilution_solvent_id
-      }
-    };
-  } else {
-    // Non-diluted material: standard calculation
-    const cost = calculateIngredientCost(gramAmount, unitPrice);
-    return {
-      cost,
-      activeAmount: gramAmount,
-      solventAmount: 0,
-      dilutionInfo: {
-        isDiluted: false
-      }
-    };
-  }
-};
-
-/**
  * Calculate total cost from array of ingredients
  * @param {Array} ingredients - Array of ingredient objects with gram_amount and unit_price
  * @returns {number} Total cost

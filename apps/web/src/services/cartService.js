@@ -84,15 +84,6 @@ export const checkoutPaymentMethods = [
   },
 ];
 
-export const checkoutPaymentOptions = [
-  MANUAL_TRANSFER_PAYMENT.label,
-  'DOKU Checkout',
-  'WhatsApp confirmation',
-  'QRIS payment request',
-  'Bank transfer request',
-  'Payment link request',
-];
-
 export const getCheckoutPaymentMethod = (methodId) => (
   checkoutPaymentMethods.find((method) => method.id === methodId || method.provider === methodId)
   || MANUAL_TRANSFER_PAYMENT

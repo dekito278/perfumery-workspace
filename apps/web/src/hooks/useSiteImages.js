@@ -54,8 +54,3 @@ export const useSiteImages = () => {
   return { images: imageMap, loading, refresh };
 };
 
-/**
- * Get a single site image URL with fallback.
- */
-export const getSiteImageWithFallback = (images, key) =>
-  images[key] || DEFAULT_IMAGES[key] || '';

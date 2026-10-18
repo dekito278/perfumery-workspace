@@ -714,10 +714,6 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
   return referenceProfileId;
 };
 
-export const recalculateReferenceProfileForRawMaterial = async (rawMaterial) => (
-  syncManualReferenceProfileForRawMaterial(rawMaterial)
-);
-
 export const approveReferenceCandidateForRawMaterial = async (rawMaterialId) => (
   updateManualReferenceMetadataForRawMaterial(rawMaterialId, (existingRawPayload) => ({
     ...existingRawPayload,
