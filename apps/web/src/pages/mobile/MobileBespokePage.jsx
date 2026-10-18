@@ -34,7 +34,7 @@ import { formatRupiah } from '@/services/productCatalogService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
-import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
+import { desktopCanonicalPath, shopCanonicalUrl } from '@/utils/seo.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 const BESPOKE_DRAFT_STORAGE_KEY = 'dekito.storefront.bespokeDraft.v1';
@@ -148,7 +148,7 @@ const CapMockup = ({ cap, bottle, label }) => {
 };
 
 const MobileBespokePage = () => {
-  const { t, isInternational } = useTranslate();
+  const { t, isInternational, region } = useTranslate();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
@@ -974,7 +974,7 @@ const MobileBespokePage = () => {
     <MobileCommerceLayout>
       <Helmet>
         <title>{t('bsp.tabMobile')}</title>
-        <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/bespoke'))} />
+        <link rel="canonical" href={shopCanonicalUrl(desktopCanonicalPath('/mobile/bespoke'), region)} />
         <meta name="description" content={t('bsp.metaMobile')} />
       </Helmet>
       <main className="mobile-page mobile-bespoke-page">

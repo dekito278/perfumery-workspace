@@ -32,15 +32,7 @@ import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-import {
-
-
-  DEFAULT_SHARE_IMAGE,
-  buildBreadcrumbJsonLd,
-  buildProductJsonLd,
-  getSiteOrigin,
-  toAbsoluteUrl,
-} from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
 import { isPlaceholderMood } from '@/utils/productMood.js';
 import { describeWear } from '@/utils/productWear.js';
@@ -183,7 +175,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   }
 
   const siteOrigin = getSiteOrigin();
-  const canonicalUrl = toAbsoluteUrl(`/catalog/${product.slug}`, siteOrigin);
+  const canonicalUrl = shopCanonicalUrl(`/catalog/${product.slug}`, region, siteOrigin);
   const shareImage = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, siteOrigin);
   const metaDescription = `${product.name} — ${product.subtitle || product.story || ''}`.trim().slice(0, 155);
   const productJsonLd = buildProductJsonLd(product, { origin: siteOrigin, canonicalUrl });

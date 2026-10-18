@@ -23,13 +23,7 @@ import { LineDivider } from '@/components/line/LineArt.jsx';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
-import {
-  DEFAULT_SHARE_IMAGE,
-  buildOrganizationJsonLd,
-  buildWebSiteJsonLd,
-  getSiteOrigin,
-  toAbsoluteUrl,
-} from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, buildOrganizationJsonLd, buildWebSiteJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 import { articleExcerpt } from '@/utils/articleExcerpt.js';
 
@@ -48,7 +42,7 @@ const getArticleExcerpt = (article) => articleExcerpt(article, 120);
 
 const HomePage = () => {
   const fetchedProducts = useStorefrontProducts();
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   // Same reason as CatalogPage: the bundled seed is six perfumes this shop does not sell, and showing
   // them during an outage put phantom stock on the front page.
   const catalogProducts = fetchedProducts;
@@ -80,7 +74,7 @@ const HomePage = () => {
   const carousel = useCarouselPosition(collectionProducts.length);
 
   const siteOrigin = getSiteOrigin();
-  const homeCanonical = toAbsoluteUrl('/home', siteOrigin);
+  const homeCanonical = shopCanonicalUrl('/home', region, siteOrigin);
   const homeShareImage = toAbsoluteUrl(DEFAULT_SHARE_IMAGE, siteOrigin);
 
   return (

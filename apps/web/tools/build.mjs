@@ -2,6 +2,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH } from '../src/utils/seo.js';
+import { MESSAGES } from '../src/i18n/messages.js';
 import { EN_PREFIX, alternateLinks, setDocumentLanguage, upsertAlternates } from './seo-artifacts.mjs';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -32,6 +33,7 @@ const BRAND_SUMMARY = 'An artisan perfume atelier by Dekito, crafting quiet olfa
 const staticPublicPages = [
   {
     route: '/home',
+    idDescriptionKey: 'home.meta',
     title: 'SOLIVAGANT - Artisan Perfumery Atelier by Dekito',
     description: 'SOLIVAGANT is an artisan perfumery atelier by Dekito, crafting quiet fragrance objects from raw materials, memory, and personal ritual.',
     eyebrow: 'Artisan Perfumery Atelier',
@@ -47,6 +49,8 @@ const staticPublicPages = [
   },
   {
     route: '/catalog',
+    idTitleKey: 'catalog.tab',
+    idDescriptionKey: 'catalog.meta',
     title: 'Fragrance Collection - SOLIVAGANT',
     // Deliberately names no products. The previous description listed five, and four of them —
     // Chant Nocturne, Jaipong, Porte vers le Paradis, Trace d'Aventure — had been discontinued; their
@@ -68,6 +72,13 @@ const staticPublicPages = [
   },
   {
     route: '/bespoke',
+    idTitleKey: 'bsp.tab',
+    idDescriptionKey: 'bsp.meta',
+    // The English description below is half Indonesian — "Public flow: Aroma, Preferensi, Botol,
+    // Ongkir, Bayar. Pre-order 7-14 hari." went out as the English shop's search-result sentence. The
+    // English half of bsp.meta is Dekito's own clean twin of it, so the fix needs no new words. Revert
+    // by deleting this one line.
+    enDescriptionKey: 'bsp.meta',
     title: 'Bespoke Perfume Consultation - SOLIVAGANT',
     description: 'Request a SOLIVAGANT custom perfume consultation. Public flow: Aroma, Preferensi, Botol, Ongkir, Bayar. Pre-order 7-14 hari.',
     eyebrow: 'Bespoke Perfume Consultation',
@@ -85,6 +96,8 @@ const staticPublicPages = [
   },
   {
     route: '/about',
+    idTitleKey: 'about.tab',
+    idDescriptionKey: 'about.meta',
     title: 'About SOLIVAGANT - Artisan Perfume Atelier',
     // The page a fragrance database editor reads before entering the house, so the prerendered copy
     // carries the same facts the live page does and states no founding year, because nobody has.
@@ -206,22 +219,33 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
     const routePath = path.join(routeDir, 'index.html');
     const canonical = siteUrl ? `${siteUrl}${page.route}` : '';
 
+    // THE INDONESIAN PAGE SPEAKS INDONESIAN. The copy on the page objects above was written for search
+    // results and is English; it stayed English on BOTH addresses, so an Indonesian searcher met an
+    // Indonesian shop (lang="id", x-default in the sitemap) described to them in English.
+    //
+    // The Indonesian words are not newly written here: they are the same strings the live page shows
+    // through t(), out of the one message file, so the two cannot drift. Where a key is missing or
+    // identical on purpose — home.tab and the whole journal, both recorded in IDENTICAL_ON_PURPOSE —
+    // the English literal stands, which is the existing decision rather than an omission.
+    const idTitle = MESSAGES.id[page.idTitleKey] || page.title;
+    const idDescription = MESSAGES.id[page.idDescriptionKey] || page.description;
+
     let html = baseHtml
-      .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(page.title)}</title>`)
+      .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(idTitle)}</title>`)
       .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page));
-    html = replaceMetaContent(html, 'name="description"', page.description);
+    html = replaceMetaContent(html, 'name="description"', idDescription);
     html = replaceMetaContent(html, 'property="og:type"', 'website');
     html = replaceMetaContent(html, 'property="og:site_name"', 'SOLIVAGANT');
-    html = replaceMetaContent(html, 'property="og:title"', page.title);
-    html = replaceMetaContent(html, 'property="og:description"', page.description);
+    html = replaceMetaContent(html, 'property="og:title"', idTitle);
+    html = replaceMetaContent(html, 'property="og:description"', idDescription);
     // These four pages claimed a large-image card while offering no image at all, so a link shared to
     // WhatsApp or Instagram previewed as bare text — on the four pages most likely to be shared.
     const shareImage = siteUrl ? `${siteUrl}${SHARE_IMAGE_PATH}` : SHARE_IMAGE_PATH;
     html = replaceMetaContent(html, 'property="og:image"', shareImage);
     html = replaceMetaContent(html, 'name="twitter:image"', shareImage);
     html = replaceMetaContent(html, 'name="twitter:card"', 'summary_large_image');
-    html = replaceMetaContent(html, 'name="twitter:title"', page.title);
-    html = replaceMetaContent(html, 'name="twitter:description"', page.description);
+    html = replaceMetaContent(html, 'name="twitter:title"', idTitle);
+    html = replaceMetaContent(html, 'name="twitter:description"', idDescription);
     if (canonical) {
       html = replaceMetaContent(html, 'property="og:url"', canonical);
       html = replaceMetaContent(html, 'property="og:locale"', 'id_ID');
@@ -243,7 +267,16 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
     // a second address for the same Indonesian articles. robots.txt keeps crawlers off it.
     if (canonical && page.route !== '/journal') {
       const enCanonical = `${siteUrl}${EN_PREFIX}${page.route}`;
-      let enHtml = setDocumentLanguage(html, 'en');
+      // The twin carries the English copy the page objects above hold — unchanged, byte for byte, from
+      // what this build shipped before the Indonesian page stopped borrowing it.
+      let enHtml = setDocumentLanguage(html, 'en')
+        .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(page.title)}</title>`);
+      const enDescription = MESSAGES.en[page.enDescriptionKey] || page.description;
+      enHtml = replaceMetaContent(enHtml, 'name="description"', enDescription);
+      enHtml = replaceMetaContent(enHtml, 'property="og:title"', page.title);
+      enHtml = replaceMetaContent(enHtml, 'property="og:description"', enDescription);
+      enHtml = replaceMetaContent(enHtml, 'name="twitter:title"', page.title);
+      enHtml = replaceMetaContent(enHtml, 'name="twitter:description"', enDescription);
       enHtml = replaceMetaContent(enHtml, 'property="og:url"', enCanonical);
       enHtml = replaceMetaContent(enHtml, 'property="og:locale"', 'en_US');
       enHtml = upsertCanonical(enHtml, enCanonical);

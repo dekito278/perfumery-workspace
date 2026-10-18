@@ -9,13 +9,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
-import {
-  DEFAULT_SHARE_IMAGE,
-  buildBreadcrumbJsonLd,
-  buildProductJsonLd,
-  getSiteOrigin,
-  toAbsoluteUrl,
-} from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
@@ -42,7 +36,7 @@ import { toast } from 'sonner';
  */
 const ImmersiveProductPage = ({ product, story, mobile = false, stale = false }) => {
   const { addItem } = useCart();
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
@@ -148,7 +142,7 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
   };
 
   const siteOrigin = getSiteOrigin();
-  const canonicalUrl = toAbsoluteUrl(`/catalog/${product.slug}`, siteOrigin);
+  const canonicalUrl = shopCanonicalUrl(`/catalog/${product.slug}`, region, siteOrigin);
   const shareImage = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, siteOrigin);
   const metaDescription = String(hero.subtitle || product.subtitle || product.story || '').trim().slice(0, 155);
   const productJsonLd = buildProductJsonLd(product, { origin: siteOrigin, canonicalUrl });

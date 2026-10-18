@@ -9,6 +9,7 @@ import WhyBuyDirect from '@/components/storefront/WhyBuyDirect.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
+import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 
@@ -67,9 +68,15 @@ const WelcomeContent = ({ mobile, currentUser, signIn }) => {
 
 const WelcomePage = ({ mobile = false }) => {
   const { currentUser, loginWithGoogle } = useAuth();
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   const revealRef = useScrollReveal();
-  const signIn = () => loginWithGoogle(`${window.location.origin}${mobile ? '/mobile/customer' : '/customer'}`).catch(() => {});
+  // The shop prefix has to survive the round trip. Built from the origin alone, an English visitor
+  // who signed in from /en/welcome came back to the INDONESIAN /customer — the language follows the
+  // stored region so the page still read English, but the /en address, its canonical and its
+  // hreflang twin were all left behind.
+  const signIn = () => loginWithGoogle(
+    `${window.location.origin}${shopPrefixForRegion(region)}${mobile ? '/mobile/customer' : '/customer'}`,
+  ).catch(() => {});
 
   const head = (
     <Helmet>

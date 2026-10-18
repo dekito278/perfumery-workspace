@@ -45,7 +45,11 @@ for (const [file, expected] of [
 ]) {
   const source = read('src', 'pages', 'mobile', file);
   assert.ok(source.includes(expected), `${file} must declare its desktop canonical`);
-  assert.match(source, /<link rel="canonical" href=\{toAbsoluteUrl\(/, `${file} must emit an absolute canonical`);
+  // shopCanonicalUrl, not toAbsoluteUrl: the desktop twin of a phone page is /catalog on the Indonesian
+  // shop and /en/catalog on the English one, and toAbsoluteUrl named the Indonesian url on both. The
+  // path is still the one asserted above; only the shop prefix is new. See eachShopSpeaksForItself.
+  assert.match(source, /<link rel="canonical" href=\{shopCanonicalUrl\(/,
+    `${file} must emit an absolute canonical that knows which shop it is in`);
 }
 assert.match(read('src', 'pages', 'mobile', 'MobileProductDetailPage.jsx'),
   /desktopCanonicalPath\(`\/mobile\/products\/\$\{product\.slug\}`\)/,

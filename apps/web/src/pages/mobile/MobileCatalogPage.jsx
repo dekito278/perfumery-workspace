@@ -12,14 +12,14 @@ import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
 import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
-import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
+import { desktopCanonicalPath, shopCanonicalUrl } from '@/utils/seo.js';
 
 
 export const MobileCatalogContent = ({ active = true }) => {
   const [searchParams] = useSearchParams();
   const initialFamily = searchParams.get('category') || searchParams.get('family') || '';
   const catalogProducts = useStorefrontProducts({ active });
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   // Mirror of the desktop catalogue's own loading guard — without this the page told the buyer "No
   // fragrance matches" during the very first fetch, and kept saying it forever if that fetch failed
   // (audit round 7). Named rather than cited by line: the line moved, and a frozen mirror is how the
@@ -69,7 +69,7 @@ export const MobileCatalogContent = ({ active = true }) => {
       {active ? (
         <Helmet>
           <title>{t('catalog.tab')}</title>
-          <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/catalog'))} />
+          <link rel="canonical" href={shopCanonicalUrl(desktopCanonicalPath('/mobile/catalog'), region)} />
           <meta name="description" content={t('catalog.meta')} />
         </Helmet>
       ) : null}
