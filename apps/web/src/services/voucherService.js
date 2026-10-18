@@ -30,7 +30,6 @@ export {
 
 export const VOUCHER_STORAGE_KEY = 'dekito.storefront.vouchers.v1';
 export const APPLIED_VOUCHER_STORAGE_KEY = 'dekito.storefront.appliedVoucher.v1';
-export const VOUCHER_USAGE_STORAGE_KEY = 'dekito.storefront.voucherUsage.v1';
 export const VOUCHER_UPDATED_EVENT = 'dekito:vouchers-updated';
 export const APPLIED_VOUCHER_UPDATED_EVENT = 'dekito:applied-voucher-updated';
 
@@ -96,20 +95,6 @@ const persistCachedVouchers = (vouchers) => {
   return nextVouchers;
 };
 
-const parseStoredUsageRecords = (value) => {
-  try {
-    const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-const readStoredUsageRecords = () => {
-  if (typeof window === 'undefined') return [];
-  return parseStoredUsageRecords(window.localStorage.getItem(VOUCHER_USAGE_STORAGE_KEY));
-};
-
 export const getAppliedVoucherCode = () => {
   if (typeof window === 'undefined') return '';
   return normalizeVoucherCode(window.localStorage.getItem(APPLIED_VOUCHER_STORAGE_KEY));
@@ -147,12 +132,6 @@ export const getVouchers = async () => {
   }
 
   return cacheVouchers(normalizeVoucherRows(data || []));
-};
-
-export const refreshVouchers = async () => {
-  const vouchers = await getVouchers();
-  dispatchVoucherUpdated();
-  return vouchers;
 };
 
 export const migrateLocalVouchersToSupabase = async () => {
@@ -367,15 +346,6 @@ export const getVoucherUsageRecords = async () => {
     usedAt: record.used_at || record.usedAt || new Date().toISOString(),
   }));
 };
-
-export const getLocalVoucherUsageRecords = () => readStoredUsageRecords().map((record) => ({
-  id: record.id || `${normalizeVoucherCode(record.voucherCode || record.code)}-${record.orderNumber || record.orderId || record.order_id || Date.now()}`,
-  voucherCode: normalizeVoucherCode(record.voucherCode || record.code),
-  orderId: String(record.orderId || record.order_id || '').trim(),
-  orderNumber: String(record.orderNumber || record.order_number || '').trim(),
-  amount: Math.max(toAmount(record.amount), 1),
-  usedAt: record.usedAt || record.used_at || new Date().toISOString(),
-})).filter((record) => record.voucherCode && (record.orderId || record.orderNumber));
 
 // Usage is recorded by api/orders/create.js (service role) at creation, never from the browser.
 

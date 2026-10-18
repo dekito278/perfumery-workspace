@@ -18,7 +18,6 @@ import {
   buildMergedRawMaterialData,
   mergeManualReferenceProfilesIntoMaster,
   mergeReferenceLinksIntoMaster,
-  moveRowsByRawMaterialId,
   validateMergeableRawMaterials,
 } from '@/services/rawMaterialsMergeHelpers.js';
 
@@ -103,7 +102,6 @@ const buildNameCandidates = ({ name, notes }) => {
 export const normalizeRawMaterialLookupValue = normalizeLookupValue;
 export const collapseRawMaterialLookupValue = collapseLookupValue;
 export const normalizeRawMaterialCasValue = normalizeCasValue;
-export const normalizeRawMaterialChemicalName = normalizeChemicalSemanticValue;
 export const buildRawMaterialSemanticLookupKey = buildSemanticLookupKey;
 export const rawMaterialHasDilutionMarker = hasDilutionMarker;
 export const buildRawMaterialNameCandidates = buildNameCandidates;
@@ -839,25 +837,6 @@ export const getSolvents = async () => {
   } catch (error) {
     console.error('Error fetching solvents:', error);
     throw new Error('Failed to fetch solvents');
-  }
-};
-
-export const getRawMaterialVendorSuggestions = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('raw_materials')
-      .select('vendor')
-      .not('vendor', 'is', null)
-      .order('vendor', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
-
-    return [...new Set((data || []).map((item) => item.vendor).filter(Boolean))];
-  } catch (error) {
-    console.error('Error fetching vendor suggestions:', error);
-    return [];
   }
 };
 

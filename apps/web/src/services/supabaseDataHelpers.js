@@ -59,20 +59,3 @@ export const fetchAccordsMap = async (ids) => {
   return new Map((data || []).map((row) => [row.id, toAppRecord(row)]));
 };
 
-export const fetchFormulasMap = async (ids) => {
-  const uniqueIds = [...new Set((ids || []).filter(Boolean))];
-  if (!uniqueIds.length) {
-    return new Map();
-  }
-
-  const { data, error } = await supabase
-    .from('formulas')
-    .select('*')
-    .in('id', uniqueIds);
-
-  if (error) {
-    throw new Error(error.message || 'Failed to load formulas');
-  }
-
-  return new Map((data || []).map((row) => [row.id, toAppRecord(row)]));
-};

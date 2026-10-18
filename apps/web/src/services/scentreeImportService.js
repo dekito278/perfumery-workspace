@@ -2,11 +2,6 @@ import supabase from '@/lib/supabaseClient.js';
 
 const API_BASE_URL = '/api';
 
-// These now run as real serverless functions in apps/web/api/imports/, sharing the scrapers with the Vite
-// dev plugin. They were dev-only middleware before, so every import button 404'd in production
-// (audit round 8). The endpoints are admin-only, so the studio session's token rides along.
-export const URL_IMPORT_AVAILABLE = true;
-
 const authHeaders = async () => {
   const { data: { session } = {} } = await supabase.auth.getSession();
   const accessToken = session?.access_token;
@@ -33,15 +28,6 @@ const parseImportResponse = async (response, fallbackMessage) => {
 	}
 
 	return payload;
-};
-
-export const buildPerfumersWorldUrlFromWorkbookCode = (workbookCode) => {
-	const normalizedCode = String(workbookCode || '').trim().toUpperCase();
-	if (!normalizedCode) {
-		return '';
-	}
-
-	return `https://www.perfumersworld.com/view.php?pro_id=${encodeURIComponent(normalizedCode)}`;
 };
 
 // All three sources share one endpoint (api/imports/index.js) — three route files would have put the

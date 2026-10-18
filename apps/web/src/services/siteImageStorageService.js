@@ -209,10 +209,3 @@ export const listSiteImageFingerprints = async () => {
   return fingerprints;
 };
 
-/**
- * Get a single site image URL by key, or null if not uploaded.
- */
-export const getSiteImageUrl = async (key) => {
-  const map = await listSiteImages();
-  return map.get(key) || null;
-};

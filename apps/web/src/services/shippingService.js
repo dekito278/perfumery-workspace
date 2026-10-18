@@ -5,8 +5,6 @@ import {
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '@/utils/itemWeight.js';
 import { weighFreeVialLines } from '@/utils/freeVial.js';
 
-export const SHIPPING_STORAGE_KEY = 'solivagant.checkout.shipping.v1';
-
 // A body that is not JSON is a BROKEN service, never an empty result.
 //
 // `await response.json().catch(() => ({}))` turned an HTML page into `{}`, and `{}` has no destinations

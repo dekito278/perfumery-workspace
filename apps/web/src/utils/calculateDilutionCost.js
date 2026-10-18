@@ -68,34 +68,3 @@ export const formatDilutionInfo = (dilutionPercentage) => {
   return `${percentage}% active + ${solventPercentage}% solvent`;
 };
 
-/**
- * Calculate total composition breakdown for diluted materials
- * @param {Array} items - Array of items with usedAmount, dilutionPercentage
- * @returns {Object} { totalActive, totalSolvent, totalAmount }
- */
-export const calculateTotalDilutionBreakdown = (items) => {
-  if (!Array.isArray(items)) {
-    return { totalActive: 0, totalSolvent: 0, totalAmount: 0 };
-  }
-
-  let totalActive = 0;
-  let totalSolvent = 0;
-
-  items.forEach(item => {
-    if (item.is_diluted && item.dilution_percentage) {
-      const breakdown = calculateDilutionCost(
-        item.usedAmount || item.gram_amount || 0,
-        0, // price not needed for composition
-        item.dilution_percentage
-      );
-      totalActive += breakdown.activeAmount;
-      totalSolvent += breakdown.solventAmount;
-    }
-  });
-
-  return {
-    totalActive: Math.round(totalActive * 1000) / 1000,
-    totalSolvent: Math.round(totalSolvent * 1000) / 1000,
-    totalAmount: Math.round((totalActive + totalSolvent) * 1000) / 1000
-  };
-};

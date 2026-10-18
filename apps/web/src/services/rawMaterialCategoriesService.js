@@ -112,46 +112,6 @@ export const getRawMaterialCategories = async () => {
     });
 };
 
-export const createRawMaterialCategory = async (payload) => {
-  const userId = await getCurrentUserId();
-
-  const { data, error } = await supabase
-    .from('raw_material_categories')
-    .insert({
-      user_id: userId,
-      name: payload.name,
-      color: payload.color,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating raw material category:', error);
-    throw new Error(error.message || 'Failed to create category');
-  }
-
-  return mapCategory(data);
-};
-
-export const updateRawMaterialCategory = async (id, payload) => {
-  const { data, error } = await supabase
-    .from('raw_material_categories')
-    .update({
-      name: payload.name,
-      color: payload.color,
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating raw material category:', error);
-    throw new Error(error.message || 'Failed to update category');
-  }
-
-  return mapCategory(data);
-};
-
 export const deleteRawMaterialCategory = async (id) => {
   const { error } = await supabase
     .from('raw_material_categories')
