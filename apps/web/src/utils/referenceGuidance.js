@@ -1,6 +1,16 @@
 import { resolveCanonicalReferenceProfile } from '@/utils/canonicalReferenceProfile.js';
 
+// NOT RECORDED IS NOT ZERO. Number(null) is 0 and Number('') is 0, so every field nobody had filled in
+// came out of here as a measurement of zero — and one of them decides where a material sits in the
+// pyramid. deriveTopMiddleBaseTendency puts anything at or under TOP_LIFE_HOURS_CEILING (10) hours at
+// the TOP, so a material with no recorded longevity was read as "gone within zero hours" and declared
+// the most volatile thing in the formula. Measured on production: all 27 materials that have no
+// reference profile AND no life_hours were answered 'top' — Cedarwood texas, sandalwood kupang,
+// malinau resin oud 50%, BENZOIN F-TEC, Vertofix Coeur. Base materials, every one.
+//
+// Same defect class as ifra_limit_percent = 0 meaning "not recorded yet", one column over.
 const normalizeNumber = (value) => {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
 };
