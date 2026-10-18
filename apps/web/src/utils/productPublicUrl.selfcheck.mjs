@@ -50,8 +50,11 @@ assert.doesNotMatch(helper.replace(/mobile \? `\/mobile\/products\/\$\{slug\}`/,
   + 'pages are neither prerendered nor indexed');
 
 // The page's own canonical, for the hydrated case.
-assert.match(read('src', 'pages', 'PublicProductDetailPage.jsx'), /toAbsoluteUrl\(`\/catalog\/\$\{product\.slug\}`/,
-  'the live page must declare the same canonical the prerendered file does');
+// The PATH is what has to match the prerendered file; the shop prefix in front of it is what
+// shopCanonicalUrl adds, and the prerendered English twin lives at /en/catalog/<slug>.
+assert.match(read('src', 'pages', 'PublicProductDetailPage.jsx'),
+  /shopCanonicalUrl\(`\/catalog\/\$\{product\.slug\}`, region/,
+  'the live page must declare the same canonical the prerendered file does, for the shop it is in');
 
 // 5. The old URL must heal rather than linger as an indexable duplicate with no canonical of its own —
 // in BOTH shops. Only the Indonesian half was redirected, so /products/<slug> healed to a prerendered

@@ -38,7 +38,10 @@ assert.match(page, /<meta name="robots" content="noindex,follow" \/>/, 'a door f
 // therefore check the MESSAGES, not the JSX — a claim moved into a data file is a claim that escaped
 // its guard unless the guard follows it.
 assert.match(MESSAGES.id['welcome.signIn'], /harga member/, 'the Indonesian way in says what it is for');
-assert.match(page, /loginWithGoogle\(`\$\{window\.location\.origin\}\$\{mobile \? '\/mobile\/customer' : '\/customer'\}`\)/, 'signing in lands on the account, on the right surface');
+// On the right surface AND in the right shop. Built from the origin alone, an English visitor who
+// signed in from /en/welcome came back to the Indonesian /customer, leaving the /en address behind.
+assert.match(page, /loginWithGoogle\(\s*`\$\{window\.location\.origin\}\$\{shopPrefixForRegion\(region\)\}\$\{mobile \? '\/mobile\/customer' : '\/customer'\}`/,
+  'signing in lands on the account, on the right surface, in the shop the visitor came from');
 assert.match(page, /currentUser \? \(/, 'a buyer already signed in is not asked to sign in again');
 assert.match(page, /<WhyBuyDirect mobile \/>/, 'the reasons come from the one shared source on the phone');
 assert.match(page, /<WhyBuyDirect \/>/, 'and on desktop');

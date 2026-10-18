@@ -19,13 +19,13 @@ import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/util
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-import { buildBreadcrumbJsonLd, getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
+import { buildBreadcrumbJsonLd, getSiteOrigin, shopCanonicalUrl } from '@/utils/seo.js';
 import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
 
 const CatalogPage = () => {
   const fetchedProducts = useStorefrontProducts();
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   // No fallback to the bundled seed data. featuredProducts is six invented perfumes — Santal Morn,
   // Petal Smoke and so on — that this shop has never sold. When the catalogue query came back empty, a
   // customer was shown all six with prices, and clicking one landed on "Halaman tidak ditemukan". An
@@ -104,7 +104,7 @@ const CatalogPage = () => {
   }, [initialFamily, catalogCategories]);
 
   const siteOrigin = getSiteOrigin();
-  const catalogCanonical = toAbsoluteUrl('/catalog', siteOrigin);
+  const catalogCanonical = shopCanonicalUrl('/catalog', region, siteOrigin);
   const catalogBreadcrumb = buildBreadcrumbJsonLd([
     { name: t('pdp.home'), path: '/home' },
     { name: t('pdp.collection'), path: '/catalog' },

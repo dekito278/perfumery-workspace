@@ -27,6 +27,26 @@ export const toAbsoluteUrl = (value, origin = getSiteOrigin()) => {
   return origin ? `${origin}${path}` : path;
 };
 
+/**
+ * The canonical for the shop the visitor is ACTUALLY in.
+ *
+ * Every runtime canonical was built as toAbsoluteUrl('/catalog') — the Indonesian path, on both shops.
+ * So /en/catalog told a crawler its canonical home was /catalog: the English shop asking to be dropped
+ * in favour of the Indonesian one. The prerendered /en/*\/index.html files carry the right canonical,
+ * which is why this never showed up in the built output; it is the tag React writes afterwards that is
+ * wrong, and Google runs the JavaScript.
+ *
+ * The journal is the one page that SHOULD canonical across shops: journal_posts has no English columns,
+ * so /en/journal would be a second address for the same Indonesian articles, and robots.txt keeps
+ * crawlers off it. Those pages pass region 'id' on purpose.
+ */
+export const shopCanonicalUrl = (path, region, origin = getSiteOrigin()) => {
+  const bare = String(path || '').trim();
+  if (!bare) return '';
+  const prefix = region === 'en' ? '/en' : '';
+  return toAbsoluteUrl(`${prefix}${bare.startsWith('/') ? bare : `/${bare}`}`, origin);
+};
+
 // The mobile storefront is a SECOND set of URLs for the same shop. RootRedirect sends every phone to
 // /mobile/dashboard, and Google crawls mobile-first — so the crawler lands on the duplicate, not on the
 // prerendered page the sitemap advertises. Measured on the live site: /mobile/dashboard, /mobile/catalog

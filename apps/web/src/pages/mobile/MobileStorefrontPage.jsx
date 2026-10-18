@@ -26,7 +26,7 @@ import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } f
 // anything heavier than before while a 1x phone drops to 480.
 const HERO_WIDTHS = [480, 720, 900];
 const STATEMENT_WIDTHS = [480, 600, 750];
-import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
+import { desktopCanonicalPath, shopCanonicalUrl } from '@/utils/seo.js';
 
 // The notes come from the desktop home page's mood list, shortened. Without them each card was a flat
 // pastel square holding one italic word, which reads as unfinished rather than minimal (UX backlog U-11).
@@ -44,7 +44,7 @@ const getArticleExcerpt = (article) =>
 
 export const MobileStorefrontContent = ({ active = true }) => {
   const navigate = useNavigate();
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   const catalogProducts = useStorefrontProducts({ active });
   const { images: siteImages, loading: siteImagesLoading } = useSiteImages();
   const [articles, setArticles] = useState([]);
@@ -71,7 +71,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
       {active ? (
         <Helmet>
           <title>{t('home.tabMobile')}</title>
-          <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/dashboard'))} />
+          <link rel="canonical" href={shopCanonicalUrl(desktopCanonicalPath('/mobile/dashboard'), region)} />
           <meta name="description" content={t('home.metaMobile')} />
         </Helmet>
       ) : null}

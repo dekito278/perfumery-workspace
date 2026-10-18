@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
+import { brandFacts } from '@/data/brandProfile.js';
+import { shopCanonicalUrl } from '@/utils/seo.js';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -8,7 +10,6 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-import { BRAND_PROFILE, brandFacts } from '@/data/brandProfile.js';
 
 // The page a stranger is sent to when they ask "who are you".
 //
@@ -75,13 +76,13 @@ const AboutContent = ({ mobile }) => {
 };
 
 const AboutPage = ({ mobile = false }) => {
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   const head = (
     <Helmet>
       <title>{t('about.tab')}</title>
       <meta name="description" content={t('about.meta')} />
       {/* Indexable on purpose, unlike /welcome: this is the page a brand is meant to be found by. */}
-      <link rel="canonical" href={`${BRAND_PROFILE.website}/about`} />
+      <link rel="canonical" href={shopCanonicalUrl('/about', region)} />
     </Helmet>
   );
 

@@ -842,7 +842,7 @@ const SelfServiceActions = ({
 };
 
 const CustomerPortalPage = () => {
-  const { t, isInternational } = useTranslate();
+  const { t, isInternational, region } = useTranslate();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode } = useAuth();
@@ -965,7 +965,10 @@ const CustomerPortalPage = () => {
 
   const signInGoogle = async () => {
     try {
-      await loginWithGoogle(`${window.location.origin}${isMobileRoute ? '/mobile/customer' : '/customer'}`);
+      // With the shop prefix, or an English visitor comes back to the Indonesian address.
+      await loginWithGoogle(
+        `${window.location.origin}${shopPrefixForRegion(region)}${isMobileRoute ? '/mobile/customer' : '/customer'}`,
+      );
     } catch (error) {
       toast.error(publicErrorMessage(error, t('cust.googleFail')));
     }
