@@ -6,6 +6,7 @@ import BackToTop from '@/components/storefront/BackToTop.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { storefrontCategories } from '@/data/storefront.js';
+import PriceChangeNotice from '@/components/storefront/PriceChangeNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
 // `titleKey`/`labelKey` go through the message file; a category name is product data, not copy, so it
@@ -90,6 +91,7 @@ const PublicHeader = () => {
 
   return (
     <div ref={menuRef} className={`editorial-header-wrap${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`}>
+      <PriceChangeNotice />
       <header className="editorial-header">
         <Link to="/home" className="editorial-wordmark" aria-label={t('nav.wordmarkAria')}>
           SOLIVAGANT

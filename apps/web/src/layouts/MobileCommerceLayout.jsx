@@ -10,6 +10,7 @@ import { useMobileKeyboardAvoidance } from '@/hooks/useMobileKeyboardAvoidance.j
 import { useMobileKeyboardState } from '@/hooks/useMobileKeyboardState.js';
 import { useMobileFormEnhancements } from '@/hooks/useMobileFormEnhancements.js';
 import { useMobileTouchFeedback } from '@/hooks/useMobileTouchFeedback.js';
+import PriceChangeNotice from '@/components/storefront/PriceChangeNotice.jsx';
 import { cn } from '@/lib/utils.js';
 
 // SIX TABS, BOTH SHOPS. The cart tab was dropped in the English shop while that shop had no cart and
@@ -88,6 +89,7 @@ const MobileCommerceLayout = ({ children }) => {
           </button>
           <RegionSwitch />
         </header>
+        <PriceChangeNotice className="mx-4 mt-3" />
         {children}
       </div>
       {/* The owner's way back to Studio — for the OWNER. Gated on isAuthenticated, it appeared for every
