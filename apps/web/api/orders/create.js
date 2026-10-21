@@ -217,10 +217,27 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
     // and charged another is the worst version of two implementations disagreeing. `overseas` is false:
     // overseas sales are quoted by hand and entered in Studio, they do not come through this endpoint.
     const tierRows = await sbSelectOptional(
-      `storefront_product_prices?product_id=eq.${encodeURIComponent(product.id)}&select=variant_id,tier,price_number`,
+      // `select=*` on purpose, not a column list. The scheduled-price column (effective_at) arrives with
+      // a migration, and PostgREST answers 400 for a column it does not have yet — naming it here would
+      // have broken order creation on any deploy that landed before the migration ran. A star over at
+      // most three rows per product costs nothing and cannot be out of step with the schema.
+      `storefront_product_prices?product_id=eq.${encodeURIComponent(product.id)}&select=*`,
     );
-    if (tierRows.length) {
-      const index = indexTierPrices(tierRows.map((row) => ({ ...row, slug })));
+    // And the SCHEDULED prices, which live in their own table because the one above has
+    // unique (product_id, variant_id, tier) and cannot hold today's member price and November's at the
+    // same time. sbSelectOptional swallows a missing table, so this endpoint keeps working before the
+    // migration runs — it simply finds nothing scheduled.
+    const scheduledRows = await sbSelectOptional(
+      `storefront_price_schedule?product_id=eq.${encodeURIComponent(product.id)}&select=*`,
+    );
+    if (tierRows.length || scheduledRows.length) {
+      // The SERVER's clock decides when a price changes, never the buyer's device. indexTierPrices drops
+      // rows whose effective_at has not arrived and, among those in force, keeps the latest — without
+      // that second rule the winner was whichever row this query happened to return last.
+      const index = indexTierPrices(
+        [...tierRows, ...scheduledRows].map((row) => ({ ...row, slug })),
+        { asOf: Date.now() },
+      );
       unitPrice = resolveTierPrice({
         retailPrice: unitPrice,
         tierPrices: tierPricesForLine(index, slug, variant?.id || ''),
