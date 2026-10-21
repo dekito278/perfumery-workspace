@@ -14,6 +14,11 @@ import { carryCatalogFlags } from './catalogArrayFlags.js';
  * Returns the array it was given, by reference, when nothing applies. Before the migration runs that
  * is always, so the storefront behaves exactly as it does today — no re-render, no near-miss copy.
  */
+const toPrice = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
 export const applyTierPrices = (products = [], tier = 'retail', index = {}, formatPrice = String) => {
   if (!products.length || !index || !Object.keys(index).length) return products;
 
@@ -27,11 +32,20 @@ export const applyTierPrices = (products = [], tier = 'retail', index = {}, form
       overseas: false,
     });
 
+    // A SCHEDULED retail price moves the BASELINE, it is not something to strike through. Once the
+    // 12 Nov 2026 row is in force, retail is 479.000 — so a retail visitor must see 479.000 as the
+    // price, with no "was 359.000" beside it. Recording the variant's old figure as retailPriceNumber
+    // would have dressed a price rise as a discount, and the member nudge reads that same field.
+    const baselineFor = (variant) => (
+      toPrice(tierPricesForLine(index, product.slug, variant?.id || '').retail)
+      ?? Number(variant?.priceNumber || 0)
+    );
+
     const originalVariants = Array.isArray(product.variants) ? product.variants : [];
     const variants = originalVariants.map((variant) => {
-      const retailPrice = Number(variant.priceNumber || 0);
+      const retailPrice = baselineFor(variant);
       const price = priceFor(retailPrice, variant.id || '');
-      if (price === retailPrice) return variant;
+      if (price === retailPrice && retailPrice === Number(variant.priceNumber || 0)) return variant;
       return { ...variant, priceNumber: price, price: formatPrice(price), retailPriceNumber: retailPrice };
     });
 
