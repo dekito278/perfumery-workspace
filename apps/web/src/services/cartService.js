@@ -13,15 +13,32 @@ export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
  */
 export const CART_ITEM_ADDED_EVENT = 'dekito:cart-item-added';
 
+// WHERE THE MONEY GOES, from the environment first.
+//
+// Dekito's brief, §0: "Data sensitif (nomor rekening, kontak) disimpan di config/env, bukan hard-coded
+// di template." These two blocks predate that instruction and still carry the numbers as literals —
+// they are kept as a FALLBACK rather than removed, because an unset variable would leave a live payment
+// screen with no account number on it, which is worse than a number in a repository. Once the VITE_PAY_*
+// variables are set in Vercel the literals come out, and the same names feed /pay/<token>, so there is
+// one set of variables rather than two.
+const payEnv = (name, fallback) => {
+  try {
+    const value = String(import.meta.env?.[name] ?? '').trim();
+    return value || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export const MANUAL_TRANSFER_PAYMENT = {
   id: 'manual_transfer_bca',
   provider: 'manual_transfer_bca',
   label: 'Transfer manual BCA',
   labelKey: 'paymethod.manual',
   shortLabel: 'BCA Transfer',
-  bankName: 'BCA',
-  accountNumber: '7401775441',
-  accountName: 'Ade Rizki Wiranto',
+  bankName: payEnv('VITE_PAY_BANK_NAME', 'BCA'),
+  accountNumber: payEnv('VITE_PAY_BANK_ACCOUNT', '7401775441'),
+  accountName: payEnv('VITE_PAY_BANK_HOLDER', 'Ade Rizki Wiranto'),
   description: 'Transfer sesuai total bayar, lalu wajib upload bukti transfer.',
   descriptionKey: 'paymethod.manualBody',
 };
@@ -42,10 +59,16 @@ export const INTERNATIONAL_TRANSFER_PAYMENT = {
   id: 'manual_transfer_usd',
   provider: 'manual_transfer_usd',
   label: 'International transfer (USD)',
-  bankName: 'PT Bank BTPN Tbk (Jenius)',
-  swift: 'SUNIIDJA',
-  accountNumber: '90022310398',
-  accountName: 'Ade Rizki Wiranto',
+  // BTPN was renamed PT Bank SMBC Indonesia Tbk. The old name sat here on a block an overseas buyer
+  // copies into a wire form, and a wire naming a bank that no longer has that name is a transfer that
+  // gets queried or returned — which is exactly the stall this shop has been losing orders to.
+  bankName: payEnv('VITE_PAY_WIRE_BANK', 'PT Bank SMBC Indonesia Tbk (Jenius)'),
+  swift: payEnv('VITE_PAY_WIRE_BIC', 'SUNIIDJA'),
+  accountNumber: payEnv('VITE_PAY_WIRE_ACCOUNT', '90022310398'),
+  accountName: payEnv('VITE_PAY_BANK_HOLDER', 'Ade Rizki Wiranto'),
+  // Wire forms ask for the bank's address and this block never carried one, so it was typed by hand or
+  // left blank. No fallback: an address invented here would be worse than none.
+  bankAddress: payEnv('VITE_PAY_WIRE_ADDRESS', ''),
   currency: 'USD',
 };
 
