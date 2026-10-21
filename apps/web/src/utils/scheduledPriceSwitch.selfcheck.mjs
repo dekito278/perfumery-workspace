@@ -33,7 +33,12 @@ const rows = () => [
   { slug: 'la-tulipe', variant_id: '30-ml', tier: 'retail', price_number: 479000, effective_at: SWITCH },
   { slug: 'la-tulipe', variant_id: '30-ml', tier: 'member', price_number: 429000, effective_at: SWITCH },
 ];
-const pricesAt = (asOf) => indexTierPrices(rows(), { asOf })['la-tulipe']['30-ml'];
+// POSTGREST DOES NOT PROMISE AN ORDER, so the fixture is read in both directions. With the scheduled
+// row last, "whichever row came back last" happens to give the right answer and a missing latest-wins
+// rule looks fine — the first version of this guard passed a sabotage that removed it. Reversed, the
+// undated member row arrives last and would win, putting the OLD member price back after the switch.
+const reversed = () => [...rows()].reverse();
+const pricesAt = (asOf, order = rows) => indexTierPrices(order(), { asOf })['la-tulipe']['30-ml'];
 
 // --- 1. The boundary, to the second ------------------------------------------------------------------
 const before = pricesAt(BEFORE);
@@ -48,6 +53,18 @@ assert.equal(resolveTierPrice({ retailPrice: 359000, tierPrices: after, tier: 'r
   'at 00:00:00 on 12 Nov retail is the new price, without the product row being rewritten');
 assert.equal(resolveTierPrice({ retailPrice: 359000, tierPrices: after, tier: 'member' }), 429000,
   'and the member price is the new one, not the old row that is still in the table');
+
+// --- 1b. The same answer whichever order the rows arrive in -------------------------------------------
+for (const [label, order] of [['as queried', rows], ['reversed', reversed]]) {
+  const prices = pricesAt(SWITCH, order);
+  assert.equal(resolveTierPrice({ retailPrice: 359000, tierPrices: prices, tier: 'member' }), 429000,
+    `${label}: the row in force wins by its date, not by its position in the result`);
+  assert.equal(resolveTierPrice({ retailPrice: 359000, tierPrices: prices, tier: 'retail' }), 479000,
+    `${label}: and so does the scheduled retail`);
+  const earlier = pricesAt(BEFORE, order);
+  assert.equal(resolveTierPrice({ retailPrice: 359000, tierPrices: earlier, tier: 'member' }), 323000,
+    `${label}: before the switch the undated row is the only one there is`);
+}
 
 // --- 2. The international price does not move ---------------------------------------------------------
 for (const [label, prices] of [['before', before], ['after', after]]) {
