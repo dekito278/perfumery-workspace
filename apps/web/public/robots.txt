@@ -7,6 +7,8 @@ Disallow: /checkout
 Disallow: /payment
 Disallow: /customer
 Disallow: /cart
+# One order's payment instructions, reached only by a 160-bit token. Nothing links here.
+Disallow: /pay/
 
 # The whole mobile tree is private BY DEFAULT. Every desktop path above has a /mobile twin that these
 # rules did not match — robots.txt compares from the start of the path, so "Disallow: /cart" never
@@ -35,6 +37,7 @@ Disallow: /en/checkout
 Disallow: /en/payment
 Disallow: /en/customer
 Disallow: /en/cart
+Disallow: /en/pay/
 Disallow: /en/mobile/
 Allow: /en/mobile/dashboard
 Allow: /en/mobile/home
