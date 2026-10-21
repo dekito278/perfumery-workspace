@@ -4,31 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  ArrowLeft,
-  AlertCircle,
-  Clipboard,
-  Copy,
-  CreditCard,
-  Download,
-  ExternalLink,
-  FileCheck2,
-  FileText,
-  History,
-  Loader2,
-  Mail,
-  MessageCircle,
-  NotebookPen,
-  PackageCheck,
-  Printer,
-  RefreshCw,
-  Save,
-  Send,
-  ShieldCheck,
-  Sparkles,
-  Truck,
-  UserRound,
-} from 'lucide-react';
+import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, FileCheck2, FileText, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, Printer, ReceiptText, RefreshCw, Save, Send, ShieldCheck, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -567,6 +543,42 @@ const OrderDetailPage = () => {
     toast.success('Resi PDF siap');
   };
 
+  // The commercial invoice. The number comes from the database and is written onto the order, so
+  // printing twice prints the same invoice rather than burning the next number in the series.
+  const exportInvoice = async () => {
+    try {
+      const { allocateInvoiceNumber } = await import('@/services/invoiceNumberService.js');
+      const { buildInvoicePdf } = await import('@/utils/invoicePdf.js');
+      const { getStorefrontWhatsAppNumber } = await import('@/services/cartService.js');
+      const { usdPriceFor } = await import('@/utils/usdPrice.js');
+      const invoiceNumber = await allocateInvoiceNumber(orderKey, order?.invoiceNumber || order?.invoice_number || '');
+      const productLines = (order?.items || [])
+        .filter((item) => item.type !== 'voucher_discount' && !/vial/i.test(String(item.name || '')))
+        .map((item) => ({ quantity: Number(item.quantity) || 1, unitUsd: usdPriceFor(Number(item.priceNumber) || 0) }));
+      const doc = buildInvoicePdf({
+        order: {
+          invoiceNumber,
+          orderNumber: order?.orderNumber || '',
+          customerName: order?.customerName || '',
+          deliveryAddress: order?.deliveryAddress || '',
+          contact: order?.contact || '',
+          paymentStatus: order?.paymentStatus || 'unpaid',
+          paymentMethod: order?.paymentProvider || '',
+          paidAt: order?.paidAt || '',
+          paymentReference: order?.paymentReference || '',
+        },
+        lines: productLines,
+        shipping: { usd: usdPriceFor(Number(order?.shippingFee) || 0) },
+        whatsapp: getStorefrontWhatsAppNumber(),
+      });
+      doc.save(`${invoiceNumber}.pdf`);
+      await refreshOrder();
+      toast.success(`Invoice ${invoiceNumber} siap`);
+    } catch (error) {
+      toast.error(error?.message || 'Gagal membuat invoice');
+    }
+  };
+
   const openWhatsApp = (message) => {
     window.open(getNotificationHandoffUrl(order, message), '_blank', 'noopener,noreferrer');
   };
@@ -651,6 +663,12 @@ const OrderDetailPage = () => {
             <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
               <Download className="h-4 w-4" />
               Resi PDF
+            </Button>
+            {/* Available whatever the payment status: an UNPAID invoice is what a buyer uploads to their
+                bank to make the transfer, which is the whole reason the status line exists on it. */}
+            <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={exportInvoice}>
+              <ReceiptText className="h-4 w-4" />
+              Invoice PDF
             </Button>
           </div>
         </div>
