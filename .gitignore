@@ -36,3 +36,9 @@ Thumbs.db
 
 # DOKU keys — never commit
 *.pem
+
+# Temporary shims the selfchecks write to run a module whose '@/' imports plain node cannot resolve
+# (shippingLabelLayout, invoiceSaysNothingCustomsStops, oneShippingPolicy). They carry a pid suffix and
+# are deleted in a finally block — but a crash between writing and deleting leaves one behind, and two
+# were caught on their way into a commit.
+apps/web/src/utils/.*.selfcheck.*.mjs

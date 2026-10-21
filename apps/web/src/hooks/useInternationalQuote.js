@@ -5,6 +5,7 @@ import { useTierPrices, useStorefrontProducts } from '@/hooks/useStorefrontProdu
 import { usdPriceFor } from '@/utils/usdPrice.js';
 import { countryNameFor, DESTINATION_OTHER, DESTINATION_PICKER_ID } from '@/utils/shippingDestination.js';
 import { quoteInternationalShippingPrice } from '@/utils/internationalShippingPrice.js';
+import { getExportShippingPolicy } from '@/services/exportShippingPolicyService.js';
 import { internationalPriceFor } from '@/utils/shippingRegion.js';
 import { tierPricesForLine } from '@/utils/tierPrice.js';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
@@ -54,7 +55,9 @@ export const internationalQuoteFor = ({
   // Nothing picked is its own case and must not be confused with a destination we cannot serve: the
   // first is a question the buyer has not answered, the second is an answer we do not have.
   const quote = country && onTheCard
-    ? quoteInternationalShippingPrice({ countryCode: country, bottles })
+    // The same two policy numbers the Studio quote reads, out of the one cache, so a figure sent by
+    // hand on WhatsApp cannot disagree with the cart.
+    ? quoteInternationalShippingPrice({ countryCode: country, bottles, policy: getExportShippingPolicy() })
     : null;
   const shippingUsd = quote?.usd ?? null;
   const shippingCostUsd = quote?.costUsd ?? null;

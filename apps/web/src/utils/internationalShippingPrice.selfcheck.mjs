@@ -37,6 +37,7 @@ const module = await import(`data:text/javascript;base64,${Buffer.from(`
 ${inline('data', 'exportZones.js')}
 ${inline('data', 'exportRates.js')}
 ${inline('data', 'internationalShippingRates.js')}
+${inline('utils', 'exportShippingPolicy.js')}
 ${inline('utils', 'internationalShippingPrice.js')}
 ${inline('utils', 'exportShipping.js')}
 export {
