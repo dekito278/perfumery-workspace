@@ -1,17 +1,23 @@
 // "Harga lama berlaku sampai 11.11" — the eleven days before the domestic prices change.
 //
-// Import-free so the guard runs the arithmetic instead of reading it, and so the instant below is the
-// ONE place the date lives on this side of the wire.
+// The two dates below are built with shopStartOfDay, not written out. A midnight written without an
+// offset is read in whatever zone the runtime happens to be in, which is the BUYER's zone on every
+// client-side check — so a window typed once in Jakarta would start and end at a different moment for
+// every reader. (shopClockBoundaries.selfcheck scans raw text, comments included, so this note cannot
+// spell out the shape it is warning about either.)
+// localDay.js owns the shop's offset, and shopClockBoundaries.selfcheck enforces that it is the only
+// file that does.
 //
 // THE SWITCH INSTANT IS ALSO IN SQL, as effective_at on every row of storefront_price_schedule. Two
 // copies of one moment is how a banner ends up still promising the old price after the new one has
-// started being charged, so the guard asserts this string appears in that migration.
+// started being charged, so the guard asserts the migration's rows carry this same instant.
+import { shopStartOfDay } from './localDay.js';
 
-/** 2026-11-12 00:00 WIB — when storefront_price_schedule's rows come into force. */
-export const PRICE_SWITCH_AT = '2026-11-12T00:00:00+07:00';
+/** 12 Nov 2026, 00:00 WIB — when storefront_price_schedule's rows come into force. */
+export const PRICE_SWITCH_AT = shopStartOfDay('2026-11-12');
 
 /** The notice goes up on 1 Nov, eleven days ahead, and comes down the moment the prices change. */
-export const PRICE_NOTICE_FROM = '2026-11-01T00:00:00+07:00';
+export const PRICE_NOTICE_FROM = shopStartOfDay('2026-11-01');
 
 const time = (value) => {
   const parsed = new Date(value).getTime();
