@@ -647,6 +647,10 @@ const toOrderDatabasePayload = (order) => ({
   payment_status: order.paymentStatus || 'unpaid',
   payment_reference: order.paymentReference || null,
   payment_url: order.paymentUrl || null,
+  // The /pay/<token> secret. Listed HERE because this mapper names its columns by hand: a field that is
+  // set on the order object and missing from this list is written nowhere, silently, and that has
+  // happened in this file before (compareAtPriceNumber, intensity, the tier price fields).
+  payment_token: order.paymentToken || null,
   payment_expires_at: order.paymentExpiresAt || null,
   payment_session_id: order.paymentSessionId || null,
   payment_response: order.paymentResponse && typeof order.paymentResponse === 'object' ? order.paymentResponse : null,

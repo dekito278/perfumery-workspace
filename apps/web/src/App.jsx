@@ -84,6 +84,7 @@ const lazyRoute = (loader) => lazy(async () => {
 });
 
 const PaymentPage = lazyRoute(() => import('@/pages/PaymentPage.jsx'));
+const PaymentInstructionsPage = lazyRoute(() => import('@/pages/PaymentInstructionsPage.jsx'));
 const CustomerPortalPage = lazyRoute(() => import('@/pages/CustomerPortalPage.jsx'));
 const WelcomePage = lazyRoute(() => import('@/pages/WelcomePage.jsx'));
 const CustomerInvoicePage = lazyRoute(() => import('@/pages/CustomerInvoicePage.jsx'));
@@ -533,6 +534,9 @@ function AppRoutes() {
         <Route path="/cart" element={<ByShop domestic={<CartPage />} international={<InternationalCartPage />} />} />
         <Route path="/checkout" element={<DomesticOnly><CheckoutPage /></DomesticOnly>} />
         <Route path="/payment" element={<PaymentPage />} />
+        {/* How to pay ONE order, reached only by its token. Not in the nav, not in the sitemap, and
+            disallowed in robots.txt for all three trees — the token is the whole address. */}
+        <Route path="/pay/:token" element={<PaymentInstructionsPage />} />
         {/* The greeting card in every parcel points here. */}
         <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/customer" element={<CustomerPortalPage />} />

@@ -35,6 +35,9 @@ export const buildExportOrderData = ({
   deliveryAddress = '',
   notes = '',
   formatMoney = String,
+  // Injected so this file stays pure and the guard can feed a known value. The order carries the secret
+  // behind /pay/<token>; see paymentLinkToken.js for why the order NUMBER cannot be that secret.
+  makeToken = () => '',
 } = {}) => {
   const priced = lines
     .map((line) => ({ ...line, quantity: round(line.quantity) }))
@@ -80,6 +83,9 @@ export const buildExportOrderData = ({
     reason: '',
     warnings: domesticPriced,
     orderData: {
+      // The secret behind /pay/<token>, minted when the order is written. One per order, never derived
+      // from the order number, which is printed on the invoice.
+      paymentToken: makeToken() || '',
       customerName: customerName.trim(),
       contact: contact.trim(),
       deliveryAddress: deliveryAddress.trim(),

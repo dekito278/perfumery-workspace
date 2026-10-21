@@ -52,6 +52,11 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'price.memberIs',   // "Member Rp 675.000" — "member" is the loanword in both
   'nav.bespokeShort', // "Bespoke" is the word used in both, and the tab has room for one
   'nav.info',         // same word, same meaning
+  'pay.link.wuTitle',   // "Western Union" is the company's name, not a description of it
+  'pay.link.wireTitle', // "Wire USD (SWIFT)" — SWIFT is the network's name and "wire" is the word the
+                        // bank form itself prints, in both languages
+  'pay.link.fieldBank', // the label above a bank name, one word, the same one here
+  'pay.link.fieldBic',  // an ISO code's name
   'why.atelier.cta',  // "Bespoke ritual" is the name of the service, not a description of it
   'region.enTitle',   // the international option is named in English on BOTH sides on purpose: it is
                       // what an Indonesian reader is switching TO, so translating it hides the switch
@@ -323,6 +328,10 @@ for (const file of [
 
 const PAGES_FULLY_TRANSLATED = [
   ['pages', 'PaymentPage.jsx'], ['pages', 'PublicTrackingPage.jsx'], ['pages', 'NotFoundPage.jsx'],
+  // /pay/<token>: how to pay ONE order. Mostly read by an overseas buyer — the Wise, Western Union and
+  // SWIFT routes are theirs — but a domestic order settled by manual transfer can be sent the same link,
+  // so both halves are real translations rather than one language with a note.
+  ['pages', 'PaymentInstructionsPage.jsx'],
   // One component behind /about and /mobile/about, in both shops. The English half is the one a
   // fragrance-database editor reads, so an untranslated line here reaches exactly the reader it must not.
   ['pages', 'AboutPage.jsx'],

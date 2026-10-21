@@ -7838,3 +7838,79 @@ main :is(a, figure, picture, div, span):has(> img) {
   letter-spacing: 0.04em;
   text-align: center;
 }
+
+/* /pay/<token> — one order's payment instructions. Plain blocks: a buyer reading this is about to type
+   an account number into a banking app, so nothing here competes for attention with the numbers. */
+.pay-link__block {
+  margin: 24px 0 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(26, 24, 20, 0.12);
+  border-radius: 12px;
+  background: var(--editorial-paper);
+}
+
+.pay-link__block h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.pay-link__block ol {
+  margin: 10px 0 0 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+}
+
+.pay-link__fields {
+  margin: 14px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.pay-link__field {
+  display: grid;
+  grid-template-columns: minmax(120px, 34%) 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.pay-link__field dt {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--editorial-muted);
+}
+
+/* The number itself: selectable, monospaced, and big enough to read off a phone while typing. */
+.pay-link__field dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--editorial-charcoal);
+  user-select: all;
+  word-break: break-word;
+}
+
+.pay-link__amount {
+  margin: 10px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 0.86rem;
+}
+
+.pay-link__amount strong { font-size: 1.5rem; }
+
+.pay-link__note {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: var(--editorial-muted);
+}
+
+@media (max-width: 520px) {
+  .pay-link__field { grid-template-columns: 1fr; gap: 2px; }
+}

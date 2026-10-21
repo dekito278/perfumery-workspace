@@ -19,6 +19,7 @@ import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { giftVialLine } from '@/utils/internationalGiftVials.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
+import { browserRandomBytes, createPaymentToken } from '@/utils/paymentLinkToken.js';
 import { buildCheckoutDraft, buildOrderNotes, INTERNATIONAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { createOrder } from '@/services/orderService.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
@@ -173,6 +174,9 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // way an unlisted country could be ordered from at all.
 
   const draftOrder = buildExportOrderData({
+      // Minted here, in the browser that writes the order, so /pay/<token> works the moment the
+      // order exists.
+      makeToken: () => createPaymentToken(browserRandomBytes),
     lines,
     shippingTotal: shippingCharged,
     shippingSettled,
