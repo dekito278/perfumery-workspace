@@ -7914,3 +7914,12 @@ main :is(a, figure, picture, div, span):has(> img) {
 @media (max-width: 520px) {
   .pay-link__field { grid-template-columns: 1fr; gap: 2px; }
 }
+
+/* Customs and fragrance-database reviewers read this; shoppers mostly do not. Quiet, small, and never
+   between the buyer and the price — it sits under the notes on the USD page only. */
+.pdp-synthetic-accords {
+  margin: 12px 0 0;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--editorial-muted);
+}

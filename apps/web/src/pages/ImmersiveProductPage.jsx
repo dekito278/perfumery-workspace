@@ -10,6 +10,7 @@ import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
+import { usdPriceFor } from '@/utils/usdPrice.js';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
@@ -145,7 +146,14 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
   const canonicalUrl = shopCanonicalUrl(`/catalog/${product.slug}`, region, siteOrigin);
   const shareImage = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, siteOrigin);
   const metaDescription = String(hero.subtitle || product.subtitle || product.story || '').trim().slice(0, 155);
-  const productJsonLd = buildProductJsonLd(product, { origin: siteOrigin, canonicalUrl });
+  const productJsonLd = buildProductJsonLd(product, {
+    origin: siteOrigin,
+    canonicalUrl,
+    // The English shop states its OWN price to Google. exportPrice is the overseas tier in rupiah and
+    // usdPriceFor is the shop's own rounding, so the structured data carries the same US$ figure the
+    // buyer is reading — not the Rp this used to emit to every visitor on earth.
+    offer: exportPrice ? { currency: 'USD', price: usdPriceFor(exportPrice) } : null,
+  });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: t('nav.home'), path: '/home' },
     { name: t('pdp.collection'), path: '/catalog' },
@@ -346,6 +354,9 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
               SwitchToIndonesiaHint keeps the way back one tap away for whoever IS shipping inside
               Indonesia and simply prefers reading English. */}
           {exportPrice ? <InternationalPrice price={exportPrice} /> : null}
+          {/* Customs and reviewers read this, not shoppers: a US shipment was held over the word
+              oud. Shown only where the page is quoting internationally. */}
+          {exportPrice ? <p className="pdp-synthetic-accords">{t('pdp.syntheticAccords')}</p> : null}
           {/* The complete figure, before the buyer asks instead of after. Gated inside the component
               on the same hook the headline above uses, so the two cannot disagree about whether this
               reader is being quoted internationally. */}
