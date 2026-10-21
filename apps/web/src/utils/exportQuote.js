@@ -26,9 +26,13 @@
  * @param eta              the arrival estimate the website already shows for this destination, or ''
  * @param formatMoney      the app's own Rupiah formatter — for the figures RETURNED to the Studio screen,
  *                         never for the message
+ * @param giftVialLine     "Gift vials: N x 3 ml (free)" for this bottle count, or '' — passed in rather
+ *                         than computed here so this file stays import-free and the band rule lives in
+ *                         one place (internationalGiftVials.js)
  */
 export const buildExportQuote = ({
   destinationName = '', lines = [], shipping = null, toUsd = () => 0, eta = '', formatMoney = String,
+  giftVialLine = () => '',
 } = {}) => {
   const priced = lines
     .map((line) => ({ ...line, quantity: Math.max(0, Math.round(Number(line.quantity) || 0)) }))
@@ -68,12 +72,24 @@ export const buildExportQuote = ({
       : (shipping?.label
         ? `Shipping: ${shipping.label}`
         : 'Shipping: we are confirming the rate to your country and will send it shortly.'),
+    // The gift, named before the total so nobody reads it as something they are paying for. The atelier
+    // picks the scents at packing, so the line is a count and a size — never a list of names, which
+    // would be a promise about stock three weeks before the parcel is packed.
+    ...(giftVialLine(bottles) ? [giftVialLine(bottles)] : []),
     `Total: US$${goodsUsd + shippingUsd}`,
     ...(eta ? ['', `Estimated delivery: ${eta}`] : []),
+    '',
+    // What Dekito needs back before he can pack anything. It used to be typed by hand every time, which
+    // is how an order reaches the payment step with no phone number.
+    'Please also send your full shipping address, email, and phone number.',
     '',
     // Both lines are promises this quote must not accidentally make.
     'Import duties and taxes in your country are charged to the recipient on arrival, separately from this total.',
     'This estimate does not reserve stock.',
+    // NOTHING HERE PROMISES A TRACKING NUMBER. The brief's draft ended with "I'll ship within about 2
+    // days and send you the tracking number"; Dekito had that sentence removed (2026-10-21), because
+    // this shop does not record waybills — the decision of 10 Oct 2026, and the third time a tracking
+    // promise has had to be taken back out of buyer-facing copy.
   ].join('\n');
 
   return {

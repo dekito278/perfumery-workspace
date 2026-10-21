@@ -17,6 +17,7 @@ import {
 } from '@/data/internationalShippingRates.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
+import { giftVialLine } from '@/utils/internationalGiftVials.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
 import { buildCheckoutDraft, buildOrderNotes, INTERNATIONAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { createOrder } from '@/services/orderService.js';
@@ -141,6 +142,9 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // Studio's. "dikutip menyusul" went out to a German customer verbatim until 2026-10-06.
   const shippingLabel = quoteLater ? 'to be confirmed — we will send it shortly' : 'confirmed below';
   const summary = buildExportQuote({
+    // The gift vials, from the one band rule, so the quote and the cart cannot disagree about
+    // how many ship with an order.
+    giftVialLine,
     destinationName: destination?.name || '',
     lines,
     shipping: shippingCharged > 0 || quoteLater ? { total: shippingCharged, label: shippingLabel } : null,
