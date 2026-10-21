@@ -199,9 +199,22 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
 
   const baseHtml = fs.readFileSync(indexPath, 'utf8');
 
+  // NO PRICE IN THE SNAPSHOT, and the rupiah is the reason.
+  //
+  // This block is written once per route and served to everyone, so the English address carried the
+  // Indonesian price list: `curl /en/catalog | grep Rp` answered twelve times — Rp 429.000, Rp 750.000,
+  // Rp 359.000 — four times the export price, to any crawler or anyone reading the source. A stockist
+  // abroad found those figures and read them as the real price. Geo cannot fix it: one prerendered file
+  // answers every IP.
+  //
+  // A second reason not to put the dollar price here instead: from 12 Nov 2026 the domestic prices are
+  // scheduled, and a number baked into HTML at build time would go on showing the old one to crawlers
+  // until the next deploy. The price belongs where it is read live — the rendered page and its JSON-LD.
+  //
+  // Dekito's decision, 2026-10-21, asked as option (a) against edge rendering per geo.
   const catalogSections = products
     .slice(0, 12)
-    .map((product) => [product.name, [product.description, product.concentration, product.priceNumber ? `Rp ${product.priceNumber.toLocaleString('id-ID')}` : ''].filter(Boolean).join('. ')]);
+    .map((product) => [product.name, [product.description, product.concentration].filter(Boolean).join('. ')]);
 
   const journalSections = journal
     .slice(0, 12)
