@@ -224,6 +224,10 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
             swift: INTERNATIONAL_TRANSFER_PAYMENT.swift,
             accountNumber: INTERNATIONAL_TRANSFER_PAYMENT.accountNumber,
             accountName: INTERNATIONAL_TRANSFER_PAYMENT.accountName,
+            // Frozen onto the order with the rest: a wire form asks for the bank's address, and an
+            // order written today should not depend on the constant still saying the same thing in
+            // March. Empty until VITE_PAY_WIRE_ADDRESS is set.
+            bankAddress: INTERNATIONAL_TRANSFER_PAYMENT.bankAddress,
           }
           : undefined,
         notes: buildOrderNotes({

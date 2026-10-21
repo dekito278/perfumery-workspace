@@ -103,7 +103,11 @@ for (const field of ['bankName', 'swift', 'accountNumber', 'accountName']) {
 }
 // A SWIFT code is what makes an international transfer possible at all — an account number alone sends
 // the buyer back to ask, and a buyer who has to ask has already lost confidence.
-assert.match(cart, /swift: '[A-Z]{6}[A-Z0-9]{2,5}'/, 'the SWIFT/BIC must be a real code, not a placeholder');
+// Since 2026-10-21 the figure comes from VITE_PAY_WIRE_BIC with the real code as its fallback, so the
+// assertion is on the CODE wherever it sits rather than on the literal — a placeholder would fail it in
+// either position, which is what this line is for.
+assert.match(cart, /swift: (?:payEnv\('VITE_PAY_WIRE_BIC', )?'[A-Z]{6}[A-Z0-9]{2,5}'/,
+  'the SWIFT/BIC must be a real code, not a placeholder');
 
 assert.match(calculator, /INTERNATIONAL_TRANSFER_PAYMENT\.swift/,
   'an order quoted in dollars must carry the account those dollars go to');
