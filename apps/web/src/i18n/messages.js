@@ -83,6 +83,9 @@ export const MESSAGES = {
     'pdp.notFoundTab': 'Tidak ditemukan - SOLIVAGANT',
     'pdp.notFoundEyebrow': 'TIDAK DITEMUKAN',
     'pdp.soldOutOption': ' (Stok habis)',
+    // Shown under the notes on the USD product page only. Not marketing: a US shipment was held by
+    // Fish and Wildlife over the word oud, and a fragrance-database reviewer reads the same line.
+    'pdp.syntheticAccords': 'Seluruh nada oud, musk, dan animalic di sini adalah akord sintetis. Tidak ada bahan dari hewan maupun bahan yang terdaftar CITES.',
     'pdp.addedSheetTitle': 'Masuk ke keranjang',
     'pdp.addedSheetBody': 'Lanjut belanja, atau langsung ke pembayaran.',
     'pdp.addedSheetBodyIntl': 'Lanjut belanja, atau buka keranjang untuk memilih negara dan melihat ongkirnya.',
@@ -1371,6 +1374,7 @@ export const MESSAGES = {
     'pdp.notFoundTab': 'Not found - SOLIVAGANT',
     'pdp.notFoundEyebrow': 'NOT FOUND',
     'pdp.soldOutOption': ' (sold out)',
+    'pdp.syntheticAccords': 'All oud, musk and animalic notes are synthetic accords. No animal-derived or CITES-listed ingredients.',
     'pdp.addedSheetTitle': 'Added to cart',
     'pdp.addedSheetBody': 'Keep browsing, or go to checkout.',
     'pdp.addedSheetBodyIntl': 'Keep browsing, or open your cart to choose your country and see the shipping.',

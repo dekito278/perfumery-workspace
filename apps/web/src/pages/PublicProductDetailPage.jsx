@@ -33,6 +33,7 @@ import InternationalShippingQuote from '@/components/storefront/InternationalShi
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
+import { usdPriceFor } from '@/utils/usdPrice.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
 import { isPlaceholderMood } from '@/utils/productMood.js';
 import { describeWear } from '@/utils/productWear.js';
@@ -178,7 +179,14 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const canonicalUrl = shopCanonicalUrl(`/catalog/${product.slug}`, region, siteOrigin);
   const shareImage = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, siteOrigin);
   const metaDescription = `${product.name} — ${product.subtitle || product.story || ''}`.trim().slice(0, 155);
-  const productJsonLd = buildProductJsonLd(product, { origin: siteOrigin, canonicalUrl });
+  const productJsonLd = buildProductJsonLd(product, {
+    origin: siteOrigin,
+    canonicalUrl,
+    // The English shop states its OWN price to Google. exportPrice is the overseas tier in rupiah and
+    // usdPriceFor is the shop's own rounding, so the structured data carries the same US$ figure the
+    // buyer is reading — not the Rp this used to emit to every visitor on earth.
+    offer: exportPrice ? { currency: 'USD', price: usdPriceFor(exportPrice) } : null,
+  });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: t('pdp.home'), path: '/home' },
     { name: t('pdp.collection'), path: '/catalog' },
@@ -258,6 +266,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 <InternationalShippingQuote product={product} variant={selectedVariant} className="mt-4" />
               </div>
             ) : null}
+            {/* Customs and reviewers read this, not shoppers: a US shipment was held over the word
+                oud. Shown only where the page is quoting internationally. */}
+            {exportPrice ? <p className="pdp-synthetic-accords">{t('pdp.syntheticAccords')}</p> : null}
 
             {/* Meta details */}
             <div className="pdp-meta" data-reveal>

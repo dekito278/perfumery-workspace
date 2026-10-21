@@ -122,7 +122,14 @@ export const buildBreadcrumbJsonLd = (crumbs = [], origin = getSiteOrigin()) => 
   })),
 });
 
-export const buildProductJsonLd = (product, { origin = getSiteOrigin(), canonicalUrl } = {}) => {
+/**
+ * @param offer  { currency, price } to state instead of the domestic one — what the ENGLISH shop must
+ *   pass. Without it this emitted priceCurrency IDR and the rupiah figure to every visitor, including on
+ *   /en/catalog/<slug>: structured data telling Google the bottle costs Rp 359.000 while the page in
+ *   front of the buyer said US$80. Google runs the JavaScript, so the rich result is built from this.
+ *   Same leak as the rupiah in the crawler snapshot, one layer in.
+ */
+export const buildProductJsonLd = (product, { origin = getSiteOrigin(), canonicalUrl, offer = null } = {}) => {
   if (!product) return null;
   const image = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, origin);
   const url = canonicalUrl || toAbsoluteUrl(`/catalog/${product.slug}`, origin);
@@ -139,11 +146,17 @@ export const buildProductJsonLd = (product, { origin = getSiteOrigin(), canonica
     url,
   };
 
-  if (priceNumber > 0) {
+  // THE CURRENCY AND THE PRICE FALL TOGETHER. Taking the currency from the offer and the price from the
+  // product emitted "USD 359000" — the rupiah figure labelled as dollars, which is worse than either
+  // half being wrong. So an offer without a usable price is ignored entirely rather than half-applied.
+  const stated = Number(offer?.price) > 0 && offer?.currency ? offer : null;
+  const offerPrice = stated ? Number(stated.price) : priceNumber;
+  const offerCurrency = stated ? stated.currency : 'IDR';
+  if (offerPrice > 0) {
     jsonLd.offers = {
       '@type': 'Offer',
-      priceCurrency: 'IDR',
-      price: priceNumber,
+      priceCurrency: offerCurrency,
+      price: offerPrice,
       availability: availabilityUrl(product),
       url,
       seller: { '@type': 'Organization', name: SITE_NAME },
