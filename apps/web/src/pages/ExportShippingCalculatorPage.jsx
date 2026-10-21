@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { AlertTriangle, ClipboardCopy, Globe2, Info, Plus, ReceiptText, Search, Trash2 } from 'lucide-react';
+import { AlertTriangle, ClipboardCopy, Globe2, Info, Plus, ReceiptText, Save, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -10,6 +10,9 @@ import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { quoteExportShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
+import {
+  getExportShippingPolicy, refreshExportShippingPolicy, saveExportShippingPolicy,
+} from '@/services/exportShippingPolicyService.js';
 import { internationalPriceFor } from '@/utils/shippingRegion.js';
 import { usdPriceFor, USD_PRICE_RATE, USD_PRICE_RATE_SET_ON } from '@/utils/usdPrice.js';
 import {
@@ -39,6 +42,9 @@ const COMPARE_QUANTITIES = [1, 3, 6, 12, 24];
 const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const destinations = useMemo(() => listExportDestinations(), []);
   const catalog = useCatalogProducts();
+  // The policy the cart uses, loaded once and editable below: the one place these two numbers live.
+  const [shippingPolicy, setShippingPolicy] = useState(getExportShippingPolicy);
+  useEffect(() => { refreshExportShippingPolicy().then(setShippingPolicy).catch(() => {}); }, []);
   const [countryCode, setCountryCode] = useState('MY');
   const [countrySearch, setCountrySearch] = useState('');
   const [outsideDeliveryArea, setOutsideDeliveryArea] = useState(false);
@@ -107,7 +113,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // What the buyer is CHARGED: the carrier's rate for the bracket, less the support SOLIVAGANT carries
   // (internationalShippingRates.js). Written for 30 ml bottles, so a cart holding other sizes is counted
   // but flagged rather than quietly quoted at a price the rule never covered.
-  const priceCard = quoteInternationalShippingPrice({ countryCode, bottles });
+  const priceCard = quoteInternationalShippingPrice({ countryCode, bottles, policy: shippingPolicy });
   // The rate that DECIDES, not the one that estimates. This rupiah figure is not a caption: the "Pakai"
   // button below types it into the shipping field, and that field is what the order is billed. Converting
   // it with USD_PER_RUPIAH_RATE meant the freight left the card in dollars and arrived as a different
@@ -549,6 +555,63 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               order untuk mengirim konfirmasinya — pesannya sudah berbahasa Inggris.
             </p>
           ) : null}
+        </section>
+
+        {/* THE TWO NUMBERS THAT ARE A DECISION, editable here because they are the only part of the rule
+            Dekito sets himself. The carrier's sheet is not on this screen for the same reason the price
+            of a stamp is not: it is transcribed, not decided. Saving writes one row and the storefront
+            cart reads the same one, so the figure above and the figure a buyer sees move together. */}
+        <section className="mt-4 rounded-2xl border border-editorial-charcoal/15 bg-white p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-editorial-charcoal">
+            Kebijakan ongkir ekspor
+          </p>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Yang Solivagant tanggung, dan kurs untuk mengubah biaya kurir jadi dolar. Keranjang toko
+            memakai angka yang sama.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {[
+              ['supportSingleUsd', 'Ditanggung · 1 botol (US$)'],
+              ['supportMultipleUsd', 'Ditanggung · 2+ botol (US$)'],
+              ['costRateIdr', 'Kurs biaya kurir (Rp/US$)'],
+            ].map(([field, label]) => (
+              <label key={field} className="grid gap-1 text-xs font-semibold text-[#6b7280]">
+                {label}
+                <LocalizedNumberInput
+                  value={shippingPolicy[field]}
+                  onValueChange={(next) => setShippingPolicy((current) => ({ ...current, [field]: next }))}
+                  className="h-11 rounded-xl border border-editorial-charcoal/15 bg-white px-3 text-sm font-bold text-editorial-charcoal"
+                />
+              </label>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 rounded-2xl bg-white gap-2"
+              onClick={async () => {
+                try {
+                  const saved = await saveExportShippingPolicy(shippingPolicy);
+                  setShippingPolicy(saved);
+                  toast.success('Kebijakan ongkir ekspor tersimpan');
+                } catch (error) {
+                  toast.error(error?.message || 'Gagal menyimpan');
+                }
+              }}
+            >
+              <Save className="h-4 w-4" />
+              Simpan kebijakan
+            </Button>
+            {/* The effect, not the setting: one bottle to the United States is the example in Dekito's
+                own brief, so he can see the number he wrote about move as he types. */}
+            <p className="text-xs font-semibold text-[#6b7280]">
+              Contoh: 1 botol ke Amerika ={' '}
+              {formatShippingUsd(quoteInternationalShippingPrice({
+                countryCode: 'US', bottles: 1, policy: shippingPolicy,
+              })?.usd ?? 0)}
+            </p>
+          </div>
         </section>
 
         {/* The published price comes first and the carrier cost sits under it: the buyer is quoted from the

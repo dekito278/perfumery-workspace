@@ -9,11 +9,10 @@
 // The limits are answers, not gaps: more than six bottles, and any destination the carrier's zone sheet
 // does not name, are quoted on request. Returning a number there would be inventing a price.
 import { EXPORT_PACKAGE_RATES } from '@/data/exportRates.js';
+import { normalizeExportShippingPolicy, supportUsdFor } from '@/utils/exportShippingPolicy.js';
 import {
-  SHIPPING_COST_RATE,
   SHIPPING_RATE_MAX_BOTTLES,
   SHIPPING_RATE_TIERS,
-  SHIPPING_SUPPORT_USD,
   SHIPPING_TRANSIT_DAYS,
   shippingRateRegionFor,
   shippingZoneFor,
@@ -27,10 +26,14 @@ export const shippingTierFor = (bottles) => (
   SHIPPING_RATE_TIERS.find((tier) => bottles <= tier.maxBottles) || null
 );
 
-/** What SOLIVAGANT carries, by count: one bottle, or two and more. */
-export const shippingSupportUsd = (bottles) => (
-  bottles >= 2 ? SHIPPING_SUPPORT_USD.multiple : SHIPPING_SUPPORT_USD.single
-);
+/**
+ * What SOLIVAGANT carries, by count: one bottle, or two and more.
+ *
+ * ON THE SHIPPED DEFAULTS. Since 2026-10-21 the two amounts are a policy row Dekito can edit, so
+ * anything pricing a real parcel must call supportUsdFor with the loaded policy instead — this is kept
+ * because a guard asserts the default pair, and delegating means there is still one implementation.
+ */
+export const shippingSupportUsd = (bottles) => supportUsdFor(bottles);
 
 /** The carrier's rupiah for a zone at a weight bracket, straight off the PACKAGE table. */
 export const shippingCostIdr = (zone, kg) => {
@@ -44,7 +47,7 @@ export const shippingCostIdr = (zone, kg) => {
  *   { region, regionLabel, zone, tierLabel, bottles, costIdr, costUsd, supportUsd, usd, transitDays } — a price
  *   { region, regionLabel, zone, bottles, usd: null, onRequest: 'bottles' | 'destination' }
  */
-export const quoteInternationalShippingPrice = ({ countryCode, bottles } = {}) => {
+export const quoteInternationalShippingPrice = ({ countryCode, bottles, policy = null } = {}) => {
   const code = String(countryCode || '').trim().toUpperCase();
   if (!code || code === 'ID') return null;
 
@@ -63,9 +66,18 @@ export const quoteInternationalShippingPrice = ({ countryCode, bottles } = {}) =
     return { region: region.key, regionLabel: region.label, zone, bottles: count, usd: null, onRequest: 'bottles' };
   }
 
+  // The two POLICY numbers — what the shop carries and the rate it converts the carrier's rupiah at —
+  // come from the caller when Dekito has set them, and from the constants otherwise. The carrier's own
+  // sheet is not policy and is never overridden.
+  const settings = normalizeExportShippingPolicy(policy || {});
   const costIdr = shippingCostIdr(zone, tier.kg);
-  const costUsd = up5(costIdr / SHIPPING_COST_RATE);
-  const supportUsd = shippingSupportUsd(count);
+  const costUsd = up5(costIdr / settings.costRateIdr);
+  const supportUsd = supportUsdFor(count, settings);
+  // FLOORED AT ZERO. Until the subsidy was editable it could not exceed the freight — zone 1 at one kilo
+  // costs US$55 against a US$50 subsidy — so the subtraction had no floor and did not need one. A
+  // subsidy typed higher than the carrier's rate would have produced a NEGATIVE shipping line, which
+  // reduces the total: the shop paying the buyer to receive a parcel.
+  const chargedUsd = Math.max(0, costUsd - supportUsd);
   return {
     region: region.key,
     regionLabel: region.label,
@@ -75,7 +87,7 @@ export const quoteInternationalShippingPrice = ({ countryCode, bottles } = {}) =
     costIdr,
     costUsd,
     supportUsd,
-    usd: costUsd - supportUsd,
+    usd: chargedUsd,
     transitDays: SHIPPING_TRANSIT_DAYS[zone] || null,
   };
 };
