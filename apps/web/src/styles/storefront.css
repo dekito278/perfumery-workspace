@@ -7822,3 +7822,19 @@ main :is(a, figure, picture, div, span):has(> img) {
   font-size: var(--text-caption);
   font-weight: 600;
 }
+
+/* "Harga lama berlaku sampai 11.11" — the eleven days before the domestic prices change. A notice, not
+   an alarm: the shop's own ink rather than a colour the brand never uses. --editorial-brass-text is the
+   MEASURED token (4.71:1 on ivory), not the estimate that preceded it. */
+.price-change-notice {
+  margin: 0;
+  padding: 8px 20px;
+  background: var(--editorial-paper);
+  border-bottom: 1px solid rgba(26, 24, 20, 0.08);
+  color: var(--editorial-brass-text);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}

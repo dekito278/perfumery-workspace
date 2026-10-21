@@ -99,6 +99,11 @@ export const MESSAGES = {
     'price.retailLabel': 'Harga retail',
     'price.resellerTier': 'Harga reseller',
     'price.memberIs': 'Member {price}',
+    // The eleven days before the domestic prices change, 1-11 Nov 2026. No percentage in it on
+    // purpose (Dekito's brief, §2), and domestic only: the dollar prices are not moving, so
+    // telling an overseas visitor that current prices hold would announce a change that never
+    // reaches them.
+    'price.oldPricesHold': 'Harga lama berlaku sampai 11.11',
     'price.saveShort': 'hemat {amount}',
     'price.save': 'Hemat {amount}',
     'price.signInGoogle': 'Masuk dengan Google',
@@ -1355,6 +1360,7 @@ export const MESSAGES = {
     'price.retailLabel': 'Retail price',
     'price.resellerTier': 'Reseller price',
     'price.memberIs': 'Member {price}',
+    'price.oldPricesHold': 'Current prices hold until 11.11',
     'price.saveShort': 'save {amount}',
     'price.save': 'Save {amount}',
     'price.signInGoogle': 'Sign in with Google',
