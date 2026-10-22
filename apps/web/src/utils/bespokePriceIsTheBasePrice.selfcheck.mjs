@@ -87,18 +87,57 @@ assert.doesNotMatch(phone, /isComplete: \(\) => Boolean\(form\.bottleType && for
 // group from section 2's list and this section lets its word back into the copy by itself.
 const WORDS = { bottleTypes: ['botol', 'bottle'], capDesigns: ['cap', 'tutup'], labelDesigns: ['label'] };
 const copy = read('i18n', 'messages.js');
-for (const key of ['bsp.floorNote', 'bsp.flowLead']) {
-  const line = copy.split('\n').find((l) => l.includes(`"${key}":`));
-  assert.ok(line, `${key} is missing from the messages`);
-  for (const [group, words] of Object.entries(WORDS)) {
-    const at = defaults.indexOf(`${group}: [`);
-    const block = defaults.slice(at, defaults.indexOf('],', at));
-    if (block.includes('enabled: true')) continue;
-    for (const word of words) {
-      assert.doesNotMatch(line.toLowerCase(), new RegExp(`\\b${word}\\b`),
-        `${key} still names "${word}", but ${group} has nothing a buyer can pick`);
-    }
+
+// EVERY line carrying the key, not the first: these pages render in both shops, and the English copy
+// named the same three choices. Checking only the Indonesian line would have passed while /en/bespoke
+// still said "Choose the direction, size, bottle, cap, label and materials first."
+const SENTENCES = ['bsp.floorNote', 'bsp.flowLead', 'bsp.lead', 'bsp.designFirstTitle', 'bsp.designFirstBody'];
+const lines = copy.split('\n');
+
+// WHAT IS BANNED IS THE LIST, NOT THE WORD. A first attempt banned each word outright and fired on the
+// English floorNote — "A bespoke BOTTLE is quoted one by one from abroad" — where the word means the
+// product, not a choice of bottle shape. No word-level rule can tell those apart, so the rule matches
+// the hazard instead: naming TWO OR MORE switched-off groups in one sentence is the enumeration that
+// promises a buyer their total rises with choices nobody offers them.
+//
+// The trade is deliberate and worth stating: a sentence naming exactly one of them still passes. That
+// is the price of letting "bottle" go on meaning the thing in the box.
+const switchedOff = Object.entries(WORDS).filter(([group]) => {
+  const at = defaults.indexOf(`${group}: [`);
+  return !defaults.slice(at, defaults.indexOf('],', at)).includes('enabled: true');
+});
+for (const key of SENTENCES) {
+  const carrying = lines.filter((l) => l.includes(`"${key}":`));
+  assert.ok(carrying.length >= 2, `${key} should exist in both shops; found ${carrying.length}`);
+  for (const line of carrying) {
+    const named = switchedOff
+      .filter(([, words]) => words.some((w) => new RegExp(`\\b${w}\\b`).test(line.toLowerCase())))
+      .map(([group]) => group);
+    assert.ok(named.length < 2,
+      `${key} lists ${named.join(' + ')} — groups with nothing a buyer can pick:\n  ${line.trim()}`);
   }
 }
+
+// And the two sentences this was found by, by name, so no rewrite quietly restores them.
+for (const gone of [
+  'Naik sesuai botol, cap, label, dan material yang dipilih',
+  'Choose the direction, size, bottle, cap, label and materials first',
+]) {
+  assert.ok(!copy.includes(gone), `the copy brought back: "${gone}"`);
+}
+
+// --- 5. The preview names only the parts that exist ---------------------------------------------------
+// Its meta strip was four fixed spans falling back to the generic word, so with the three groups off it
+// read "Botol · Cap · Label" permanently — categories named, none offered, and no price attached to any
+// of them. The sticker on the mockup printed "Label" the same way. Found on the live desktop page after
+// the phone had already been checked and passed: the two pages fail differently.
+for (const part of ['size', 'bottle', 'cap', 'label', 'material']) {
+  assert.match(desktop, new RegExp(`\\{${part} \\? <span`),
+    `the preview still prints a ${part} span unconditionally, so it names a part that may not exist`);
+}
+assert.doesNotMatch(desktop, /\{label\?\.label \|\| t\('bsp\.label'\)\}/,
+  'the mockup sticker must not fall back to the word "Label"');
+assert.match(desktop, /options: exoticMaterialOptions\.length \? \[noneMaterialOption/,
+  'a Material tab whose only option is "no add-on" is not a choice and must not be offered');
 
 console.log('bespokePriceIsTheBasePrice OK (30 ml 569.000 / 50 ml 939.000, and an empty group is not a tab, a step, or a price)');
