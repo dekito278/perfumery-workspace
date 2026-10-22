@@ -97,13 +97,22 @@ assert.match(storefrontData, /export const bespokeOccasionOptions = \[/,
 assert.match(storefrontData, /\{ value: 'Harian', labelKey: 'bsp\.occ\.harian' \}/,
   "the occasion list must keep its value/labelKey split — the VALUE is what an order records");
 
-// ── 3. A failed settings fetch may not quote a component as free ─────────────────────────────────
+// ── 3. A failed settings fetch may not quote the bottle itself as free ───────────────────────────
 // bespokeFloorPrice sums the cheapest enabled option of four collections, and cheapestEnabled([])
 // answers {} — whose price reads as 0. So an empty collection in the fallback silently makes that part
 // of a bespoke bottle free, on exactly the path taken when the database cannot be reached.
+//
+// NARROWED 2026-10-23 from four collections to one. Dekito switched the bottle, cap and label choices
+// off that day and moved what they used to cost into the 30 ml price (569.000), so those three being
+// empty is now the shop's answer rather than a hole: nothing is quoted free, because nothing is quoted
+// separately. bespokePriceIsTheBasePrice.selfcheck owns that arrangement.
+//
+// THE SIZE IS DIFFERENT IN KIND and is why this section survives at all: it is the only collection the
+// whole price rests on. With no size enabled, a bespoke bottle quotes at zero — not a component lost,
+// the entire bottle given away.
 const fallbackCollections = [...fallbackBlock[1].matchAll(/^\s{2}(\w+): \[([\s\S]*?)\n\s{2}\]/gm)]
   .map(([, key, body]) => [key, body]);
-const PRICED = ['bottleSizes', 'bottleTypes', 'capDesigns', 'labelDesigns'];
+const PRICED = ['bottleSizes'];
 for (const key of PRICED) {
   const entry = fallbackCollections.find(([name]) => name === key);
   assert.ok(entry, `the fallback has no ${key}, so a failed fetch would offer that part of the bottle free`);
@@ -115,13 +124,13 @@ for (const key of PRICED) {
 assert.equal(cheapestEnabled([]).price, undefined, 'an empty collection has no price — this is the hazard above');
 assert.equal(Number(cheapestEnabled([]).price || 0), 0, 'and it reads as free');
 const sample = {
-  bottleSizes: [{ price: 240000, enabled: true }, { price: 395000, enabled: true }],
-  bottleTypes: [{ price: 10000, enabled: true }, { price: 50000, enabled: true }],
-  capDesigns: [{ price: 50000, enabled: true }, { price: 5000, enabled: true }],
-  labelDesigns: [{ price: 0, enabled: true }, { price: 75000, enabled: true }],
+  bottleSizes: [{ price: 569000, enabled: true }, { price: 939000, enabled: true }],
+  bottleTypes: [{ price: 10000, enabled: false }, { price: 50000, enabled: false }],
+  capDesigns: [{ price: 50000, enabled: false }, { price: 5000, enabled: false }],
+  labelDesigns: [{ price: 0, enabled: false }, { price: 75000, enabled: false }],
 };
-assert.equal(bespokeFloorPrice(sample), 255000,
-  'the floor is the sum of the cheapest enabled option in each priced collection');
+assert.equal(bespokeFloorPrice(sample), 569000,
+  'the floor is the cheapest enabled size; a switched-off collection adds nothing to it');
 assert.equal(bespokeFloorPrice({}), 0, 'and with no settings at all it is 0, which is why section 3 exists');
 
 console.log(`bespokeOptionsHaveOneHome: ok — ${Object.keys(DELETED).length} dead lists stay deleted, one priced home, ${PRICED.length} collections that cannot fall to free`);

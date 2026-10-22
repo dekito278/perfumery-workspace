@@ -186,7 +186,10 @@ export const bespokeFloorPrice = (settings = {}) => (
 
 export const cheapestEnabled = (options = []) => {
   const enabled = options.filter((option) => option.enabled);
-  if (!enabled.length) return options[0] || {};
+  // Nothing enabled means the group costs NOTHING, not "whatever the first row happens to say". Falling
+  // back to options[0] used to put a disabled option's price into bespokeFloorPrice, so a group Dekito
+  // had switched off still raised the "mulai dari" figure by a number no buyer could ever choose.
+  if (!enabled.length) return {};
   return enabled.reduce((best, option) => (
     Number(option.price || 0) < Number(best.price || 0) ? option : best
   ), enabled[0]);

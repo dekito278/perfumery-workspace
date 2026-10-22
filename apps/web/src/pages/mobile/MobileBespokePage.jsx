@@ -561,8 +561,13 @@ const MobileBespokePage = () => {
       ),
       isComplete: () => Boolean(form.size),
     },
+    // Dropped entirely when Dekito has no bottle, cap or label options switched on — which he does not
+    // since 2026-10-23, the 30 ml price covering them instead. Leaving it in would have been worse than
+    // an empty screen: isComplete below demands all three fields, so the step could never be finished
+    // and the phone's bespoke flow would dead-end on it.
     {
       key: 'bottle',
+      hidden: !(bottleTypeOptions.length || capDesignOptions.length || labelDesignOptions.length),
       title: t('bsp.stepLook'),
       shortLabel: t('bsp.bottle'),
       description: t('bsp.stepLookBody'),
@@ -602,7 +607,11 @@ const MobileBespokePage = () => {
           </div>
         </div>
       ),
-      isComplete: () => Boolean(form.bottleType && form.capDesign && form.labelDesign),
+      isComplete: () => (
+        (!bottleTypeOptions.length || Boolean(form.bottleType))
+        && (!capDesignOptions.length || Boolean(form.capDesign))
+        && (!labelDesignOptions.length || Boolean(form.labelDesign))
+      ),
     },
     {
       key: 'delivery',
@@ -778,7 +787,7 @@ const MobileBespokePage = () => {
       ),
       isComplete: () => Boolean(form.paymentMethod && form.preorderAcknowledged),
     },
-  ], [autoCalculateShipping, bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, exoticMaterialOptions, form, handleCourierChange, labelDesignOptions, loadShippingRates, lookupCustomer, pasteCustomerCode, searchDestinations, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, updateDestinationSearch, updateField, visibleShippingOptions, voucher, t, optionPriceLabel]);
+  ].filter((step) => !step.hidden), [autoCalculateShipping, bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, exoticMaterialOptions, form, handleCourierChange, labelDesignOptions, loadShippingRates, lookupCustomer, pasteCustomerCode, searchDestinations, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, updateDestinationSearch, updateField, visibleShippingOptions, voucher, t, optionPriceLabel]);
 
   // The English shop stops at the design: no address step, because the shipping is worked out by hand,
   // and no payment step, because a bespoke bottle has no international price to charge. The steps are
