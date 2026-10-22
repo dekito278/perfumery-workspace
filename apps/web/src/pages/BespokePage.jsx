@@ -138,18 +138,24 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
         <div className="editorial-bespoke-preview__mockup" aria-hidden="true">
           <span className={`editorial-bespoke-preview__bottle${isSquare ? ' is-square' : ''}${isLarge ? ' is-large' : ''}${isSmall ? ' is-small' : ''}`} />
           <span className={`editorial-bespoke-preview__cap${isStone ? ' is-stone' : ''}${isAcrylic ? ' is-acrylic' : ''}`} />
-          <span className="editorial-bespoke-preview__label">{label?.label || t('bsp.label')}</span>
+          {/* The sticker printed the word "Label" when nothing was chosen. Since the label options were
+              switched off there is nothing to choose, so it printed it permanently. */}
+          {label?.label ? <span className="editorial-bespoke-preview__label">{label.label}</span> : null}
         </div>
         <div className="editorial-bespoke-preview__focus">
           <span>{t('bsp.previewFocus')}</span>
           <strong>{activeLabel}</strong>
         </div>
       </div>
+      {/* One span per part the buyer actually has. These used to be four fixed spans falling back to the
+          generic word, so with the bottle, cap and label options switched off the strip read
+          "Botol · Cap · Label" for ever — three categories named and none of them offered. `material`
+          was already written this way; the other three now match it. */}
       <div className="editorial-bespoke-preview__meta">
-        <span className={activeGroup === 'size' ? 'is-active' : ''}>{size?.label || t('bsp.size')}</span>
-        <span className={activeGroup === 'bottle' ? 'is-active' : ''}>{bottle?.label || t('bsp.bottle')}</span>
-        <span className={activeGroup === 'cap' ? 'is-active' : ''}>{cap?.label || t('bsp.cap')}</span>
-        <span className={activeGroup === 'label' ? 'is-active' : ''}>{label?.label || t('bsp.label')}</span>
+        {size ? <span className={activeGroup === 'size' ? 'is-active' : ''}>{size.label}</span> : null}
+        {bottle ? <span className={activeGroup === 'bottle' ? 'is-active' : ''}>{bottle.label}</span> : null}
+        {cap ? <span className={activeGroup === 'cap' ? 'is-active' : ''}>{cap.label}</span> : null}
+        {label ? <span className={activeGroup === 'label' ? 'is-active' : ''}>{label.label}</span> : null}
         {material ? <span className={activeGroup === 'material' ? 'is-active' : ''}>{material.label}</span> : null}
       </div>
     </div>
@@ -312,7 +318,9 @@ const BespokePage = () => {
       title: t('bsp.addonMaterial'),
       field: 'exoticMaterial',
       selected: selectedMaterial || noneMaterialOption,
-      options: [noneMaterialOption, ...exoticMaterialOptions],
+      // Only a tab when there is something to add. [noneMaterialOption] alone is a tab whose single
+      // option is "no thanks" — it survived the empty-group filter below and offered nothing.
+      options: exoticMaterialOptions.length ? [noneMaterialOption, ...exoticMaterialOptions] : [],
     },
   ].filter((group) => group.options.length > 0), [bottleSizeOptions, bottleTypeOptions, capDesignOptions, exoticMaterialOptions, labelDesignOptions, noneMaterialOption, selectedBottle, selectedCap, selectedLabel, selectedMaterial, selectedSize, t]);
   const activeChoice = bespokeChoiceGroups.find((group) => group.key === activeChoiceGroup) || bespokeChoiceGroups[0];
