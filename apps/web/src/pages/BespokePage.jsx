@@ -265,6 +265,9 @@ const BespokePage = () => {
     value: '',
     description: t('bsp.noAddonBody'),
   }), [t]);
+  // A group with nothing in it is not a tab. Dekito switched the bottle, cap and label options off on
+  // 2026-10-23 — the 30 ml price now covers them — and without this filter the page would still have
+  // shown three tabs that open onto an empty panel.
   const bespokeChoiceGroups = useMemo(() => [
     {
       key: 'size',
@@ -311,7 +314,7 @@ const BespokePage = () => {
       selected: selectedMaterial || noneMaterialOption,
       options: [noneMaterialOption, ...exoticMaterialOptions],
     },
-  ], [bottleSizeOptions, bottleTypeOptions, capDesignOptions, exoticMaterialOptions, labelDesignOptions, noneMaterialOption, selectedBottle, selectedCap, selectedLabel, selectedMaterial, selectedSize, t]);
+  ].filter((group) => group.options.length > 0), [bottleSizeOptions, bottleTypeOptions, capDesignOptions, exoticMaterialOptions, labelDesignOptions, noneMaterialOption, selectedBottle, selectedCap, selectedLabel, selectedMaterial, selectedSize, t]);
   const activeChoice = bespokeChoiceGroups.find((group) => group.key === activeChoiceGroup) || bespokeChoiceGroups[0];
   const isNoneMaterialOption = useCallback((option) => getOptionKey(option) === getOptionKey(noneMaterialOption), [noneMaterialOption]);
   const isActiveChoiceOption = useCallback((group, option) => {
