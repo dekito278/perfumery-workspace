@@ -72,4 +72,33 @@ assert.match(phone, /\]\.filter\(\(step\) => !step\.hidden\)/,
 assert.doesNotMatch(phone, /isComplete: \(\) => Boolean\(form\.bottleType && form\.capDesign && form\.labelDesign\)/,
   'the look step must not demand three fields the buyer has no way to fill');
 
+// --- 4. The copy may not name a choice the buyer cannot make ------------------------------------------
+// Switching the options off left two sentences behind that the live page still printed, word for word:
+//   "Sebelum ongkir. Naik sesuai botol, cap, label, dan material yang dipilih."
+//   "Cerita aroma, pilihan botol, delivery, dan payment dalam flow singkat."
+// Both were true on 22 October and false on the 23rd, and that is the hazard: a note promising the total
+// rises with a choice the buyer is never offered reads as a cost being hidden from them.
+//
+// The rule is tied to the DATA, not to today's wording: a group with no enabled option in the fallback
+// may not be named in the two sentences that describe what the price depends on.
+//
+// Reviving a group is therefore a TWO-line change here, not one: section 2 above refuses any enabled
+// bottle/cap/label option because that is Dekito's decision of 2026-10-23, and it fails first. Drop the
+// group from section 2's list and this section lets its word back into the copy by itself.
+const WORDS = { bottleTypes: ['botol', 'bottle'], capDesigns: ['cap', 'tutup'], labelDesigns: ['label'] };
+const copy = read('i18n', 'messages.js');
+for (const key of ['bsp.floorNote', 'bsp.flowLead']) {
+  const line = copy.split('\n').find((l) => l.includes(`"${key}":`));
+  assert.ok(line, `${key} is missing from the messages`);
+  for (const [group, words] of Object.entries(WORDS)) {
+    const at = defaults.indexOf(`${group}: [`);
+    const block = defaults.slice(at, defaults.indexOf('],', at));
+    if (block.includes('enabled: true')) continue;
+    for (const word of words) {
+      assert.doesNotMatch(line.toLowerCase(), new RegExp(`\\b${word}\\b`),
+        `${key} still names "${word}", but ${group} has nothing a buyer can pick`);
+    }
+  }
+}
+
 console.log('bespokePriceIsTheBasePrice OK (30 ml 569.000 / 50 ml 939.000, and an empty group is not a tab, a step, or a price)');
