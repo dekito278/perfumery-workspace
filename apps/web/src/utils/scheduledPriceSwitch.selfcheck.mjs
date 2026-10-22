@@ -126,7 +126,7 @@ assert.deepEqual(tally, {
   'retail:479000': 10, 'member:429000': 10,
   'retail:569000': 7, 'member:509000': 7,
   'retail:849000': 1, 'member:765000': 1,
-  'retail:950000': 1, 'member:855000': 1,
+  'retail:999000': 1, 'member:899000': 1,
 }, 'ten tier A, seven tier B, and the two reserves — mapped from the price each product carries today');
 
 // --- 6. The order endpoint reads the schedule too -----------------------------------------------------
