@@ -1005,14 +1005,14 @@ export const MESSAGES = {
     "bsp.preorderTitle": "Konfirmasi pre-order",
     "bsp.brief": "Brief bespoke",
     "bsp.requestPerfume": "Request parfum bespoke.",
-    "bsp.flowLead": "Cerita aroma, pilihan botol, delivery, dan payment dalam flow singkat.",
+    "bsp.flowLead": "Cerita aroma, ukuran, delivery, dan payment dalam flow singkat.",
     "bsp.preorderDays": "Pre-order / 7-14 hari",
 
     // Step 1 showed no number at all on the most expensive thing this atelier sells. The figure is
     // derived from the cheapest enabled option in each required group — never typed here, or the copy
     // becomes a second source of truth that goes stale the day a price changes in Studio.
     "bsp.floor": "Mulai dari {price}",
-    "bsp.floorNote": "Sebelum ongkir. Naik sesuai botol, cap, label, dan material yang dipilih.",
+    "bsp.floorNote": "Sebelum ongkir. Naik sesuai pilihan yang kamu ambil.",
     // What this option adds over the cheapest in its own group, beside the option itself. A plus sign
     // and a rupiah figure read the same in both shops, so the two halves are identical on purpose.
     "bsp.optionExtra": "+{price}",
@@ -2284,7 +2284,7 @@ export const MESSAGES = {
     "bsp.preorderTitle": "Confirm the pre-order",
     "bsp.brief": "Bespoke brief",
     "bsp.requestPerfume": "Request a bespoke perfume.",
-    "bsp.flowLead": "Scent story and bottle choices in one short flow, then we settle the price and the shipping on WhatsApp.",
+    "bsp.flowLead": "Scent story and size in one short flow, then we settle the price and the shipping on WhatsApp.",
     "bsp.preorderDays": "Pre-order / 7–14 days",
 
     // NOT the same sentence. These prices are one domestic set with no international variant, and the
