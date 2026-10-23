@@ -219,7 +219,15 @@ export const useCartInternationalQuote = (items = []) => {
     // nothing, weighs 10 g against a one-kilo minimum, and changes neither the bottle count nor the
     // shipping. Left out of the message he would pack the order without it, and the buyer would have
     // chosen an aroma that never arrived.
-    ...(gift ? [t('export.waCartGiftLine', { name: gift.name })] : []),
+    //
+    // THE AROMA, NOT THE PRODUCT NAME. The gift is one product with a variant per scent, so its line
+    // name is "Vial hadiah — La Tulipe" — and an English buyer was sending himself
+    // "- Vial hadiah — La Tulipe — free vial, no charge", two Indonesian words inside his own order.
+    // Every i18n guard missed it because the phrase is DATA, not a message: it comes from the product
+    // row, which the English shop never translates and should not, since the perfume names are
+    // deliberately Indonesian. The variant holds the aroma on its own, and "free vial" already says
+    // what the thing is, so the product name adds nothing in either shop.
+    ...(gift ? [t('export.waCartGiftLine', { name: gift.size || gift.name })] : []),
   ].join('\n');
   // Settled: the total. Chosen but unquotable — "another country", seven bottles, a size the rule was not
   // written for: the basket and the destination, asking for the rate. Nothing chosen: no draft, and the
