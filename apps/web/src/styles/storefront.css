@@ -7969,8 +7969,70 @@ main :is(a, figure, picture, div, span):has(> img) {
   overflow: hidden;
 }
 
+/* ─── The story behind a scent, on the product page ──────────────────────────────────────────────
+   The mirror of .journal-related-product, which puts the perfume at the end of the article. Same
+   restraint: a bordered card that offers, never shouts, and sits before the other bottles because a
+   buyer still deciding about THIS one is better served by what was written about it.
+   Every var() carries a literal fallback — this renders on the phone too, where the desktop palette
+   is not loaded. */
+.product-story-link {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(27, 26, 22, 0.1);
+}
+
+.product-story-link__card {
+  display: block;
+  margin-top: 12px;
+  padding: 16px 18px;
+  border: 1px solid rgba(27, 26, 22, 0.12);
+  border-radius: 22px;
+  background: #fff;
+  text-decoration: none;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.product-story-link__card:hover {
+  border-color: rgba(27, 26, 22, 0.3);
+  transform: translateY(-1px);
+}
+
+.product-story-link__title {
+  display: block;
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-size: 1.15rem;
+  line-height: 1.25;
+  color: var(--editorial-charcoal, #1b1a16);
+}
+
+.product-story-link__excerpt {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-body, "DM Sans", sans-serif);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--editorial-muted, #6f695f);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-story-link__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-family: var(--font-body, "DM Sans", sans-serif);
+  font-size: var(--text-eyebrow, 11px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--editorial-charcoal, #1b1a16);
+}
+
 /* ─── Skip to the product list ───────────────────────────────────────────────────────────────────
-   Twenty-six tab stops stood between the top of the catalogue and the first bottle, measured on the
+   Twenty-six tab stops stood between the top of the catalogue and the first bottle, counted on the
    built site: the header, six category pills, the search box, thirteen wear chips. This costs a mouse
    user nothing because it is off-screen until focused, and saves a keyboard user twenty-five presses.
    Positioned fixed rather than static so revealing it never pushes the toolbar down.
