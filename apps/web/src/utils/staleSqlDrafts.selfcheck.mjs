@@ -9,7 +9,8 @@
 // migration that defines it, the draft side from every .sql file and every ```sql fence under docs/.
 // Comment a dangerous draft out and it stops being runnable, which is the honest fix.
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { skipChain, DOCS_OUTSIDE_CHECKOUT } from '../../tools/selfcheckSubject.mjs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,13 +27,28 @@ const walk = (dir) => readdirSync(dir).flatMap((entry) => {
   return statSync(full).isDirectory() ? walk(full) : [full];
 });
 
+// Is the documentation in this checkout at all? `.vercelignore` lists `docs`, so in the Vercel build it
+// is not. The first version of this guard asked only whether the DIRECTORY existed — which was still
+// true there, while every .md and .sql inside it was gone — so the build failed a second time. The test
+// is therefore for the SUBJECT, not for a folder: no markdown and no SQL under docs/ means there is
+// nothing here to read.
+//
+// It has to come before the walk below, because a genuinely absent docs/ makes readdirSync throw.
+const docsFiles = existsSync(docsDir) ? walk(docsDir) : [];
+const readable = docsFiles.filter((file) => file.endsWith('.md') || file.endsWith('.sql'));
+if (readable.length === 0) skipChain(DOCS_OUTSIDE_CHECKOUT);
+
 // Every piece of SQL a reader could copy out of docs/: whole .sql files, plus ```sql fences in markdown.
-const docsSql = walk(docsDir).flatMap((file) => {
+const docsSql = readable.flatMap((file) => {
   if (file.endsWith('.sql')) return [{ file, sql: readFileSync(file, 'utf8') }];
-  if (!file.endsWith('.md')) return [];
   return [...readFileSync(file, 'utf8').matchAll(/```sql\n([\s\S]*?)```/g)].map((m) => ({ file, sql: m[1] }));
 });
-assert.ok(docsSql.length >= 5, `only ${docsSql.length} SQL snippets found under docs/ — the scan is broken`);
+
+// Past the skip, the documents ARE here — so a scan that suddenly finds almost nothing is a real
+// regression and still fails loudly.
+assert.ok(docsSql.length >= 5,
+  `only ${docsSql.length} SQL snippets found across ${readable.length} documents under docs/ — the scan `
+  + 'is broken (the documents are here, so this is not the missing-checkout case)');
 
 // Read a `returns table ( ... )` column list by balancing parentheses; a regex stops at the first `)`,
 // which inside `numeric(10,2)` is the wrong one.

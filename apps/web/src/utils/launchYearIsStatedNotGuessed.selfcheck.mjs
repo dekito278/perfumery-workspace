@@ -14,8 +14,9 @@
 // actually reads — would still not carry it. That trap is documented in 20260920170000, where `limited`
 // hit it; this guard makes the next column fail here instead of in production.
 import assert from 'node:assert/strict';
+import { noteSkip, DOCS_OUTSIDE_CHECKOUT } from '../../tools/selfcheckSubject.mjs';
 import { BRAND_PROFILE } from '../data/brandProfile.js';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -132,37 +133,46 @@ assert.deepEqual(leaking, [],
   + 'started in 2023; the bottles did not all come out then');
 
 // The Fragrantica submission may not carry one year on every fragrance either — that is the same
-// mistake, in the document that goes somewhere permanent.
-const submission = readFileSync(join(root, 'docs', 'fragrantica-submission.txt'), 'utf8');
-const launched = [...submission.matchAll(/^\s*Launched\s+(.+)$/gm)].map((match) => match[1].trim());
-assert.ok(launched.length >= 19, `the submission lists ${launched.length} launch lines, expected at least 19`);
-const yearCounts = {};
-for (const value of launched) {
-  const year = value.match(/^(20\d\d)$/)?.[1];
-  if (year) yearCounts[year] = (yearCounts[year] || 0) + 1;
+// mistake, in the document that goes somewhere permanent. docs/ is outside the build checkout, so
+// this section announces itself as skipped there rather than failing the deploy — and section 3
+// below, which is about the shop and not the document, still runs either way.
+const submissionPath = join(root, 'docs', 'fragrantica-submission.txt');
+if (!existsSync(submissionPath)) {
+  noteSkip(`fragrantica-submission.txt: ${DOCS_OUTSIDE_CHECKOUT}`);
+} else {
+  // The Fragrantica submission may not carry one year on every fragrance either — that is the same
+  // mistake, in the document that goes somewhere permanent.
+  const submission = readFileSync(submissionPath, 'utf8');
+  const launched = [...submission.matchAll(/^\s*Launched\s+(.+)$/gm)].map((match) => match[1].trim());
+  assert.ok(launched.length >= 19, `the submission lists ${launched.length} launch lines, expected at least 19`);
+  const yearCounts = {};
+  for (const value of launched) {
+    const year = value.match(/^(20\d\d)$/)?.[1];
+    if (year) yearCounts[year] = (yearCounts[year] || 0) + 1;
+  }
+  // Two tests, and neither is "fewer than ten share a year" — eleven of the nineteen really are 2025.
+  //
+  // What must not happen is ONE year on all of them, which is how the brand's founding year got written
+  // nineteen times, and no fragrance may carry the founding year at all: Dekito's perfumes are 2025 and
+  // 2026, and 2023 in a Launched line would mean the old mistake came back.
+  const submissionYears = [...new Set(Object.keys(yearCounts))];
+  assert.ok(
+    submissionYears.length >= 2,
+    `every fragrance in the submission says ${submissionYears[0]}. One year on all nineteen is the blanket `
+    + 'mistake; a wrong year in Fragrantica is permanent',
+  );
+  assert.ok(
+    !submissionYears.includes(String(FOUNDED_YEAR)),
+    `a fragrance in the submission claims to have launched in ${FOUNDED_YEAR}, which is when the HOUSE `
+    + 'started. That is the mistake Dekito corrected on 11 Oct 2026',
+  );
+  // And every fragrance has one, so none goes to Fragrantica with a placeholder where a year belongs.
+  assert.equal(
+    Object.values(yearCounts).reduce((sum, count) => sum + count, 0),
+    launched.length,
+    'a Launched line in the submission is not a year — fill it in or delete the line before posting',
+  );
 }
-// Two tests, and neither is "fewer than ten share a year" — eleven of the nineteen really are 2025.
-//
-// What must not happen is ONE year on all of them, which is how the brand's founding year got written
-// nineteen times, and no fragrance may carry the founding year at all: Dekito's perfumes are 2025 and
-// 2026, and 2023 in a Launched line would mean the old mistake came back.
-const submissionYears = [...new Set(Object.keys(yearCounts))];
-assert.ok(
-  submissionYears.length >= 2,
-  `every fragrance in the submission says ${submissionYears[0]}. One year on all nineteen is the blanket `
-  + 'mistake; a wrong year in Fragrantica is permanent',
-);
-assert.ok(
-  !submissionYears.includes(String(FOUNDED_YEAR)),
-  `a fragrance in the submission claims to have launched in ${FOUNDED_YEAR}, which is when the HOUSE `
-  + 'started. That is the mistake Dekito corrected on 11 Oct 2026',
-);
-// And every fragrance has one, so none goes to Fragrantica with a placeholder where a year belongs.
-assert.equal(
-  Object.values(yearCounts).reduce((sum, count) => sum + count, 0),
-  launched.length,
-  'a Launched line in the submission is not a year — fill it in or delete the line before posting',
-);
 
 // --- 3. The shop carries it from the row to the page, both ways and both screens ------------------------
 // FOUR hand-written allowlists stand between the database row and the screen, and the field has to be
