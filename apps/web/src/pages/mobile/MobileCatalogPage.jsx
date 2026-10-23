@@ -9,6 +9,8 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
+import { catalogPillCounts, pillIsOffered } from '@/utils/catalogFacets.js';
+import { shortNoteList } from '@/utils/shortNoteList.js';
 import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
@@ -42,15 +44,24 @@ export const MobileCatalogContent = ({ active = true }) => {
 
   const categories = useMemo(() => catalogCategoryPills(products), [products]);
 
-  const filtered = useMemo(() => {
+  // Split from the category the same way the desktop catalogue does, so the pills can count what they
+  // would show against what the buyer has already typed rather than against the whole shelf.
+  const narrowed = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    return products.filter((product) => {
-      if (!matchesCatalogCategory(product, activeCategory)) return false;
-      if (!q) return true;
-      return [product.name, product.mood, product.category, ...(product.topNotes || []), ...(product.heartNotes || []), ...(product.baseNotes || [])]
-        .join(' ').toLowerCase().includes(q);
-    });
-  }, [activeCategory, products, searchTerm]);
+    if (!q) return products;
+    return products.filter((product) => (
+      [product.name, product.mood, product.category, ...(product.topNotes || []), ...(product.heartNotes || []), ...(product.baseNotes || [])]
+        .join(' ').toLowerCase().includes(q)
+    ));
+  }, [products, searchTerm]);
+  const pillCounts = useMemo(
+    () => catalogPillCounts(narrowed, categories, matchesCatalogCategory),
+    [narrowed, categories],
+  );
+  const filtered = useMemo(
+    () => narrowed.filter((product) => matchesCatalogCategory(product, activeCategory)),
+    [narrowed, activeCategory],
+  );
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
@@ -101,9 +112,11 @@ export const MobileCatalogContent = ({ active = true }) => {
               type="button"
               aria-pressed={cat === activeCategory}
               className={`m-editorial-pill ${cat === activeCategory ? 'is-active' : ''}`}
+              disabled={!pillIsOffered(cat, pillCounts[cat])}
               onClick={() => setActiveCategory(cat)}
             >
               {cat === 'All' ? t('catalog.all') : cat}
+              <span className="m-editorial-pill__count">{pillCounts[cat] ?? 0}</span>
             </button>
           ))}
         </div>
@@ -123,6 +136,9 @@ export const MobileCatalogContent = ({ active = true }) => {
                 <div className="m-editorial-product-card__info">
                   <span className="m-editorial-product-card__category">{cardLabels(product).join(' · ') || 'Atelier'}</span>
                   <h3>{product.name}</h3>
+                  {shortNoteList(product.notes, CARD_NOTE_LIMIT)
+                    ? <span className="m-editorial-product-card__notes">{shortNoteList(product.notes, CARD_NOTE_LIMIT)}</span>
+                    : null}
                   <CardPrice product={product} className="m-editorial-product-card__price" memberClassName="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                 </div>
               </Link>
@@ -174,6 +190,9 @@ export const MobileCatalogContent = ({ active = true }) => {
     </>
   );
 };
+
+// Same three as the desktop card: more wraps to a third line on a phone.
+const CARD_NOTE_LIMIT = 3;
 
 const MobileCatalogPage = () => (
   <MobileCommerceLayout>

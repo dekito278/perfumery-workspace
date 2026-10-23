@@ -18,10 +18,15 @@ import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
 import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
+import { catalogPillCounts, pillIsOffered } from '@/utils/catalogFacets.js';
+import { shortNoteList } from '@/utils/shortNoteList.js';
 import { getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { buildBreadcrumbJsonLd, getSiteOrigin, shopCanonicalUrl } from '@/utils/seo.js';
 import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
+
+// Three notes is what fits on a card at phone width without wrapping to a third line.
+const CARD_NOTE_LIMIT = 3;
 
 const CatalogPage = () => {
   const fetchedProducts = useStorefrontProducts();
@@ -85,22 +90,32 @@ const CatalogPage = () => {
 
   const catalogCategories = useMemo(() => catalogCategoryPills(products), [products]);
 
-  const filteredProducts = useMemo(() => {
+  // Everything EXCEPT the category, kept separate so the pills can count what they would show. A pill
+  // counted against the whole catalogue would read "FLORAL 8" to someone who has typed "vanilla" and
+  // would see two — a number worse than no number.
+  const matchesSearchAndWear = useCallback((product) => {
     const query = searchTerm.trim().toLowerCase();
-    return products.filter((product) => {
-      if (!matchesCatalogCategory(product, activeCategory)) return false;
-      // matchesWear ignores facets the customer left unset, and refuses products with no tags
-      // at all once a facet is set. An untagged bottle stays out rather than being guessed at.
-      if (!matchesWear(product.wear, wearSelection)) return false;
-      if (!query) return true;
-      const searchable = [
-        product.name, product.subtitle, product.description,
-        product.notes, product.mood, product.category,
-        ...(product.topNotes || []), ...(product.heartNotes || []), ...(product.baseNotes || []),
-      ].join(' ').toLowerCase();
-      return searchable.includes(query);
-    });
-  }, [activeCategory, products, searchTerm, wearSelection]);
+    // matchesWear ignores facets the customer left unset, and refuses products with no tags
+    // at all once a facet is set. An untagged bottle stays out rather than being guessed at.
+    if (!matchesWear(product.wear, wearSelection)) return false;
+    if (!query) return true;
+    const searchable = [
+      product.name, product.subtitle, product.description,
+      product.notes, product.mood, product.category,
+      ...(product.topNotes || []), ...(product.heartNotes || []), ...(product.baseNotes || []),
+    ].join(' ').toLowerCase();
+    return searchable.includes(query);
+  }, [searchTerm, wearSelection]);
+
+  const narrowedProducts = useMemo(() => products.filter(matchesSearchAndWear), [products, matchesSearchAndWear]);
+  const pillCounts = useMemo(
+    () => catalogPillCounts(narrowedProducts, catalogCategories, matchesCatalogCategory),
+    [narrowedProducts, catalogCategories],
+  );
+  const filteredProducts = useMemo(
+    () => narrowedProducts.filter((product) => matchesCatalogCategory(product, activeCategory)),
+    [narrowedProducts, activeCategory],
+  );
 
   const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
 
@@ -159,9 +174,11 @@ const CatalogPage = () => {
                   type="button"
                   aria-pressed={category === activeCategory}
                   className={`catalog-pill ${category === activeCategory ? 'is-active' : ''}`}
+                  disabled={!pillIsOffered(category, pillCounts[category])}
                   onClick={() => setActiveCategory(category)}
                 >
                   {category === 'All' ? t('catalog.all') : category}
+                  <span className="catalog-pill__count">{pillCounts[category] ?? 0}</span>
                 </button>
               ))}
             </div>
@@ -232,6 +249,12 @@ const CatalogPage = () => {
                   <div className="catalog-card__info">
                     <span className="catalog-card__category">{cardLabels(product).join(' · ') || 'Atelier'}</span>
                     <h3>{product.name}</h3>
+                    {/* What it smells of, in three words. The field holds the full material list since
+                        2026-10-07 — far too long for a card — so this reuses the clamp the cart lines
+                        already use rather than inventing a second idea of how much is too much. */}
+                    {shortNoteList(product.notes, CARD_NOTE_LIMIT)
+                      ? <span className="catalog-card__notes">{shortNoteList(product.notes, CARD_NOTE_LIMIT)}</span>
+                      : null}
                     <CardPrice product={product} className="catalog-card__price" memberClassName="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>
                 </Link>
