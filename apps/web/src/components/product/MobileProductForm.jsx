@@ -56,6 +56,7 @@ export const emptyProduct = {
   images: [],
   featured: true,
   limited: false,
+  reserve: false,
   catalogVisible: true,
 };
 
@@ -571,6 +572,11 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         <label className="flex items-center gap-3 rounded-2xl bg-amber-50 px-3 py-3 text-xs font-bold text-amber-800">
           <input type="checkbox" checked={Boolean(form.limited)} onChange={(event) => updateField('limited', event.target.checked)} />
           Badge LIMITED
+        </label>
+        {/* The Reserve line — see ProductForm for why it is a badge and not a category. */}
+        <label className="flex items-center gap-3 rounded-2xl bg-stone-100 px-3 py-3 text-xs font-bold text-stone-800">
+          <input type="checkbox" checked={Boolean(form.reserve)} onChange={(event) => updateField('reserve', event.target.checked)} />
+          Lini RESERVE
         </label>
         <label className={`flex items-start gap-3 rounded-2xl px-3 py-3 text-xs font-bold ${canPublish ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
           <input

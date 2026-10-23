@@ -572,6 +572,8 @@ export const normalizeProduct = (input, existingProducts = []) => {
     featured: Boolean(input.featured),
   // A badge, not a scent family. Kept apart from `category` so a perfume can be both Floral and limited.
   limited: Boolean(input.limited),
+  // Same shape as `limited`: a badge, not a scent family. See productBadge.js.
+  reserve: Boolean(input.reserve),
     popularity: Number(input.popularity || 70),
     visual: input.visual || FALLBACK_VISUALS[visualIndex],
     imageUrl: images[0] || '',
@@ -604,6 +606,7 @@ const toDatabasePayload = (product) => ({
   intensity: product.intensity,
   featured: product.featured,
   limited: Boolean(product.limited),
+  reserve: Boolean(product.reserve),
   popularity: product.popularity,
   visual: product.visual,
   image_url: product.imageUrl,
@@ -643,6 +646,7 @@ const fromDatabaseRow = (row) => normalizeProduct({
   intensity: row.intensity,
   featured: row.featured,
   limited: Boolean(row.limited),
+  reserve: Boolean(row.reserve),
   popularity: row.popularity,
   visual: row.visual,
   imageUrl: row.image_url,
