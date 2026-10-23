@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { writeJournalPages } from './seo-artifacts.mjs';
+import { DEFAULT_SHARE_IMAGE } from '../src/utils/seo.js';
 
 const dist = fs.mkdtempSync(path.join(os.tmpdir(), 'journal-prerender-'));
 const baseHtml = '<!doctype html><html><head><title>SOLIVAGANT</title></head><body><div id="root"></div></body></html>';
@@ -41,11 +42,18 @@ assert.match(first, /"@type":\s*"BreadcrumbList"/);
 // The canonical must be the production host, never a relative or preview URL
 assert.ok(!/rel="canonical"[^>]*content="\//.test(first));
 
-// No image means no large-image card promise, and seo_title wins over title
+// An article with NO cover of its own. Until 2026-09-13 this shipped no og:image at all and promised a
+// plain `summary` card; since 8a7a6e1 it falls back to the brand share image, because an article shared
+// with no image at all previewed on WhatsApp as bare text. This section asserted the old behaviour and
+// was never updated, so it sat red for six weeks — the chains do not run in the Vercel build, so nothing
+// said so. What matters is pinned below: a cover-less article must still carry a share image.
 const second = fs.readFileSync(path.join(dist, 'articles', 'tanpa-gambar', 'index.html'), 'utf8');
 assert.match(second, /<title>SEO Judul - SOLIVAGANT<\/title>/);
-assert.match(second, /name="twitter:card"[^>]*content="summary"/);
-assert.ok(!/og:image/.test(second), 'must not advertise an image it does not have');
+assert.match(second, new RegExp(`property="og:image"[^>]*content="${siteUrl}${DEFAULT_SHARE_IMAGE}"`),
+  'a cover-less article must fall back to the brand share image, not share as bare text');
+assert.match(second, /name="twitter:image"/, 'the twitter image travels with the og one');
+assert.match(second, /name="twitter:card"[^>]*content="summary_large_image"/,
+  'there IS an image to show — the fallback one — so the large card is honest');
 // Empty excerpt falls back to the title rather than an empty description
 assert.match(second, /name="description"[^>]*content="Tanpa Gambar"/);
 
