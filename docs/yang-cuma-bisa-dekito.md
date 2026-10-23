@@ -1,6 +1,6 @@
 # Yang cuma bisa kamu kerjakan — 24 Oktober 2026
 
-Lima hal. Semuanya saya coba kerjakan sendiri dan tertahan di pagar izin sesi saya, bukan di
+Enam hal. Semuanya saya coba kerjakan sendiri dan tertahan di pagar izin sesi saya, bukan di
 aksesmu — kamu sudah memberi akses, tapi pagarnya ada di sisi saya dan tidak bisa saya lepas.
 Yang tidak tertahan sudah saya selesaikan dan sudah hidup di produksi.
 
@@ -80,7 +80,40 @@ Mana saja yang masuk lini Reserve itu keputusanmu. Saya sengaja tidak menebak.
 
 ---
 
-## 4. Supabase → Authentication → URL Configuration
+## 4. SQL: posisi piramida 28 bahan  ·  1 query, aman diulang
+
+`supabase/migrations/20261024120000_place_materials_whose_life_was_measured.sql`.
+
+**Ini bukan tebakan, dan bukan karangan saya.** 549 bahan yang sudah KAMU isi posisinya terpisah
+sempurna berdasarkan jam ketahanannya, tanpa tumpang tindih sama sekali:
+
+| posisi | jumlah | rentang |
+|---|---|---|
+| top | 157 | 0 – 11 jam |
+| middle | 281 | 12 – 112 jam |
+| base | 111 | 120 – 2000 jam |
+
+Jadi aturan "≤11 top, ≥120 base, sisanya middle" menghasilkan **549 dari 549** jawabanmu sendiri —
+100%, saya ukur dengan query, bukan saya klaim. Jam-nya bukan pengganti aturanmu; itu MEMANG
+aturan yang selama ini kamu pakai.
+
+Query ini mengisi **28 bahan** yang jam-nya sudah terukur tapi posisinya belum pernah ditulis:
+base 17, top 7, middle 4. Tidak ada satu pun yang dekat garis batas.
+
+**195 bahan sisanya sengaja dibiarkan kosong** — jamnya belum pernah diukur, jadi tidak ada bukti
+apa pun di belakangnya. Mengarang posisi untuk mereka justru kesalahan yang perbaikan ini mau
+hapus. Dan yang sudah kamu isi sendiri tidak disentuh sama sekali.
+
+Kalau mau bisa dibatalkan, ambil daftarnya DULU sebelum menjalankan:
+
+```sql
+select id, name, reference_life_hours from public.raw_materials
+ where pyramid_placement is null and reference_life_hours > 0;
+```
+
+---
+
+## 5. Supabase → Authentication → URL Configuration
 
 Tambahkan dua baris ke **Redirect URLs**:
 
@@ -93,7 +126,7 @@ Tanpa ini, pelanggan toko Inggris yang login Google mental saat kembali.
 
 ---
 
-## 5. SQL: harga terjadwal  ·  TUNGGU SAMPAI 12 NOVEMBER
+## 6. SQL: harga terjadwal  ·  TUNGGU SAMPAI 12 NOVEMBER
 
 `supabase/migrations/20261112090000_apply_and_clear_price_schedule.sql`.
 
@@ -104,10 +137,15 @@ lewat) dan aman kalau dijalankan dua kali.
 
 ## Yang sengaja TIDAK saya kerjakan
 
-- **56 pyramid placement.** Kamu bolehkan saya mengarang, dan untuk naskah saya pakai itu. Tapi ini
-  data wangi yang dibaca pembeli sebagai fakta, dan heuristiknya cuma 46% akurat — sudah pernah
-  diukur. Mengisinya berarti menaruh 30 keterangan yang salah di halaman produk. Pedoman konten-mu
-  sendiri melarangnya.
+- **195 posisi piramida yang jamnya belum diukur.** Yang 28 sudah saya siapkan (nomor 4) karena ada
+  buktinya. Sisanya tidak — bukan karena saya tidak boleh mengarang, tapi karena hasilnya akan
+  menyesatkan alat racikmu sendiri. Isi dulu jam ketahanannya, nanti posisinya ikut dengan
+  sendirinya.
+
+  Catatan koreksi: saya pernah menolak ini dengan alasan "dibaca pembeli di halaman produk". **Itu
+  salah.** Piramida di halaman produk dibaca dari deskripsi tulisanmu (`topNotes`/`heartNotes`/
+  `baseNotes`), bukan dari kolom ini. Kolom ini cuma dipakai Studio. Begitu saya cek, ternyata
+  bukan cuma boleh dikerjakan — ada jalan yang 100% akurat.
 - **Ambar Segara di katalog.** Mekanismenya sudah siap, tapi membuat produknya berarti membuat
   parfum yang bisa dipesan orang dengan harga dan notes karangan saya.
 - **Pengajuan Fragrantica & `ORDER_ALERT_WEBHOOK_URL`.** Yang pertama mengirim atas namamu ke pihak
