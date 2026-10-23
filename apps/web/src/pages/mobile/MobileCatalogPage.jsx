@@ -9,6 +9,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
+import SkipToResults from '@/components/storefront/SkipToResults.jsx';
 import { catalogPillCounts, pillIsOffered } from '@/utils/catalogFacets.js';
 import { shortNoteList } from '@/utils/shortNoteList.js';
 import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
@@ -105,6 +106,7 @@ export const MobileCatalogContent = ({ active = true }) => {
         </div>
 
         {/* Category pills */}
+        <SkipToResults />
         <div className="m-editorial-catalog-pills">
           {categories.map((cat) => (
             <button
@@ -123,7 +125,7 @@ export const MobileCatalogContent = ({ active = true }) => {
 
         {/* Product grid */}
         {filtered.length ? (
-          <div className="m-editorial-product-grid">
+          <div className="m-editorial-product-grid" id="catalog-results" tabIndex={-1}>
             {visible.map((product) => (
               <Link key={product.slug} to={`/mobile/products/${product.slug}`} className="m-editorial-product-card">
                 <ProductVisual
