@@ -41,6 +41,17 @@ export const reconcileCartLines = (items = [], catalog = []) => {
 
     return {
       ...item,
+      // THE VARIANT, WRITTEN BACK. This function already resolves it — by id when the line names one,
+      // by size when it does not — and then used to throw the answer away, so a line stored with
+      // variantId '' kept it for ever. Export prices are keyed by (product, variant), so such a line
+      // was refused with "no international price yet" on every later visit, even after the bug that
+      // created it was fixed. Healing it here reaches carts already sitting in buyers' browsers, which
+      // fixing the add-to-cart buttons cannot.
+      //
+      // Only ever the id of a variant matched DETERMINISTICALLY. A line whose size matches nothing is
+      // left alone and marked unavailable above; guessing a variant would price a bottle the buyer did
+      // not choose, and being refused is better than being charged the wrong number.
+      ...(variant?.id ? { variantId: variant.id, size: variant.size || item.size } : {}),
       category: product.category || item.category,
       images: product.images,
       imageUrl: product.imageUrl,

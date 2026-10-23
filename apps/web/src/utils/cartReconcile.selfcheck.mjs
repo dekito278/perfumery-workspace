@@ -122,6 +122,48 @@ assert.equal(agreed, cases.length);
 assert.ok(refusedSomething >= 3, `the fixtures must actually reach the refusing branch — only ${refusedSomething} did`);
 assert.ok(cases.length - refusedSomething >= 2, 'and at least two fixtures must still be accepted, or agreement is trivial');
 
+// --- A line stored without a variant is healed, and only when the match is certain ------------------
+// The catalogue card used to add lines with variantId '' (fixed 2026-10-23). Export prices are keyed by
+// (product, variant), so those lines were refused with "no international price yet" on EVERY later
+// visit — fixing the button does nothing for a cart already sitting in a buyer's browser. Reconcile
+// already resolved the variant by size and threw the answer away; now it writes it back.
+const withVariants = {
+  slug: 'la-tulipe', id: 'p1', priceNumber: 359000,
+  variants: [{ id: '30-ml', size: '30 ml', priceNumber: 359000, stock: 5 }],
+};
+const [healed] = reconcileCartLines(
+  [{ slug: 'la-tulipe', productId: 'p1', variantId: '', size: '30 ml', priceNumber: 359000, quantity: 1 }],
+  [withVariants],
+);
+assert.equal(healed.variantId, '30-ml',
+  'a line whose size matches a variant must come back carrying that variant id');
+assert.equal(healed.unavailable, false, 'and it is a perfectly good line');
+
+// NOT healed by guessing. A size that matches nothing is flagged, not quietly attached to the first
+// variant — being refused is better than being charged for a bottle nobody chose.
+const [notHealed] = reconcileCartLines(
+  [{ slug: 'la-tulipe', productId: 'p1', variantId: '', size: '100 ml', priceNumber: 359000, quantity: 1 }],
+  [withVariants],
+);
+assert.equal(notHealed.variantId, '', 'a size that matches no variant must not be given one');
+assert.equal(notHealed.unavailable, true, 'it is flagged instead');
+assert.equal(notHealed.priceNumber, 359000, 'and keeps the price it was stored at');
+
+// A line that already names a variant keeps it — healing must never overwrite a real choice.
+const twoSizes = {
+  slug: 'bespoke', id: 'p2', priceNumber: 569000,
+  variants: [
+    { id: '30-ml', size: '30 ml', priceNumber: 569000, stock: 3 },
+    { id: '50-ml', size: '50 ml', priceNumber: 939000, stock: 3 },
+  ],
+};
+const [kept] = reconcileCartLines(
+  [{ slug: 'bespoke', productId: 'p2', variantId: '50-ml', size: '50 ml', priceNumber: 939000, quantity: 1 }],
+  [twoSizes],
+);
+assert.equal(kept.variantId, '50-ml', 'the buyer\'s own choice of variant survives reconciliation');
+assert.equal(kept.priceNumber, 939000, 'at its own price');
+
 // An empty catalog is still a no-op (it means "not loaded", not "everything is gone")
 assert.deepEqual(reconcileCartLines(stored, []), stored);
 
