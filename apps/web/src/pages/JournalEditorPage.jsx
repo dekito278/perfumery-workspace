@@ -158,6 +158,12 @@ const JournalEditorPage = () => {
         ? await updateJournalPost(id, payload)
         : await createJournalPost(payload);
 
+      // The snapshot is what `isDirty` compares against, and until 2026-10-23 a successful save never
+      // moved it. So the editor went on believing the article was unsaved: leaving the page raised the
+      // browser's "Leave site?" dialog, and "Kembali ke Journal" asked whether to discard changes that
+      // were already in the database. Saving five articles in a row, the warning fired every time — and
+      // a warning that cries wolf after every save is how a real one gets clicked through.
+      setSavedSnapshot(JSON.stringify(formState));
       toast.success(isEditMode ? 'Artikel berhasil diperbarui' : 'Artikel berhasil disimpan');
       navigate(`/studio/journal/${savedPost.id}`);
     } catch (error) {
