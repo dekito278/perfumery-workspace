@@ -2292,7 +2292,7 @@ export const MESSAGES = {
     // promise buildBespokeEnquiryDraft exists to avoid. The block is gated to the Indonesian shop; this
     // is what stands if that gate is ever edited.
     "bsp.floor": "Priced with you on WhatsApp",
-    "bsp.floorNote": "A bespoke bottle is quoted one by one from abroad, shipping included, before anything is agreed.",
+    "bsp.floorNote": "A bespoke bottle is quoted one by one from abroad, before anything is agreed.",
     "bsp.optionExtra": "+{price}",
     "bsp.scentReference": "Scent reference:",
     "bsp.briefShort": "Short brief",
