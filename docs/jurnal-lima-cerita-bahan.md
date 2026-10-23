@@ -22,6 +22,13 @@ di judul. Ganti sesukamu — itu memang bagian yang paling pantas kamu tulis sen
 cover, tempel kreditnya di baris terakhir isi artikel — daftarnya masih ada di file caption
 masing-masing. Kalau cover-nya foto sendiri, tidak perlu kredit.
 
+**Tapi ada konsekuensinya kalau cover dibiarkan kosong:** artikel tanpa cover otomatis memakai
+foto brand `perfumer-at-work.jpg` sebagai gambar preview. Artinya kalau kelima artikel ini
+terbit tanpa cover, kelimanya akan tampil dengan **gambar preview yang sama persis** di
+WhatsApp dan Instagram — lima tautan berbeda, satu foto. Masih jauh lebih baik daripada preview
+tanpa gambar sama sekali, tapi kalau kamu mau kelimanya kelihatan beda, isi cover-nya.
+Foto Wikimedia di file caption masing-masing sudah cukup untuk itu.
+
 ---
 
 ## 1. Gaharu → Aquilaria tuberosa
