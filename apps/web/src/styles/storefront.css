@@ -7923,3 +7923,48 @@ main :is(a, figure, picture, div, span):has(> img) {
   line-height: 1.5;
   color: var(--editorial-muted);
 }
+
+/* ─── Filter pill counts, and the note line on a catalogue card ──────────────────────────────────
+   Both exist so a buyer can decide without a tap: how many bottles are behind this filter, and what
+   this one smells of. The count is the quieter of the two — it sits beside the label, never competes
+   with it, and a pill with nothing behind it is disabled rather than left as a dead end. */
+.catalog-pill__count,
+.m-editorial-pill__count {
+  margin-left: 0.5em;
+  font-size: 0.78em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+}
+
+.catalog-pill:disabled,
+.m-editorial-pill:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.catalog-pill:disabled:hover,
+.m-editorial-pill:disabled:hover {
+  border-color: var(--editorial-border, #e2ddd2);
+  background: transparent;
+}
+
+.catalog-card__notes,
+.m-editorial-product-card__notes {
+  display: block;
+  margin-top: 2px;
+  /* Literal fallbacks on every var(): the phone does not load the desktop palette, so an .m-editorial-
+     rule that leans on a bare var() renders with no font, no size and no colour. motionPolish's guard
+     caught this one before it shipped. */
+  font-family: var(--font-body, "DM Sans", sans-serif);
+  font-size: var(--text-eyebrow, 11px);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--editorial-muted, #6f695f);
+  /* Two lines at most. The notes field is the full material list, and the clamp in the markup already
+     cuts it to three — this is the belt for a single very long note name. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
