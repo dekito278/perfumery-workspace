@@ -101,6 +101,19 @@ for (const page of ['pages/InternationalCartPage.jsx', 'pages/mobile/MobileInter
   for (const shop of ['id', 'en']) {
     assert.ok(MESSAGES[shop]['export.waCartGiftLine'], `export.waCartGiftLine is missing from the ${shop} shop`);
   }
+
+  // AND IT NAMES THE AROMA, NOT THE PRODUCT. The gift is one product carrying a variant per scent, so
+  // its cart line is called "Vial hadiah — La Tulipe". Passed straight through, an English buyer sent
+  // himself "- Vial hadiah — La Tulipe — free vial, no charge" — two Indonesian words inside his own
+  // order, live until 2026-10-23.
+  //
+  // No i18n guard could have caught it, and that is the part worth keeping: the phrase is DATA, read
+  // from the product row, not a message in this file. The English shop does not translate product
+  // names and must not — the perfumes are called Ayang-ayang and Maskumambang on purpose. The variant
+  // already holds the aroma by itself, and "free vial" says what the thing is.
+  assert.match(hook, /waCartGiftLine', \{ name: gift\.size \|\| gift\.name \}/,
+    'the gift line must be built from the aroma; gift.name drags the Indonesian product name into an '
+    + 'English order message');
 }
 // The domestic carts never touch the international quote: a rupiah basket that starts quoting dollars
 // is the mirror of the leak this guard was first written for.
