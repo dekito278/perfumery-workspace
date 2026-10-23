@@ -38,7 +38,10 @@ import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
 // Keys: module-level, so no hook can run here. The component translates them.
-const stepKeys = ['bsp.scent', 'bsp.preferences', 'bsp.bottle', 'bsp.addressShort', 'bsp.pay'];
+// Step 3 was 'bsp.bottle' — "Botol" — back when it held the bottle, cap and label choices. Dekito
+// removed all three on 2026-10-23 and confirmed it is permanent, so the step holds the size and
+// nothing else. The chip outside now says what the panel inside says.
+const stepKeys = ['bsp.scent', 'bsp.preferences', 'bsp.size', 'bsp.addressShort', 'bsp.pay'];
 
 
 const checkoutCourierOptions = [
