@@ -25,6 +25,7 @@ import { quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import ProductStoryLink from '@/components/storefront/ProductStoryLink.jsx';
 import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
@@ -273,6 +274,8 @@ const MobileProductDetailPage = () => {
         </div>
 
         {/* Related */}
+        <ProductStoryLink product={product} mobile className="m-editorial-section pdp-story-link" />
+
         {related.length ? (
           <section className="m-editorial-section m-editorial-pdp__related">
             <div className="m-editorial-section__head">
