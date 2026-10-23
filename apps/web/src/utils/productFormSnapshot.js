@@ -34,6 +34,7 @@ export const snapshotProductForm = (product = {}) => JSON.stringify({
   intensity: product.intensity || 'Medium',
   featured: Boolean(product.featured),
   limited: Boolean(product.limited),
+  reserve: Boolean(product.reserve),
   catalogVisible: Boolean(product.catalogVisible),
 });
 

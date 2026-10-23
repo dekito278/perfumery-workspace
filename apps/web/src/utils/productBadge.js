@@ -12,12 +12,45 @@
  */
 const LIMITED = 'limited';
 
+/**
+ * Badges that are NOT scent families.
+ *
+ * LIMITED says how rare something is. RESERVE (added 2026-10-24) is the name of a line — Dekito's own
+ * words: "jalan kecil yang aku buka buat bahan-bahan alami yang langka". Neither answers "what does
+ * this smell like", so neither belongs in `category`, and both need the same three things: a badge on
+ * the card, a pill that finds everything wearing it, and a column of its own.
+ *
+ * One list rather than two copies of the same sixty lines, so a third badge is a row here and nothing
+ * else. `category` is the legacy seat: LIMITED still has to answer to it because ten perfumes were
+ * filed there before the split, while RESERVE never was and is column-only.
+ */
+const BADGES = [
+  { key: 'limited', label: 'Limited', legacyCategory: true },
+  { key: 'reserve', label: 'Reserve', legacyCategory: false },
+];
+
+/** The badge a pill name refers to, or undefined when the pill is an ordinary scent family. */
+const badgeNamed = (category) => {
+  const wanted = String(category || '').trim().toLowerCase();
+  return BADGES.find((badge) => badge.key === wanted);
+};
+
+/** Does this perfume wear that badge? Its own column, plus the legacy category seat where there is one. */
+const wearsBadge = (product, badge) => (
+  Boolean(product?.[badge.key])
+  || (badge.legacyCategory && String(product?.category || '').trim().toLowerCase() === badge.key)
+);
+
+/** Every badge this perfume wears, in the order above. */
+export const productBadges = (product = {}) => BADGES.filter((badge) => wearsBadge(product, badge));
+
 export const isLimitedCategory = (category) => String(category || '').trim().toLowerCase() === LIMITED;
 
 /** True when this perfume should wear the LIMITED badge, however its category is currently filed. */
-export const isLimitedProduct = (product = {}) => (
-  Boolean(product?.limited) || isLimitedCategory(product?.category)
-);
+export const isLimitedProduct = (product = {}) => wearsBadge(product, BADGES[0]);
+
+/** True when this perfume belongs to the Reserve line. Column only — no legacy category to inherit. */
+export const isReserveProduct = (product = {}) => Boolean(product?.reserve);
 
 /**
  * What the card prints as the family line. A category that is really a badge is not a family, so it is
@@ -28,7 +61,7 @@ export const familyLabel = (product = {}) => {
   // Empty, not a fallback word. A perfume still filed as 'Limited' has no family to print yet, and the
   // badge beside it already says the only true thing — so the card reads exactly as it does today, one
   // word. Printing 'Atelier' there would be inventing a family to fill a gap.
-  if (!category || isLimitedCategory(category)) return '';
+  if (!category || badgeNamed(category)) return '';
   return category;
 };
 
@@ -47,7 +80,8 @@ export const familyLabel = (product = {}) => {
  */
 export const matchesCatalogCategory = (product = {}, category = '') => {
   if (!category || category === 'All') return true;
-  if (isLimitedCategory(category)) return isLimitedProduct(product);
+  const badge = badgeNamed(category);
+  if (badge) return wearsBadge(product, badge);
   return String(product?.publicCategory || product?.category || '') === category;
 };
 
@@ -75,14 +109,19 @@ export const catalogCategoryPills = (products = []) => {
     const category = String(product?.publicCategory || product?.category || '').trim();
     if (category && !pills.includes(category)) pills.push(category);
   }
-  if (!pills.some(isLimitedCategory) && list.some(isLimitedProduct)) pills.push('Limited');
+  // Each badge's pill is kept alive by the badge: present while anything wears it, absent when nothing
+  // does — which is also why RESERVE costs nothing until Dekito flags his first bottle.
+  for (const badge of BADGES) {
+    const already = pills.some((pill) => String(pill).trim().toLowerCase() === badge.key);
+    if (!already && list.some((product) => wearsBadge(product, badge))) pills.push(badge.label);
+  }
   return pills;
 };
 
 /** The whole label line: the family, the badge, or both once a limited perfume has been re-filed. */
 export const cardLabels = (product = {}) => [
   familyLabel(product),
-  isLimitedProduct(product) ? 'Limited' : '',
+  ...productBadges(product).map((badge) => badge.label),
 ].filter(Boolean);
 
 export default isLimitedProduct;

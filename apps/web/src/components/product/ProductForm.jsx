@@ -56,6 +56,7 @@ export const emptyProduct = {
   wear: {},
   featured: true,
   limited: false,
+  reserve: false,
   catalogVisible: true,
 };
 
@@ -502,6 +503,13 @@ const ProductForm = ({ product = null, onSaved }) => {
           <label className="flex items-center gap-3 rounded-2xl border bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
             <input type="checkbox" checked={Boolean(form.limited)} onChange={(event) => updateField('limited', event.target.checked)} />
             Badge LIMITED
+          </label>
+          {/* Solivagant Reserve: a LINE, not a price tier and not a scent family — Dekito's own words,
+              "jalan kecil yang aku buka buat bahan-bahan alami yang langka". It behaves exactly like
+              LIMITED: badge on the card, and a pill that appears only once something wears it. */}
+          <label className="flex items-center gap-3 rounded-2xl border bg-stone-100 px-4 py-3 text-sm font-bold text-stone-800">
+            <input type="checkbox" checked={Boolean(form.reserve)} onChange={(event) => updateField('reserve', event.target.checked)} />
+            Lini RESERVE
           </label>
           <label className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-bold ${canPublish ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
             <input
