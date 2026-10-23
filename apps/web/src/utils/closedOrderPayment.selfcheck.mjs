@@ -4,7 +4,7 @@
 // DKT-MU9L5XW2-JNBGGD: status "cancelled", payment_status "expired", stock already given back by
 // api/orders/expire-reservations.js. The payment page for that order was still printing
 //
-//     REKENING TUJUAN — BCA — 7401775441 — Ade Rizki Wiranto
+//     REKENING TUJUAN — BCA — <nomor rekening> — <nama pemilik>
 //     1. Transfer tepat sebesar Rp 235.900.
 //
 // and offering the upload form. Someone opening the WhatsApp link a day late is told, in detail, to send

@@ -12,7 +12,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -66,13 +66,38 @@ for (const sensitive of ['VITE_PAY_BANK_ACCOUNT', 'VITE_PAY_WIRE_ACCOUNT', 'VITE
     `${sensitive} has a fallback again, so the value is back in the repository`);
 }
 
-// And nothing that looks like an account number may sit in either payment file, however it got there —
-// a pasted literal, a comment, a "temporary" default. The two real numbers are ten and eleven digits.
-for (const [name, source] of [['cartService.js', cart], ['paymentDetails.js', details]]) {
-  const digits = [...source.matchAll(/\b\d{9,}\b/g)].map((m) => m[0]);
-  assert.deepEqual(digits, [],
-    `${name} carries what looks like an account number: ${digits.join(', ')}`);
-}
+// AND NOT ANYWHERE ELSE EITHER. Scoping this to the two payment files was too narrow, which the first
+// repo-wide sweep proved within the hour: the real BCA number was still sitting in a COMMENT in
+// closedOrderPayment.selfcheck, quoting what a broken payment page printed in September. A number in a
+// comment is a number in the repository — the one thing §0 asks not to happen, and precisely the case
+// this rule's own sabotage test plants on purpose.
+//
+// A standalone run of ten or eleven digits is the shape of an Indonesian bank account. Measured across
+// src, api and tools on 2026-10-23 there were four; three were these, and the fourth was the leak.
+const NOT_AN_ACCOUNT = {
+  4294967296: '2^32, a numeric bound',
+  '08120000000': 'a placeholder phone number — every digit after the prefix is zero',
+  '0123456789': 'a placeholder, digits in order',
+};
+const scan = (dir) => {
+  let found = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) { found = found.concat(scan(full)); continue; }
+    if (!/\.(jsx?|mjs)$/.test(entry.name)) continue;
+    for (const m of readFileSync(full, 'utf8').matchAll(/(?<![0-9A-Za-z_-])(\d{10,11})(?![0-9])/g)) {
+      if (!NOT_AN_ACCOUNT[m[1]]) found.push(`${entry.name}: ${m[1]}`);
+    }
+  }
+  return found;
+};
+const looksLikeAnAccount = [src, join(src, '..', 'api'), join(src, '..', 'tools')]
+  .filter((dir) => existsSync(dir))
+  .flatMap(scan);
+assert.deepEqual(looksLikeAnAccount, [],
+  'these carry what looks like a bank account number, in code or in a comment:\n  '
+  + `${looksLikeAnAccount.join('\n  ')}\n`
+  + 'If a number is genuinely not an account, add it to NOT_AN_ACCOUNT with the reason it is not.');
 
 // WHAT STAYED is published by the banks themselves and is not what §0 is about. Keeping these means a
 // preview deploy still renders a recognisable block instead of a row of blanks that reads as a bug.
