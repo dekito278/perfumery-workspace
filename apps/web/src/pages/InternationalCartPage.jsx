@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Globe, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useCartInternationalQuote } from '@/hooks/useInternationalQuote.js';
@@ -106,7 +107,7 @@ const InternationalCartPage = () => {
                       <Minus className="h-3.5 w-3.5" />
                     </button>
                     <span>{line.quantity}</span>
-                    <button type="button" onClick={() => updateQuantity(line.slug, line.quantity + 1)} aria-label={t('cart.increaseOf', { name: line.name })}>
+                    <button type="button" onClick={() => updateQuantity(line.slug, nextQuantityUp(line))} disabled={atStockCap(line)} aria-label={t('cart.increaseOf', { name: line.name })}>
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>

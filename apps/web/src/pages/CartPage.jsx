@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useMemo } from 'react';
@@ -113,7 +114,7 @@ const CartPage = () => {
                       <Minus className="h-3.5 w-3.5" />
                     </button>
                     <span>{item.quantity}</span>
-                    <button type="button" onClick={() => updateQuantity(item.slug, item.quantity + 1)} aria-label={t('cart.increaseOf', { name: item.name })}>
+                    <button type="button" onClick={() => updateQuantity(item.slug, nextQuantityUp(item))} disabled={atStockCap(item)} aria-label={t('cart.increaseOf', { name: item.name })}>
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>

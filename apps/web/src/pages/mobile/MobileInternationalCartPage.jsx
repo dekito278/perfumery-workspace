@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Globe, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
+import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
@@ -108,7 +109,7 @@ const MobileInternationalCartPage = () => {
                 <div style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 10, border: '1px solid var(--editorial-stone)', background: 'var(--editorial-paper)', padding: 4 }}>
                   <Button type="button" size="icon" variant="ghost" aria-label={t('cart.decreaseOf', { name: line.name })} className="h-8 w-8 rounded-lg tap-44" onClick={() => decrease(line)}><Minus className="h-4 w-4" /></Button>
                   <span style={{ display: 'grid', height: 32, minWidth: 40, placeItems: 'center', fontSize: '0.875rem', fontWeight: 600 }}>{line.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.increaseOf', { name: line.name })} className="h-8 w-8 rounded-lg tap-44" onClick={() => updateQuantity(line.slug, line.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.increaseOf', { name: line.name })} className="h-8 w-8 rounded-lg tap-44" disabled={atStockCap(line)} onClick={() => updateQuantity(line.slug, nextQuantityUp(line))}><Plus className="h-4 w-4" /></Button>
                 </div>
                 <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>{line.lineUsd ? `US$${line.lineUsd}` : ''}</div>
               </div>
