@@ -16,12 +16,20 @@ export const CART_ITEM_ADDED_EVENT = 'dekito:cart-item-added';
 // WHERE THE MONEY GOES, from the environment first.
 //
 // Dekito's brief, §0: "Data sensitif (nomor rekening, kontak) disimpan di config/env, bukan hard-coded
-// di template." These two blocks predate that instruction and still carry the numbers as literals —
-// they are kept as a FALLBACK rather than removed, because an unset variable would leave a live payment
-// screen with no account number on it, which is worse than a number in a repository. Once the VITE_PAY_*
-// variables are set in Vercel the literals come out, and the same names feed /pay/<token>, so there is
-// one set of variables rather than two.
-const payEnv = (name, fallback) => {
+// di template." Settled 2026-10-23, when all eight VITE_PAY_* variables were finally set in Production.
+//
+// WHAT §0 NAMES IS WHAT CAME OUT: the two account numbers and the holder's name now have NO fallback,
+// so they exist in one place, Vercel, and nowhere in this repository. An unset variable leaves those
+// fields empty rather than quietly printing a number from the source — which is the point; a number in
+// a repository is the thing the brief was written against.
+//
+// WHAT STAYED is deliberately not sensitive: "BCA", the wire bank's registered name, and its SWIFT code
+// are printed on the payment screen and published by the banks themselves. Keeping them as fallbacks
+// means a preview deploy or a local dev server still renders a recognisable block instead of a row of
+// blanks that looks like a bug and trains everyone to ignore it.
+//
+// The same variable names feed /pay/<token>, so there is one set rather than two.
+const payEnv = (name, fallback = '') => {
   try {
     const value = String(import.meta.env?.[name] ?? '').trim();
     return value || fallback;
@@ -37,8 +45,8 @@ export const MANUAL_TRANSFER_PAYMENT = {
   labelKey: 'paymethod.manual',
   shortLabel: 'BCA Transfer',
   bankName: payEnv('VITE_PAY_BANK_NAME', 'BCA'),
-  accountNumber: payEnv('VITE_PAY_BANK_ACCOUNT', '7401775441'),
-  accountName: payEnv('VITE_PAY_BANK_HOLDER', 'Ade Rizki Wiranto'),
+  accountNumber: payEnv('VITE_PAY_BANK_ACCOUNT'),
+  accountName: payEnv('VITE_PAY_BANK_HOLDER'),
   description: 'Transfer sesuai total bayar, lalu wajib upload bukti transfer.',
   descriptionKey: 'paymethod.manualBody',
 };
@@ -64,8 +72,8 @@ export const INTERNATIONAL_TRANSFER_PAYMENT = {
   // gets queried or returned — which is exactly the stall this shop has been losing orders to.
   bankName: payEnv('VITE_PAY_WIRE_BANK', 'PT Bank SMBC Indonesia Tbk (Jenius)'),
   swift: payEnv('VITE_PAY_WIRE_BIC', 'SUNIIDJA'),
-  accountNumber: payEnv('VITE_PAY_WIRE_ACCOUNT', '90022310398'),
-  accountName: payEnv('VITE_PAY_BANK_HOLDER', 'Ade Rizki Wiranto'),
+  accountNumber: payEnv('VITE_PAY_WIRE_ACCOUNT'),
+  accountName: payEnv('VITE_PAY_BANK_HOLDER'),
   // Wire forms ask for the bank's address and this block never carried one, so it was typed by hand or
   // left blank. No fallback: an address invented here would be worse than none.
   bankAddress: payEnv('VITE_PAY_WIRE_ADDRESS', ''),

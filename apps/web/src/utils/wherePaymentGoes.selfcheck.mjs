@@ -46,18 +46,40 @@ for (const name of ['VITE_PAY_BANK_NAME', 'VITE_PAY_BANK_ACCOUNT', 'VITE_PAY_BAN
   assert.ok(cart.includes(name), `${name} is read by the cart too — one set of variables, not two`);
 }
 
-// --- 3. The environment wins, and an unset variable does not blank a payment screen -------------------
-assert.match(cart, /const payEnv = \(name, fallback\) =>/,
-  'the cart reads the environment with a fallback');
+// --- 3. The environment wins, and §0 is finally met ---------------------------------------------------
+// Settled 2026-10-23: all eight VITE_PAY_* variables are set in Production, so the sensitive literals
+// came out of the source. What the brief names — "nomor rekening, kontak" — now exists in Vercel and
+// nowhere in this repository.
+assert.match(cart, /const payEnv = \(name, fallback = ''\) =>/,
+  'an unset variable must read as empty rather than undefined');
 for (const field of ['bankName', 'accountNumber', 'accountName', 'swift']) {
   assert.match(cart, new RegExp(`${field}: payEnv\\('VITE_PAY_`),
     `${field} comes from the environment first`);
 }
-// The literals that remain are a deliberate fallback, not an oversight — and they are the ONLY place a
-// number may still appear. This records that, so removing them later is a one-line change and anybody
-// reading this knows the brief's §0 is not yet fully met.
-assert.match(cart, /kept as a FALLBACK rather than removed/,
-  'and the reason the numbers are still here is written down');
+
+// NO FALLBACK FOR THE THINGS §0 NAMES. A second argument here would put the value back in the repo,
+// which is the whole thing the brief was written against.
+for (const sensitive of ['VITE_PAY_BANK_ACCOUNT', 'VITE_PAY_WIRE_ACCOUNT', 'VITE_PAY_BANK_HOLDER']) {
+  assert.match(cart, new RegExp(`payEnv\\('${sensitive}'\\)`),
+    `${sensitive} must be read with no fallback — §0 keeps it out of the source`);
+  assert.doesNotMatch(cart, new RegExp(`payEnv\\('${sensitive}',`),
+    `${sensitive} has a fallback again, so the value is back in the repository`);
+}
+
+// And nothing that looks like an account number may sit in either payment file, however it got there —
+// a pasted literal, a comment, a "temporary" default. The two real numbers are ten and eleven digits.
+for (const [name, source] of [['cartService.js', cart], ['paymentDetails.js', details]]) {
+  const digits = [...source.matchAll(/\b\d{9,}\b/g)].map((m) => m[0]);
+  assert.deepEqual(digits, [],
+    `${name} carries what looks like an account number: ${digits.join(', ')}`);
+}
+
+// WHAT STAYED is published by the banks themselves and is not what §0 is about. Keeping these means a
+// preview deploy still renders a recognisable block instead of a row of blanks that reads as a bug.
+for (const [name, fallback] of [['VITE_PAY_BANK_NAME', 'BCA'], ['VITE_PAY_WIRE_BIC', 'SUNIIDJA']]) {
+  assert.match(cart, new RegExp(`payEnv\\('${name}', '`),
+    `${name} keeps its published fallback (${fallback})`);
+}
 
 // --- 4. The bank address, which a wire form asks for and this block never had -------------------------
 assert.match(cart, /bankAddress: payEnv\('VITE_PAY_WIRE_ADDRESS', ''\)/,
