@@ -18,7 +18,7 @@ import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
 import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
-import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { buildBreadcrumbJsonLd, getSiteOrigin, shopCanonicalUrl } from '@/utils/seo.js';
 import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
@@ -54,7 +54,20 @@ const CatalogPage = () => {
       toast.error(t('catalog.outOfStockToast', { name: product.name }));
       return;
     }
-    addItem(product, 1);
+    // THE VARIANT, which this call used to leave out. Export prices are keyed by (product, variant), so
+    // a line with variantId '' matched nothing and the English cart printed "quoted on request" under a
+    // card that had just advertised US$95 — a price offered on the shelf and withdrawn at the till.
+    // Measured on production 2026-10-23: added from here, L'iris and Maskumambang both lost their
+    // price; the same two bottles added from the product page kept it. The other three addItem callers
+    // already build the line this way; this one is brought into line with them rather than given its
+    // own rule.
+    const variant = getPrimaryVariant(Array.isArray(product?.variants) ? product.variants : []);
+    const variantKey = variant?.id || variant?.size || '';
+    addItem({
+      ...product,
+      cartSlug: variantKey ? `${product.slug}-${variantKey}` : product.slug,
+      variantId: variant?.id || '',
+    }, 1);
     setAddedSlug(product.slug);
     toast.success(t('pdp.addedToast', { name: product.name }), {
       description: t('pdp.cartUpdated'),
