@@ -140,4 +140,16 @@ assert.doesNotMatch(desktop, /\{label\?\.label \|\| t\('bsp\.label'\)\}/,
 assert.match(desktop, /options: exoticMaterialOptions\.length \? \[noneMaterialOption/,
   'a Material tab whose only option is "no add-on" is not a choice and must not be offered');
 
+// --- 6. The step chip says what the step holds ---------------------------------------------------------
+// The desktop flow labelled step 3 "Botol" while the only thing in it was the size picker. A label that
+// names a choice the panel no longer offers is the same defect as the copy above, one layer out.
+const stepLine = desktop.split('\n').find((l) => l.includes('const stepKeys ='));
+assert.ok(stepLine, 'the desktop step list has moved; this assertion no longer reads it');
+for (const [group, words] of switchedOff) {
+  for (const word of words) {
+    assert.doesNotMatch(stepLine, new RegExp(`'bsp\\.${word}'`),
+      `the step chips still name bsp.${word}, but ${group} has nothing a buyer can pick`);
+  }
+}
+
 console.log('bespokePriceIsTheBasePrice OK (30 ml 569.000 / 50 ml 939.000, and an empty group is not a tab, a step, or a price)');
