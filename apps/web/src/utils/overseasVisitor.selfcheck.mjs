@@ -462,6 +462,32 @@ for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
     `the ${lang} line still says the freight is in the price, which it is not`);
 }
 
+// THE SAME PROMISE, EVERYWHERE, NOT JUST IN THE KEY THIS SECTION WAS WRITTEN AROUND.
+// The rule above guarded one message. On 2026-10-23 the bespoke page was found still telling English
+// readers "A bespoke bottle is quoted one by one from abroad, SHIPPING INCLUDED, before anything is
+// agreed" — a promise retired on 2026-09-25, live for four weeks, on a page this guard never looked at.
+// A buyer could have held Dekito to free DHL on a single bottle, which the carrier bills at a one-kilo
+// minimum.
+//
+// So the subject is now every message in both shops, and a phrase that claims the freight is covered
+// has to earn its place on the list below with a reason. Domestic free shipping is a real feature and
+// says "gratis ongkir"; that is a different claim, about Java, and is not matched here.
+const CLAIMS = /shipping\s+(is\s+)?included|freight\s+included|includes\s+shipping|ongkir\s+(sudah\s+)?termasuk|termasuk\s+ongkir/i;
+const ALLOWED = {
+  'mcheckout.shippingInTotal':
+    'renders only after the courier fee is computed and added, so it describes the total the buyer is '
+    + 'about to pay rather than promising the freight is free',
+};
+for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
+  for (const [key, value] of Object.entries(table)) {
+    if (typeof value !== 'string' || !CLAIMS.test(value)) continue;
+    assert.ok(ALLOWED[key],
+      `${lang}.${key} claims the freight is included: "${value}"\n  That promise was retired on `
+      + '2026-09-25 — the carrier bills a one-kilo minimum, so it only ever held on a full parcel. '
+      + 'If this one is genuinely true, add it to ALLOWED with the reason it is.');
+  }
+}
+
 // Every caller passes the variant. All 18 tier prices are keyed by variant, so a product-level lookup
 // finds nothing and the line silently never appears — the exact shape of the bug that shipped in #147.
 for (const caller of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
