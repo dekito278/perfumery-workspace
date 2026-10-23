@@ -1,4 +1,20 @@
-# Lima cerita bahan — siap tempel ke Studio → Jurnal
+# Lima cerita bahan — SUDAH jadi draft di Studio
+
+> **Status 23 Okt 2026: kelimanya sudah saya masukkan.** Buka Studio → Jurnal dan kamu akan lihat
+> enam artikel: lima draft baru (Material Note) plus Kisah Jason Voorhees yang sudah terbit.
+> Semuanya masih **Draft**, jadi belum terlihat pembeli.
+>
+> Yang tinggal kamu lakukan: baca, lalu ubah Status jadi **Published** satu per satu. Saya tidak
+> boleh menekan tombol itu — menerbitkan tulisan ke publik atas namamu di luar batas saya, dan
+> menurut saya memang pantas begitu.
+>
+> Sudah saya cek langsung ke database, bukan dari layar: kelimanya `material_note`, `draft`,
+> dan "Produk terkait"-nya benar — gaharu→`aquilaria-tuberosa`, nilam→`patchouli-so-sexy`,
+> akar wangi→`j-adore-la-vetiver`, vanila→`vanille-planifolia`, geosmin→`jata-bhumi`.
+>
+> Teks di bawah ini saya simpan sebagai arsip: inilah persis yang masuk, kalau kamu mau
+> membandingkan atau menulis ulang.
+
 
 Teksnya **punyamu**, diambil dari caption Instagram yang sudah kamu tulis dan sudah kamu cek
 faktanya. Yang saya buang cuma bagian yang hanya masuk akal di Instagram:
