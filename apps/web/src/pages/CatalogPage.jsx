@@ -18,6 +18,7 @@ import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
 import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
+import SkipToResults from '@/components/storefront/SkipToResults.jsx';
 import { catalogPillCounts, pillIsOffered } from '@/utils/catalogFacets.js';
 import { shortNoteList } from '@/utils/shortNoteList.js';
 import { getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -167,6 +168,7 @@ const CatalogPage = () => {
         <section className="catalog-section">
           {/* Toolbar: category pills + search */}
           <div className="catalog-toolbar">
+            <SkipToResults />
             <div className="catalog-pills" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
               {catalogCategories.map((category) => (
                 <button
@@ -206,7 +208,7 @@ const CatalogPage = () => {
               ))}
             </div>
           ) : filteredProducts.length ? (
-            <div className="catalog-grid" data-reveal data-stagger-children>
+            <div className="catalog-grid" id="catalog-results" tabIndex={-1} data-reveal data-stagger-children>
               {visibleProducts.map((product, index) => (
                 <Link
                   key={product.slug || product.id}

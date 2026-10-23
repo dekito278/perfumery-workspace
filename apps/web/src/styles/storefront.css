@@ -7968,3 +7968,40 @@ main :is(a, figure, picture, div, span):has(> img) {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ─── Skip to the product list ───────────────────────────────────────────────────────────────────
+   Twenty-six tab stops stood between the top of the catalogue and the first bottle, measured on the
+   built site: the header, six category pills, the search box, thirteen wear chips. This costs a mouse
+   user nothing because it is off-screen until focused, and saves a keyboard user twenty-five presses.
+   Positioned fixed rather than static so revealing it never pushes the toolbar down.
+   Literal fallbacks on every var(): the phone catalogue renders this too. */
+.skip-to-results {
+  position: fixed;
+  top: -200px;
+  left: 16px;
+  z-index: 80;
+  padding: 10px 18px;
+  border: 1.5px solid var(--editorial-charcoal, #1b1a16);
+  border-radius: 100px;
+  background: var(--editorial-paper, #faf8f3);
+  font-family: var(--font-body, "DM Sans", sans-serif);
+  font-size: var(--text-eyebrow, 11px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--editorial-charcoal, #1b1a16);
+  text-decoration: none;
+  transition: top 160ms ease;
+}
+
+.skip-to-results:focus,
+.skip-to-results:focus-visible {
+  top: 16px;
+}
+
+/* The grid takes focus when the link is used, so the next Tab continues from the first product rather
+   than from the top of the page. An outline there would be a ring round the whole grid, which reads as
+   a bug — the products inside keep their own focus styles. */
+#catalog-results:focus {
+  outline: none;
+}
