@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { getScheduledPricesForProduct } from '@/services/priceScheduleService.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import {
   buildStockCorrection,
@@ -109,6 +110,18 @@ const ProductForm = ({ product = null, onSaved }) => {
   // so an editable field here was a box that quietly did nothing.
   const primaryPrice = Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0);
   const primarySize = getPrimaryVariant(form.variants || [])?.size || form.size;
+
+  // A price with a date on it, which this form cannot otherwise show. storefront_prices_for_me prefers a
+  // dated row over an undated one, so once the date has passed the shop charges the scheduled number and
+  // the field above goes on accepting edits that change nothing a buyer sees. Until 2026-10-23 that
+  // happened in silence; whatever the schedule holds, this says so.
+  const [scheduledPrices, setScheduledPrices] = useState([]);
+  useEffect(() => {
+    let active = true;
+    if (!product?.id) { setScheduledPrices([]); return () => { active = false; }; }
+    getScheduledPricesForProduct(product.id).then((rows) => { if (active) setScheduledPrices(rows); });
+    return () => { active = false; };
+  }, [product?.id]);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const updateVariant = (index, key, value) => setForm((current) => ({
@@ -329,6 +342,27 @@ const ProductForm = ({ product = null, onSaved }) => {
         </TabsContent>
 
         <TabsContent value="commercial" className="mt-5 grid gap-4 sm:grid-cols-2">
+          {scheduledPrices.length ? (
+            <div className="sm:col-span-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase text-amber-800">
+                <AlertTriangle className="h-4 w-4" /> Harga terjadwal
+              </div>
+              <ul className="mt-2 grid gap-1 text-[12px] font-semibold text-amber-900">
+                {scheduledPrices.map((row) => (
+                  <li key={`${row.variantId}-${row.tier}-${row.effectiveAt}`}>
+                    {row.tier} {row.variantId ? `(${row.variantId})` : ''} → {formatRupiah(row.priceNumber)}
+                    {' '}{row.inForce ? 'sudah berlaku sejak' : 'mulai'}{' '}
+                    {row.effectiveAt ? new Date(row.effectiveAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] font-semibold text-amber-800">
+                {scheduledPrices.some((row) => row.inForce)
+                  ? 'Harga terjadwal yang sudah berlaku MENGALAHKAN harga di bawah — mengubah angka di bawah tidak akan terlihat di toko sampai jadwalnya dibersihkan.'
+                  : 'Pada tanggal itu harga di toko berubah sendiri, apa pun yang tertulis di bawah.'}
+              </p>
+            </div>
+          ) : null}
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Harga katalog</span>
             <input value={formatRupiah(primaryPrice)} readOnly disabled className="mt-2 h-11 w-full rounded-2xl border bg-[#f3f1ec] px-4 text-sm font-semibold text-muted-foreground outline-none" />
