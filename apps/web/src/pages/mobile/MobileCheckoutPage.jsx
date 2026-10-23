@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from '@/utils/freeVial.js';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import { asCustomerCode } from '@/utils/customerCode.js';
@@ -499,7 +500,7 @@ const MobileCheckoutPage = () => {
                 <div className="mt-3 inline-flex items-center rounded-[14px] border border-editorial-stone/10 bg-white p-1">
                   <Button type="button" size="icon" variant="ghost" aria-label={t('cart.decrease')} className="h-8 w-8 rounded-xl tap-44" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span className="grid h-8 min-w-10 place-items-center text-sm font-bold">{item.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.increase')} className="h-8 w-8 rounded-xl tap-44" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.increase')} className="h-8 w-8 rounded-xl tap-44" disabled={atStockCap(item)} onClick={() => updateQuantity(item.slug, nextQuantityUp(item))}><Plus className="h-4 w-4" /></Button>
                 </div>
               </div>
               );

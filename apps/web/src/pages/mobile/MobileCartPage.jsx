@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React from 'react';
@@ -194,7 +195,7 @@ const MobileCartPage = () => {
                 <div style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 10, border: '1px solid var(--editorial-stone)', background: 'var(--editorial-paper)', padding: 4 }}>
                   <Button type="button" size="icon" variant="ghost" aria-label={t('cart.decrease')} className="h-8 w-8 rounded-lg tap-44" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span style={{ display: 'grid', height: 32, minWidth: 40, placeItems: 'center', fontSize: '0.875rem', fontWeight: 600 }}>{item.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.increase')} className="h-8 w-8 rounded-lg tap-44" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.increase')} className="h-8 w-8 rounded-lg tap-44" disabled={atStockCap(item)} onClick={() => updateQuantity(item.slug, nextQuantityUp(item))}><Plus className="h-4 w-4" /></Button>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   {hasLineDiscount ? (
