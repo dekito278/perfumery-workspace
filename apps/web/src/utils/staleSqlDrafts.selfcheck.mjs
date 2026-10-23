@@ -9,7 +9,8 @@
 // migration that defines it, the draft side from every .sql file and every ```sql fence under docs/.
 // Comment a dangerous draft out and it stops being runnable, which is the honest fix.
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { skipChain, DOCS_OUTSIDE_CHECKOUT } from '../../tools/selfcheckSubject.mjs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,6 +18,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..', '..', '..');
 const migrationsDir = join(repo, 'supabase', 'migrations');
 const docsDir = join(repo, 'docs');
+if (!existsSync(docsDir)) skipChain(DOCS_OUTSIDE_CHECKOUT);
 
 // A line comment makes the rest of the line unrunnable. Everything left is what the SQL editor would do.
 const runnable = (sql) => sql.split('\n').map((line) => line.replace(/--.*$/, '')).join('\n');

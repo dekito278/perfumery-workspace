@@ -13,6 +13,7 @@ import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { SKIP_MARKER } from './selfcheckSubject.mjs';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const ROOT = path.resolve(HERE, '..');
@@ -49,18 +50,28 @@ const runOne = (file) => new Promise((resolve) => {
   });
 });
 
-/** Run them all, a few at a time. Returns every failure rather than stopping at the first. */
+/**
+ * Run them all, a few at a time. Returns every failure rather than stopping at the first, and every
+ * chain that declared part of its subject missing.
+ *
+ * A skip is reported, never swallowed. `docs/` is outside the Vercel checkout, so two chains cannot read
+ * it there — and the one thing that must not happen is those two quietly counting as clean passes, which
+ * is the exact state that let one chain sit red for six weeks.
+ */
 export const runChains = async (files, concurrency = Math.max(2, os.cpus().length - 1)) => {
   const queue = [...files];
   const failures = [];
+  const skipped = [];
   const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
     for (let next = queue.shift(); next; next = queue.shift()) {
       const result = await runOne(next);
       if (!result.ok) failures.push(result);
+      else if (result.output.includes(SKIP_MARKER)) skipped.push(result);
     }
   });
   await Promise.all(workers);
-  return failures.sort((a, b) => a.file.localeCompare(b.file));
+  const byFile = (a, b) => a.file.localeCompare(b.file);
+  return { failures: failures.sort(byFile), skipped: skipped.sort(byFile) };
 };
 
 const main = async () => {
@@ -72,18 +83,23 @@ const main = async () => {
     process.exit(1);
   }
   const started = Date.now();
-  const failures = await runChains(chains);
+  const { failures, skipped } = await runChains(chains);
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
+  for (const skip of skipped) {
+    const line = skip.output.split('\n').find((text) => text.includes(SKIP_MARKER)) || SKIP_MARKER;
+    console.log(`[selfcheck] skipped a section of ${path.relative(ROOT, skip.file)} — ${line.replace(SKIP_MARKER, '').trim()}`);
+  }
   for (const failure of failures) {
     console.error(`\n[selfcheck] FAILED ${path.relative(ROOT, failure.file)}`);
     console.error(failure.output.split('\n').slice(0, 12).join('\n'));
   }
+  const tail = skipped.length > 0 ? `, ${skipped.length} with a skipped section` : '';
   if (failures.length > 0) {
-    console.error(`\n[selfcheck] ${failures.length} of ${chains.length} chain(s) failed in ${seconds}s`);
+    console.error(`\n[selfcheck] ${failures.length} of ${chains.length} chain(s) failed in ${seconds}s${tail}`);
     process.exit(1);
   }
-  console.log(`[selfcheck] ${chains.length} chain(s) passed in ${seconds}s`);
+  console.log(`[selfcheck] ${chains.length} chain(s) passed in ${seconds}s${tail}`);
 };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
