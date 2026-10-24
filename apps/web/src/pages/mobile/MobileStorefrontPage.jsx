@@ -1,4 +1,5 @@
 import CardPrice from '@/components/storefront/CardPrice.jsx';
+import { shortNoteList } from '@/utils/shortNoteList.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -27,6 +28,10 @@ import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } f
 const HERO_WIDTHS = [480, 720, 900];
 const STATEMENT_WIDTHS = [480, 600, 750];
 import { desktopCanonicalPath, shopCanonicalUrl } from '@/utils/seo.js';
+
+// Three, matching the catalogue card and the desktop carousel. Declared above every component that
+// reads it, rather than below the one that happens to be last in the file.
+const MOBILE_CARD_NOTE_LIMIT = 3;
 
 // The notes come from the desktop home page's mood list, shortened. Without them each card was a flat
 // pastel square holding one italic word, which reads as unfinished rather than minimal (UX backlog U-11).
@@ -113,6 +118,13 @@ export const MobileStorefrontContent = ({ active = true }) => {
                   <div className="m-editorial-product-card__info">
                     <span className="m-editorial-product-card__category">{cardLabels(product).join(' · ')}</span>
                     <h3>{product.name}</h3>
+                    {/* The phone's own front page. It named a price and left out the one thing a
+                        perfume has to answer — same gap the desktop carousel had, and the class of
+                        gap this repo keeps finding on the mobile twin rather than the desktop one.
+                        .m-editorial-product-card__notes was already styled for exactly this. */}
+                    {shortNoteList(product.notes, MOBILE_CARD_NOTE_LIMIT) ? (
+                      <span className="m-editorial-product-card__notes">{shortNoteList(product.notes, MOBILE_CARD_NOTE_LIMIT)}</span>
+                    ) : null}
                     <CardPrice product={product} className="m-editorial-product-card__price" memberClassName="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>
                 </Link>
