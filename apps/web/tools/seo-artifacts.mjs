@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import { isFreeVialProduct } from '../src/utils/freeVial.js';
 import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
-import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH } from '../src/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, stripTrailingBrand } from '../src/utils/seo.js';
 import { schemaAvailability } from '../src/utils/schemaAvailability.js';
 import path from 'node:path';
 
@@ -370,7 +370,8 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
   for (const post of journal) {
     if (!post.title) continue;
     const canonical = abs(siteUrl, `/articles/${post.slug}`);
-    const title = `${post.seoTitle || post.title} - ${BRAND}`;
+    // Said once: the SEO Title field invites a brand signature and this line adds one of its own.
+    const title = `${stripTrailingBrand(post.seoTitle || post.title, BRAND)} - ${BRAND}`;
     const description = (post.excerpt || post.title).slice(0, 155);
     // An article with no cover used to ship no og:image at all, so sharing it previewed as bare text.
     const image = getOptimizedStorageImageUrl(abs(siteUrl, post.image || SHARE_IMAGE_PATH), 1200);
