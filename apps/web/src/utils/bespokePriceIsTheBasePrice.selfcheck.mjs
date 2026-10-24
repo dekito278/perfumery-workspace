@@ -53,8 +53,19 @@ const sizes = defaults.slice(defaults.indexOf('bottleSizes: ['), defaults.indexO
 assert.match(sizes, /"30 ml", price: 569000/, '30 ml must be 569.000');
 assert.match(sizes, /"50 ml", price: 939000/, '50 ml must be 939.000');
 for (const group of ['bottleTypes', 'capDesigns', 'labelDesigns']) {
-  const block = defaults.slice(defaults.indexOf(`${group}: [`), defaults.indexOf('],', defaults.indexOf(`${group}: [`)));
-  assert.ok(block.includes('enabled:'), `${group} has no rows to check`);
+  assert.ok(defaults.includes(`${group}: `),
+    `${group} is not declared in the defaults at all — the slice below would read the wrong block`);
+  // Two legitimate shapes, and the difference matters. An EMPTY array is the group gone, which is what
+  // Dekito asked for and what the shop's own table now holds. Rows that are all disabled is the older
+  // shape, equally acceptable. What must never pass is a third case: a block this check could not find,
+  // where "no option is switched on" would be true because nothing was read at all.
+  const emptied = defaults.includes(`${group}: [],`);
+  if (emptied) continue;
+
+  const at = defaults.indexOf(`${group}: [`);
+  const block = defaults.slice(at, defaults.indexOf('],', at));
+  assert.ok(block.includes('enabled:'),
+    `${group} is neither emptied nor a list of rows — this check read nothing, so its verdict means nothing`);
   assert.doesNotMatch(block, /enabled: true/,
     `${group} still has an option switched on; Dekito asked for the bottle/cap/label choices to go`);
 }

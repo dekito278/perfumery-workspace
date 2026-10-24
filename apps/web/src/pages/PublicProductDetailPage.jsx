@@ -30,6 +30,7 @@ import ProductStoryLink from '@/components/storefront/ProductStoryLink.jsx';
 import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import FreeVialNote from '@/components/storefront/FreeVialNote.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -329,6 +330,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                   asks for the destination and hands the order to WhatsApp; it never reaches the domestic
                   checkout. The gate that hid this button in the English shop from 18 Sep to 6 Oct is gone
                   with the reason for it. */}
+              <FreeVialNote products={studioProducts} className="mb-3" />
               <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
                 {soldOut ? (
                   <>{t('pdp.soldOut')}</>

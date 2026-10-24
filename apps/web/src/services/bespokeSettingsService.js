@@ -22,19 +22,16 @@ export const defaultBespokeSettings = {
     { id: "30-ml", label: "30 ml", value: "30 ml", price: 569000, description: "Ukuran default bespoke.", enabled: true, sortOrder: 10 },
     { id: "50-ml-1778532231031", label: "50 ml", value: "50 ml", price: 939000, description: "", enabled: true, sortOrder: 30 },
   ],
-  bottleTypes: [
-    { id: "classic-clear", label: "Classic", value: "Classic", price: 10000, description: "Bentuk botol basic, cap by request", enabled: false, sortOrder: 10 },
-    { id: "square-premium", label: "Thematic Botol", value: "Thematic Botol", price: 50000, description: "Bentuk botol abstrak by request", enabled: false, sortOrder: 20 },
-  ],
-  capDesigns: [
-    { id: "cap-custom-akrilik", label: "Cap custom Abstrak", value: "Cap custom Abstrak", price: 50000, description: "Custom color/form abstrak look.", enabled: false, sortOrder: 30 },
-    { id: "cap-basic-1778533418244", label: "Cap Basic", value: "Cap Basic", price: 5000, description: "Cap basic, cap bulet, cap kotak", enabled: false, sortOrder: 40 },
-  ],
-  labelDesigns: [
-    { id: "minimal-label", label: "Tulis tangan", value: "Tulis tangan", price: 0, description: "Label stiker dengan tulisan tangan saya", enabled: false, sortOrder: 10 },
-    { id: "custom-name-label", label: "Custom name label", value: "Custom name label", price: 75000, description: "Label dengan nama atau pesan personal.\n+ penambahan waktu pengerjaan 14 hari", enabled: false, sortOrder: 20 },
-    { id: "none-1778533982963", label: "None", value: "None", price: 0, description: "Tidak mengunakan stiker", enabled: false, sortOrder: 30 },
-  ],
+  // Emptied 2026-10-25 to match the shop. Dekito switched bespoke to size-only on 23 October — 30 ml
+  // and 50 ml, nothing else — and deleted these rows from storefront_bespoke_options. The fallback
+  // kept listing them, all disabled, so the bundled copy and the live table disagreed about what the
+  // house sells. The build's own drift check is what said so.
+  //
+  // They are removed rather than left disabled: a reader of this file should see what bespoke IS, and
+  // a list of seven things nobody can order is a list of seven questions.
+  bottleTypes: [],
+  capDesigns: [],
+  labelDesigns: [],
   exoticMaterials: [],
 };
 
