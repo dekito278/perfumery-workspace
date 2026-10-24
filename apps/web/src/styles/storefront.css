@@ -1033,6 +1033,8 @@ main :is(a, figure, picture, div, span):has(> img) {
 }
 
 .journal-tab {
+  /* A link now, not a button: Tailwind preflight already drops the underline, this says so out loud. */
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
