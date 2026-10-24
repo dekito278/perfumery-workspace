@@ -1,9 +1,12 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { catalogPillCounts, pillIsOffered } from '@/utils/catalogFacets.js';
+import {
+  JOURNAL_ALL_TAB, JOURNAL_TAB_PARAM, journalCategoryLabelFromUrl, journalTabPath,
+} from '@/utils/journalCategoryUrl.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import TextReveal from '@/components/storefront/TextReveal.jsx';
@@ -24,12 +27,24 @@ import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const getExcerpt = (article) => articleExcerpt(article, 180);
 
-const ALL_TABS = ['All', ...JOURNAL_CATEGORIES.map((category) => category.label)];
+const ALL_TABS = [JOURNAL_ALL_TAB, ...JOURNAL_CATEGORIES.map((category) => category.label)];
+
+// Which tab a reader is on lives in the URL, as ?category=<the category's stored value>.
+//
+// It was useState before, which meant the five material stories had no address. A reader who wanted to
+// send someone "the posts about raw materials" could only send /journal and say which tab to press;
+// their own back button did nothing; a bookmark always reopened on All. The obvious fix was a second
+// page at /kelas-parfum, and that is what I nearly built — a route whose whole content would have been
+// the five articles /journal already lists, which is a duplicate URL to keep in step and for search
+// engines to choose between. The tab was already the index. It just had no address.
+//
+// The tabs are Links rather than buttons for the same reason: an index you cannot copy, open in a new
+// window or crawl is not an index. journalCategoryUrl.js holds the mapping, so it can be run.
 
 // The same predicate the grid filters with, passed into the counter rather than reimplemented beside
 // it — a count derived from a second copy of the rule is a count that can disagree with the list.
 const matchesJournalCategory = (article, category) => (
-  category === 'All' || getJournalCategoryLabel(article?.category) === category
+  category === JOURNAL_ALL_TAB || getJournalCategoryLabel(article?.category) === category
 );
 
 // The tabs are built from what is PUBLISHED, not from the five categories the editor offers.
@@ -49,7 +64,8 @@ const PublicJournalPage = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [searchParams] = useSearchParams();
+  const activeCategory = journalCategoryLabelFromUrl(searchParams.get(JOURNAL_TAB_PARAM) || '');
   const [visibleCount, setVisibleCount] = useState(9);
 
   useEffect(() => {
@@ -88,7 +104,9 @@ const PublicJournalPage = () => {
   // A tab can vanish under the reader — an article unpublished while the page is open empties the
   // category they are standing in. Falling back to All beats showing an empty grid under a tab that is
   // no longer on screen.
-  const effectiveCategory = categories.includes(activeCategory) ? activeCategory : 'All';
+  const effectiveCategory = categories.includes(activeCategory) ? activeCategory : JOURNAL_ALL_TAB;
+
+  useEffect(() => { setVisibleCount(9); }, [activeCategory]);
 
   const filtered = useMemo(
     () => articles.filter((article) => matchesJournalCategory(article, effectiveCategory)),
@@ -103,7 +121,7 @@ const PublicJournalPage = () => {
   return (
     <>
       <Helmet>
-        <title>{t("journal.tab")}</title>
+        <title>{effectiveCategory === 'All' ? t("journal.tab") : `${effectiveCategory} — ${t("journal.tab")}`}</title>
         <meta name="description" content={t("journal.meta")} />
         <link rel="canonical" href={journalCanonical} />
         <meta property="og:type" content="website" />
@@ -127,16 +145,15 @@ const PublicJournalPage = () => {
         {/* Category filter tabs — only the ones with something behind them, each carrying its count */}
         <nav className="journal-tabs hero-animate-fade">
           {categories.map((cat) => (
-            <button
+            <Link
               key={cat}
-              type="button"
-              aria-pressed={effectiveCategory === cat}
+              to={journalTabPath(cat)}
+              aria-current={effectiveCategory === cat ? 'page' : undefined}
               className={`journal-tab${effectiveCategory === cat ? ' is-active' : ''}`}
-              onClick={() => { setActiveCategory(cat); setVisibleCount(9); }}
             >
-              {cat === 'All' ? t("journal.all") : cat}
+              {cat === JOURNAL_ALL_TAB ? t("journal.all") : cat}
               <span className="journal-tab__count">{tabCounts[cat] ?? 0}</span>
-            </button>
+            </Link>
           ))}
         </nav>
 
