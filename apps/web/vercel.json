@@ -74,6 +74,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/shipping/destinations",
+      "destination": "/api/shipping/rates"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/not-found"
     },
