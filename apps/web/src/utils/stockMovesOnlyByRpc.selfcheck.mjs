@@ -30,6 +30,48 @@ const strip = (text) => text
   .replace(/\/\*[\s\S]*?\*\//g, ' ')
   .replace(/^\s*\/\/.*$/gm, ' ');
 
+// --- 0. And NOBODY ELSE writes bottle stock at all ----------------------------------------------------
+//
+// The title of this file promises something about the whole repository; until 2026-10-25 every check in
+// it read ONE file. A new page or endpoint that reached for storefront_products and set stock directly
+// would have sailed past, which is precisely the regression this guard exists to stop — and precisely
+// the shape ("the promise is wider than the subject") that has bitten this repo more than once.
+//
+// The rule is not "no file may write stock", because one legitimately does. saveCustomProduct writes a
+// full product row, stock included, and is allowed to: it carries an optimistic lock on updated_at, so
+// a form opened before an order deducted stock is REFUSED rather than silently resurrecting the sold
+// units (audit round 7). Order-driven movement goes through the RPCs; the admin's own full-row save is
+// guarded by the lock. Everything else is a bug waiting to happen.
+//
+// So: every file except that service must not write stock to storefront_products in any way.
+const walkSources = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+  const full = join(dir, entry.name);
+  if (entry.isDirectory()) return walkSources(full);
+  return /\.(js|jsx)$/.test(entry.name) && !entry.name.includes('selfcheck') ? [full] : [];
+});
+
+const OWNER = join('services', 'productCatalogService.js');
+const WRITE = /(\.update\(|\.upsert\(|\.insert\(|PATCH|method:\s*['"`]P(ATCH|OST))/i;
+
+const rogue = [];
+for (const file of [...walkSources(src), ...walkSources(join(src, '..', 'api'))]) {
+  if (file.endsWith(OWNER)) continue;
+  const body = strip(readFileSync(file, 'utf8'));
+  const lines = body.split('\n');
+  lines.forEach((line, index) => {
+    if (!/\bstock\b/.test(line)) return;
+    // A window, because the table name and the write verb rarely share a line with the field.
+    const near = lines.slice(Math.max(0, index - 6), index + 7).join(' ');
+    if (/storefront_products/.test(near) && WRITE.test(near)) {
+      rogue.push(`${file.slice(file.indexOf('/src/') + 1 || 0)}:${index + 1}  ${line.trim().slice(0, 70)}`);
+    }
+  });
+}
+assert.deepEqual(rogue, [],
+  'these write bottle stock to storefront_products outside productCatalogService. Stock moves through '
+  + 'the RPCs, or through the one full-row save that holds an optimistic lock — a third way silently '
+  + 'resurrects sold units, which is audit round 7 all over again:\n  ' + rogue.join('\n  '));
+
 // --- 1. Both movements, derived from the RPCs they call ------------------------------------------------
 //
 // The pair is found by looking for the stock RPCs, not by naming the two functions: a third movement would
