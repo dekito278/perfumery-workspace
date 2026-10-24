@@ -7949,7 +7949,11 @@ main :is(a, figure, picture, div, span):has(> img) {
   background: transparent;
 }
 
+/* The home carousel card says what it smells of too. Joined to the catalogue rule rather than given
+   its own, so the two cards cannot drift apart in size or colour — which is how one of them ends up
+   quietly louder than the other. */
 .catalog-card__notes,
+.home-carousel__card-notes,
 .m-editorial-product-card__notes {
   display: block;
   margin-top: 2px;

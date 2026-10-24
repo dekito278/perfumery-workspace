@@ -15,6 +15,7 @@ import TextReveal from '@/components/storefront/TextReveal.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { shortNoteList } from '@/utils/shortNoteList.js';
 import { CURATED_LIMIT_DESKTOP, pickCuratedProducts } from '@/utils/curatedProducts.js';
 import useCarouselPosition from '@/hooks/useCarouselPosition.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
@@ -39,6 +40,9 @@ const moodCategories = [
 ];
 
 const getArticleExcerpt = (article) => articleExcerpt(article, 120);
+
+// Three, like the catalogue card. A fourth makes the carousel card taller than its photograph.
+const HOME_CARD_NOTE_LIMIT = 3;
 
 const HomePage = () => {
   const fetchedProducts = useStorefrontProducts();
@@ -190,6 +194,13 @@ const HomePage = () => {
                     />
                     <div className="home-carousel__card-info">
                       <h3>{product.name}</h3>
+                      {/* What it smells of, on the first card a visitor ever sees. The catalogue card has
+                          said this since #516; the home carousel named a price and a perfumer and left
+                          the one question a perfume has to answer unanswered. Same helper, same three
+                          notes, so the two cards cannot drift apart. */}
+                      {shortNoteList(product.notes, HOME_CARD_NOTE_LIMIT) ? (
+                        <p className="home-carousel__card-notes">{shortNoteList(product.notes, HOME_CARD_NOTE_LIMIT)}</p>
+                      ) : null}
                       <div className="home-carousel__card-meta">
                         <span className="home-carousel__card-perfumer">{t('home.byDekito')}</span>
                         {(product.price || product.priceNumber) ? (
