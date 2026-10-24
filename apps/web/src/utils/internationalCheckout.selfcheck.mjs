@@ -26,7 +26,13 @@ const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf
 // --- 1. The premise, held in the code it is about ---------------------------------------------------------
 // If a country field ever appears, or destinations stop coming from a domestic-only API, this notice
 // becomes a lie and should be revisited rather than left standing.
-const destinations = read('..', 'api', 'shipping', 'destinations.js');
+// The destination search lived in its own api/shipping/destinations.js until 2026-10-25, when it was
+// folded into rates.js to stay under Vercel's twelve-function ceiling. Same code, same upstream, now
+// reached by GET on the same file — the premise below is unchanged, only its address moved.
+const destinations = read('..', 'api', 'shipping', 'rates.js');
+assert.match(destinations, /domestic-destination/,
+  'the destination search is gone from rates.js — it was folded in there, so either it moved again or '
+  + 'it was lost in the fold');
 assert.match(destinations, /rajaongkir/i, 'destinations still come from the Indonesian domestic courier API');
 for (const form of [['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx']]) {
   const source = read(...form);
