@@ -126,12 +126,33 @@ Tanpa ini, pelanggan toko Inggris yang login Google mental saat kembali.
 
 ---
 
-## 6. SQL: harga terjadwal  ·  TUNGGU SAMPAI 12 NOVEMBER
+## 6. SQL: harga terjadwal  ·  BERES-BERES SAJA, bukan sakelar
 
-`supabase/migrations/20261112090000_apply_and_clear_price_schedule.sql`.
+**Koreksi penting dari yang saya tulis sebelumnya.** Kalimat "jalankan setelah 12 Nov" tadi bisa
+terbaca seolah harganya baru berganti kalau kamu menjalankan SQL ini. **Tidak.**
 
-Jalankan **setelah 12 Nov 2026**. Aman kalau kecepatan (tidak melakukan apa-apa sampai tanggalnya
-lewat) dan aman kalau dijalankan dua kali.
+Harganya **berganti sendiri** pada 12 Nov 2026 pukul **00:00 WIB**, tanpa kamu melakukan apa pun.
+Diverifikasi 25 Okt 2026 di tiga tempat yang semuanya harus sepakat, dan ternyata memang sepakat:
+
+| yang memutuskan harga | membaca jadwal? |
+|---|---|
+| tampilan toko (`storefront_prices_for_me`) | ya, difilter `effective_at <= now()` |
+| endpoint pembuatan order (`api/orders/create.js`) | ya, `asOf: Date.now()` |
+| tabel jadwal (`storefront_price_schedule`) | 38 baris, semuanya 12 Nov 00:00 WIB |
+
+Jadi pembeli tidak akan pernah melihat satu harga lalu ditagih harga lain. Komentar di kodenya
+menegaskan aturannya: *jam SERVER yang memutuskan kapan harga berganti, bukan perangkat pembeli.*
+
+Soal zona waktu: database jalan di UTC, tapi kolomnya `timestamptz` — menyimpan titik waktu
+absolut. Jadi 00:00 WIB benar-benar tengah malam Jakarta, bukan jam 7 pagi.
+
+**Lalu untuk apa SQL ini?** Beres-beres: memindahkan harga yang sudah berlaku ke tabel utama lalu
+mengosongkan barisnya dari tabel jadwal, supaya kolom harga di Studio kembali berarti. Tidak ada
+yang rusak kalau kamu lupa — cuma Studio terus menampilkan harga lama di kolom isiannya sementara
+toko sudah memakai yang baru.
+
+`supabase/migrations/20261112090000_apply_and_clear_price_schedule.sql`. Jalankan kapan saja
+setelah 12 Nov. Aman kalau kecepatan dan aman kalau dijalankan dua kali.
 
 ---
 
