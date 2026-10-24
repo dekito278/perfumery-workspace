@@ -2,6 +2,37 @@ import { schemaAvailability } from './schemaAvailability.js';
 // Shared SEO helpers: canonical URLs + JSON-LD structured data builders.
 
 export const SITE_NAME = 'SOLIVAGANT';
+
+/**
+ * A title with the brand said ONCE.
+ *
+ * Both title templates append the house name — the prerendered article head adds " - SOLIVAGANT", the
+ * journal page adds " - Solivagant Journal". A title that already ends in the brand therefore shipped it
+ * twice: "Gaharu dan oud: dari pohon yang terluka — Solivagant - SOLIVAGANT", live on 2026-10-24.
+ *
+ * That came from the SEO titles I wrote for Dekito's five material articles, but the trap is the field,
+ * not those five: the box is labelled "SEO Title" and says nothing about a suffix being added, so
+ * anybody writing one naturally signs it with the brand. Fixing the five strings would leave the next
+ * one to fall in. So the trailing mention is stripped here and the caller's suffix is appended to what
+ * is left — which keeps "Journal" in the journal variant, where simply skipping the suffix would lose
+ * it.
+ *
+ * Only a TRAILING mention goes, and only as a whole word: "Solivagant Reserve" keeps its name, and a
+ * title that merely talks about the house mid-sentence is left alone.
+ */
+export const stripTrailingBrand = (title, brand = SITE_NAME) => {
+  const text = String(title ?? '').trim();
+  if (!text) return '';
+  const name = String(brand ?? '').trim();
+  if (!name) return text;
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // An optional separator before it, and nothing but whitespace after.
+  const trailing = new RegExp(`[\\s]*[-–—|:·]?[\\s]*${escaped}[\\s]*$`, 'i');
+  const stripped = text.replace(trailing, '').trim();
+  // Never return nothing: a title that is ONLY the brand is a real title.
+  return stripped || text;
+};
+
 export const SITE_TAGLINE = 'Atelier Parfum Artisan oleh Dekito';
 export const BRAND_LOGO_PATH = '/brand/solivagant-logo.png';
 // One share image for the whole site. There used to be two — seo.js pointed at the raw-material photo

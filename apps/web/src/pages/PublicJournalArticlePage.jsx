@@ -22,7 +22,7 @@ import { formatDate } from '@/utils/formatting.js';
 // The shared helpers fall back to the production site URL; this page had its own copies that fell back to
 // window.location.origin, so an article viewed on a Vercel preview or a bare domain published a canonical,
 // og:url and JSON-LD @id pointing at that host (audit round 8).
-import { DEFAULT_SHARE_IMAGE, getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, getSiteOrigin, stripTrailingBrand, toAbsoluteUrl } from '@/utils/seo.js';
 import { stripMarkdown } from '@/utils/articleExcerpt.js';
 
 const getReadingMinutes = (content) => {
@@ -193,7 +193,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
 
   const tags = Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [];
   const readingMinutes = useMemo(() => getReadingMinutes(post?.content), [post?.content]);
-  const title = post?.seo_title || post?.title || 'Journal Article';
+  const title = stripTrailingBrand(post?.seo_title || post?.title || 'Journal Article');
   const description = truncateMeta(post?.excerpt || post?.content || DEFAULT_DESCRIPTION);
   const canonicalPath = post?.slug ? `/articles/${post.slug}` : `/articles/${slug || ''}`;
   const siteOrigin = getSiteOrigin();
