@@ -137,7 +137,14 @@ export default async function handler(req, res) {
   });
   // The secret is checked before the body is even read: an unauthenticated caller must not be able to
   // make this endpoint do work, let alone reach the database.
-  if (!verdict.ok && verdict.reason !== 'wrong-chat') return ok(res);
+  if (!verdict.ok && verdict.reason !== 'wrong-chat') {
+    // The REASON, never the values. A refusal is silent to the sender on purpose — telling a stranger
+    // which half of the lock they failed is halfway to opening it — but silent to the owner too is how
+    // a dead bot looks exactly like a wrong secret. This line is the difference between diagnosing it
+    // and guessing at it.
+    console.warn(`[telegram] refused: ${verdict.reason}`);
+    return ok(res);
+  }
 
   const update = await readBody(req);
   const message = update?.message || update?.edited_message || null;
@@ -148,7 +155,12 @@ export default async function handler(req, res) {
     chatId,
     allowedChatId: allowedChatIdFrom(process.env.ORDER_ALERT_EXTRA),
   });
-  if (!gate.ok) return ok(res);
+  if (!gate.ok) {
+    // Same again for the second half. 'wrong-chat' here means the secret matched — so Telegram and the
+    // endpoint agree — and the sender simply is not the chat id in ORDER_ALERT_EXTRA.
+    console.warn(`[telegram] refused: ${gate.reason}`);
+    return ok(res);
+  }
 
   const { command, args, body } = parseCommand(message?.text || '');
   if (!command) return ok(res);

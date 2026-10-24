@@ -65,8 +65,24 @@ assert.match(endpoint, /x-telegram-bot-api-secret-token/,
 assert.match(endpoint, /TELEGRAM_WEBHOOK_SECRET/, 'the expected secret is never read from the environment');
 assert.match(endpoint, /allowedChatIdFrom\(process\.env\.ORDER_ALERT_EXTRA\)/,
   'the allowlist no longer comes from the alert config, so it may not be the owner\'s chat at all');
-assert.match(endpoint, /if \(!gate\.ok\) return ok\(res\)/,
-  'the gate result is computed but not obeyed');
+// The gate must be OBEYED, in whatever shape it is written. An earlier version of this rule pinned the
+// exact one-line form and went red the moment a log line was added inside the branch — a guard that
+// polices formatting instead of behaviour costs attention it has not earned.
+const gateBranch = endpoint.slice(endpoint.indexOf('if (!gate.ok)'), endpoint.indexOf('if (!gate.ok)') + 320);
+assert.ok(endpoint.includes('if (!gate.ok)'), 'the chat gate result is never tested');
+assert.match(gateBranch, /return ok\(res\)/,
+  'the gate result is computed but the branch does not stop — execution falls through to the commands');
+
+// --- 5b. A refusal must be explainable afterwards ------------------------------------------------------
+// Silent to the sender, yes. Silent to the owner as well means a bot that is merely misconfigured is
+// indistinguishable from one that is under attack, and the only way to tell them apart is to guess —
+// which is exactly where 2026-10-25 went. The reason code is logged; the values never are.
+assert.match(endpoint, /console\.warn\(`\[telegram\] refused: \$\{verdict\.reason\}`\)/,
+  'a refusal at the secret gate leaves no trace, so a misconfigured bot cannot be told from a hostile one');
+assert.match(endpoint, /console\.warn\(`\[telegram\] refused: \$\{gate\.reason\}`\)/,
+  'a refusal at the chat gate leaves no trace');
+assert.ok(!/console\.(warn|log|error)\([^)]*(expectedSecret|secretHeader|TELEGRAM_WEBHOOK_SECRET)/.test(endpoint),
+  'the refusal log prints the secret itself — a diagnostic that leaks the thing it is diagnosing');
 
 // --- 6. Stock still moves only through the RPC ----------------------------------------------------------
 // The whole reason a set-stock RPC exists. A bot that assigned the column directly would be audit round
