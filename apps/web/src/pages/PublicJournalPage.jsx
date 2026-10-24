@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { catalogPillCounts, pillIsOffered } from '@/utils/catalogFacets.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import TextReveal from '@/components/storefront/TextReveal.jsx';
@@ -23,9 +24,23 @@ import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const getExcerpt = (article) => articleExcerpt(article, 180);
 
-// Tabs must use the real category labels — otherwise the filter (which compares against
-// getJournalCategoryLabel) never matches and every non-{t("journal.all")} tab shows zero articles.
-const CATEGORIES = ['All', ...JOURNAL_CATEGORIES.map((category) => category.label)];
+const ALL_TABS = ['All', ...JOURNAL_CATEGORIES.map((category) => category.label)];
+
+// The same predicate the grid filters with, passed into the counter rather than reimplemented beside
+// it — a count derived from a second copy of the rule is a count that can disagree with the list.
+const matchesJournalCategory = (article, category) => (
+  category === 'All' || getJournalCategoryLabel(article?.category) === category
+);
+
+// The tabs are built from what is PUBLISHED, not from the five categories the editor offers.
+//
+// Until 2026-10-25 they came straight from JOURNAL_CATEGORIES, so the live journal showed Formula
+// Accord, Process and Product Idea with nothing behind any of them: three taps that each ended on an
+// empty page. The catalogue stopped doing this in #516; the journal was never in that change's scope,
+// and the guard that was written for it reads two catalogue files by name.
+//
+// Same rule as the catalogue, same helper: count first, offer only what is there, and say the number
+// before the tap rather than after it.
 
 const PublicJournalPage = () => {
   const { t } = useTranslate();
@@ -62,10 +77,23 @@ const PublicJournalPage = () => {
     };
   }, [t]);
 
-  const filtered = useMemo(() => {
-    if (activeCategory === 'All') return articles;
-    return articles.filter((a) => getJournalCategoryLabel(a.category) === activeCategory);
-  }, [articles, activeCategory]);
+  const tabCounts = useMemo(
+    () => catalogPillCounts(articles, ALL_TABS, matchesJournalCategory),
+    [articles],
+  );
+  const categories = useMemo(
+    () => ALL_TABS.filter((category) => pillIsOffered(category, tabCounts[category])),
+    [tabCounts],
+  );
+  // A tab can vanish under the reader — an article unpublished while the page is open empties the
+  // category they are standing in. Falling back to All beats showing an empty grid under a tab that is
+  // no longer on screen.
+  const effectiveCategory = categories.includes(activeCategory) ? activeCategory : 'All';
+
+  const filtered = useMemo(
+    () => articles.filter((article) => matchesJournalCategory(article, effectiveCategory)),
+    [articles, effectiveCategory],
+  );
 
   const featured = filtered[0];
   const remaining = useMemo(() => filtered.slice(1, visibleCount), [filtered, visibleCount]);
@@ -96,17 +124,18 @@ const PublicJournalPage = () => {
           <p className="hero-animate-text hero-animate-text--d3">{t("journal.lead")}</p>
         </section>
 
-        {/* Category filter tabs */}
+        {/* Category filter tabs — only the ones with something behind them, each carrying its count */}
         <nav className="journal-tabs hero-animate-fade">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat}
               type="button"
-              aria-pressed={activeCategory === cat}
-              className={`journal-tab${activeCategory === cat ? ' is-active' : ''}`}
+              aria-pressed={effectiveCategory === cat}
+              className={`journal-tab${effectiveCategory === cat ? ' is-active' : ''}`}
               onClick={() => { setActiveCategory(cat); setVisibleCount(9); }}
             >
               {cat === 'All' ? t("journal.all") : cat}
+              <span className="journal-tab__count">{tabCounts[cat] ?? 0}</span>
             </button>
           ))}
         </nav>
@@ -140,7 +169,7 @@ const PublicJournalPage = () => {
           ) : !filtered.length ? (
             <div className="editorial-empty-state">
               <p className="editorial-eyebrow">{t("journal.emptyEyebrow")}</p>
-              <h2>{activeCategory !== 'All' ? t('journal.emptyCategory', { category: activeCategory }) : t('journal.emptyAll')}</h2>
+              <h2>{effectiveCategory !== 'All' ? t('journal.emptyCategory', { category: effectiveCategory }) : t('journal.emptyAll')}</h2>
             </div>
           ) : (
             <>

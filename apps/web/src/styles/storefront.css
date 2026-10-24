@@ -7928,7 +7928,10 @@ main :is(a, figure, picture, div, span):has(> img) {
    Both exist so a buyer can decide without a tap: how many bottles are behind this filter, and what
    this one smells of. The count is the quieter of the two — it sits beside the label, never competes
    with it, and a pill with nothing behind it is disabled rather than left as a dead end. */
+/* The journal tab carries its count the same way the catalogue pill does — joined to that rule rather
+   than given its own, so the two cannot drift into different sizes or weights. */
 .catalog-pill__count,
+.journal-tab__count,
 .m-editorial-pill__count {
   margin-left: 0.5em;
   font-size: 0.78em;

@@ -9,9 +9,9 @@
 // would see two. So both catalogues split their filtering: everything except the category narrows the
 // list, the pills count against THAT, and the category is applied last.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { catalogPillCounts, pillIsOffered } from './catalogFacets.js';
 
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
@@ -34,6 +34,42 @@ assert.deepEqual(catalogPillCounts(null, null, matches), {}, 'and nothing at all
 assert.equal(pillIsOffered('All', 0), true, 'All is always offered — it is the way back');
 assert.equal(pillIsOffered('Fresh', 0), false, 'a pill with nothing behind it is not a destination');
 assert.equal(pillIsOffered('Fresh', 2), true);
+
+// --- 1b. EVERY filter, not just the two catalogues ----------------------------------------------------
+//
+// The sentence at the top of this file is about "a filter pill". Until 2026-10-25 every check below it
+// read two catalogue files BY NAME, and the public journal — which has a row of category tabs built
+// straight from the five categories the editor offers — was never in scope. Live, it showed Formula
+// Accord, Process and Product Idea with nothing behind any of them: three taps that each ended on an
+// empty page, the exact thing #516 removed from the catalogue.
+//
+// Third time today that a guard's promise turned out to be wider than its subject. So the subject is
+// derived: anything that renders a row of filter controls has to count and has to offer only what is
+// there. Found by walking, so a fourth filter surface is covered the day it is written.
+const walkPages = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+  const full = join(dir, entry.name);
+  if (entry.isDirectory()) return walkPages(full);
+  return /\.jsx$/.test(entry.name) ? [full] : [];
+});
+
+// Detected by the filter-row classes, NOT by aria-pressed. The first version used aria-pressed and
+// swept up the bespoke option pickers, the checkout payment chooser and the orders status tabs — those
+// are CHOICES, where every option is meant to be selectable and "nothing behind it" is not a state
+// they can be in. A filter row narrows a list; that is the thing this file is about.
+const filterSurfaces = walkPages(join(src, 'pages'))
+  .filter((file) => /className=\{?[`"'][^`"']*(catalog-pill|journal-tab|m-editorial-pill)/.test(readFileSync(file, 'utf8')))
+  .map((file) => relative(src, file).split(sep).join('/'));
+
+assert.ok(filterSurfaces.length >= 3,
+  `only ${filterSurfaces.length} filter surfaces found — this walk is looking in the wrong place`);
+
+const uncounted = filterSurfaces.filter((name) => {
+  const body = readFileSync(join(src, name), 'utf8');
+  return !/catalogPillCounts\(/.test(body) || !/pillIsOffered\(/.test(body);
+});
+assert.deepEqual(uncounted, [],
+  'these render a row of filters without counting what is behind each one, so at least one of them '
+  + 'can lead to an empty page that looked occupied:\n  ' + uncounted.join('\n  '));
 
 // --- 2. Both catalogues count against the NARROWED list ---------------------------------------------
 // The hazard is counting against `products`. Asserting the shape of the call is what catches a later
