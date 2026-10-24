@@ -29,6 +29,7 @@ import ProductStoryLink from '@/components/storefront/ProductStoryLink.jsx';
 import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import FreeVialNote from '@/components/storefront/FreeVialNote.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
@@ -201,6 +202,7 @@ const MobileProductDetailPage = () => {
             </>
           )}
           {scarcity ? <p className="pdp-scarcity">{scarcity}</p> : null}
+          <FreeVialNote products={allProducts} className="mt-3" />
 
           {previewMode ? (
             <div className="m-editorial-pdp__preview-badge">

@@ -8074,3 +8074,34 @@ main :is(a, figure, picture, div, span):has(> img) {
 #catalog-results:focus {
   outline: none;
 }
+
+
+/* ─── The gift, said on the page where the decision happens ─────────────────────────────────────────
+   Quiet on purpose. It is a reason to buy, not a banner: one line in the shop's own muted tone, the
+   same restraint as .pdp-scarcity beside it. Literal fallbacks on every var() because the phone does
+   not load the desktop palette. */
+.pdp-vial-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--editorial-line, #e6e1d7);
+  border-radius: 14px;
+  background: var(--editorial-ivory, #faf8f3);
+  font-family: var(--font-body, "DM Sans", sans-serif);
+  font-size: var(--text-small, 13px);
+  line-height: 1.45;
+  color: var(--editorial-charcoal, #1b1a16);
+}
+
+.pdp-vial-note strong {
+  font-weight: 700;
+}
+
+.pdp-vial-note__icon {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  color: var(--editorial-muted, #6f695f);
+}
