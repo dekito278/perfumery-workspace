@@ -28,6 +28,32 @@ NOTE ON THE NOTE NAMES
   Ambrocenide is mapped to Amberwood and NOT to Ambergris. It is a Symrise molecule
   made from cedarwood terpenes; ambergris comes from the sperm whale, CITES Appendix I.
 
+  Maskumambang's "Deer Musk Accord" is listed here as Musk, by the same reasoning: real
+  deer musk is CITES Appendix I, the bottle contains an accord and not the animal, and a
+  permanent public listing should not say otherwise. The website keeps its own label.
+
+CHECKED AGAINST THE LIVE CATALOGUE — 25 October 2026
+  All 19 names and all 19 launch years match the shop exactly. Sizes match: 19 perfumes,
+  one 30 ml variant each.
+
+  The note lines were compared too, and ten differences turned out to be this file doing
+  its job — mapping house labels onto the Fragrantica vocabulary ("Spice"/"Spicy Notes",
+  "Muguet"/"Lily-of-the-Valley", "Creamy"/"Cream", "Olibanum Boswellia"/"Olibanum",
+  "Radiant Musk"/"Musk", "Sea Salt"/"Sea Notes", and Wongka!'s Fresh -> Water Notes, which
+  Dekito chose on 11 Oct).
+
+  FOUR are real drift. The shop was edited after this file was written on 9 October — every
+  product carries an updated_at later than that, the last on 18 October — and these four
+  never made it back in. Each needs ONE Fragrantica word chosen before posting, which is
+  why they are listed rather than guessed: a wrong note there is permanent.
+
+    HUG N°1         top     the shop now also lists  Medicinal
+    Lintang Asmoro  top     the shop now also lists  Clean Accord
+    Pantura         heart   the shop now also lists  Bitter
+    La Rose         top     the shop says Nectar, this file still says Honey
+
+  Nothing else differs. Everything below is otherwise verified against the live shop.
+
 FRAGRANCES
 
   .Wayback
