@@ -114,6 +114,7 @@ const BatchProductionPage = () => {
   const catalogProducts = useCatalogProducts({ editableOnly: true });
   const {
     formulaProfile,
+    profileError,
     formulas,
     loading,
     profileLoading,
@@ -686,7 +687,12 @@ const BatchProductionPage = () => {
                 </div>
                 <StatusChip tone={concentrateRows.length ? 'success' : 'neutral'}>{concentrateRows.length} materials</StatusChip>
               </div>
-              <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mt-4" />
+              {profileError ? (
+                <div role="alert" className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold leading-relaxed text-rose-700">
+                  Biaya material formula gagal dimuat — COGS &amp; harga saran di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0), dan angka itu ikut TERSIMPAN ke catatan batch. Pilih ulang formula sebelum menyimpan.
+                </div>
+              ) : null}
+                            <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mt-4" />
               <div className="mt-4 overflow-x-auto rounded-2xl border">
                 <table className="min-w-[920px] w-full text-left text-sm">
                   <thead className="bg-[#fbfaf7] text-xs uppercase text-muted-foreground">

@@ -120,6 +120,7 @@ const MobileProductionCostingPage = () => {
     bulkInputs,
     bulkScenarios,
     formulaProfile,
+    profileError,
     formulas,
     handleExportPdf,
     handleExportQuotationPdf,
@@ -322,6 +323,15 @@ const MobileProductionCostingPage = () => {
                       <div className="py-3 text-xs font-semibold text-[#6b7280]">Bottle, sticker, box, labor, dan overhead belum diisi.</div>
                     ) : null}
                   </div>
+                  {/* The desktop page has warned about this since the profile loader was written; this
+                      one never did, while reading the SAME hook. When the cost profile fails to load,
+                      material cost falls back to Rp 0 — so the COGS and the per-ml figure directly
+                      below are too low, and they are exactly the numbers a price gets set from. */}
+                  {profileError ? (
+                    <div role="alert" className="mx-4 mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold leading-relaxed text-rose-700">
+                      Biaya material formula gagal dimuat — angka COGS &amp; harga di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0). Pilih ulang formula sebelum memakai angka ini.
+                    </div>
+                  ) : null}
                   <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mx-4 mb-4" />
                   <div className="grid grid-cols-2 gap-2 border-t border-[#ece8df] bg-[#faf9f6] p-4">
                     <MoneyTile label="Total batch cost" value={formatPrice(retailComputed.totalProductionCost)} helper={`${retailComputed.bottleCount} bottles`} tone="amber" />
