@@ -291,6 +291,7 @@ const MobileBatchesPage = () => {
     bulkComputed,
     bulkInputs,
     formulaProfile,
+    profileError,
     formulas,
     loading,
     profileLoading,
@@ -1060,7 +1061,12 @@ const MobileBatchesPage = () => {
                     />
                     <MetricTile label="COGS" value={formatPrice(concentrateCost)} helper={`${formatCurrency(concentrateCostPerGram)} / g`} tone="amber" />
                   </div>
-                  <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mt-3" />
+                  {profileError ? (
+                    <div role="alert" className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-xs font-semibold leading-relaxed text-rose-700">
+                      Biaya material formula gagal dimuat — COGS &amp; harga saran di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0), dan angka itu ikut TERSIMPAN ke catatan batch. Pilih ulang formula sebelum menyimpan.
+                    </div>
+                  ) : null}
+                                    <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mt-3" />
 
                 </div>
               </div>
