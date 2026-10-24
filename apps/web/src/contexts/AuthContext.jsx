@@ -520,6 +520,34 @@ export const AuthProvider = ({ children }) => {
     return data?.totp || [];
   };
 
+  /**
+   * Throw away any half-finished enrolment before starting another.
+   *
+   * mfa.enroll creates the factor IMMEDIATELY, in `unverified` state — before the person has typed a
+   * single digit. Abandon the page at the QR step (close the tab, change phones, mistype three times
+   * and give up) and that factor stays on the account forever. The settings screen cannot show it,
+   * because it lists only `verified` factors, so nothing on screen says it is there.
+   *
+   * They accumulate one per attempt, and Supabase caps the number of enrolled factors per user. Reach
+   * that cap and enroll starts failing — on a screen that reports no authenticator at all and offers
+   * no way to delete anything. For a one-person studio that is the wrong kind of surprise: the fix
+   * would be a dashboard visit, at the exact moment of trying to secure the account.
+   *
+   * Verified factors are never touched here; removing one of those needs a live TOTP code, which is
+   * what disableAuthenticator is for.
+   */
+  const discardUnverifiedAuthenticators = async () => {
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) return 0;
+    const stale = (data?.all || data?.totp || []).filter((item) => item?.id && item.status !== 'verified');
+    let removed = 0;
+    for (const item of stale) {
+      const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: item.id });
+      if (!unenrollError) removed += 1;
+    }
+    return removed;
+  };
+
   const disableAuthenticator = async (factorId, code) => {
     if (!factorId) {
       throw new Error('Authenticator factor is required');
@@ -644,6 +672,7 @@ export const AuthProvider = ({ children }) => {
     challengeAuthenticatorEnrollment,
     currentUser,
     disableAuthenticator,
+    discardUnverifiedAuthenticators,
     enrollAuthenticator,
     listAuthenticatorFactors,
     isAdmin: !!session?.user && isAdminUser(session.user),

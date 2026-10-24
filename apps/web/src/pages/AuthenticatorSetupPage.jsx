@@ -38,6 +38,7 @@ const SetupContent = ({ mobile = false }) => {
     challengeAuthenticatorEnrollment,
     currentUser,
     disableAuthenticator,
+    discardUnverifiedAuthenticators,
     enrollAuthenticator,
     listAuthenticatorFactors,
     reauthenticateWithPassword,
@@ -83,6 +84,10 @@ const SetupContent = ({ mobile = false }) => {
   const startSetup = async () => {
     setLoading(true);
     try {
+      // A previous attempt that never reached the verify step left a factor behind. It is invisible
+      // here — this screen lists verified factors only — and they stack up until enrolment hits
+      // Supabase's per-user cap and simply stops working.
+      await discardUnverifiedAuthenticators();
       const enrollment = await enrollAuthenticator('Solivagant Studio');
       const challenge = await challengeAuthenticatorEnrollment(enrollment.id);
       setFactor(enrollment);
