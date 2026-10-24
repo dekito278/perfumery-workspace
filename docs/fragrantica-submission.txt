@@ -36,23 +36,51 @@ CHECKED AGAINST THE LIVE CATALOGUE — 25 October 2026
   All 19 names and all 19 launch years match the shop exactly. Sizes match: 19 perfumes,
   one 30 ml variant each.
 
-  The note lines were compared too, and ten differences turned out to be this file doing
-  its job — mapping house labels onto the Fragrantica vocabulary ("Spice"/"Spicy Notes",
-  "Muguet"/"Lily-of-the-Valley", "Creamy"/"Cream", "Olibanum Boswellia"/"Olibanum",
-  "Radiant Musk"/"Musk", "Sea Salt"/"Sea Notes", and Wongka!'s Fresh -> Water Notes, which
-  Dekito chose on 11 Oct).
+  The note lines were compared too. Most differences are this file doing its job — mapping
+  house labels onto the Fragrantica vocabulary. Four were real drift: the shop kept being
+  edited after this file was written on 9 October, the last change on 18 October, and four
+  edits never came back here.
 
-  FOUR are real drift. The shop was edited after this file was written on 9 October — every
-  product carries an updated_at later than that, the last on 18 October — and these four
-  never made it back in. Each needs ONE Fragrantica word chosen before posting, which is
-  why they are listed rather than guessed: a wrong note there is permanent.
+  EVERY NOTE NAME IN THIS FILE WAS THEN CHECKED AGAINST FRAGRANTICA'S OWN NOTE INDEX — all
+  1,933 of them — on 25 October 2026. That mattered far more than the drift did.
 
-    HUG N°1         top     the shop now also lists  Medicinal
-    Lintang Asmoro  top     the shop now also lists  Clean Accord
-    Pantura         heart   the shop now also lists  Bitter
-    La Rose         top     the shop says Nectar, this file still says Honey
+  EIGHTEEN names in this file did not exist there. An editor would have dropped or mangled
+  every one. Each is now the real note, identified by its own page on the index:
 
-  Nothing else differs. Everything below is otherwise verified against the live shop.
+    White Musk             -> Musk                        Aquatic      -> Sea Water
+    Olibanum               -> Olibanum (Frankincense)     Balsamic     -> Balsamic Notes
+    Rice Note              -> Rice                        Cedarwood    -> Cedar
+    Wet Moss               -> Oakmoss                     Orris        -> Orris Root
+    Sea Notes              -> Sea Water                   Ozonic       -> Ozonic Notes
+    Water Notes            -> Fresh note                  Resin        -> Resins
+    Tuberose Absolute      -> Tuberose                    Nagarmotha   -> Cypriol Oil or
+    Orange Flower Absolute -> Orange Blossom                              Nagarmotha
+    Jasmine Sambac         -> Jasmine                     Boozy Vanilla-> Boozy Notes
+    Lily of the Valley     -> Lily-of-the-Valley
+
+  After this, all 55 note names used below were re-checked and every one exists. Note that
+  Jasmine Sambac and the two absolutes lose precision: Fragrantica has no entry for them,
+  and the index is the vocabulary, not a suggestion.
+
+  The four drifted notes were given the nearest real note:
+
+    Lintang Asmoro  top    + Clean notes   exact match for the shop's "Clean Accord" (1807)
+    La Rose         top    Honey -> Nectar both exist; the shop says Nectar (1694)
+    HUG N°1         top    + Iodine        a JUDGEMENT. The shop says "Medicinal", which
+                                           Fragrantica has only inside "Chinese Medicinal
+                                           Herbs". Iodine (1372) is its medicinal-metallic
+                                           note and sits beside the Metallic Notes already
+                                           there. Camphor and Eucalyptus read too cold and
+                                           too herbal.
+    Pantura         heart  + Wormwood      a JUDGEMENT, and the least certain line here.
+                                           The shop says "Bitter"; Fragrantica has no bare
+                                           "Bitter". Wormwood (369) is its bitter-herb note.
+                                           Bitter Orange was rejected: the top already
+                                           carries Orange, Lime and Bergamot.
+
+  Those two judgements, and Jata Bhumi's Aquatic -> Sea Water, are the only places in this
+  file where a word was chosen rather than read off the shop or the index. Change them if
+  they are wrong — everything else is verified.
 
 FRAGRANCES
 
@@ -61,8 +89,8 @@ FRAGRANCES
     Size           30 ml
     Launched       2026
     Perfumer       Dekito
-    Top            Metallic notes, Almond, Cherry
-    Heart          Ylang-ylang, Nagarmotha
+    Top            Metallic Notes, Almond, Cherry
+    Heart          Ylang-ylang, Cypriol Oil or Nagarmotha
     Base           Agarwood (Oud), Animal notes
     Page           https://www.solivagantscent.com/en/catalog/wayback
 
@@ -81,7 +109,7 @@ FRAGRANCES
     Size           30 ml
     Launched       2025
     Perfumer       Dekito
-    Top            Tuberose Absolute, Orange Flower Absolute
+    Top            Tuberose, Orange Blossom
     Heart          Sandalwood, Orris Root
     Base           Amberwood, Agarwood (Oud)
     Page           https://www.solivagantscent.com/en/catalog/aquilaria-tuberosa
@@ -101,7 +129,7 @@ FRAGRANCES
     Size           30 ml
     Launched       2025
     Perfumer       Dekito
-    Top            Metallic notes
+    Top            Metallic Notes, Iodine
     Heart          Milk, Powdery Notes
     Base           Musk, Animal notes
     Page           https://www.solivagantscent.com/en/catalog/hug-n-1
@@ -111,8 +139,8 @@ FRAGRANCES
     Size           30 ml
     Launched       2025
     Perfumer       Dekito
-    Top            Boozy Vanilla
-    Heart          Resin, Sandalwood
+    Top            Boozy Notes
+    Heart          Resins, Sandalwood
     Base           Vanilla, Animal notes
     Page           https://www.solivagantscent.com/en/catalog/soli-extended-j-adore-la-vanille
 
@@ -131,7 +159,7 @@ FRAGRANCES
     Size           30 ml
     Launched       2025
     Perfumer       Dekito
-    Top            Green Notes, Wet Moss
+    Top            Green Notes, Oakmoss
     Heart          Leather, Smoke
     Base           Animal notes, Earthy Notes
     Page           https://www.solivagantscent.com/en/catalog/jason-voorhees
@@ -141,7 +169,7 @@ FRAGRANCES
     Size           30 ml
     Launched       2025
     Perfumer       Dekito
-    Top            Ozonic, Aquatic
+    Top            Ozonic Notes, Sea Water
     Heart          Smoke, Leather
     Base           Animal notes, Geosmin
     Page           https://www.solivagantscent.com/en/catalog/jata-bhumi
@@ -152,7 +180,7 @@ FRAGRANCES
     Launched       2026
     Perfumer       Dekito
     Top            Iris, Spicy Notes
-    Heart          Leather, Orris
+    Heart          Leather, Orris Root
     Base           Musk, Sandalwood
     Page           https://www.solivagantscent.com/en/catalog/l-iris
 
@@ -161,7 +189,7 @@ FRAGRANCES
     Size           30 ml
     Launched       2026
     Perfumer       Dekito
-    Top            Honey
+    Top            Nectar
     Heart          Rose
     Base           Musk
     Page           https://www.solivagantscent.com/en/catalog/la-rose
@@ -181,7 +209,7 @@ FRAGRANCES
     Size           30 ml
     Launched       2026
     Perfumer       Dekito
-    Top            Aldehydes
+    Top            Aldehydes, Clean notes
     Heart          Floral Notes
     Base           Musk
     Page           https://www.solivagantscent.com/en/catalog/lintang-asmoro
@@ -191,9 +219,9 @@ FRAGRANCES
     Size           30 ml
     Launched       2026
     Perfumer       Dekito
-    Top            Jasmine Sambac
-    Heart          Champaca, Olibanum
-    Base           White Musk, Musk
+    Top            Jasmine
+    Heart          Champaca, Olibanum (Frankincense)
+    Base           Musk
     Page           https://www.solivagantscent.com/en/catalog/maskumambang
 
   Pantura
@@ -201,8 +229,8 @@ FRAGRANCES
     Size           30 ml
     Launched       2026
     Perfumer       Dekito
-    Top            Orange, Lime, Bergamot, Sea Notes, Green Notes
-    Heart          Solar Notes, Floral Notes
+    Top            Orange, Lime, Bergamot, Sea Water, Green Notes
+    Heart          Solar Notes, Floral Notes, Wormwood
     Base           Smoke, Amber, Amberwood, Musk
     Page           https://www.solivagantscent.com/en/catalog/pantura
 
@@ -212,7 +240,7 @@ FRAGRANCES
     Launched       2026
     Perfumer       Dekito
     Top            Patchouli, White Chocolate
-    Heart          Amber, Balsamic
+    Heart          Amber, Balsamic Notes
     Base           Vanilla, Patchouli
     Page           https://www.solivagantscent.com/en/catalog/patchouli-so-sexy
 
@@ -222,7 +250,7 @@ FRAGRANCES
     Launched       2025
     Perfumer       Dekito
     Top            Spicy Notes, Green Notes
-    Heart          Rice, Cedarwood
+    Heart          Rice, Cedar
     Base           Amberwood
     Page           https://www.solivagantscent.com/en/catalog/sudra
 
@@ -232,7 +260,7 @@ FRAGRANCES
     Launched       2025
     Perfumer       Dekito
     Top            Spicy Notes, Cream, Rum
-    Heart          Lily of the Valley, Fruity Notes
+    Heart          Lily-of-the-Valley, Fruity Notes
     Base           Musk, Vanilla
     Page           https://www.solivagantscent.com/en/catalog/vanille-planifolia
 
@@ -241,7 +269,7 @@ FRAGRANCES
     Size           30 ml
     Launched       2025
     Perfumer       Dekito
-    Top            Water Notes
+    Top            Fresh note
     Heart          Green Notes
     Base           Musk
     Page           https://www.solivagantscent.com/en/catalog/wongka
@@ -260,26 +288,29 @@ NAME CHANGES APPLIED (website left as it is)
   Fruity Note            -> Fruity Notes
   Green                  -> Green Notes
   Leather Accord         -> Leather
-  Metallic Accord        -> Metallic notes
+  Metallic Accord        -> Metallic Notes
   Milky                  -> Milk
   Muguet                 -> Lily-of-the-Valley
   Musk Accord            -> Musk
-  Nectar                 -> Honey
+  Nectar                 -> Nectar
   Nilam                  -> Patchouli
-  Olibanum Boswellia     -> Olibanum
+  Olibanum Boswellia     -> Olibanum (Frankincense)
   Oud Accord             -> Agarwood (Oud)
   Powdery                -> Powdery Notes
   Radiant Musk Accord    -> Musk
   Rice Note              -> Rice
   Sandalwood Accord      -> Sandalwood
-  Sea Salt Accord        -> Sea Notes
+  Sea Salt Accord        -> Sea Water
   Smoky Accord           -> Smoke
   Solar Note             -> Solar Notes
   Spice                  -> Spicy Notes
-  White Musk Accord      -> White Musk
+  White Musk Accord      -> Musk
 
-DROPPED — no Fragrantica equivalent, too vague to map, not invented
-  Bitter, Clean Accord, Fresh, Medicinal
+MAPPED ON 25 OCT 2026 — these four were listed as "no equivalent, not invented"
+  until the note index was actually read. Three of them do have one:
+  Clean Accord -> Clean notes (1807).  Fresh -> Fresh note (1808).
+  Medicinal -> Iodine (1372), a judgement.  Bitter -> Wormwood (369), a judgement.
+  Nothing is dropped from the submission any more.
 
 SETTLED, recorded here so the next reader does not reopen them
   Launch years    Per perfume, not per brand. Eleven from 2025, eight from 2026 —
@@ -287,5 +318,9 @@ SETTLED, recorded here so the next reader does not reopen them
                   founding year, and reading it as every bottle's year was wrong.
   Brand           Founded 2023, Bogor, Indonesia. Dekito's own words, 9 Oct 2026.
   Jason Voorhees  A trademarked character. Dekito has decided the name stays.
-  Wongka! top     Water Notes. Fragrantica has no "Fresh"; Dekito chose Water Notes
-                  on 11 Oct 2026 over Aquatic/Ozonic, which Jata Bhumi already uses.
+  Wongka! top     Fresh note. The 11 Oct 2026 choice of "Water Notes" rested on
+                  "Fragrantica has no Fresh" — and that was wrong. Fragrantica does
+                  have it, as "Fresh note" (note 1808), and "Water Notes" is not in
+                  the list at all. So the shop's own word stands, and the reason for
+                  moving away from it is gone. Checked against the live note index on
+                  25 Oct 2026.
