@@ -1,5 +1,39 @@
 # Bot Telegram dua arah — perintah dari HP
 
+> ## STATUS 25 Okt 2026: terpasang, BELUM menyala
+>
+> Semua kodenya hidup di produksi. Botnya tidak menjawab karena satu sebab yang sudah
+> **terdiagnosis pasti**, bukan dugaan — log runtime Vercel mencatat:
+>
+> ```
+> [telegram] refused: bad-secret
+> ```
+>
+> Artinya nilai `TELEGRAM_WEBHOOK_SECRET` di Vercel berbeda dengan `secret_token` yang dikirim
+> saat `setWebhook`. Bukan masalah kode, bukan masalah jaringan.
+>
+> **Dalam keadaan ini botnya aman** — ia menolak semua perintah, jadi tidak ada yang bisa
+> dilakukan siapa pun lewat dia. Menunda tidak berbahaya.
+>
+> **Satu hal yang sebaiknya tidak ditunda lama:** token bot sempat terbuka di URL tab browser
+> (`api.telegram.org/bot<TOKEN>/...`), jadi ia ada di riwayat browser. Siapa pun yang memegang
+> token itu bisa memanggil `setWebhook` sendiri dan mengalihkan seluruh perintah ke server
+> mereka. Mengganti token lewat `@BotFather` → `/revoke` gratis dan membatalkan yang lama.
+>
+> ### Urutan menyalakannya (sekaligus menutup kedua hal di atas)
+> 1. `@BotFather` → `/revoke` → token baru
+> 2. `openssl rand -hex 32` → secret baru
+> 3. Vercel, **timpa** dua variabel:
+>    `ORDER_ALERT_WEBHOOK_URL` = `https://api.telegram.org/bot<TOKEN-BARU>/sendMessage`
+>    `TELEGRAM_WEBHOOK_SECRET` = secret baru
+> 4. buka `https://api.telegram.org/bot<TOKEN-BARU>/setWebhook?url=https://www.solivagantscent.com/api/telegram/webhook&secret_token=<SECRET-BARU>`
+> 5. minta deploy ulang, lalu kirim `/bantuan`
+>
+> Kalau masih diam: buka **Vercel → Logs**, cari `[telegram] refused:`. Kode alasannya
+> menunjuk langsung — `bad-secret`, `wrong-chat`, atau `allowlist-not-configured`.
+> `vercel logs` dari CLI TIDAK menampilkannya; harus lewat dashboard.
+
+
 Notifikasi satu arah sudah hidup. Ini separuh keduanya: kamu kirim perintah, toko menjawab.
 
 ## Yang perlu kamu tahu dulu, sekali saja
