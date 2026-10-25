@@ -8107,3 +8107,69 @@ main :is(a, figure, picture, div, span):has(> img) {
   margin-top: 2px;
   color: var(--editorial-muted, #6f695f);
 }
+
+/* The three answers a first-time buyer needs, on the page where they are asking. Plain <details>, so the
+   open/close costs no JavaScript and the browser's own find-in-page reaches inside a closed one. */
+.pdp-answers {
+  width: min(var(--content-max), calc(100% - 64px));
+  margin: 56px auto 0;
+  border-top: 1px solid var(--editorial-border, #e6e1d7);
+  padding-top: 28px;
+}
+
+.pdp-answers > .editorial-eyebrow {
+  margin-bottom: 10px;
+}
+
+.pdp-answer {
+  border-bottom: 1px solid var(--editorial-border, #e6e1d7);
+}
+
+.pdp-answer__q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 14px 0;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-body);
+  font-size: var(--text-body, 15px);
+  font-weight: 600;
+  color: var(--editorial-charcoal, #1b1a16);
+}
+
+/* Safari still draws its own triangle without this, which lands beside the one below. */
+.pdp-answer__q::-webkit-details-marker {
+  display: none;
+}
+
+.pdp-answer__q::after {
+  content: '+';
+  flex: 0 0 auto;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--editorial-muted, #6f695f);
+  transition: transform 0.18s ease;
+}
+
+.pdp-answer[open] .pdp-answer__q::after {
+  content: '−';
+}
+
+.pdp-answer__a {
+  margin: 0;
+  padding: 0 0 18px;
+  max-width: 62ch;
+  color: var(--editorial-muted, #6f695f);
+  font-size: var(--text-caption, 13px);
+  line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+  .pdp-answers {
+    width: auto;
+    margin: 32px 16px 0;
+  }
+}
