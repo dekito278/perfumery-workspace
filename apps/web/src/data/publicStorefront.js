@@ -1,3 +1,4 @@
+import { normalizeTestimonials } from '@/utils/productTestimonials.js';
 import {
   formatRupiah,
   getPrimaryVariant,
@@ -147,6 +148,9 @@ export const toPublicFragrance = (product = {}) => {
     // answered "how rare am I" to a filter asking "what do you smell of".
     limited: Boolean(product.limited) || String(product.category || '').trim().toLowerCase() === 'limited',
     reserve: Boolean(product.reserve),
+    // Carried, not dropped: deadProductInputs refused the field until it reached a buyer, which is the
+    // whole point of typing it. Normalised here too, so a malformed row never reaches the page.
+    testimonials: normalizeTestimonials(product.testimonials),
     collection: product.collection || product.category || 'SOLIVAGANT Atelier',
     topNotes: topNotes.length ? topNotes : ['Opening impression'],
     heartNotes: heartNotes.length ? heartNotes : ['Atelier heart'],

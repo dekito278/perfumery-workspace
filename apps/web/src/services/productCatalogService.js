@@ -1,3 +1,4 @@
+import { normalizeTestimonials } from '@/utils/productTestimonials.js';
 import { isStockOrderItem } from '@/utils/orderTotals.js';
 import { featuredProducts } from '@/data/storefront.js';
 import supabase from '@/lib/supabaseClient.js';
@@ -574,6 +575,7 @@ export const normalizeProduct = (input, existingProducts = []) => {
   limited: Boolean(input.limited),
   // Same shape as `limited`: a badge, not a scent family. See productBadge.js.
   reserve: Boolean(input.reserve),
+  testimonials: normalizeTestimonials(input.testimonials),
     popularity: Number(input.popularity || 70),
     visual: input.visual || FALLBACK_VISUALS[visualIndex],
     imageUrl: images[0] || '',
@@ -607,6 +609,7 @@ const toDatabasePayload = (product) => ({
   featured: product.featured,
   limited: Boolean(product.limited),
   reserve: Boolean(product.reserve),
+  testimonials: normalizeTestimonials(product.testimonials),
   popularity: product.popularity,
   visual: product.visual,
   image_url: product.imageUrl,
@@ -647,6 +650,7 @@ const fromDatabaseRow = (row) => normalizeProduct({
   featured: row.featured,
   limited: Boolean(row.limited),
   reserve: Boolean(row.reserve),
+  testimonials: normalizeTestimonials(row.testimonials),
   popularity: row.popularity,
   visual: row.visual,
   imageUrl: row.image_url,

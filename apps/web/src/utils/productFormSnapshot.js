@@ -7,6 +7,7 @@
 // Written by hand is the root of it. A field is added to the form, wired to an input, and the snapshot
 // twenty lines up is not where anyone looks. productFormCoversTheForm.selfcheck.mjs closes that by
 // deriving the field list from the inputs themselves.
+import { normalizeTestimonials } from '@/utils/productTestimonials.js';
 import { moodForEditing } from '@/utils/productMood.js';
 
 export const snapshotProductForm = (product = {}) => JSON.stringify({
@@ -32,6 +33,9 @@ export const snapshotProductForm = (product = {}) => JSON.stringify({
   mood: moodForEditing(product.mood),
   wear: product.wear || {},
   intensity: product.intensity || 'Medium',
+  // Buyer quotes are a repeater, so an edit here is several keystrokes of someone else's words. Leaving
+  // them out meant typing one and walking away threw it out with no warning at all.
+  testimonials: normalizeTestimonials(product.testimonials),
   featured: Boolean(product.featured),
   limited: Boolean(product.limited),
   reserve: Boolean(product.reserve),

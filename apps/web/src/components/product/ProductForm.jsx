@@ -1,3 +1,4 @@
+import TestimonialsField from '@/components/product/TestimonialsField.jsx';
 import React, { useEffect, useMemo, useState } from 'react';
 import { compareAtPriceNote } from '@/utils/compareAtPrice.js';
 import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
@@ -57,6 +58,7 @@ export const emptyProduct = {
   featured: true,
   limited: false,
   reserve: false,
+  testimonials: [],
   catalogVisible: true,
 };
 
@@ -507,6 +509,7 @@ const ProductForm = ({ product = null, onSaved }) => {
           {/* Solivagant Reserve: a LINE, not a price tier and not a scent family — Dekito's own words,
               "jalan kecil yang aku buka buat bahan-bahan alami yang langka". It behaves exactly like
               LIMITED: badge on the card, and a pill that appears only once something wears it. */}
+          <TestimonialsField value={form.testimonials} onChange={(next) => updateField('testimonials', next)} />
           <label className="flex items-center gap-3 rounded-2xl border bg-stone-100 px-4 py-3 text-sm font-bold text-stone-800">
             <input type="checkbox" checked={Boolean(form.reserve)} onChange={(event) => updateField('reserve', event.target.checked)} />
             Lini RESERVE
