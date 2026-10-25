@@ -31,6 +31,7 @@ import { productCopyFor } from '@/utils/productCopy.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import FreeVialNote from '@/components/storefront/FreeVialNote.jsx';
 import BuyerAnswers from '@/components/storefront/BuyerAnswers.jsx';
+import ProductTestimonials from '@/components/storefront/ProductTestimonials.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
@@ -278,6 +279,7 @@ const MobileProductDetailPage = () => {
 
         {/* Related */}
         <ProductStoryLink product={product} mobile className="m-editorial-section pdp-story-link" />
+        <ProductTestimonials product={product} className="m-editorial-section" />
         <BuyerAnswers className="m-editorial-section" />
 
         {related.length ? (

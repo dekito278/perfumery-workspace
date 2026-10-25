@@ -1,3 +1,4 @@
+import TestimonialsField from '@/components/product/TestimonialsField.jsx';
 import React, { useEffect, useMemo, useState } from 'react';
 import { compareAtPriceNote } from '@/utils/compareAtPrice.js';
 import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
@@ -57,6 +58,7 @@ export const emptyProduct = {
   featured: true,
   limited: false,
   reserve: false,
+  testimonials: [],
   catalogVisible: true,
 };
 
@@ -574,6 +576,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
           Badge LIMITED
         </label>
         {/* The Reserve line — see ProductForm for why it is a badge and not a category. */}
+        <TestimonialsField value={form.testimonials} onChange={(next) => updateField('testimonials', next)} mobile />
         <label className="flex items-center gap-3 rounded-2xl bg-stone-100 px-3 py-3 text-xs font-bold text-stone-800">
           <input type="checkbox" checked={Boolean(form.reserve)} onChange={(event) => updateField('reserve', event.target.checked)} />
           Lini RESERVE

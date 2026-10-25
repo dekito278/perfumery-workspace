@@ -32,6 +32,7 @@ import { productCopyFor } from '@/utils/productCopy.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import FreeVialNote from '@/components/storefront/FreeVialNote.jsx';
 import BuyerAnswers from '@/components/storefront/BuyerAnswers.jsx';
+import ProductTestimonials from '@/components/storefront/ProductTestimonials.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -352,6 +353,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         {/* The story, before the other bottles. Someone still deciding about THIS perfume is better
             served by what was written about it than by four alternatives. */}
         <ProductStoryLink product={product} className="pdp-story-link" />
+        <ProductTestimonials product={product} />
         <BuyerAnswers />
 
         {related.length ? (

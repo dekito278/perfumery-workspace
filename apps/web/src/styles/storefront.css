@@ -8173,3 +8173,51 @@ main :is(a, figure, picture, div, span):has(> img) {
     margin: 32px 16px 0;
   }
 }
+
+/* Buyer quotes. Absent on most products and that is the design — see ProductTestimonials.jsx. */
+.pdp-quotes {
+  width: min(var(--content-max), calc(100% - 64px));
+  margin: 56px auto 0;
+}
+
+.pdp-quotes__list {
+  display: grid;
+  gap: 18px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pdp-quote {
+  border-left: 2px solid var(--editorial-border, #e6e1d7);
+  padding-left: 18px;
+}
+
+.pdp-quote__text {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--editorial-charcoal, #1b1a16);
+  font-family: var(--font-display, serif);
+  font-size: var(--text-body, 16px);
+  font-style: italic;
+  line-height: 1.65;
+}
+
+.pdp-quote__by {
+  display: block;
+  margin-top: 8px;
+  color: var(--editorial-muted, #6f695f);
+  font-family: var(--font-body);
+  font-size: var(--text-caption, 12px);
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+  .pdp-quotes {
+    width: auto;
+    margin: 32px 16px 0;
+  }
+}

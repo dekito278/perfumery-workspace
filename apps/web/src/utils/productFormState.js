@@ -12,6 +12,7 @@
 // One builder now, holding the union of what either layout needs. stockAdjustmentNote is only rendered
 // by the desktop form; carrying the empty string on the phone costs nothing and removes the reason to
 // keep two versions of this function.
+import { normalizeTestimonials } from './productTestimonials.js';
 import {
   getProductRestockThreshold,
   getProductStockCorrections,
@@ -40,6 +41,9 @@ export const toProductFormState = (product) => {
     stockAdjustmentNote: '',
     stockCorrections: getProductStockCorrections(product),
     images: product.images || (product.imageUrl ? [product.imageUrl] : []),
+    // Spread by ...product already, but normalised here so a null column opens as an empty list rather
+    // than crashing the repeater on its first render.
+    testimonials: normalizeTestimonials(product.testimonials),
   };
 };
 

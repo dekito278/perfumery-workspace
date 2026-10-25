@@ -22,7 +22,10 @@ import { Buffer } from 'node:buffer';
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
 
 const snapshotSource = readFileSync(join(src, 'utils', 'productFormSnapshot.js'), 'utf8')
-  .replace(/'@\//g, `'${pathToFileURL(src).href}/`);
+  .replace(/'@\//g, `'${pathToFileURL(src).href}/`)
+  // Relative imports too. A `./x.js` left alone becomes unresolvable from a data: URL, and the error
+  // prints the whole module as base64 — which is a long way to say "someone added an import".
+  .replace(/'\.\//g, `'${pathToFileURL(join(src, 'utils')).href}/`);
 const { snapshotProductForm } = await import(
   `data:text/javascript;base64,${Buffer.from(snapshotSource, 'utf8').toString('base64')}`
 );
