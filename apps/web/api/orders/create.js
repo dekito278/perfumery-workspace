@@ -17,6 +17,9 @@ import { Buffer } from 'node:buffer';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '../../src/utils/bespokeOrder.js';
 import { validateVoucher } from '../../src/utils/voucherValidation.js';
 import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js';
+import {
+  destinationSearchTerms, javaClaimIsContradicted, javaClaimNeedsProof, provinceForDestinationId,
+} from '../../src/utils/shippingZoneClaim.js';
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
@@ -330,6 +333,28 @@ const computeShippingFee = async (baseUrl, { destinationId, destination, weight,
   if (!chosen) throw new Error('No shipping rate for the selected destination/courier');
 
   const [promoRow] = await sbSelect('storefront_shipping_promotion_settings?id=eq.default&select=*').catch(() => []);
+
+  // The promo pays out by ZONE, and the zone was being read from province and label strings in this
+  // request body while the id the cost was priced from came in beside them, unchecked against each
+  // other. Forging provinceName to a Java province turned an Rp 85.000 Papua parcel into Rp 0, saved on
+  // the order. See shippingZoneClaim.js for the measurements and for why this VERIFIES the claim instead
+  // of recomputing the zone: a lookup that misses must never overcharge an honest Java buyer.
+  if (javaClaimNeedsProof({ promo: { enabled: promoRow?.enabled, preset: promoRow?.preset }, destination })) {
+    let trustedProvince = '';
+    // Two terms at most: one upstream call each, and only ever on an order that claims the paying side
+    // of a live promo.
+    for (const term of destinationSearchTerms(destination).slice(0, 2)) {
+      const found = await fetch(`${baseUrl}/api/shipping/rates?search=${encodeURIComponent(term)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null);
+      trustedProvince = provinceForDestinationId(found?.destinations, destinationId);
+      if (trustedProvince) break;
+    }
+    if (javaClaimIsContradicted(trustedProvince)) {
+      throw new Error('Alamat pengiriman tidak cocok dengan daerah yang dipilih. Pilih ulang tujuan pengiriman.');
+    }
+  }
+
   const [promoted] = applyShippingPromotionToRates(
     [{ ...chosen, cost: Math.round(Number(chosen.cost || 0)) }],
     destination,
