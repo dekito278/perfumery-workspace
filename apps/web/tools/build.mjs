@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { undefinedExportsIn } from '../src/utils/chunkExportsAreDefined.js';
 import { spawnSync } from 'node:child_process';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH } from '../src/utils/seo.js';
 import { MESSAGES } from '../src/i18n/messages.js';
@@ -966,6 +967,33 @@ const sitemapPaths = (distRoot) => {
 // `import { _ } from './pdf-export-vendor.js'` and every visitor to a product page downloaded 520 kB of
 // jspdf and html2canvas. Nothing in the bundle output showed it — the chunk was still listed as separate,
 // still absent from modulepreload, and still only imported dynamically in the source.
+// A build whose output cannot run must not be deployed. See chunkExportsAreDefined.js for the day every
+// preview deployment was a dead page while the build exited 0 and the Vercel check went green.
+const assertChunksDefineWhatTheyExport = () => {
+  const assetsDir = path.join(webRoot, 'dist', 'assets');
+  if (!fs.existsSync(assetsDir)) return;
+  const chunks = fs.readdirSync(assetsDir).filter((file) => file.endsWith('.js'));
+  if (!chunks.length) {
+    console.error('[bundle] no chunks emitted — nothing was built, so nothing was checked.');
+    process.exit(1);
+  }
+  for (const file of chunks) {
+    const { count, names } = undefinedExportsIn(fs.readFileSync(path.join(assetsDir, file), 'utf8'));
+    if (count) {
+      console.error(
+        `[bundle] ${file} exports ${count} name(s) it never defines (${names.join(', ')}${count > names.length ? ', …' : ''}). `
+        + 'The browser would stop on the first one and the app would not boot.\n'
+        + '  Measured cause, 2026-10-25: this happens when the client Supabase env is ABSENT. '
+        + 'VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY exist in Vercel for Production only, so every '
+        + 'PREVIEW deployment built a hollow bundle and served a dead page while the build exited 0. '
+        + 'Set both for Preview too. Removing experimentalMinChunkSize does NOT fix it — that was tested.',
+      );
+      process.exit(1);
+    }
+  }
+  console.log(`[bundle] ${chunks.length} chunk(s) define every name they export.`);
+};
+
 const assertDeferredChunksStayLazy = () => {
   const distRoot = path.join(webRoot, 'dist');
   const indexPath = path.join(distRoot, 'index.html');
@@ -1013,6 +1041,7 @@ await assertQrisCanBeConfirmed();
 await warnIfBespokeDefaultsDrifted();
 
 if (viteResult.status === 0) {
+  assertChunksDefineWhatTheyExport();
   assertDeferredChunksStayLazy();
   assertNoChunkSwarm();
   await generateSeoArtifacts();
