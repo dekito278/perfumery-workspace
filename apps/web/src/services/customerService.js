@@ -18,6 +18,9 @@ const normalizeCustomer = (customer = {}) => ({
   lastOrderAt: customer.last_order_at || customer.lastOrderAt || '',
   securityQuestion: customer.security_question || customer.securityQuestion || '',
   requiresSecurity: Boolean(customer.requires_security || customer.requiresSecurity),
+  // Set by checkout_lookup when the code is recognised but the caller has proved nothing: an
+  // unprotected code with no login. The checkout must NOT pre-fill PII in this case — it never had it.
+  requiresIdentity: Boolean(customer.requires_identity || customer.requiresIdentity),
   masked: Boolean(customer.masked),
   securityEnabledAt: customer.security_enabled_at || customer.securityEnabledAt || '',
   persistence: customer.persistence || 'database',
@@ -271,17 +274,21 @@ export const setCustomerPortalSecurity = async ({
   securityQuestion,
   securityAnswer,
   currentAnswer = '',
+  contact = '',
 }) => {
   const normalizedCode = normalizeCustomerCode(customerCode);
   if (!normalizedCode || !securityQuestion?.trim() || !securityAnswer?.trim()) {
     throw new Error('Security question and answer are required');
   }
 
+  // Sent on every call; the server only consults it the first time an answer is set, to prove the caller
+  // is the customer and not someone who guessed the code. Ignored once an answer exists.
   const { data, error } = await supabase.rpc('storefront_customer_set_security', {
     p_customer_code: normalizedCode,
     p_security_question: securityQuestion.trim(),
     p_security_answer: securityAnswer.trim(),
     p_current_answer: currentAnswer?.trim() || null,
+    p_contact: contact?.trim() || null,
   });
 
   if (error) {
