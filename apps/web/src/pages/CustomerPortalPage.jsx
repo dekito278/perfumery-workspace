@@ -860,6 +860,9 @@ const CustomerPortalPage = () => {
   const [securityQuestion, setSecurityQuestion] = useState('');
   const [newSecurityAnswer, setNewSecurityAnswer] = useState('');
   const [currentSecurityAnswer, setCurrentSecurityAnswer] = useState('');
+  // Required to protect a code for the FIRST time: proof the setter is the customer, not a code-guesser.
+  // Unused when re-setting an existing answer (the current answer proves ownership then).
+  const [securityContact, setSecurityContact] = useState('');
   const [savingSecurity, setSavingSecurity] = useState(false);
   const [refreshingPaymentOrder, setRefreshingPaymentOrder] = useState('');
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
@@ -1172,6 +1175,7 @@ const CustomerPortalPage = () => {
         securityQuestion,
         securityAnswer: newSecurityAnswer,
         currentAnswer: currentSecurityAnswer,
+        contact: securityContact,
       });
       setPortal((current) => ({
         ...current,
@@ -1183,6 +1187,7 @@ const CustomerPortalPage = () => {
       }));
       setNewSecurityAnswer('');
       setCurrentSecurityAnswer('');
+      setSecurityContact('');
       setSecurityFormOpen(false);
       toast.success(t('cust.securitySaved'));
     } catch (error) {
@@ -1485,7 +1490,12 @@ const CustomerPortalPage = () => {
                   <form onSubmit={saveSecurity} className="mt-3 grid gap-2 border-t border-[#e5e7eb] pt-3">
                     {portal.customer.securityEnabledAt ? (
                       <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder={t('cust.currentAnswer')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
-                    ) : null}
+                    ) : (
+                      <>
+                        <input value={securityContact} onChange={(event) => setSecurityContact(event.target.value)} placeholder={t('cust.securityContactPlaceholder')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
+                        <span className="text-[10px] font-semibold text-[#6b7280]">{t('cust.securityContactHint')}</span>
+                      </>
+                    )}
                     <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder={t('cust.securityQuestion')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
                     <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder={t('cust.answer')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
                     <Button type="submit" className="h-11 rounded-2xl gap-2" disabled={savingSecurity}>
@@ -1740,7 +1750,17 @@ const CustomerPortalPage = () => {
                           placeholder={t('cust.currentAnswer')}
                           className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
                         />
-                      ) : null}
+                      ) : (
+                        <>
+                          <input
+                            value={securityContact}
+                            onChange={(event) => setSecurityContact(event.target.value)}
+                            placeholder={t('cust.securityContactPlaceholder')}
+                            className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+                          />
+                          <span className="text-xs font-semibold text-muted-foreground">{t('cust.securityContactHint')}</span>
+                        </>
+                      )}
                       <input
                         value={securityQuestion}
                         onChange={(event) => setSecurityQuestion(event.target.value)}

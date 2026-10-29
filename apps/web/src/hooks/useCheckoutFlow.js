@@ -443,6 +443,19 @@ export const useCheckoutFlow = ({
       return;
     }
 
+    // Code recognised, but the caller proved nothing — an unprotected code with no login. checkout_lookup
+    // used to pre-fill this stranger-or-owner's saved name, contact and address from the code alone; that
+    // was the PII leak (see the 20261026 migration). The code is kept so the order still links to the
+    // record, but the buyer types their own details, or logs in to have them filled.
+    if (customer.requiresIdentity) {
+      setSecurityChallenge(null);
+      setRepeatCustomer(null);
+      setRepeatAddressMode('new');
+      setCustomerCode(customer.customerCode);
+      toast.info('Kode dikenali. Isi detail pengirimanmu, atau login untuk mengisinya otomatis.');
+      return;
+    }
+
     applyCheckoutCustomer(customer);
   };
 
