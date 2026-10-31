@@ -1028,6 +1028,238 @@ a.ng-row:hover {
   }
 }
 
+/* --- Bespoke -------------------------------------------------------------------------------------- */
+
+.editorial-bespoke-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.editorial-bespoke-tabs button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--ng-line-strong);
+  background: transparent;
+  color: var(--ng-bone);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.editorial-bespoke-tabs button.is-active {
+  border-color: var(--ng-bone);
+  background: var(--ng-bone);
+  color: var(--ng-ink);
+}
+
+.editorial-bespoke-option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: 12px;
+}
+
+.editorial-bespoke-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 88px;
+  padding: 14px;
+  border: 1px solid rgba(237, 230, 214, 0.25);
+  background: transparent;
+  color: var(--ng-bone);
+  text-align: left;
+  cursor: pointer;
+}
+
+.editorial-bespoke-option:hover {
+  border-color: var(--ng-bone);
+}
+
+.editorial-bespoke-option.is-active {
+  border-color: var(--ng-bone);
+  background: rgba(237, 230, 214, 0.06);
+}
+
+.editorial-bespoke-option__media {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  background: var(--ng-card);
+}
+
+.editorial-bespoke-option__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.editorial-bespoke-option__fallback span {
+  display: block;
+  width: 18px;
+  height: 30px;
+  border: 1px solid rgba(237, 230, 214, 0.45);
+  border-radius: 6px 6px 9px 9px;
+}
+
+.editorial-bespoke-option__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editorial-bespoke-option__body strong {
+  font-family: var(--ng-font-display);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.editorial-bespoke-option__extra {
+  color: var(--ng-ember);
+  font-size: 13px;
+}
+
+.editorial-bespoke-option__body small {
+  color: var(--ng-dust);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* The preview: a bottle drawn in outline on the dark card. Its parts change shape with the choices
+   (is-square, is-large, is-small, is-stone, is-acrylic), which is why the drawing stays CSS. */
+.editorial-bespoke-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editorial-bespoke-preview__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid rgba(237, 230, 214, 0.12);
+  background: radial-gradient(ellipse 60% 50% at 50% 60%, rgba(237, 230, 214, 0.07), rgba(22, 19, 16, 0) 70%), var(--ng-card);
+}
+
+.editorial-bespoke-preview__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+}
+
+.editorial-bespoke-preview__mockup {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.editorial-bespoke-preview__cap {
+  order: -1;
+  width: 46px;
+  height: 30px;
+  margin-bottom: -1px;
+  border: 1px solid rgba(237, 230, 214, 0.6);
+  background: var(--ng-ink);
+}
+
+.editorial-bespoke-preview__cap.is-stone {
+  background: radial-gradient(circle at 30% 25%, #d8d0bf, #6f695f 55%, #2a2520);
+}
+
+.editorial-bespoke-preview__cap.is-acrylic {
+  background: rgba(237, 230, 214, 0.15);
+}
+
+.editorial-bespoke-preview__bottle {
+  width: 104px;
+  height: 140px;
+  border: 1px solid rgba(237, 230, 214, 0.6);
+  border-radius: 14px 14px 22px 22px;
+  background: rgba(237, 230, 214, 0.05);
+}
+
+.editorial-bespoke-preview__bottle.is-large {
+  width: 128px;
+  height: 172px;
+}
+
+.editorial-bespoke-preview__bottle.is-small {
+  width: 84px;
+  height: 108px;
+}
+
+.editorial-bespoke-preview__bottle.is-square {
+  border-radius: 4px;
+}
+
+.editorial-bespoke-preview__label {
+  position: absolute;
+  bottom: 40px;
+  padding: 4px 8px;
+  border: 1px solid rgba(237, 230, 214, 0.4);
+  color: var(--ng-bone);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.editorial-bespoke-preview__focus {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editorial-bespoke-preview__focus span {
+  color: var(--ng-ash);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.editorial-bespoke-preview__focus strong {
+  font-family: var(--ng-font-display);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.editorial-bespoke-preview__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.editorial-bespoke-preview__meta span {
+  padding: 6px 10px;
+  border: 1px solid var(--ng-line);
+  color: var(--ng-dust);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.editorial-bespoke-preview__meta span.is-active {
+  border-color: var(--ng-bone);
+  color: var(--ng-bone);
+}
+
 /* --- Journal -------------------------------------------------------------------------------------- */
 
 .ng-journal-row {
