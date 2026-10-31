@@ -303,13 +303,13 @@ const getPaymentExperienceState = (order, t) => {
   };
 };
 
-const PaymentExperiencePanel = ({ compact = false, order }) => {
+const PaymentExperiencePanel = ({ order }) => {
   const { t } = useTranslate();
   const state = getPaymentExperienceState(order, t);
   if (!state) return null;
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-none border ${state.className}`}>
+    <div className={`mt-4 p-4 rounded-none border ${state.className}`}>
       <div className="flex items-start gap-3">
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-none ${state.iconClassName}`}>
           <CreditCard className="h-4 w-4" />
@@ -319,7 +319,7 @@ const PaymentExperiencePanel = ({ compact = false, order }) => {
             <span className="rounded-full bg-transparent px-2.5 py-1 text-[10px] font-bold uppercase">{state.label}</span>
             {state.action ? <span className="text-[10px] font-bold uppercase opacity-75">{state.action}</span> : null}
           </div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-2 font-bold text-ng-bone`}>{state.title}</h4>
+          <h4 className={`text-base mt-2 font-bold text-ng-bone`}>{state.title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{state.description}</p>
         </div>
       </div>
@@ -327,7 +327,7 @@ const PaymentExperiencePanel = ({ compact = false, order }) => {
   );
 };
 
-const PaymentProofPanel = ({ order, compact = false }) => {
+const PaymentProofPanel = ({ order }) => {
   const { t } = useTranslate();
   if (!isManualTransferPayment(order.paymentProvider)) return null;
 
@@ -341,7 +341,7 @@ const PaymentProofPanel = ({ order, compact = false }) => {
       : t('cust.proofMissing');
 
   return (
-    <div className={`mt-3 rounded-none border ${rejected || !submitted ? 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember' : 'border-[#8fd0a4]/40 bg-[#14231a] text-[#9fdcb2]'} ${compact ? 'p-3' : 'p-4'}`}>
+    <div className={`mt-3 rounded-none border ${rejected || !submitted ? 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember' : 'border-[#8fd0a4]/40 bg-[#14231a] text-[#9fdcb2]'} p-4`}>
       <div className="flex items-start gap-3">
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-none ${submitted ? 'bg-[#14231a] text-[#9fdcb2]' : 'bg-transparent text-ng-ember'}`}>
           {submitted ? <FileCheck2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
@@ -374,7 +374,6 @@ const PaymentProofPanel = ({ order, compact = false }) => {
 };
 
 const PaymentTaskPanel = ({
-  compact = false,
   onRenewDokuPayment,
   order,
   renewing = false,
@@ -407,17 +406,17 @@ const PaymentTaskPanel = ({
       : t('cust.openPayLink');
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-none border border-ng-ember/40 bg-ng-ember/10 text-ng-sand`}>
+    <div className={`mt-4 p-4 rounded-none border border-ng-ember/40 bg-ng-ember/10 text-ng-sand`}>
       <div className="flex items-start gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-none bg-transparent text-ng-ember">
           <CreditCard className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ng-ember">{t('cust.payActions')}</div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-ng-bone`}>{title}</h4>
+          <h4 className={`text-base mt-1 font-bold text-ng-bone`}>{title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-ember">{description}</p>
 
-          <div className={`${compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-3'} mt-3`}>
+          <div className={`grid gap-3 sm:grid-cols-3 mt-3`}>
             <div className="rounded-none bg-transparent px-3 py-2">
               <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.order')}</div>
               <div className="mt-1 truncate text-xs font-bold text-ng-bone">{order.orderNumber}</div>
@@ -440,7 +439,7 @@ const PaymentTaskPanel = ({
             )}
           </div>
 
-          <div className={`${compact ? 'grid gap-2' : 'flex flex-wrap gap-2'} mt-3`}>
+          <div className={`flex flex-wrap gap-2 mt-3`}>
             {manualPayment ? (
               <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-4 text-xs font-bold text-ng-ink">
                 <Upload className="h-4 w-4" />
@@ -470,7 +469,7 @@ const PaymentTaskPanel = ({
   );
 };
 
-const OrderTimeline = ({ order, compact = false }) => {
+const OrderTimeline = ({ order }) => {
   const { t } = useTranslate();
   const activeStep = portalActiveStepIndex(order);
   const timeline = progressSteps.map((step, index) => {
@@ -502,7 +501,7 @@ const OrderTimeline = ({ order, compact = false }) => {
   });
 
   return (
-    <div className={compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {timeline.map((step, index) => (
         <div key={step.key} className={`rounded-none border px-3 py-3 ${step.done ? 'border-ng-bone/20 bg-transparent' : 'border-ng-bone/10 bg-transparent'} ${step.current ? 'ring-1 ring-ng-bone/40' : ''}`}>
           <div className="flex items-start gap-3">
@@ -533,14 +532,14 @@ const OrderTimeline = ({ order, compact = false }) => {
 // explain: a voucher, freight, or both. An order read through a lookup that returns no items has no
 // freight to name (getOrderShippingFee refuses to call the whole total freight), so it still shows
 // nothing rather than inventing a breakdown.
-const OrderTotals = ({ order, compact = false }) => {
+const OrderTotals = ({ order }) => {
   const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const shippingFee = getOrderShippingFee(order);
   if (!voucherSnapshot && !shippingFee) return null;
 
   return (
-    <div className={`mt-3 rounded-none border border-ng-bone/10 bg-ng-ink ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-ng-bone`}>
+    <div className={`mt-3 rounded-none border border-ng-bone/10 bg-ng-ink p-4 text-sm font-bold text-ng-bone`}>
       <div className="flex justify-between gap-3">
         <span>{t('cust.subtotalProducts')}</span>
         <span>{formatTotal(getOrderProductsSubtotal(order))}</span>
@@ -567,7 +566,7 @@ const OrderTotals = ({ order, compact = false }) => {
   );
 };
 
-const OrderItems = ({ order, compact = false }) => {
+const OrderItems = ({ order }) => {
   const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const discountedLines = getDiscountedVoucherCartLines(
@@ -582,7 +581,7 @@ const OrderItems = ({ order, compact = false }) => {
         const hasDiscount = line.discount > 0;
 
         return (
-          <div key={`${order.orderNumber}-${item.slug || item.name}`} className={`rounded-none bg-transparent font-semibold ${compact ? 'border border-[#e5e7eb] px-3 py-2 text-xs' : 'px-3 py-2 text-sm'}`}>
+          <div key={`${order.orderNumber}-${item.slug || item.name}`} className={`rounded-none bg-transparent font-semibold px-3 py-2 text-sm`}>
             <div className="flex items-start justify-between gap-2">
               <span className="min-w-0 truncate">{item.name} x{item.quantity}</span>
               <span className="shrink-0 text-right text-ng-ember">
@@ -603,27 +602,27 @@ const OrderItems = ({ order, compact = false }) => {
           </div>
         );
       })}
-      <OrderTotals order={order} compact={compact} />
+      <OrderTotals order={order} />
     </div>
   );
 };
 
-const BespokeDetailPanel = ({ item, compact = false }) => {
+const BespokeDetailPanel = ({ item }) => {
   const { t } = useTranslate();
   const rows = bespokeDetailRows(item, t);
   if (!rows.length) return null;
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-none bg-ng-ink`}>
+    <div className={`mt-4 p-4 rounded-none bg-ng-ink`}>
       <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
         <Sparkles className="h-3.5 w-3.5" />
         {t('cust.bespokeDetail')}
       </div>
-      <div className={`mt-3 grid gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
+      <div className={`mt-3 grid gap-2 sm:grid-cols-2`}>
         {rows.map(([label, value]) => (
-          <div key={label} className={`${compact ? 'grid grid-cols-[68px_1fr] gap-2 text-xs leading-snug' : 'rounded-none bg-transparent px-3 py-2 text-sm'} font-semibold`}>
-            <span className={`${compact ? 'text-ng-dust' : 'block text-[10px] font-bold uppercase text-ng-dust'}`}>{label}</span>
-            <span className={`${compact ? 'text-[#1f2937]' : 'mt-1 block text-ng-bone'}`}>{value}</span>
+          <div key={label} className={`rounded-none bg-transparent px-3 py-2 text-sm font-semibold`}>
+            <span className={`block text-[10px] font-bold uppercase text-ng-dust`}>{label}</span>
+            <span className={`mt-1 block text-ng-bone`}>{value}</span>
           </div>
         ))}
       </div>
@@ -631,14 +630,14 @@ const BespokeDetailPanel = ({ item, compact = false }) => {
   );
 };
 
-const BespokeProductionPanel = ({ order, compact = false }) => {
+const BespokeProductionPanel = ({ order }) => {
   const { t } = useTranslate();
   if (!isBespokeOrder(order)) return null;
   const currentStatus = order.bespokeProductionStatus || 'review_brief';
   const activeStep = getBespokeProductionStep(currentStatus);
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-none border border-ng-bone/10 bg-ng-deep`}>
+    <div className={`mt-4 p-4 rounded-none border border-ng-bone/10 bg-ng-deep`}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
           <Sparkles className="h-3.5 w-3.5" />
@@ -651,13 +650,13 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
       {/* The column count follows the workflow instead of being typed as a 6. Tailwind cannot take a
           computed class name, so this is the same lookup-with-a-fallback MobileCommerceLayout already uses
           for its bottom nav. */}
-      <div className={`mt-3 grid ${bespokeStepColumns} ${compact ? 'gap-1' : 'gap-2'}`}>
+      <div className={`mt-3 grid ${bespokeStepColumns} gap-2`}>
         {BESPOKE_PRODUCTION_STEPS.map((step, index) => {
           const done = activeStep >= index;
           return (
             <div key={step} className="min-w-0">
-              <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-ng-bone' : 'bg-ng-bone/15'}`} />
-              <div className={`mt-1 truncate font-bold uppercase ${compact ? 'text-[7px]' : 'text-[9px]'} ${done ? 'text-ng-bone' : 'text-ng-dust'}`}>
+              <div className={`h-2 rounded-full ${done ? 'bg-ng-bone' : 'bg-ng-bone/15'}`} />
+              <div className={`mt-1 truncate font-bold uppercase text-[9px] ${done ? 'text-ng-bone' : 'text-ng-dust'}`}>
                 {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, step, t)}
               </div>
             </div>
@@ -668,7 +667,7 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
   );
 };
 
-const ShipmentPanel = ({ order, compact = false }) => {
+const ShipmentPanel = ({ order }) => {
   const { t, region } = useTranslate();
   if (!order || order.shipmentStatus === 'not_ready') return null;
   const courierSearchUrl = buildCourierTrackingSearchUrl({
@@ -677,7 +676,7 @@ const ShipmentPanel = ({ order, compact = false }) => {
   });
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-none border border-ng-bone/10 bg-transparent`}>
+    <div className={`mt-4 p-4 rounded-none border border-ng-bone/10 bg-transparent`}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
           <Truck className="h-3.5 w-3.5" />
@@ -685,7 +684,7 @@ const ShipmentPanel = ({ order, compact = false }) => {
         </div>
         <ShipmentBadge status={order.shipmentStatus} />
       </div>
-      <div className={`mt-3 grid gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
+      <div className={`mt-3 grid gap-2 sm:grid-cols-2`}>
         {order.courierName ? (
           <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
             <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.courier')}</div>
@@ -732,7 +731,6 @@ const ShipmentPanel = ({ order, compact = false }) => {
 };
 
 const SelfServiceActions = ({
-  compact = false,
   invoicePath,
   onReorder,
   onRefreshPayment,
@@ -752,9 +750,7 @@ const SelfServiceActions = ({
   // writing a new brief.
   const canReorder = getReorderableItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
-  const buttonClass = compact
-    ? 'flex h-11 items-center justify-center gap-2 rounded-none text-xs font-bold'
-    : 'inline-flex h-11 items-center justify-center gap-2 rounded-none px-4 text-sm font-bold';
+  const buttonClass = 'inline-flex h-11 items-center justify-center gap-2 rounded-none px-4 text-sm font-bold';
   const outlineClass = `${buttonClass} border border-ng-bone/25 bg-transparent text-ng-bone`;
   const primaryClass = `${buttonClass} bg-ng-bone text-ng-ink`;
   const courierSearchUrl = buildCourierTrackingSearchUrl({
@@ -763,7 +759,7 @@ const SelfServiceActions = ({
   });
 
   return (
-    <div className={compact ? 'mt-3 grid gap-2' : 'mt-4 flex flex-wrap gap-2'}>
+    <div className="mt-4 flex flex-wrap gap-2">
       {canUploadPaymentProof(order) ? (
         <Link to={paymentPath} className={primaryClass}>
           <Upload className="h-4 w-4" />
