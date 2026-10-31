@@ -52,12 +52,14 @@ const walkPages = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((en
   return /\.jsx$/.test(entry.name) ? [full] : [];
 });
 
-// Detected by the filter-row classes, NOT by aria-pressed. The first version used aria-pressed and
+// Detected by the filter-row classes, NOT by aria-pressed. Since the 2026-10-31 redesign a filter button
+// carries `ng-filter` beside its look (`ng-chip`), because the same chip also draws choices that are not
+// filters. The first version used aria-pressed and
 // swept up the bespoke option pickers, the checkout payment chooser and the orders status tabs — those
 // are CHOICES, where every option is meant to be selectable and "nothing behind it" is not a state
 // they can be in. A filter row narrows a list; that is the thing this file is about.
 const filterSurfaces = walkPages(join(src, 'pages'))
-  .filter((file) => /className=\{?[`"'][^`"']*(catalog-pill|journal-tab|m-editorial-pill)/.test(readFileSync(file, 'utf8')))
+  .filter((file) => /className=\{?[`"'][^`"']*(catalog-pill|journal-tab|m-editorial-pill|ng-filter)/.test(readFileSync(file, 'utf8')))
   .map((file) => relative(src, file).split(sep).join('/'));
 
 assert.ok(filterSurfaces.length >= 3,

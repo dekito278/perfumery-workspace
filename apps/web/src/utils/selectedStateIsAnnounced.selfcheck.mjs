@@ -45,7 +45,9 @@ assert.ok(files.length >= 150, `expected to sweep the screens; found ${files.len
 // A button that LOOKS selected: its className is decided by something that reads as a selected flag.
 // Matched on the shape rather than on a list of class names, so the next pill group is caught by what it
 // does. `is-active` is this app's class, and `active ?` / `isActive` cover the inline forms.
-const LOOKS_SELECTED = /is-active|'active'|\bactive\b\s*\?|isActive/;
+// `ng-chip` (the 2026-10-31 redesign) draws its selected look FROM [aria-pressed], so a chip without the
+// attribute looks unselected forever — it is swept in here so a chip that forgets it is caught.
+const LOOKS_SELECTED = /is-active|'active'|\bactive\b\s*\?|isActive|ng-chip/;
 // Either ARIA that carries the state: aria-pressed for a toggle, aria-selected for a real tab (the
 // bespoke option groups are a proper tablist and must not be forced onto aria-pressed).
 const SAYS_SELECTED = /aria-pressed|aria-current|role="tab"|aria-selected/;

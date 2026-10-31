@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
-import TextReveal from '@/components/storefront/TextReveal.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
@@ -16,7 +15,6 @@ import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
 import { cardLabels, catalogCategoryPills, matchesCatalogCategory } from '@/utils/productBadge.js';
-import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import SkipToResults from '@/components/storefront/SkipToResults.jsx';
 import { catalogPillCounts, pillIsOffered } from '@/utils/catalogFacets.js';
@@ -25,6 +23,7 @@ import { getPrimaryVariant, isProductVisibleInStorefront } from '@/services/prod
 import { buildBreadcrumbJsonLd, getSiteOrigin, shopCanonicalUrl } from '@/utils/seo.js';
 import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
+import { splitScriptName } from '@/utils/scriptName.js';
 
 // Three notes is what fits on a card at phone width without wrapping to a third line.
 const CARD_NOTE_LIMIT = 3;
@@ -46,7 +45,6 @@ const CatalogPage = () => {
   const [wearSelection, setWearSelection] = useState({ occasions: '', times: '', weather: '' });
   const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
   const revealRef = useScrollReveal();
-  const { magnetic, tilt, resetTilt } = useMicroInteractions();
   const { addItem } = useCart();
   const navigate = useNavigate();
   const [addedSlug, setAddedSlug] = useState('');
@@ -159,140 +157,159 @@ const CatalogPage = () => {
         <ScrollProgress />
         <PublicHeader />
 
-        <section className="catalog-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t('catalog.eyebrow')}</p>
-          <TextReveal as="h1" text={t('catalog.title')} />
-          <p className="hero-animate-text hero-animate-text--d3">{t('catalog.lead')}</p>
+        <header className="ng-section !pb-14 !pt-16 md:!pt-24">
+          <div className="ng-container flex flex-wrap items-end justify-between gap-8">
+            <div className="flex flex-col gap-5">
+              <p className="ng-eyebrow ng-mono m-0">{t('catalog.ngEyebrow', { count: products.length })}</p>
+              <h1 className="ng-display ng-h1">{t('catalog.title')}</h1>
+            </div>
+            <p className="ng-lead max-w-[440px] !text-base">{t('catalog.ngLead')}</p>
+          </div>
+        </header>
+
+        <section className="ng-section ng-section--deep !py-8" aria-label={t('catalog.ngFilters')}>
+          <div className="ng-container flex flex-col gap-6">
+            <SkipToResults />
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap gap-2.5" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
+                {catalogCategories.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    aria-pressed={category === activeCategory}
+                    className="ng-chip ng-filter"
+                    disabled={!pillIsOffered(category, pillCounts[category])}
+                    onClick={() => setActiveCategory(category)}
+                  >
+                    {category === 'All' ? t('catalog.all') : category}
+                    <span className="ng-chip__count">{pillCounts[category] ?? 0}</span>
+                  </button>
+                ))}
+              </div>
+              <input
+                type="search"
+                className="ng-field md:!w-[320px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={t('catalog.searchPlaceholder')}
+                aria-label={t('catalog.searchLabel')}
+              />
+            </div>
+            <WearFilter products={products} selection={wearSelection} onChange={setWearSelection} />
+          </div>
         </section>
 
-        <section className="catalog-section">
-          {/* Toolbar: category pills + search */}
-          <div className="catalog-toolbar">
-            <SkipToResults />
-            <div className="catalog-pills" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
-              {catalogCategories.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  aria-pressed={category === activeCategory}
-                  className={`catalog-pill ${category === activeCategory ? 'is-active' : ''}`}
-                  disabled={!pillIsOffered(category, pillCounts[category])}
-                  onClick={() => setActiveCategory(category)}
-                >
-                  {category === 'All' ? t('catalog.all') : category}
-                  <span className="catalog-pill__count">{pillCounts[category] ?? 0}</span>
-                </button>
-              ))}
-            </div>
-            <input
-              type="search"
-              className="catalog-search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={t('catalog.searchPlaceholder')}
-              aria-label={t('catalog.searchLabel')}
-            />
-          </div>
-
-          <WearFilter products={products} selection={wearSelection} onChange={setWearSelection} />
-
-          {/* Image-first product grid */}
-          {isLoading ? (
-            <div className="catalog-grid" aria-hidden="true">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="skel-card">
-                  <div className="editorial-skel skel-card__img" />
-                  <div className="editorial-skel skel-line skel-line--sm" />
-                  <div className="editorial-skel skel-line skel-line--md" />
+        <section className="ng-section !pt-12" aria-label={t('catalog.ngResults')}>
+          <div className="ng-container">
+            {isLoading ? (
+              <div className="flex flex-col" aria-hidden="true">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="ng-cat-row">
+                    <span />
+                    <span className="editorial-skel block h-[90px] w-[72px]" />
+                    <span className="editorial-skel block h-8 w-2/3" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredProducts.length ? (
+              <div className="flex flex-col" id="catalog-results" tabIndex={-1}>
+                <div className="ng-cat-row ng-cat-row--head ng-mono" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span>{t('home.ngColWork')}</span>
+                  <span className="ng-cat-row__notes">{t('home.ngColNotes')}</span>
+                  <span>{t('home.ngColPrice')}</span>
+                  <span />
                 </div>
-              ))}
-            </div>
-          ) : filteredProducts.length ? (
-            <div className="catalog-grid" id="catalog-results" tabIndex={-1} data-reveal data-stagger-children>
-              {visibleProducts.map((product, index) => (
-                <Link
-                  key={product.slug || product.id}
-                  to={`/catalog/${product.slug}`}
-                  className="catalog-card card-lift card-tilt img-hover-zoom"
-                  onMouseMove={tilt}
-                  onMouseLeave={resetTilt}
-                >
-                  <div className="catalog-card__media">
-                    <ProductVisual
-                      product={product}
-                      className="catalog-card__visual"
-                      imageFit="cover"
-                      priority={index < 4}
-                      label={false}
-                      soldOut={false}
-                    />
-                    {/* Quick-add in both shops since 2026-10-06. It once added the bottle at the DOMESTIC
-                        price into a cart the English shop could not open — La Tulipe at Rp 260.000 under
-                        a page quoting Rp 1.020.000. The English cart now prices every line at its export
-                        price on read, so what the card adds is a line, not a price. */}
-                    {(
-                    <button
-                      type="button"
-                      className={`catalog-card__quick-add${addedSlug === product.slug ? ' is-added' : ''}`}
-                      onClick={(event) => handleQuickAdd(event, product)}
-                      aria-label={product.publicStatus !== 'Available' ? t('catalog.soldOutAria', { name: product.name }) : t('catalog.addAria', { name: product.name })}
-                      disabled={product.publicStatus !== 'Available'}
-                    >
-                      {product.publicStatus !== 'Available' ? (
-                        <>{t('catalog.soldOutShort')}</>
-                      ) : addedSlug === product.slug ? (
-                        <><CheckCircle2 className="h-4 w-4" /> {t('catalog.added')}</>
-                      ) : (
-                        <><Plus className="h-4 w-4" /> {t('catalog.quickAdd')}</>
-                      )}
-                    </button>
-                    )}
-                  </div>
-                  <div className="catalog-card__info">
-                    <span className="catalog-card__category">{cardLabels(product).join(' · ') || 'Atelier'}</span>
-                    <h3>{product.name}</h3>
-                    {/* What it smells of, in three words. The field holds the full material list since
-                        2026-10-07 — far too long for a card — so this reuses the clamp the cart lines
-                        already use rather than inventing a second idea of how much is too much. */}
-                    {shortNoteList(product.notes, CARD_NOTE_LIMIT)
-                      ? <span className="catalog-card__notes">{shortNoteList(product.notes, CARD_NOTE_LIMIT)}</span>
-                      : null}
-                    <CardPrice product={product} className="catalog-card__price" memberClassName="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700" />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="catalog-empty">
-              {/* Two different situations, two different messages: nothing matched the filter, or the
-                  catalogue itself did not load. Offering "Reset Katalog" for an outage sends the customer
-                  round a loop that cannot help them. */}
-              <p className="editorial-eyebrow">{products.length ? t('catalog.noMatchEyebrow') : t('catalog.notLoadedEyebrow')}</p>
-              <h2>
-                {products.length
-                  ? t('catalog.noMatch')
-                  : t('catalog.notLoaded')}
-              </h2>
-              {products.length ? (
-                <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
-                  {t('catalog.resetCatalog')}
-                </button>
-              ) : (
-                <button type="button" className="editorial-button" onClick={() => window.location.reload()}>
-                  {t('catalog.reload')}
-                </button>
-              )}
-            </div>
-          )}
+                {visibleProducts.map((product, index) => {
+                  const named = splitScriptName(product.name);
+                  const available = product.publicStatus === 'Available';
+                  return (
+                    <div key={product.slug || product.id} className="ng-cat-row">
+                      <span className="ng-cat-row__no ng-mono text-ng-ember">{String(index + 1).padStart(2, '0')}</span>
+                      {/* The photo and the name are the two links; the add button sits beside them, not
+                          inside an <a> — a button nested in a link is two controls a keyboard cannot
+                          tell apart, which is how the old card was built. */}
+                      <Link to={`/catalog/${product.slug}`} className="ng-cat-row__thumb" tabIndex={-1} aria-hidden="true">
+                        <ProductVisual
+                          product={product}
+                          className="h-full w-full"
+                          imageFit="cover"
+                          priority={index < 4}
+                          label={false}
+                          sizes="72px"
+                        />
+                      </Link>
+                      <Link to={`/catalog/${product.slug}`} className="ng-cat-row__name">
+                        <span className="font-ng-display text-[28px] leading-none [overflow-wrap:anywhere] md:text-[34px]">{named.name}</span>
+                        <span className="ng-cat-row__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || 'Atelier'}</span>
+                      </Link>
+                      {/* What it smells of, in three words. The field holds the full material list since
+                          2026-10-07 — far too long for a row — so this reuses the clamp the cart lines
+                          already use rather than inventing a second idea of how much is too much. */}
+                      <span className="ng-cat-row__notes text-[15px] leading-normal text-ng-dust">
+                        {shortNoteList(product.notes, CARD_NOTE_LIMIT)}
+                      </span>
+                      <span className="ng-cat-row__price flex flex-col gap-1 text-base">
+                        <CardPrice product={product} memberClassName="ng-mono text-ng-dust" />
+                      </span>
+                      <span className="ng-cat-row__act">
+                        {/* Quick-add in both shops since 2026-10-06. It once added the bottle at the
+                            DOMESTIC price into a cart the English shop could not open. The English cart
+                            now prices every line at its export price on read, so what the row adds is a
+                            line, not a price. */}
+                        <button
+                          type="button"
+                          className="ng-btn ng-btn--ghost !min-h-[44px] !px-4"
+                          onClick={(event) => handleQuickAdd(event, product)}
+                          aria-label={!available ? t('catalog.soldOutAria', { name: product.name }) : t('catalog.addAria', { name: product.name })}
+                          disabled={!available}
+                        >
+                          {!available ? (
+                            <>{t('catalog.soldOutShort')}</>
+                          ) : addedSlug === product.slug ? (
+                            <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('catalog.added')}</>
+                          ) : (
+                            <><Plus className="h-4 w-4" aria-hidden="true" /> {t('catalog.quickAdd')}</>
+                          )}
+                        </button>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-start gap-5 py-14">
+                {/* Two different situations, two different messages: nothing matched the filter, or the
+                    catalogue itself did not load. Offering "Reset Katalog" for an outage sends the customer
+                    round a loop that cannot help them. */}
+                <p className="ng-mono m-0 text-ng-ash">{products.length ? t('catalog.noMatchEyebrow') : t('catalog.notLoadedEyebrow')}</p>
+                <h2 className="ng-display text-[36px] font-normal md:text-[44px]">
+                  {products.length
+                    ? t('catalog.noMatch')
+                    : t('catalog.notLoaded')}
+                </h2>
+                {products.length ? (
+                  <button type="button" className="ng-btn" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
+                    {t('catalog.resetCatalog')}
+                  </button>
+                ) : (
+                  <button type="button" className="ng-btn" onClick={() => window.location.reload()}>
+                    {t('catalog.reload')}
+                  </button>
+                )}
+              </div>
+            )}
 
-          {visibleProducts.length < filteredProducts.length ? (
-            <div className="catalog-load-more">
-              <button type="button" className="editorial-button magnetic-hover" onClick={() => setVisibleCount((c) => c + CATALOG_PAGE_SIZE)} onMouseMove={magnetic}>
-{t('catalog.showMore')} <ArrowRight className="h-4 w-4" />
-              </button>
-              <span>{t('catalog.shownOf', { shown: visibleProducts.length, total: filteredProducts.length })}</span>
-            </div>
-          ) : null}
+            {visibleProducts.length < filteredProducts.length ? (
+              <div className="mt-12 flex flex-wrap items-center gap-6">
+                <button type="button" className="ng-btn ng-btn--ghost" onClick={() => setVisibleCount((c) => c + CATALOG_PAGE_SIZE)}>
+                  {t('catalog.showMore')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <span className="ng-mono text-ng-ash">{t('catalog.shownOf', { shown: visibleProducts.length, total: filteredProducts.length })}</span>
+              </div>
+            ) : null}
+          </div>
         </section>
 
         <StorefrontFooter />

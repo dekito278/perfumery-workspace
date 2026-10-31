@@ -28,7 +28,7 @@ for (const [name, page] of pages) {
   assert.match(page, /import SkipToResults from '@\/components\/storefront\/SkipToResults\.jsx'/,
     `${name} must use the shared component rather than its own anchor`);
   // Before the filters, or it skips nothing.
-  assert.ok(page.indexOf('<SkipToResults') < page.search(/catalog-pills|m-editorial-catalog-pills/),
+  assert.ok(page.indexOf('<SkipToResults') < page.search(/catalog-pills|m-editorial-catalog-pills|ng-filter/),
     `${name} puts the skip link after the filters, so it skips nothing`);
 }
 

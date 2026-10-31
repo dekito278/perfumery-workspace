@@ -63,7 +63,7 @@ const desktop = strip(readFileSync(join(src, 'pages', 'CatalogPage.jsx'), 'utf8'
 // vocabularies still match; pinning the old shape made a correct change look like a regression.
 assert.match(
   desktop,
-  /catalog-card__category">\{(product\.(public)?[Cc]ategory|cardLabels\(product\))/,
+  /(catalog-card__category|ng-cat-row__label[^"]*)">\{(product\.(public)?[Cc]ategory|cardLabels\(product\))/,
   'the card label no longer prints a category field — check it still matches what the pills filter on',
 );
 
