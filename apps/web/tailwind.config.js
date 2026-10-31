@@ -29,6 +29,19 @@ module.exports = {
           brass: "#b08b4f",
           "brass-text": "#8a6a35",
         },
+        // "Naskah Gelap" storefront (redesign 2026-10-31). Contrast on ink, measured: bone 15.7, sand 12.7,
+        // dust 9.0, ash 6.4, faint 5.4, ember 4.9 — all clear 4.5:1 for small text.
+        ng: {
+          ink: "#0E0C0A",
+          deep: "#110F0C",
+          card: "#161310",
+          bone: "#EDE6D6",
+          sand: "#D8D0BF",
+          dust: "#B8AF9E",
+          ash: "#9B9282",
+          faint: "#8F8676",
+          ember: "#D4573A",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -72,6 +85,13 @@ module.exports = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      fontFamily: {
+        // ng- prefixed so the Studio's existing font-mono is left alone.
+        "ng-display": ['"Cormorant Garamond"', 'Georgia', '"Times New Roman"', 'serif'],
+        "ng-body": ['Inter', 'system-ui', 'sans-serif'],
+        "ng-mono": ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        "ng-java": ['"Noto Sans Javanese"', 'serif'],
       },
       borderRadius: {
         lg: "var(--radius)",

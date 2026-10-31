@@ -40,9 +40,6 @@ assert.equal(unchanged.priceChanged, false, 'an unchanged price must not raise a
 const surfaces = [
   ['pages', 'CartPage.jsx'],
   ['pages', 'CheckoutPage.jsx'],
-  ['pages', 'mobile', 'MobileCartPage.jsx'],
-  ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
-  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'],
 ];
 let admitting = 0;
@@ -53,7 +50,8 @@ for (const parts of surfaces) {
   assert.match(source, /<CartPriceChange\s+item=\{item\}/,
     `${parts.join('/')}: it tells the buyer prices changed and never shows what they changed from`);
 }
-assert.equal(admitting, 4, `expected the cart and checkout on both surfaces to carry the notice, found ${admitting}`);
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.equal(admitting, 2, `expected the cart and checkout on both surfaces to carry the notice, found ${admitting}`);
 
 // --- 3. The line says the direction, from the stored number ----------------------------------------------
 const mark = read('components', 'storefront', 'CartPriceChange.jsx');

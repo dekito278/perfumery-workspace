@@ -121,8 +121,6 @@ assert.doesNotMatch(hook, /useEffect\([\s\S]{0,400}onAuthStateChange/,
 const FLOOR = [
   ['hooks', 'useCart.js'], ['pages', 'CatalogPage.jsx'], ['pages', 'HomePage.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'CartPage.jsx'],
-  ['pages', 'mobile', 'MobileCatalogPage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
-  ['pages', 'mobile', 'MobileProductDetailPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
 ];
 
 // Every surface a stranger can reach that asks the catalogue anything — pages AND components, from

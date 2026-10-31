@@ -139,16 +139,18 @@ const PublicTrackingPage = () => {
       <main className="solivagant-editorial-home" ref={revealRef}>
         <PublicHeader />
 
-        <section className="cart-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t("track.eyebrow")}</p>
-          <h1 className="hero-animate-text hero-animate-text--d2">{t("track.title")}</h1>
-          <p className="hero-animate-text hero-animate-text--d3">{t(describeOrderKey(order))}</p>
+        <section className="ng-section !border-b-0 !pb-10 !pt-16 md:!pt-24">
+          <div className="mx-auto flex max-w-[720px] flex-col gap-5">
+          <p className="ng-eyebrow ng-mono m-0">{t("track.eyebrow")}</p>
+          <h1 className="ng-display ng-h1">{t("track.title")}</h1>
+          <p className="ng-lead">{t(describeOrderKey(order))}</p>
           {/* The button appears because the SENTENCE asked for it, not because of a status picked by
               hand: whichever lead this page opens with, if it says to message us, the way to do it is
               right here rather than in the footer. */}
           {invitesWhatsApp(t(describeOrderKey(order))) ? (
             <AskAtelierButton orderNumber={order?.orderNumber} className="mt-4" />
           ) : null}
+          </div>
         </section>
 
         <section className="tracking-content" data-reveal>
@@ -184,7 +186,7 @@ const PublicTrackingPage = () => {
                   >
                     {t('track.cancelledNotice')}
                     {invitesWhatsApp(t('track.cancelledNotice')) ? (
-                      <AskAtelierButton orderNumber={order.orderNumber} className="mt-3 w-full border-[#fecaca] bg-white text-[#b91c1c]" />
+                      <AskAtelierButton orderNumber={order.orderNumber} className="mt-3 w-full border-[#f0a090]/40 bg-transparent text-[#f0a090]" />
                     ) : null}
                   </div>
                 ) : null}
@@ -244,7 +246,7 @@ const PublicTrackingPage = () => {
                 <p>{foundNothing ? t("track.checkNumber") : t("track.whereNumber")}</p>
               </div>
             )}
-            {error ? <p className="checkout-notice is-error" style={{ marginTop: '16px' }}>{error}</p> : null}
+            {error ? <p className="ng-notice ng-notice--error mt-4" role="alert">{error}</p> : null}
           </div>
         </section>
 

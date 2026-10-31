@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -12,7 +12,6 @@ import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import { PORTAL_STEP_KEYS, orderHasShipped, portalActiveStepIndex } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
-import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import {
   claimCustomerCode,
   getCustomerAccount,
@@ -128,7 +127,7 @@ const progressStepLabelKeys = {
 };
 const progressSteps = PORTAL_STEP_KEYS.map((key) => ({ key, labelKey: progressStepLabelKeys[key] }));
 
-const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
+const buildPaymentPath = ({ order }) => `/payment?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
 const CUSTOMER_CODE_LAST_STORAGE_KEY = 'dekito.storefront.customerCode.last.v1';
 const DOKU_PAYMENT_TTL_MINUTES = 60;
 const isDokuPayment = (order) => order?.paymentProvider === 'doku';
@@ -248,8 +247,8 @@ const getPaymentExperienceState = (order, t) => {
       label: t('cust.autoCancelled'),
       title: t('cust.orderCancelled'),
       description: t('cust.cancelledBody'),
-      className: 'border-slate-200 bg-slate-50 text-slate-800',
-      iconClassName: 'bg-white text-slate-600',
+      className: 'border-ng-bone/20 bg-ng-deep text-ng-dust',
+      iconClassName: 'bg-transparent text-ng-dust',
       action: t('cust.orderAgain'),
     };
   }
@@ -258,8 +257,8 @@ const getPaymentExperienceState = (order, t) => {
       label: t('cust.paid'),
       title: t('cust.paymentReceived'),
       description: t('cust.paymentReceivedBody'),
-      className: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-      iconClassName: 'bg-white text-emerald-700',
+      className: 'border-[#8fd0a4]/40 bg-[#14231a] text-[#9fdcb2]',
+      iconClassName: 'bg-transparent text-[#9fdcb2]',
       action: '',
     };
   }
@@ -270,8 +269,8 @@ const getPaymentExperienceState = (order, t) => {
         label: t('cust.awaitingCheck'),
         title: t('cust.proofSentTitle'),
         description: t('cust.proofSentBody'),
-        className: 'border-sky-200 bg-sky-50 text-sky-900',
-        iconClassName: 'bg-white text-sky-700',
+        className: 'border-ng-bone/20 bg-ng-card text-ng-sand',
+        iconClassName: 'bg-transparent text-ng-bone',
         action: t('cust.viewProof'),
       };
     }
@@ -279,8 +278,8 @@ const getPaymentExperienceState = (order, t) => {
       label: t('cust.manualUnpaid'),
       title: t('cust.uploadProof'),
       description: t('cust.manualUnpaidBody'),
-      className: 'border-amber-200 bg-amber-50 text-amber-950',
-      iconClassName: 'bg-white text-amber-700',
+      className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-sand',
+      iconClassName: 'bg-transparent text-ng-ember',
       action: t('cust.uploadProofShort'),
     };
   }
@@ -289,8 +288,8 @@ const getPaymentExperienceState = (order, t) => {
       label: t('cust.dokuExpired'),
       title: t('cust.linkExpired'),
       description: t('cust.dokuHour'),
-      className: 'border-rose-200 bg-rose-50 text-rose-900',
-      iconClassName: 'bg-white text-rose-700',
+      className: 'border-[#f0a090]/40 bg-[#3a1814] text-[#f0a090]',
+      iconClassName: 'bg-transparent text-[#f0a090]',
       action: t('cust.newDokuLink'),
     };
   }
@@ -298,29 +297,29 @@ const getPaymentExperienceState = (order, t) => {
     label: t('cust.unpaid'),
     title: t('cust.awaitingPaymentTitle'),
     description: t('cust.awaitingPaymentBody'),
-    className: 'border-amber-200 bg-amber-50 text-amber-950',
-    iconClassName: 'bg-white text-amber-700',
+    className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-sand',
+    iconClassName: 'bg-transparent text-ng-ember',
     action: t('cust.payNow'),
   };
 };
 
-const PaymentExperiencePanel = ({ compact = false, order }) => {
+const PaymentExperiencePanel = ({ order }) => {
   const { t } = useTranslate();
   const state = getPaymentExperienceState(order, t);
   if (!state) return null;
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border ${state.className}`}>
+    <div className={`mt-4 p-4 rounded-none border ${state.className}`}>
       <div className="flex items-start gap-3">
-        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${state.iconClassName}`}>
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-none ${state.iconClassName}`}>
           <CreditCard className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase">{state.label}</span>
+            <span className="rounded-full bg-transparent px-2.5 py-1 text-[10px] font-bold uppercase">{state.label}</span>
             {state.action ? <span className="text-[10px] font-bold uppercase opacity-75">{state.action}</span> : null}
           </div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-2 font-bold text-editorial-charcoal`}>{state.title}</h4>
+          <h4 className={`text-base mt-2 font-bold text-ng-bone`}>{state.title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{state.description}</p>
         </div>
       </div>
@@ -328,35 +327,7 @@ const PaymentExperiencePanel = ({ compact = false, order }) => {
   );
 };
 
-const MobileCustomerPortalSkeleton = () => (
-  <>
-    <section className="mobile-card p-4" aria-busy="true">
-      <div className="mobile-catalog-skeleton h-4 w-32 rounded-full" />
-      <div className="mobile-catalog-skeleton mt-3 h-7 w-48 rounded-full" />
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <div className="mobile-catalog-skeleton h-16 rounded-2xl" />
-        <div className="mobile-catalog-skeleton h-16 rounded-2xl" />
-        <div className="mobile-catalog-skeleton h-16 rounded-2xl" />
-      </div>
-    </section>
-    <section className="space-y-3">
-      <div className="mobile-catalog-skeleton h-5 w-32 rounded-full" />
-      <article className="mobile-card overflow-hidden p-0">
-        <div className="border-b border-[#e5e7eb] bg-white p-4">
-          <div className="mobile-catalog-skeleton h-5 w-36 rounded-full" />
-          <div className="mobile-catalog-skeleton mt-2 h-3 w-24 rounded-full" />
-        </div>
-        <div className="grid gap-3 p-4">
-          <div className="mobile-catalog-skeleton h-24 rounded-2xl" />
-          <div className="mobile-catalog-skeleton h-28 rounded-2xl" />
-          <div className="mobile-catalog-skeleton h-12 rounded-2xl" />
-        </div>
-      </article>
-    </section>
-  </>
-);
-
-const PaymentProofPanel = ({ order, compact = false }) => {
+const PaymentProofPanel = ({ order }) => {
   const { t } = useTranslate();
   if (!isManualTransferPayment(order.paymentProvider)) return null;
 
@@ -370,9 +341,9 @@ const PaymentProofPanel = ({ order, compact = false }) => {
       : t('cust.proofMissing');
 
   return (
-    <div className={`mt-3 rounded-2xl border ${rejected || !submitted ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-emerald-100 bg-emerald-50 text-emerald-900'} ${compact ? 'p-3' : 'p-4'}`}>
+    <div className={`mt-3 rounded-none border ${rejected || !submitted ? 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember' : 'border-[#8fd0a4]/40 bg-[#14231a] text-[#9fdcb2]'} p-4`}>
       <div className="flex items-start gap-3">
-        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${submitted ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-amber-700'}`}>
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-none ${submitted ? 'bg-[#14231a] text-[#9fdcb2]' : 'bg-transparent text-ng-ember'}`}>
           {submitted ? <FileCheck2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
         </span>
         <div className="min-w-0 flex-1">
@@ -382,7 +353,7 @@ const PaymentProofPanel = ({ order, compact = false }) => {
           </div>
           <p className="mt-1 text-xs font-semibold leading-relaxed">{message}</p>
           {order.paymentProofFileName ? (
-            <div className="mt-2 truncate rounded-xl bg-white/75 px-3 py-2 text-xs font-bold">
+            <div className="mt-2 truncate rounded-none bg-transparent px-3 py-2 text-xs font-bold">
               {order.paymentProofFileName}
             </div>
           ) : null}
@@ -392,7 +363,7 @@ const PaymentProofPanel = ({ order, compact = false }) => {
             </div>
           ) : null}
           {order.paymentProofNotes ? (
-            <div className="mt-2 rounded-xl bg-white/75 px-3 py-2 text-xs font-semibold">
+            <div className="mt-2 rounded-none bg-transparent px-3 py-2 text-xs font-semibold">
               {t('cust.adminNote', { note: order.paymentProofNotes })}
             </div>
           ) : null}
@@ -403,8 +374,6 @@ const PaymentProofPanel = ({ order, compact = false }) => {
 };
 
 const PaymentTaskPanel = ({
-  compact = false,
-  isMobileRoute,
   onRenewDokuPayment,
   order,
   renewing = false,
@@ -412,7 +381,7 @@ const PaymentTaskPanel = ({
   const { t } = useTranslate();
   if (!order || !isPayableOrder(order)) return null;
 
-  const paymentPath = buildPaymentPath({ isMobileRoute, order });
+  const paymentPath = buildPaymentPath({ order });
   const manualPayment = isManualTransferPayment(order.paymentProvider);
   const dokuPayment = isDokuPayment(order);
   const dokuExpired = isDokuPaymentExpired(order);
@@ -437,58 +406,58 @@ const PaymentTaskPanel = ({
       : t('cust.openPayLink');
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-amber-200 bg-amber-50 text-amber-950`}>
+    <div className={`mt-4 p-4 rounded-none border border-ng-ember/40 bg-ng-ember/10 text-ng-sand`}>
       <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-white text-amber-700">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-none bg-transparent text-ng-ember">
           <CreditCard className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">{t('cust.payActions')}</div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-editorial-charcoal`}>{title}</h4>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">{description}</p>
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ng-ember">{t('cust.payActions')}</div>
+          <h4 className={`text-base mt-1 font-bold text-ng-bone`}>{title}</h4>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-ember">{description}</p>
 
-          <div className={`${compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-3'} mt-3`}>
-            <div className="rounded-2xl bg-white/85 px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.order')}</div>
-              <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{order.orderNumber}</div>
+          <div className={`grid gap-3 sm:grid-cols-3 mt-3`}>
+            <div className="rounded-none bg-transparent px-3 py-2">
+              <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.order')}</div>
+              <div className="mt-1 truncate text-xs font-bold text-ng-bone">{order.orderNumber}</div>
             </div>
-            <div className="rounded-2xl bg-white/85 px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.totalDue')}</div>
-              <div className="mt-1 text-sm font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</div>
+            <div className="rounded-none bg-transparent px-3 py-2">
+              <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.totalDue')}</div>
+              <div className="mt-1 text-sm font-bold text-ng-bone">{formatTotal(order.subtotal)}</div>
             </div>
             {dokuPayment ? (
-              <div className="rounded-2xl bg-white/85 px-3 py-2">
-                <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.linkDeadline')}</div>
-                <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{expiresAt ? formatDate(expiresAt, t) : t('cust.aboutAnHour')}</div>
+              <div className="rounded-none bg-transparent px-3 py-2">
+                <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.linkDeadline')}</div>
+                <div className="mt-1 truncate text-xs font-bold text-ng-bone">{expiresAt ? formatDate(expiresAt, t) : t('cust.aboutAnHour')}</div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-white/85 px-3 py-2">
-                <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.account')}</div>
-                <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{transfer.bankName} {transfer.accountNumber}</div>
-                <div className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">{t('cust.accountHolder', { name: transfer.accountName })}</div>
+              <div className="rounded-none bg-transparent px-3 py-2">
+                <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.account')}</div>
+                <div className="mt-1 truncate text-xs font-bold text-ng-bone">{transfer.bankName} {transfer.accountNumber}</div>
+                <div className="mt-0.5 truncate text-[11px] font-semibold text-ng-dust">{t('cust.accountHolder', { name: transfer.accountName })}</div>
               </div>
             )}
           </div>
 
-          <div className={`${compact ? 'grid gap-2' : 'flex flex-wrap gap-2'} mt-3`}>
+          <div className={`flex flex-wrap gap-2 mt-3`}>
             {manualPayment ? (
-              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
+              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-4 text-xs font-bold text-ng-ink">
                 <Upload className="h-4 w-4" />
                 {t('cust.uploadProof')}
               </Link>
             ) : dokuExpired ? (
-              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory disabled:opacity-60">
+              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-4 text-xs font-bold text-ng-ink disabled:opacity-60">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 {t('cust.newDokuLink')}
               </button>
             ) : (
-              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
+              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-4 text-xs font-bold text-ng-ink">
                 <CreditCard className="h-4 w-4" />
                 {t('cust.payNow')}
               </Link>
             )}
             {dokuPayment && order.paymentUrl && !dokuExpired ? (
-              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal disabled:opacity-60">
+              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-none border border-ng-bone/15 bg-transparent px-4 text-xs font-bold text-ng-bone disabled:opacity-60">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 {t('cust.renewLink')}
               </button>
@@ -500,7 +469,7 @@ const PaymentTaskPanel = ({
   );
 };
 
-const OrderTimeline = ({ order, compact = false }) => {
+const OrderTimeline = ({ order }) => {
   const { t } = useTranslate();
   const activeStep = portalActiveStepIndex(order);
   const timeline = progressSteps.map((step, index) => {
@@ -532,16 +501,16 @@ const OrderTimeline = ({ order, compact = false }) => {
   });
 
   return (
-    <div className={compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {timeline.map((step, index) => (
-        <div key={step.key} className={`rounded-2xl border px-3 py-3 ${step.done ? 'border-editorial-charcoal/20 bg-white' : 'border-stone-200 bg-stone-50'} ${step.current ? 'ring-2 ring-editorial-charcoal/15' : ''}`}>
+        <div key={step.key} className={`rounded-none border px-3 py-3 ${step.done ? 'border-ng-bone/20 bg-transparent' : 'border-ng-bone/10 bg-transparent'} ${step.current ? 'ring-1 ring-ng-bone/40' : ''}`}>
           <div className="flex items-start gap-3">
-            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.done ? 'bg-editorial-charcoal text-white' : 'bg-stone-200 text-stone-500'}`}>
+            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.done ? 'bg-ng-bone text-ng-ink' : 'bg-ng-card text-ng-ash'}`}>
               {index + 1}
             </span>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-editorial-charcoal">{t(step.labelKey)}</div>
-              <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{step.detail}</p>
+              <div className="text-xs font-bold text-ng-bone">{t(step.labelKey)}</div>
+              <p className="mt-1 text-[11px] font-semibold leading-relaxed text-ng-dust">{step.detail}</p>
             </div>
           </div>
         </div>
@@ -563,14 +532,14 @@ const OrderTimeline = ({ order, compact = false }) => {
 // explain: a voucher, freight, or both. An order read through a lookup that returns no items has no
 // freight to name (getOrderShippingFee refuses to call the whole total freight), so it still shows
 // nothing rather than inventing a breakdown.
-const OrderTotals = ({ order, compact = false }) => {
+const OrderTotals = ({ order }) => {
   const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const shippingFee = getOrderShippingFee(order);
   if (!voucherSnapshot && !shippingFee) return null;
 
   return (
-    <div className={`mt-3 rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-editorial-charcoal`}>
+    <div className={`mt-3 rounded-none border border-ng-bone/10 bg-ng-ink p-4 text-sm font-bold text-ng-bone`}>
       <div className="flex justify-between gap-3">
         <span>{t('cust.subtotalProducts')}</span>
         <span>{formatTotal(getOrderProductsSubtotal(order))}</span>
@@ -581,14 +550,14 @@ const OrderTotals = ({ order, compact = false }) => {
             <span>{t('cust.voucherCode', { code: voucherSnapshot.code })}</span>
             <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
           </div>
-          <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+          <div className="mt-2 flex justify-between gap-3 text-ng-dust">
             <span>{t('cust.subtotalAfterVoucher')}</span>
             <span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span>
           </div>
         </>
       ) : null}
       {shippingFee ? (
-        <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+        <div className="mt-2 flex justify-between gap-3 text-ng-dust">
           <span>{t('cust.shipping')}</span>
           <span>{formatTotal(shippingFee)}</span>
         </div>
@@ -597,7 +566,7 @@ const OrderTotals = ({ order, compact = false }) => {
   );
 };
 
-const OrderItems = ({ order, compact = false }) => {
+const OrderItems = ({ order }) => {
   const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const discountedLines = getDiscountedVoucherCartLines(
@@ -612,20 +581,20 @@ const OrderItems = ({ order, compact = false }) => {
         const hasDiscount = line.discount > 0;
 
         return (
-          <div key={`${order.orderNumber}-${item.slug || item.name}`} className={`rounded-2xl bg-white font-semibold ${compact ? 'border border-[#e5e7eb] px-3 py-2 text-xs' : 'px-3 py-2 text-sm'}`}>
+          <div key={`${order.orderNumber}-${item.slug || item.name}`} className={`rounded-none bg-transparent font-semibold px-3 py-2 text-sm`}>
             <div className="flex items-start justify-between gap-2">
               <span className="min-w-0 truncate">{item.name} x{item.quantity}</span>
-              <span className="shrink-0 text-right text-amber-700">
+              <span className="shrink-0 text-right text-ng-ember">
                 {hasDiscount ? (
                   <>
-                    <span className="block text-[11px] text-[#6b7280] line-through">{formatTotal(line.originalTotal)}</span>
+                    <span className="block text-[11px] text-ng-dust line-through">{formatTotal(line.originalTotal)}</span>
                     <span className="block">{formatTotal(line.discountedTotal)}</span>
                   </>
                 ) : item.price || formatTotal(line.originalTotal)}
               </span>
             </div>
             {hasDiscount ? (
-              <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold text-editorial-charcoal">
+              <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold text-ng-bone">
                 <span>{t('cust.afterVoucherUnit', { price: formatTotal(line.discountedUnitPrice) })}</span>
                 <span>-{formatTotal(line.discount)}</span>
               </div>
@@ -633,27 +602,27 @@ const OrderItems = ({ order, compact = false }) => {
           </div>
         );
       })}
-      <OrderTotals order={order} compact={compact} />
+      <OrderTotals order={order} />
     </div>
   );
 };
 
-const BespokeDetailPanel = ({ item, compact = false }) => {
+const BespokeDetailPanel = ({ item }) => {
   const { t } = useTranslate();
   const rows = bespokeDetailRows(item, t);
   if (!rows.length) return null;
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl bg-editorial-ivory`}>
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal sm:text-xs">
+    <div className={`mt-4 p-4 rounded-none bg-ng-ink`}>
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
         <Sparkles className="h-3.5 w-3.5" />
         {t('cust.bespokeDetail')}
       </div>
-      <div className={`mt-3 grid gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
+      <div className={`mt-3 grid gap-2 sm:grid-cols-2`}>
         {rows.map(([label, value]) => (
-          <div key={label} className={`${compact ? 'grid grid-cols-[68px_1fr] gap-2 text-xs leading-snug' : 'rounded-xl bg-white/70 px-3 py-2 text-sm'} font-semibold`}>
-            <span className={`${compact ? 'text-[#6b7280]' : 'block text-[10px] font-bold uppercase text-muted-foreground'}`}>{label}</span>
-            <span className={`${compact ? 'text-[#1f2937]' : 'mt-1 block text-editorial-charcoal'}`}>{value}</span>
+          <div key={label} className={`rounded-none bg-transparent px-3 py-2 text-sm font-semibold`}>
+            <span className={`block text-[10px] font-bold uppercase text-ng-dust`}>{label}</span>
+            <span className={`mt-1 block text-ng-bone`}>{value}</span>
           </div>
         ))}
       </div>
@@ -661,33 +630,33 @@ const BespokeDetailPanel = ({ item, compact = false }) => {
   );
 };
 
-const BespokeProductionPanel = ({ order, compact = false }) => {
+const BespokeProductionPanel = ({ order }) => {
   const { t } = useTranslate();
   if (!isBespokeOrder(order)) return null;
   const currentStatus = order.bespokeProductionStatus || 'review_brief';
   const activeStep = getBespokeProductionStep(currentStatus);
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-editorial-charcoal/10 bg-[#fbfaf7]`}>
+    <div className={`mt-4 p-4 rounded-none border border-ng-bone/10 bg-ng-deep`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal sm:text-xs">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
           <Sparkles className="h-3.5 w-3.5" />
           {t('cust.bespokeProduction')}
         </div>
-        <span className="rounded-full bg-editorial-ivory px-2.5 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">
+        <span className="rounded-full bg-ng-ink px-2.5 py-1 text-[10px] font-bold uppercase text-ng-bone">
           {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, currentStatus, t)}
         </span>
       </div>
       {/* The column count follows the workflow instead of being typed as a 6. Tailwind cannot take a
           computed class name, so this is the same lookup-with-a-fallback MobileCommerceLayout already uses
           for its bottom nav. */}
-      <div className={`mt-3 grid ${bespokeStepColumns} ${compact ? 'gap-1' : 'gap-2'}`}>
+      <div className={`mt-3 grid ${bespokeStepColumns} gap-2`}>
         {BESPOKE_PRODUCTION_STEPS.map((step, index) => {
           const done = activeStep >= index;
           return (
             <div key={step} className="min-w-0">
-              <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-editorial-charcoal' : 'bg-stone-200'}`} />
-              <div className={`mt-1 truncate font-bold uppercase ${compact ? 'text-[7px]' : 'text-[9px]'} ${done ? 'text-editorial-charcoal' : 'text-muted-foreground'}`}>
+              <div className={`h-2 rounded-full ${done ? 'bg-ng-bone' : 'bg-ng-bone/15'}`} />
+              <div className={`mt-1 truncate font-bold uppercase text-[9px] ${done ? 'text-ng-bone' : 'text-ng-dust'}`}>
                 {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, step, t)}
               </div>
             </div>
@@ -698,7 +667,7 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
   );
 };
 
-const ShipmentPanel = ({ order, compact = false }) => {
+const ShipmentPanel = ({ order }) => {
   const { t, region } = useTranslate();
   if (!order || order.shipmentStatus === 'not_ready') return null;
   const courierSearchUrl = buildCourierTrackingSearchUrl({
@@ -707,53 +676,53 @@ const ShipmentPanel = ({ order, compact = false }) => {
   });
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-editorial-charcoal/10 bg-white`}>
+    <div className={`mt-4 p-4 rounded-none border border-ng-bone/10 bg-transparent`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal sm:text-xs">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
           <Truck className="h-3.5 w-3.5" />
           {t('cust.delivery')}
         </div>
         <ShipmentBadge status={order.shipmentStatus} />
       </div>
-      <div className={`mt-3 grid gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
+      <div className={`mt-3 grid gap-2 sm:grid-cols-2`}>
         {order.courierName ? (
-          <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.courier')}</div>
-            <div className="mt-1 text-editorial-charcoal">{order.courierName}</div>
+          <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
+            <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.courier')}</div>
+            <div className="mt-1 text-ng-bone">{order.courierName}</div>
           </div>
         ) : null}
         {order.trackingNumber ? (
-          <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.waybill')}</div>
-            <div className="mt-1 text-editorial-charcoal">{order.trackingNumber}</div>
+          <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
+            <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.waybill')}</div>
+            <div className="mt-1 text-ng-bone">{order.trackingNumber}</div>
           </div>
         ) : null}
         {order.shippedAt ? (
-          <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.shipDate')}</div>
-            <div className="mt-1 text-editorial-charcoal">{formatDate(order.shippedAt, t)}</div>
+          <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
+            <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.shipDate')}</div>
+            <div className="mt-1 text-ng-bone">{formatDate(order.shippedAt, t)}</div>
           </div>
         ) : null}
         {order.deliveredAt ? (
-          <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.delivered')}</div>
-            <div className="mt-1 text-editorial-charcoal">{formatDate(order.deliveredAt, t)}</div>
+          <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
+            <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.delivered')}</div>
+            <div className="mt-1 text-ng-bone">{formatDate(order.deliveredAt, t)}</div>
           </div>
         ) : null}
       </div>
       {order.trackingUrl ? (
-        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-3 text-xs font-bold text-editorial-ivory">
+        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-3 text-xs font-bold text-ng-ink">
           <ExternalLink className="h-4 w-4" />
           {t('cust.trackWaybill')}
         </a>
       ) : null}
       {!order.trackingUrl && courierSearchUrl ? (
-        <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-3 text-xs font-bold text-editorial-ivory">
+        <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-3 text-xs font-bold text-ng-ink">
           <ExternalLink className="h-4 w-4" />
           {t('cust.searchWaybill')}
         </a>
       ) : null}
-      <a href={buildPublicTrackingUrl(order.orderNumber, { basename: shopPrefixForRegion(region) })} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-3 text-xs font-bold text-editorial-charcoal">
+      <a href={buildPublicTrackingUrl(order.orderNumber, { basename: shopPrefixForRegion(region) })} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-none border border-ng-bone/15 bg-transparent px-3 text-xs font-bold text-ng-bone">
         <ExternalLink className="h-4 w-4" />
         {t('cust.publicTracking')}
       </a>
@@ -762,8 +731,6 @@ const ShipmentPanel = ({ order, compact = false }) => {
 };
 
 const SelfServiceActions = ({
-  compact = false,
-  isMobileRoute,
   invoicePath,
   onReorder,
   onRefreshPayment,
@@ -771,7 +738,7 @@ const SelfServiceActions = ({
   refreshing = false,
 }) => {
   const { t, region } = useTranslate();
-  const paymentPath = buildPaymentPath({ isMobileRoute, order });
+  const paymentPath = buildPaymentPath({ order });
   // Reorder fills the cart and sends the buyer to it. It was hidden in the English shop until
   // 2026-10-06, when that shop had no cart to fill; Dekito opened it with the cart. What had to change
   // with it is where it LANDS — see handleReorder: the English basket is finished in the cart and sent
@@ -783,18 +750,16 @@ const SelfServiceActions = ({
   // writing a new brief.
   const canReorder = getReorderableItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
-  const buttonClass = compact
-    ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
-    : 'inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold';
-  const outlineClass = `${buttonClass} border border-editorial-charcoal/15 bg-white text-editorial-charcoal`;
-  const primaryClass = `${buttonClass} bg-editorial-charcoal text-editorial-ivory`;
+  const buttonClass = 'inline-flex h-11 items-center justify-center gap-2 rounded-none px-4 text-sm font-bold';
+  const outlineClass = `${buttonClass} border border-ng-bone/25 bg-transparent text-ng-bone`;
+  const primaryClass = `${buttonClass} bg-ng-bone text-ng-ink`;
   const courierSearchUrl = buildCourierTrackingSearchUrl({
     courierName: order.courierName,
     trackingNumber: order.trackingNumber,
   });
 
   return (
-    <div className={compact ? 'mt-3 grid gap-2' : 'mt-4 flex flex-wrap gap-2'}>
+    <div className="mt-4 flex flex-wrap gap-2">
       {canUploadPaymentProof(order) ? (
         <Link to={paymentPath} className={primaryClass}>
           <Upload className="h-4 w-4" />
@@ -844,7 +809,6 @@ const SelfServiceActions = ({
 const CustomerPortalPage = () => {
   const { t, isInternational, region } = useTranslate();
   const navigate = useNavigate();
-  const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode } = useAuth();
   // Stays on the page: a buyer signing out mid-checkout keeps their place, and a refused sign-out says so.
   const { signOut } = useSignOut(null);
@@ -867,12 +831,11 @@ const CustomerPortalPage = () => {
   const [refreshingPaymentOrder, setRefreshingPaymentOrder] = useState('');
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
   const [accountPanelOpen, setAccountPanelOpen] = useState(false);
-  const [codeSearchOpen, setCodeSearchOpen] = useState(false);
   const [lastCustomerCode, setLastCustomerCode] = useState(() => readLastCustomerCode());
 
   const latestOrder = portal?.orders?.[0];
-  const isMobileRoute = location.pathname.startsWith('/mobile');
-  const invoicePath = (orderNumber) => `${isMobileRoute ? '/mobile/customer/invoice' : '/customer/invoice'}/${orderNumber}?code=${encodeURIComponent(portal?.customer?.customerCode || customerCode)}`;
+  // One portal address since the phone storefront retired (2026-10-31); /mobile/customer redirects here.
+  const invoicePath = (orderNumber) => `/customer/invoice/${orderNumber}?code=${encodeURIComponent(portal?.customer?.customerCode || customerCode)}`;
   const activeOrders = useMemo(() => (
     portal?.orders?.filter((order) => !['completed', 'cancelled'].includes(order.status)) || []
   ), [portal]);
@@ -970,7 +933,7 @@ const CustomerPortalPage = () => {
     try {
       // With the shop prefix, or an English visitor comes back to the Indonesian address.
       await loginWithGoogle(
-        `${window.location.origin}${shopPrefixForRegion(region)}${isMobileRoute ? '/mobile/customer' : '/customer'}`,
+        `${window.location.origin}${shopPrefixForRegion(region)}/customer`,
       );
     } catch (error) {
       toast.error(publicErrorMessage(error, t('cust.googleFail')));
@@ -1047,23 +1010,23 @@ const CustomerPortalPage = () => {
     // "Harga member aktif" is a claim, so it comes from the server-resolved tier, never from being signed
     // in — a signed-in account whose tier row has not resolved yet is not told it has a price it may not.
     const memberActive = priceTier === 'member' || priceTier === 'reseller';
-    const inputClass = 'h-11 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal';
+    const inputClass = 'h-11 w-full rounded-none border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-ng-bone/30';
     return (
-      <section className="mobile-card rounded-2xl border bg-white p-4 shadow-sm">
+      <section className="mobile-card rounded-none border bg-transparent p-4">
         <button type="button" onClick={() => setAccountPanelOpen((open) => !open)} className="flex w-full items-center justify-between gap-3 text-left">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-editorial-ivory text-editorial-charcoal">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-none bg-ng-ink text-ng-bone">
               <UserRound className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block text-xs font-bold uppercase text-editorial-charcoal">
+              <span className="block text-xs font-bold uppercase text-ng-bone">
                 {t('cust.accountAddress')}
-                {memberActive ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-800">{t('cust.memberActive')}</span> : null}
+                {memberActive ? <span className="ml-2 rounded-full bg-ng-ember/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-ng-ember">{t('cust.memberActive')}</span> : null}
               </span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{currentUser.email}</span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-ng-dust">{currentUser.email}</span>
             </span>
           </span>
-          <span className="shrink-0 rounded-full bg-editorial-paper px-3 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">
+          <span className="shrink-0 rounded-full bg-ng-card px-3 py-1 text-[10px] font-bold uppercase text-ng-bone">
             {accountPanelOpen ? t('cust.close') : t('cust.edit')}
           </span>
         </button>
@@ -1073,17 +1036,17 @@ const CustomerPortalPage = () => {
           <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder={t('cust.recipientName')} className={inputClass} />
           <input value={profileContact} onChange={(e) => setProfileContact(e.target.value)} placeholder={t('cust.phone')} className={inputClass} />
           <textarea value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} rows="2" placeholder={t('cust.fullAddress')} className={`${inputClass} h-auto py-2`} />
-          <Button type="submit" disabled={profileLoading} className="h-11 rounded-2xl gap-2">
+          <Button type="submit" disabled={profileLoading} className="h-11 rounded-none gap-2">
             {profileLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
             {t('cust.saveAddress')}
           </Button>
         </form>
 
         <form onSubmit={submitClaim} className="mt-4 grid gap-2 border-t border-[#e5e7eb] pt-3">
-          <div className="text-[11px] font-bold uppercase text-[#6b7280]">{t('cust.haveOldCode')}</div>
+          <div className="text-[11px] font-bold uppercase text-ng-dust">{t('cust.haveOldCode')}</div>
           <input value={claimCodeValue} onChange={(e) => setClaimCodeValue(e.target.value.toUpperCase())} aria-label={t('cust.customerCode')} placeholder="SOLI09232" className={`${inputClass} uppercase tracking-[0.08em]`} />
           <input value={claimAnswer} onChange={(e) => setClaimAnswer(e.target.value)} placeholder={t('cust.answerIfAny')} className={inputClass} />
-          <Button type="submit" variant="outline" disabled={claimLoading} className="h-11 rounded-2xl gap-2 bg-white">
+          <Button type="submit" variant="outline" disabled={claimLoading} className="h-11 rounded-none gap-2 bg-transparent">
             {claimLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
             {t('cust.linkCode')}
           </Button>
@@ -1231,11 +1194,11 @@ const CustomerPortalPage = () => {
         // Not sent: the portal order carries neither, and the masked name would be worse than nothing.
         // api/doku/checkout.js reads the real ones off the order row with the service role.
         items: order.items || [],
-        callbackPath: isMobileRoute ? '/mobile/payment' : '/payment',
+        callbackPath: '/payment',
       });
       await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
       toast.success(t('cust.dokuReady'));
-      navigate(buildPaymentPath({ isMobileRoute, order: { ...order, paymentProvider: 'doku' } }));
+      navigate(buildPaymentPath({ order: { ...order, paymentProvider: 'doku' } }));
     } catch (error) {
       toast.error(publicErrorMessage(error, t('cust.dokuFailed')));
     } finally {
@@ -1306,291 +1269,10 @@ const CustomerPortalPage = () => {
     // The English basket is finished in the CART — destination, shipping, then WhatsApp — and /checkout
     // is domestic-only, so sending an English customer there would bounce them to the catalogue with a
     // full basket and no explanation.
-    if (isInternational) navigate(isMobileRoute ? '/mobile/cart' : '/cart');
-    else navigate(isMobileRoute ? '/mobile/checkout' : '/checkout');
+    if (isInternational) navigate('/cart');
+    else navigate('/checkout');
   };
 
-
-  if (isMobileRoute) {
-    return (
-      <MobileCommerceLayout>
-        <Helmet>
-          <title>{t('cust.tab')}</title>
-          <meta name="description" content={t('cust.meta')} />
-        </Helmet>
-        <main className="mobile-page space-y-4">
-          <section className="mobile-soft-card overflow-hidden">
-            <div className="relative overflow-hidden bg-[#121110] p-4 text-editorial-ivory">
-              <div className="absolute -right-8 top-0 h-28 w-28 rounded-full border border-white/10" />
-              <div className="absolute right-6 top-10 h-16 w-16 rounded-full border border-[#d6c68a]/20" />
-              <div className="relative">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase text-[#cbd6c5]">
-                  <ShoppingBag className="h-3.5 w-3.5" />
-                  {t('cust.trackOrders')}
-                </div>
-                <h1 className="mt-3 text-2xl font-bold leading-tight">{t('cust.checkProgress')}</h1>
-                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
-                  {t('cust.oneplace')}
-                </p>
-                {/* Same reason as the desktop hero below, and this is the surface most of them are on:
-                    the English shop has no checkout, so a reader abroad who reaches their account has
-                    nowhere else to arrange an order from. The phone hero does not carry the sentence
-                    that says so, which is exactly why the button had to be put here on purpose. */}
-                {isInternational ? (
-                  <AskAtelierButton
-                    labelKey="intl.noticeCta"
-                    draftKey="intl.noticeMessage"
-                    className="mt-3 w-full"
-                  />
-                ) : null}
-              </div>
-            </div>
-            <form onSubmit={loadPortal} className="grid gap-3 p-4">
-              {/* Logged-in: greet + let orders take focus. Code lookup collapses into a small option. */}
-              {currentUser ? (
-                <div className="flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-3 py-2 text-xs font-semibold text-editorial-charcoal">
-                  <span className="min-w-0 truncate">{t('cust.signedInAs', { email: currentUser.email })}</span>
-                  <button type="button" onClick={signOut} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
-                </div>
-              ) : (
-                <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-sm font-bold" onClick={signInGoogle}>
-                  <UserRound className="h-4 w-4" />
-                  {t('cust.signInMember')}
-                </Button>
-              )}
-
-              {currentUser ? (
-                <button type="button" onClick={() => setCodeSearchOpen((open) => !open)} className="flex items-center justify-between rounded-2xl border border-[#e5e7eb] bg-white px-3 py-2 text-[11px] font-bold uppercase text-[#6b7280]">
-                  <span className="inline-flex items-center gap-2"><Search className="h-3.5 w-3.5" /> {t('cust.findByCode')}</span>
-                  <span>{codeSearchOpen ? t('cust.close') : t('cust.open')}</span>
-                </button>
-              ) : null}
-
-              {(!currentUser || codeSearchOpen) ? (
-                <>
-                  <label className="text-[10px] font-bold uppercase text-[#6b7280]">{t('cust.customerCode')}</label>
-                  <div className="grid grid-cols-[1fr_auto] gap-2">
-                    <input
-                      value={customerCode}
-                      onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
-                      aria-label={t('cust.customerCode')}
-                      placeholder="SOLI09232"
-                      className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
-                    />
-                    <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label={t('cust.checkCode')}>
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={pasteCustomerCode}>
-                      <ClipboardPaste className="h-4 w-4" />
-                      {t('cust.pasteCode')}
-                    </Button>
-                    <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
-                      <History className="h-4 w-4" />
-                      {t('cust.lastCheck')}
-                    </Button>
-                  </div>
-                  {lastCustomerCode ? (
-                    <button type="button" onClick={checkLastCustomerCode} className="text-left text-[11px] font-bold text-editorial-charcoal underline underline-offset-4">
-                      {t('cust.lastUsed', { code: lastCustomerCode })}
-                    </button>
-                  ) : null}
-                  <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
-                    {t('cust.codeGiven')}
-                  </p>
-                </>
-              ) : null}
-            </form>
-          </section>
-
-          {loading ? (
-            <MobileCustomerPortalSkeleton />
-          ) : portal?.requiresSecurity ? (
-            <section className="mobile-card p-4">
-              <div className="flex items-start gap-3">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
-                  <KeyRound className="h-5 w-5" />
-                </span>
-                <div>
-                  <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('cust.securityCheck')}</div>
-                  <h2 className="mt-1 text-lg font-bold text-editorial-charcoal">{t('cust.protectedDash')}</h2>
-                  <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{t('cust.answerSecurity')}</p>
-                </div>
-              </div>
-              <form onSubmit={unlockPortal} className="mt-4 grid gap-3">
-                <div className="rounded-2xl bg-editorial-paper p-3">
-                  <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('cust.question')}</div>
-                  <div className="mt-1 text-sm font-bold text-editorial-charcoal">{portal.customer.securityQuestion}</div>
-                </div>
-                <input
-                  type="password"
-                  autoComplete="off"
-                  value={securityAnswer}
-                  onChange={(event) => setSecurityAnswer(event.target.value)}
-                  placeholder={t('cust.answer')}
-                  className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal"
-                />
-                <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
-                  {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  {t('cust.open')}
-                </Button>
-              </form>
-            </section>
-          ) : portal ? (
-            <>
-              <section className="mobile-card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('cust.welcomeBack')}</div>
-                    <h2 className="mt-1 truncate text-lg font-bold text-editorial-charcoal">{portal.customer.customerName}</h2>
-                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">{portal.customer.masked ? t('cust.hiddenForSecurity') : portal.customer.contact}</p>
-                  </div>
-                  <button type="button" onClick={copyCode} className="shrink-0 rounded-2xl bg-editorial-charcoal px-3 py-2 text-xs font-bold tracking-[0.12em] text-editorial-ivory">
-                    {portal.customer.customerCode}
-                  </button>
-                </div>
-                {portal.customer.masked ? (
-                  <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-semibold leading-relaxed text-amber-800">
-                    {t('cust.maskedNoteMobile')} <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">{t('cust.withGoogle')}</button> {t('cust.withGoogleAccount')}
-                  </div>
-                ) : null}
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-3 text-center">
-                    <div className="text-sm font-bold text-editorial-charcoal">{portal.orders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('cust.orders')}</div>
-                  </div>
-                  <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory p-3 text-center">
-                    <div className="text-sm font-bold text-editorial-charcoal">{activeOrders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('cust.active')}</div>
-                  </div>
-                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-center">
-                    <div className="truncate text-xs font-bold text-amber-800">{latestOrder ? labelFrom(orderStatusKeys, statusLabels, latestOrder.status, t) : '-'}</div>
-                    <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.latest')}</div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="mobile-card p-3">
-                <button type="button" onClick={() => setSecurityFormOpen((open) => !open)} className="flex w-full items-center justify-between gap-3 text-left">
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
-                      <ShieldCheck className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold text-editorial-charcoal">{portal.customer.securityEnabledAt ? t('cust.protectedDash') : t('cust.dashProtection')}</span>
-                      <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{t('cust.securityOptional')}</span>
-                    </span>
-                  </span>
-                  <span className="shrink-0 rounded-full bg-editorial-paper px-3 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">
-                    {securityFormOpen ? t('cust.close') : t('cust.open')}
-                  </span>
-                </button>
-                {securityFormOpen ? (
-                  <form onSubmit={saveSecurity} className="mt-3 grid gap-2 border-t border-[#e5e7eb] pt-3">
-                    {portal.customer.securityEnabledAt ? (
-                      <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder={t('cust.currentAnswer')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
-                    ) : (
-                      <>
-                        <input value={securityContact} onChange={(event) => setSecurityContact(event.target.value)} placeholder={t('cust.securityContactPlaceholder')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
-                        <span className="text-[10px] font-semibold text-[#6b7280]">{t('cust.securityContactHint')}</span>
-                      </>
-                    )}
-                    <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder={t('cust.securityQuestion')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
-                    <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder={t('cust.answer')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
-                    <Button type="submit" className="h-11 rounded-2xl gap-2" disabled={savingSecurity}>
-                      {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                      {t('cust.saveProtection')}
-                    </Button>
-                  </form>
-                ) : null}
-              </section>
-
-              <section className="space-y-3">
-                <h2 className="text-base font-bold text-editorial-charcoal">{t('cust.orderProgress')}</h2>
-                {portal.orders.map((order) => {
-                  const bespoke = isBespokeOrder(order);
-                  const bespokeItem = getBespokeItem(order);
-                  return (
-                    <article key={order.orderNumber} className="mobile-card overflow-hidden p-0">
-                      <div className="border-b border-[#e5e7eb] bg-white p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="text-base font-bold text-editorial-charcoal">{order.orderNumber}</h3>
-                            <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt, t)}</p>
-                          </div>
-                          <div className="flex shrink-0 flex-col items-end gap-1">
-                            <StatusBadge status={order.status} />
-                            <PaymentBadge status={order.paymentStatus} />
-                            {isManualTransferPayment(order.paymentProvider) ? <PaymentProofBadge status={order.paymentProofStatus || 'missing'} /> : null}
-                            {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="text-[10px] font-bold uppercase text-[#6b7280]">{bespoke ? t('cust.customPerfume') : t('cust.orderItems')}</div>
-                        <div className="text-sm font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</div>
-                      </div>
-                      <div className="mt-3">
-                        <OrderItems order={order} compact />
-                      </div>
-                      <BespokeDetailPanel item={bespokeItem} compact />
-                      <BespokeProductionPanel order={order} compact />
-                      <PaymentExperiencePanel order={order} compact />
-                      <PaymentTaskPanel
-                        compact
-                        isMobileRoute={isMobileRoute}
-                        onRenewDokuPayment={renewDokuPayment}
-                        order={order}
-                        renewing={refreshingPaymentOrder === order.orderNumber}
-                      />
-                      <PaymentProofPanel order={order} compact />
-                      <ShipmentPanel order={order} compact />
-                      <div className="mt-3 rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-3">
-                        <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('cust.selfService')}</div>
-                        <SelfServiceActions
-                          compact
-                          isMobileRoute={isMobileRoute}
-                          invoicePath={invoicePath}
-                          onRefreshPayment={refreshPaymentStatus}
-                          onReorder={handleReorder}
-                          order={order}
-                          refreshing={refreshingPaymentOrder === order.orderNumber}
-                        />
-                      </div>
-                      <div className="mt-4">
-                        <OrderTimeline order={order} compact />
-                      </div>
-                      </div>
-                    </article>
-                  );
-                })}
-                {!portal.orders.length ? (
-                  <StateBlock
-                    className="mobile-card"
-                    icon={PackageCheck}
-                    title={t('cust.noOrders')}
-                    description={t('cust.noOrdersBody')}
-                  />
-                ) : null}
-              </section>
-            </>
-          ) : (
-            <section className="mobile-card p-5 text-center">
-              {searched ? <Search className="mx-auto h-8 w-8 text-amber-700" /> : <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />}
-              <h2 className="mt-3 text-lg font-bold text-editorial-charcoal">{searched ? t('cust.codeNotFound') : t('cust.memberWaiting')}</h2>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                {searched ? t('cust.checkSoliCode') : t('cust.memberWaitingBody')}
-              </p>
-            </section>
-          )}
-
-          {renderAccountPanel()}
-        </main>
-      </MobileCommerceLayout>
-    );
-  }
 
   return (
     <>
@@ -1598,18 +1280,18 @@ const CustomerPortalPage = () => {
         <title>{t('cust.tab')}</title>
         <meta name="description" content={t('cust.meta')} />
       </Helmet>
-      <main className="min-h-screen bg-editorial-paper text-editorial-charcoal">
+      <main className="ng-scope min-h-screen bg-ng-ink text-ng-bone">
         <StorefrontHeader backTo="/home" backLabel={t('cust.home')} actions={[{ to: '/catalog', label: t('cust.catalog') }]} />
 
         <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
           <div className="space-y-5">
-            <div className="rounded-[28px] border border-editorial-charcoal/10 bg-white/70 p-6 shadow-sm">
-              <div className="inline-flex items-center gap-2 rounded-full border border-editorial-charcoal/15 bg-white px-3 py-1 text-xs font-bold uppercase text-editorial-charcoal">
+            <div className="rounded-none border border-ng-bone/10 bg-transparent p-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-ng-bone/15 bg-transparent px-3 py-1 text-xs font-bold uppercase text-ng-bone">
                 <UserRound className="h-4 w-4" />
                 {t('cust.eyebrow')}
               </div>
               <h1 className="storefront-display-heading mt-5 text-4xl font-bold sm:text-5xl">{t('cust.heroTitle')}</h1>
-              <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
+              <p className="mt-4 text-base font-medium leading-relaxed text-ng-dust">
                 {t('cust.heroBody')}
               </p>
               {/* The English shop has no checkout: that sentence tells a reader abroad their order is
@@ -1625,31 +1307,48 @@ const CustomerPortalPage = () => {
               ) : null}
             </div>
 
-            <form onSubmit={loadPortal} className="rounded-2xl border bg-white p-4 shadow-sm">
-              <label className="text-xs font-bold uppercase text-muted-foreground">{t('cust.customerCode')}</label>
+            <form onSubmit={loadPortal} className="rounded-none border bg-transparent p-4">
+              <label className="text-xs font-bold uppercase text-ng-dust">{t('cust.customerCode')}</label>
               <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
                 <input
                   value={customerCode}
                   onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
                   aria-label={t('cust.customerCode')}
                   placeholder="SOLI09232"
-                  className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
+                  className="h-12 rounded-none border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-ng-bone/30"
                 />
-                <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
+                <Button type="submit" className="h-12 rounded-none gap-2" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   {t('cust.check')}
                 </Button>
               </div>
-              <p className="mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+              {/* Paste and "last code" came over from the phone portal when it retired (2026-10-31): on a phone
+                  the code is usually sitting in a WhatsApp message, two taps away. */}
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className="h-11 gap-2 rounded-none bg-transparent text-xs font-bold" onClick={pasteCustomerCode}>
+                  <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
+                  {t('cust.pasteCode')}
+                </Button>
+                <Button type="button" variant="outline" className="h-11 gap-2 rounded-none bg-transparent text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
+                  <History className="h-4 w-4" aria-hidden="true" />
+                  {t('cust.lastCheck')}
+                </Button>
+              </div>
+              {lastCustomerCode ? (
+                <button type="button" onClick={checkLastCustomerCode} className="mt-2 min-h-[44px] text-left text-xs font-bold text-ng-bone underline underline-offset-4">
+                  {t('cust.lastUsed', { code: lastCustomerCode })}
+                </button>
+              ) : null}
+              <p className="mt-3 text-xs font-semibold leading-relaxed text-ng-dust">
                 {t('cust.codeGivenKeep')}
               </p>
               {currentUser ? (
-                <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-4 py-2 text-xs font-semibold text-editorial-charcoal">
+                <div className="mt-3 flex items-center justify-between gap-2 rounded-none bg-ng-ink px-4 py-2 text-xs font-semibold text-ng-bone">
                   <span className="min-w-0 truncate">{t('cust.signedInAs', { email: currentUser.email })}</span>
                   <button type="button" onClick={signOut} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
                 </div>
               ) : (
-                <Button type="button" variant="outline" className="mt-3 h-12 w-full rounded-2xl gap-2 text-sm font-bold" onClick={signInGoogle}>
+                <Button type="button" variant="outline" className="mt-3 h-12 w-full rounded-none gap-2 text-sm font-bold" onClick={signInGoogle}>
                   <UserRound className="h-4 w-4" />
                   {t('cust.signInMember')}
                 </Button>
@@ -1660,22 +1359,22 @@ const CustomerPortalPage = () => {
 
           <div className="space-y-4">
             {portal?.requiresSecurity ? (
-              <section className="rounded-2xl border bg-white p-5 shadow-sm">
+              <section className="rounded-none border bg-transparent p-5">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-none bg-ng-ink text-ng-bone">
                     <KeyRound className="h-5 w-5" />
                   </span>
                   <div>
-                    <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('cust.securityCheck')}</div>
+                    <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.securityCheck')}</div>
                     <h2 className="mt-1 text-2xl font-bold">{t('cust.protectedDash')}</h2>
-                    <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
                       {t('cust.securityOnBody')}
                     </p>
                   </div>
                 </div>
                 <form onSubmit={unlockPortal} className="mt-5 grid gap-3">
-                  <div className="rounded-2xl bg-editorial-paper p-4">
-                    <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.question')}</div>
+                  <div className="rounded-none bg-ng-card p-4">
+                    <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.question')}</div>
                     <div className="mt-1 text-base font-bold">{portal.customer.securityQuestion}</div>
                   </div>
                   <input
@@ -1684,9 +1383,9 @@ const CustomerPortalPage = () => {
                     value={securityAnswer}
                     onChange={(event) => setSecurityAnswer(event.target.value)}
                     placeholder={t('cust.answer')}
-                    className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+                    className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
                   />
-                  <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
+                  <Button type="submit" className="h-12 rounded-none gap-2" disabled={securityLoading}>
                     {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                     {t('cust.openDashboard')}
                   </Button>
@@ -1694,50 +1393,50 @@ const CustomerPortalPage = () => {
               </section>
             ) : portal ? (
               <>
-                <section className="rounded-2xl border bg-white p-5 shadow-sm">
+                <section className="rounded-none border bg-transparent p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('cust.welcomeBack')}</div>
+                      <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.welcomeBack')}</div>
                       <h2 className="mt-1 text-2xl font-bold">{portal.customer.customerName}</h2>
-                      <p className="mt-1 text-sm font-semibold text-muted-foreground">{portal.customer.masked ? t('cust.hiddenForSecurity') : portal.customer.contact}</p>
+                      <p className="mt-1 text-sm font-semibold text-ng-dust">{portal.customer.masked ? t('cust.hiddenForSecurity') : portal.customer.contact}</p>
                       {portal.customer.masked ? (
-                        <p className="mt-2 text-xs font-semibold leading-relaxed text-amber-800">
+                        <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-ember">
                           {t('cust.forFullDetails')} <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">{t('cust.withGoogle')}</button> {t('cust.withGoogleAccount')}
                         </p>
                       ) : null}
                     </div>
-                    <button type="button" onClick={copyCode} className="rounded-2xl bg-editorial-charcoal px-5 py-4 text-center text-xl font-bold tracking-[0.16em] text-editorial-ivory">
+                    <button type="button" onClick={copyCode} className="rounded-none bg-ng-bone px-5 py-4 text-center text-xl font-bold tracking-[0.16em] text-ng-ink">
                       {portal.customer.customerCode}
                     </button>
                   </div>
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.order')}</div>
+                    <div className="rounded-none border border-ng-bone/10 bg-ng-card p-4">
+                      <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.order')}</div>
                       <div className="mt-1 text-2xl font-bold">{portal.orders.length}</div>
                     </div>
-                    <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.active')}</div>
+                    <div className="rounded-none border border-ng-bone/10 bg-ng-ink p-4">
+                      <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.active')}</div>
                       <div className="mt-1 text-2xl font-bold">{activeOrders.length}</div>
                     </div>
-                    <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.latest')}</div>
+                    <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-4">
+                      <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.latest')}</div>
                       <div className="mt-1 text-sm font-bold">{latestOrder ? labelFrom(orderStatusKeys, statusLabels, latestOrder.status, t) : '-'}</div>
                     </div>
                   </div>
                 </section>
 
-                <section className="rounded-2xl border bg-white p-4 shadow-sm">
+                <section className="rounded-none border bg-transparent p-4">
                   <button type="button" onClick={() => setSecurityFormOpen((open) => !open)} className="flex w-full items-center justify-between gap-4 text-left">
                     <span className="flex min-w-0 items-center gap-3">
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none bg-ng-ink text-ng-bone">
                         <ShieldCheck className="h-5 w-5" />
                       </span>
                       <span>
                         <span className="block text-lg font-bold">{portal.customer.securityEnabledAt ? t('cust.protectedDash') : t('cust.dashProtection')}</span>
-                        <span className="mt-0.5 block text-sm font-semibold text-muted-foreground">{t('cust.addSecurityIf')}</span>
+                        <span className="mt-0.5 block text-sm font-semibold text-ng-dust">{t('cust.addSecurityIf')}</span>
                       </span>
                     </span>
-                    <span className="shrink-0 rounded-full bg-editorial-paper px-4 py-2 text-xs font-bold uppercase text-editorial-charcoal">
+                    <span className="shrink-0 rounded-full bg-ng-card px-4 py-2 text-xs font-bold uppercase text-ng-bone">
                       {securityFormOpen ? t('cust.close') : t('cust.open')}
                     </span>
                   </button>
@@ -1748,7 +1447,7 @@ const CustomerPortalPage = () => {
                           value={currentSecurityAnswer}
                           onChange={(event) => setCurrentSecurityAnswer(event.target.value)}
                           placeholder={t('cust.currentAnswer')}
-                          className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+                          className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
                         />
                       ) : (
                         <>
@@ -1756,24 +1455,24 @@ const CustomerPortalPage = () => {
                             value={securityContact}
                             onChange={(event) => setSecurityContact(event.target.value)}
                             placeholder={t('cust.securityContactPlaceholder')}
-                            className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+                            className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
                           />
-                          <span className="text-xs font-semibold text-muted-foreground">{t('cust.securityContactHint')}</span>
+                          <span className="text-xs font-semibold text-ng-dust">{t('cust.securityContactHint')}</span>
                         </>
                       )}
                       <input
                         value={securityQuestion}
                         onChange={(event) => setSecurityQuestion(event.target.value)}
                         placeholder={t('cust.securityPlaceholder')}
-                        className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+                        className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
                       />
                       <input
                         value={newSecurityAnswer}
                         onChange={(event) => setNewSecurityAnswer(event.target.value)}
                         placeholder={t('cust.answer')}
-                        className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+                        className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
                       />
-                      <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingSecurity}>
+                      <Button type="submit" className="h-12 rounded-none gap-2" disabled={savingSecurity}>
                         {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                         {t('cust.saveProtection')}
                       </Button>
@@ -1781,15 +1480,15 @@ const CustomerPortalPage = () => {
                   ) : null}
                 </section>
 
-                <section className="rounded-2xl border bg-white p-5 shadow-sm">
+                <section className="rounded-none border bg-transparent p-5">
                   <h2 className="text-xl font-bold">{t('cust.orderProgress')}</h2>
                   <div className="mt-4 grid gap-4">
                     {portal.orders.map((order) => {
                       const bespoke = isBespokeOrder(order);
                       const bespokeItem = getBespokeItem(order);
                       return (
-                        <article key={order.orderNumber} className="overflow-hidden rounded-[24px] border bg-[#fbfaf7] shadow-sm">
-                          <div className="border-b bg-white px-4 py-4">
+                        <article key={order.orderNumber} className="overflow-hidden rounded-none border bg-ng-deep">
+                          <div className="border-b bg-transparent px-4 py-4">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                               <div className="flex flex-wrap items-center gap-2">
@@ -1799,10 +1498,10 @@ const CustomerPortalPage = () => {
                                 {isManualTransferPayment(order.paymentProvider) ? <PaymentProofBadge status={order.paymentProofStatus || 'missing'} /> : null}
                                 {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
                               </div>
-                              <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt, t)}</p>
+                              <p className="mt-1 text-sm font-semibold text-ng-dust">{formatDate(order.createdAt, t)}</p>
                             </div>
                             <div className="text-right">
-                              <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.itemCount', { count: order.quantity })}</div>
+                              <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.itemCount', { count: order.quantity })}</div>
                               <div className="text-lg font-bold">{formatTotal(order.subtotal)}</div>
                             </div>
                             </div>
@@ -1814,22 +1513,20 @@ const CustomerPortalPage = () => {
                             <BespokeProductionPanel order={order} />
                             <PaymentExperiencePanel order={order} />
                             <PaymentTaskPanel
-                              isMobileRoute={isMobileRoute}
                               onRenewDokuPayment={renewDokuPayment}
                               order={order}
                               renewing={refreshingPaymentOrder === order.orderNumber}
                             />
                             <PaymentProofPanel order={order} />
                             <ShipmentPanel order={order} />
-                            <div className="mt-4 rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-4">
+                            <div className="mt-4 rounded-none border border-ng-bone/10 bg-ng-card p-4">
                               <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('cust.selfService')}</div>
-                                  <p className="mt-1 text-sm font-semibold text-muted-foreground">{t('cust.manageHere')}</p>
+                                  <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.selfService')}</div>
+                                  <p className="mt-1 text-sm font-semibold text-ng-dust">{t('cust.manageHere')}</p>
                                 </div>
                               </div>
                               <SelfServiceActions
-                                isMobileRoute={isMobileRoute}
                                 invoicePath={invoicePath}
                                 onRefreshPayment={refreshPaymentStatus}
                                 onReorder={handleReorder}
@@ -1846,7 +1543,7 @@ const CustomerPortalPage = () => {
                     })}
                     {!portal.orders.length ? (
                       <StateBlock
-                        className="bg-[#fbfaf7]"
+                        className="bg-ng-deep"
                         icon={PackageCheck}
                         title={t('cust.noOrders')}
                         description={t('cust.noOrdersBody')}
@@ -1856,9 +1553,9 @@ const CustomerPortalPage = () => {
                 </section>
               </>
             ) : (
-              <section className="overflow-hidden rounded-[28px] border border-editorial-charcoal/10 bg-white shadow-sm">
+              <section className="overflow-hidden rounded-none border border-ng-bone/10 bg-transparent">
                 <div className="grid gap-0 lg:grid-cols-[1fr_0.9fr]">
-                  <div className="grid min-h-[236px] place-items-center border-b border-editorial-charcoal/10 bg-[#fbfaf7] px-6 py-8 text-center lg:border-b-0 lg:border-r">
+                  <div className="grid min-h-[236px] place-items-center border-b border-ng-bone/10 bg-ng-deep px-6 py-8 text-center lg:border-b-0 lg:border-r">
                     <StateBlock
                       className="border-0 bg-transparent p-0 shadow-none"
                       icon={searched ? Search : ShoppingBag}
@@ -1866,16 +1563,16 @@ const CustomerPortalPage = () => {
                       description={searched ? t('cust.checkSoliCodeYours') : t('cust.memberWaitingBody')}
                     />
                   </div>
-                  <div className="grid content-center gap-3 bg-editorial-ivory p-5">
+                  <div className="grid content-center gap-3 bg-ng-ink p-5">
                     {[
                       ['1', 'cust.signInGoogle', 'cust.memberNow'],
                       ['2', 'cust.checkPayProd', 'cust.checkPayProdBody'],
                       ['3', 'cust.reorderFast', 'cust.reorderFastBody'],
                     ].map(([step, titleKey, descriptionKey]) => (
-                      <div key={step} className="flex gap-3 rounded-2xl bg-white/82 p-3 shadow-sm shadow-editorial-charcoal/5">
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-2xl bg-editorial-charcoal text-xs font-bold text-editorial-ivory">{step}</span>
+                      <div key={step} className="flex gap-3 rounded-none bg-transparent p-3">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-none bg-ng-bone text-xs font-bold text-ng-ink">{step}</span>
                         <span>
-                          <span className="block text-sm font-bold text-editorial-charcoal">{t(titleKey)}</span>
+                          <span className="block text-sm font-bold text-ng-bone">{t(titleKey)}</span>
                           <span className="mt-1 block text-xs font-semibold leading-relaxed text-[#667264]">{t(descriptionKey)}</span>
                         </span>
                       </div>

@@ -62,7 +62,8 @@ const walk = (dir) => {
   }
 };
 walk('pages');
-assert.ok(screens.length >= 4, `only ${screens.length} add-to-cart screen(s) found — the derivation broke`);
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(screens.length >= 3, `only ${screens.length} add-to-cart screen(s) found — the derivation broke`);
 
 const cartHook = strip(readFileSync(join(src, 'hooks', 'useCart.js'), 'utf8'));
 assert.match(cartHook, /addItem: \([\s\S]*?CART_ITEM_ADDED_EVENT/,

@@ -36,24 +36,23 @@ assert.match(toStory, /\.catch\(\(\) =>/,
 // --- 3. One component, both surfaces -----------------------------------------------------------------
 // Desktop and mobile drifting apart is this repo's commonest defect; a story offered on one and not the
 // other is exactly the kind nobody reports.
+// One product page since the phone storefront retired (2026-10-31), so one surface — but still the shared
+// component, and nothing that asks for a phone route that no longer exists.
 for (const [name, page] of [
   ['PublicProductDetailPage.jsx', read('pages', 'PublicProductDetailPage.jsx')],
-  ['MobileProductDetailPage.jsx', read('pages', 'mobile', 'MobileProductDetailPage.jsx')],
 ]) {
   assert.match(page, /<ProductStoryLink/, `${name} must offer the story`);
   assert.match(page, /import ProductStoryLink from '@\/components\/storefront\/ProductStoryLink\.jsx'/,
     `${name} must use the shared component rather than its own markup`);
 }
-// The phone passes `mobile`, or every link from it lands on a desktop route.
-assert.match(read('pages', 'mobile', 'MobileProductDetailPage.jsx'), /<ProductStoryLink[^/]*\bmobile\b/,
-  'the phone must ask for the phone route, or the story opens the desktop page');
+assert.doesNotMatch(read('components', 'storefront', 'ProductStoryLink.jsx'), /['"`]\/mobile/,
+  'the story link must not send anyone through the retired phone storefront');
 
 // --- 4. The story comes before the other bottles ------------------------------------------------------
 // Someone still deciding about THIS perfume is better served by what was written about it than by four
 // alternatives; putting it after turns it into a footnote nobody scrolls to.
 for (const [name, page] of [
   ['PublicProductDetailPage.jsx', read('pages', 'PublicProductDetailPage.jsx')],
-  ['MobileProductDetailPage.jsx', read('pages', 'mobile', 'MobileProductDetailPage.jsx')],
 ]) {
   assert.ok(page.indexOf('<ProductStoryLink') < page.indexOf('{related.length ?'),
     `${name} puts the story after the related bottles, where it reads as an afterthought`);

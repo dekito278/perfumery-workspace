@@ -874,7 +874,7 @@ const MobileOrderDetailPage = () => {
             ) : null}
           </div>
           {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-            <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={() => navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`)}>
+            <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={() => navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`)}>
               <CreditCard className="h-4 w-4" />
               Lanjut bayar
             </Button>

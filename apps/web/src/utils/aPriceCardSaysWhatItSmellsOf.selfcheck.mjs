@@ -39,8 +39,6 @@ assert.ok(rendersPrice.length >= 4,
 // quietly.
 const NOT_A_BROWSE_CARD = new Map([
   ['pages/PublicProductDetailPage.jsx', 'one perfume, full pyramid already on the page'],
-  ['pages/mobile/MobileProductDetailPage.jsx', 'one perfume, full pyramid already on the page'],
-  ['pages/mobile/MobileInternationalCartPage.jsx', 'a cart line is a receipt, not a browse card'],
   ['components/journal/JournalRelatedProduct.jsx', 'sits under an article that just described the scent'],
 ]);
 
@@ -68,7 +66,6 @@ assert.deepEqual(stale, [],
 const limits = [
   ['pages/CatalogPage.jsx', /const CARD_NOTE_LIMIT = (\d+)/],
   ['pages/HomePage.jsx', /const HOME_CARD_NOTE_LIMIT = (\d+)/],
-  ['pages/mobile/MobileStorefrontPage.jsx', /const MOBILE_CARD_NOTE_LIMIT = (\d+)/],
 ].map(([file, pattern]) => {
   const match = readFileSync(join(src, file), 'utf8').match(pattern);
   assert.ok(match, `${file} no longer declares its note limit where this guard can read it`);

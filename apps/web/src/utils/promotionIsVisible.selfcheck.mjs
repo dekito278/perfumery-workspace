@@ -65,7 +65,8 @@ const rateScreens = screens.filter((file) => {
   const text = readFileSync(file, 'utf8');
   return /setSelectedShipping\(rate\)/.test(text) && /\(rate\.cost\)/.test(text);
 });
-assert.ok(rateScreens.length >= 4,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(rateScreens.length >= 2,
   `expected the four screens that choose a courier rate, found ${rateScreens.length} — the scan is `
   + 'broken, not the code');
 assert.ok(rateScreens.some((file) => !file.includes(join('pages', 'mobile'))),

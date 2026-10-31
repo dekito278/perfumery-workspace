@@ -65,7 +65,9 @@ assert.equal(getStorageImageSrcSet(null), undefined);
 
 // The three full-bleed images on the home page must carry both halves: a srcset is inert without sizes.
 const home = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', 'HomePage.jsx'), 'utf8');
-for (const slot of ['home-hero', 'home-statement', 'home-newsletter']) {
+// home-statement left the home page with the 2026-10-31 redesign (its bespoke call joined the collaboration
+// band); the two full-bleed images that remain still carry both halves.
+for (const slot of ['home-hero', 'home-newsletter']) {
   const tag = home.split('\n').find((line) => line.includes(`siteImages['${slot}']`) && line.includes('<img'));
   assert.ok(tag, `${slot} must still be rendered`);
   assert.ok(tag.includes('srcSet={srcSet('), `${slot} must offer the browser a choice of widths`);

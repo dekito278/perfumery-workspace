@@ -78,33 +78,9 @@ export const shopCanonicalUrl = (path, region, origin = getSiteOrigin()) => {
   return toAbsoluteUrl(`${prefix}${bare.startsWith('/') ? bare : `/${bare}`}`, origin);
 };
 
-// The mobile storefront is a SECOND set of URLs for the same shop. RootRedirect sends every phone to
-// /mobile/dashboard, and Google crawls mobile-first — so the crawler lands on the duplicate, not on the
-// prerendered page the sitemap advertises. Measured on the live site: /mobile/dashboard, /mobile/catalog
-// and /mobile/products/<slug> carried no canonical and no robots meta at all.
-//
-// One mapping, here, so a page cannot declare a canonical the routes do not have.
-const MOBILE_TO_DESKTOP = {
-  '/mobile/dashboard': '/home',
-  '/mobile/home': '/home',
-  '/mobile/catalog': '/catalog',
-  '/mobile/bespoke': '/bespoke',
-  '/mobile/articles': '/journal',
-};
-
-/** The desktop URL a mobile storefront page is a copy of, or '' when there is no twin. */
-export const desktopCanonicalPath = (mobilePath) => {
-  const path = String(mobilePath || '').split(/[?#]/)[0].replace(/\/+$/, '') || '/';
-  if (MOBILE_TO_DESKTOP[path]) return MOBILE_TO_DESKTOP[path];
-
-  const product = path.match(/^\/mobile\/products\/([^/]+)$/);
-  if (product) return `/catalog/${product[1]}`;
-
-  const article = path.match(/^\/mobile\/articles\/([^/]+)$/);
-  if (article) return `/articles/${article[1]}`;
-
-  return '';
-};
+// The phone storefront's second set of URLs (/mobile/catalog, /mobile/products/<slug> …) retired on
+// 2026-10-31. They answer with a permanent redirect at the edge (vercel.json) and in the router
+// (fromRetiredMobileStorefront), so there is no duplicate left to name a canonical for.
 
 // Shared with the build-time prerender so the two cannot drift again.
 const availabilityUrl = (product) => schemaAvailability({

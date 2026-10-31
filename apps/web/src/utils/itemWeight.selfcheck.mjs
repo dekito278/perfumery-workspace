@@ -91,7 +91,7 @@ assert.match(server, /const weighedLines = isBespoke/);
 assert.match(server, /catalog\.resolved/, 'the server must weigh its own resolved lines');
 
 // Both bespoke pages quote the chosen bottle size, or their fee disagrees with the endpoint's.
-for (const file of [['src', 'pages', 'BespokePage.jsx'], ['src', 'pages', 'mobile', 'MobileBespokePage.jsx']]) {
+for (const file of [['src', 'pages', 'BespokePage.jsx']]) {
   assert.match(read(...file), /getCheckoutShippingWeight\(\[\{ quantity: 1, size:/,
     `${file.join('/')} must weigh the chosen bottle size, not a flat bottle`);
 }

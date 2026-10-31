@@ -49,9 +49,9 @@ const InternationalPrice = ({ price, className = '' }) => {
     <div className={className}>
       <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         {/* Rupiah only when there is no dollar to show — see the note at the top of this file. */}
-        <span className="text-2xl font-bold text-editorial-charcoal">{usd ? `US$${usd}` : formatRupiah(price)}</span>
+        <span className="text-2xl font-bold text-ng-bone">{usd ? `US$${usd}` : formatRupiah(price)}</span>
       </p>
-      <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold leading-relaxed text-muted-foreground">
+      <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold leading-relaxed text-ng-dust">
         <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <span>{t('intl.priceNote')}</span>
       </p>

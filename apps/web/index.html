@@ -9,7 +9,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Javanese&display=swap" />
 		<!-- Baseline share preview. The prerender replaces these per page; without them a link to the
 		     bare domain previews with no picture at all. -->
 		<meta property="og:image" content="/brand/home/perfumer-at-work.jpg" />
@@ -27,6 +27,21 @@
 		     here would double up and override per-page values.) Only the initial-paint
 		     title element stays — react-helmet replaces the title cleanly per route. -->
 		<title>SOLIVAGANT - Artisan Perfumery Atelier</title>
+		<script>
+			// The shop is dark since the 2026-10-31 redesign; Studio stays light. Decided here, before the first
+			// paint, so a shop visitor does not see a light page flash before the dark one arrives.
+			(function () {
+				var path = window.location.pathname.replace(/^\/en(?=\/|$)/, '') || '/';
+				var studio = /^\/(studio|dashboard|login|reset-password|authenticator|raw-materials?|raw-material-audit|categories|formulas|batches|production-costing|validation|accords?)(\/|$)/.test(path)
+					|| /^\/mobile\/(studio|login|reset-password|authenticator|journal|raw-materials?|raw-material-audit|materials|categories|formulas|batches|production-costing|validation|validate)(\/|$)/.test(path)
+					|| /^\/journal\/(new|[^/]+\/edit)$/.test(path);
+				if (!studio) {
+					document.documentElement.classList.add('boot-shop');
+					var theme = document.querySelector('meta[name="theme-color"]');
+					if (theme) theme.setAttribute('content', '#0e0c0a');
+				}
+			})();
+		</script>
 		<style>
 			html {
 				background: #f7f8f2;
@@ -201,6 +216,38 @@
 				}
 			}
 
+			html.boot-shop,
+			html.boot-shop body {
+				background: #0e0c0a;
+			}
+			html.boot-shop .app-boot-fallback {
+				background: #0e0c0a;
+				color: #ede6d6;
+			}
+			html.boot-shop .app-boot-status,
+			html.boot-shop .app-boot-panel,
+			html.boot-shop .app-boot-sidebar {
+				border-color: rgba(237, 230, 214, 0.14);
+				border-radius: 0;
+				background: #110f0c;
+				box-shadow: none;
+			}
+			html.boot-shop .app-boot-fallback p,
+			html.boot-shop .app-boot-fallback .app-boot-description {
+				color: #b8af9e;
+			}
+			html.boot-shop .app-boot-fallback h1 {
+				color: #ede6d6;
+				font-family: "Cormorant Garamond", Georgia, serif;
+				font-weight: 400;
+			}
+			html.boot-shop .app-boot-spinner {
+				border-color: rgba(237, 230, 214, 0.18);
+				border-top-color: #ede6d6;
+			}
+			html.boot-shop .app-boot-line {
+				background: #161310;
+			}
 			@media (prefers-reduced-motion: reduce) {
 				.app-boot-spinner,
 				.app-boot-line {
@@ -294,76 +341,6 @@
 						description: 'Customer information, a live shipping quote, an optional voucher, and payment by manual bank transfer or DOKU.',
 						items: ['Customer information', 'Shipping', 'Payment', 'Order summary'],
 					},
-					'/mobile': {
-						eyebrow: 'SOLIVAGANT Mobile',
-						title: 'Belanja parfum Solivagant.',
-						headline: 'Mobile storefront sedang dimuat.',
-						description: 'Pilih aroma ready stock, custom aroma, atau cek progress order dari pengalaman mobile Solivagant.',
-						items: ['Beranda', 'Belanja', 'Artikel', 'Bespoke', 'Keranjang', 'Akun'],
-					},
-					'/mobile/home': {
-						eyebrow: 'SOLIVAGANT Mobile',
-						title: 'Belanja parfum Solivagant.',
-						headline: 'Mobile storefront sedang dimuat.',
-						description: 'Pilih aroma ready stock, custom aroma, atau cek progress order dari pengalaman mobile Solivagant.',
-						items: ['Beranda', 'Belanja', 'Artikel', 'Bespoke', 'Keranjang', 'Akun'],
-					},
-					'/mobile/dashboard': {
-						eyebrow: 'SOLIVAGANT Mobile',
-						title: 'Belanja parfum Solivagant.',
-						headline: 'Mobile storefront sedang dimuat.',
-						description: 'Pilih aroma ready stock, custom aroma, atau cek progress order dari pengalaman mobile Solivagant.',
-						items: ['Beranda', 'Belanja', 'Artikel', 'Bespoke', 'Keranjang', 'Akun'],
-					},
-					'/mobile/catalog': {
-						eyebrow: 'Belanja',
-						title: 'Cari parfum',
-						headline: 'Katalog parfum mobile sedang dimuat.',
-						description: 'Browse parfum, notes, mood, harga, dan stok dari katalog mobile Solivagant.',
-						items: ['Search', 'Filter aroma', 'Sort', 'Product cards'],
-					},
-					'/mobile/articles': {
-						eyebrow: 'Journal',
-						title: 'Artikel parfum Solivagant.',
-						headline: 'Journal mobile sedang dimuat.',
-						description: 'Cerita aroma, material, proses studio, dan panduan kecil sebelum memilih parfum.',
-						items: ['Formula accord', 'Experience', 'Material notes'],
-					},
-					'/mobile/bespoke': {
-						eyebrow: 'Custom',
-						title: 'Bespoke Perfume',
-						headline: 'Customizer mobile sedang dimuat.',
-						description: 'Pilih ukuran, botol, cap, label, dan ringkasan custom sebelum checkout.',
-						items: ['Ukuran', 'Botol', 'Cap', 'Label', 'Checkout'],
-					},
-					'/mobile/cart': {
-						eyebrow: 'Keranjang',
-						title: 'Keranjang',
-						headline: 'Keranjang mobile sedang dimuat.',
-						description: 'Cek item, kuantitas, voucher, dan lanjutkan ke checkout.',
-						items: ['Cart items', 'Quantity', 'Voucher', 'Checkout'],
-					},
-					'/mobile/checkout': {
-						eyebrow: 'Checkout',
-						title: 'Checkout',
-						headline: 'Checkout mobile sedang dimuat.',
-						description: 'Lengkapi kontak, alamat, ongkir, voucher, dan metode pembayaran.',
-						items: ['Kontak', 'Alamat', 'Ongkir', 'Payment'],
-					},
-					'/mobile/payment': {
-						eyebrow: 'Payment',
-						title: 'Pembayaran',
-						headline: 'Instruksi pembayaran sedang dimuat.',
-						description: 'Lihat detail transfer manual BCA atau DOKU, lalu upload bukti transfer jika diperlukan.',
-						items: ['Order', 'Total transfer', 'Rekening', 'Bukti transfer'],
-					},
-					'/mobile/customer': {
-						eyebrow: 'Akun member',
-						title: 'Masuk untuk harga member',
-						headline: 'Portal customer mobile sedang dimuat.',
-						description: 'Masukkan customer code atau nomor order untuk melihat status dan histori pembelian.',
-						items: ['Customer code', 'Order lookup', 'Timeline', 'Invoice'],
-					},
 				};
 
 				function escapeHtml(value) {
@@ -398,40 +375,6 @@
 				}
 
 				function getRouteGroupFallbackContent(pathname) {
-					if (pathname.indexOf('/mobile/products/') === 0) {
-						return {
-							eyebrow: 'Belanja',
-							title: 'Detail parfum',
-							headline: 'Detail produk mobile sedang dimuat.',
-							description: 'Informasi notes, ukuran, harga, stok, dan tombol keranjang akan tampil sebentar lagi.',
-							items: ['Visual produk', 'Notes', 'Varian', 'Keranjang'],
-						};
-					}
-
-					if (pathname.indexOf('/mobile/articles/') === 0) {
-						return {
-							eyebrow: 'Journal',
-							title: 'Artikel parfum',
-							headline: 'Artikel mobile sedang dimuat.',
-							description: 'Cerita aroma dan material Solivagant akan tampil sebentar lagi.',
-							items: ['Cover', 'Kategori', 'Cerita', 'Artikel terkait'],
-						};
-					}
-
-					if (pathname.indexOf('/mobile/customer/invoice/') === 0) {
-						return {
-							eyebrow: 'Invoice',
-							title: 'Invoice order',
-							headline: 'Invoice mobile sedang dimuat.',
-							description: 'Ringkasan order, customer, total, dan status pembayaran akan tampil sebentar lagi.',
-							items: ['Customer', 'Order', 'Total', 'Status'],
-						};
-					}
-
-					if (pathname === '/mobile' || pathname.indexOf('/mobile/') === 0) {
-						return PUBLIC_ROUTE_FALLBACKS['/mobile/dashboard'];
-					}
-
 					if (pathname.indexOf('/products/') === 0 || pathname.indexOf('/catalog/') === 0) {
 						return PUBLIC_ROUTE_FALLBACKS['/catalog'];
 					}
@@ -454,20 +397,13 @@
 					};
 				}
 
+				// One set of links for every screen since the phone storefront retired (2026-10-31).
 				function getBootLinks() {
 					var route = splitLocale(normalizePathname(window.location.pathname));
-					var isMobileRoute = route.path === '/mobile' || route.path.indexOf('/mobile/') === 0;
-					return isMobileRoute
-						? [
-							{ href: route.prefix + '/mobile/dashboard', label: 'Beranda' },
-							{ href: route.prefix + '/mobile/catalog', label: 'Belanja' },
-							{ href: route.prefix + '/mobile/bespoke', label: 'Bespoke' },
-							{ href: route.prefix + '/mobile/customer', label: 'Akun' },
-						]
-						: [
-							{ href: route.prefix + '/catalog', label: 'Explore Collection' },
-							{ href: route.prefix + '/bespoke', label: 'Book Bespoke Consultation' },
-						];
+					return [
+						{ href: route.prefix + '/catalog', label: 'Explore Collection' },
+						{ href: route.prefix + '/bespoke', label: 'Book Bespoke Consultation' },
+					];
 				}
 
 				function renderPublicBootFallback() {

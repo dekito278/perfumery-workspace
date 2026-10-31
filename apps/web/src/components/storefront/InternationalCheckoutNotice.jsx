@@ -34,25 +34,25 @@ const InternationalCheckoutNotice = ({ className = '', quotedOnRequest = false }
   if (!isInternational) return null;
 
   return (
-    <aside className={`rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] p-4 ${className}`} role="note">
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-editorial-charcoal">
+    <aside className={`rounded-none border border-ng-bone/15 bg-ng-card p-4 ${className}`} role="note">
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-ng-bone">
         <Globe className="h-3.5 w-3.5" aria-hidden="true" /> {t('intl.noticeTitle')}
       </p>
-      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">{t('intl.noticeDomesticOnly')}</p>
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">{t('intl.noticeDomesticOnly')}</p>
       {/* Where the international number comes FROM, which is not the same answer everywhere.
           In the cart it is printed on each product's page. On the bespoke request there is no product
           page and no international price anywhere — the bottle does not exist yet — so pointing at one
           sent an overseas buyer looking for a number that was never written down. */}
-      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
         {t(quotedOnRequest ? 'intl.quotedOnRequest' : 'intl.noticeCatalogPrice')}
       </p>
-      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">{t('intl.domesticOk')}</p>
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">{t('intl.domesticOk')}</p>
       {whatsapp ? (
         <a
           href={buildWhatsAppCheckoutUrl(t('intl.noticeMessage'), whatsapp)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/20 bg-white px-4 py-2 text-center text-sm font-bold leading-snug text-editorial-charcoal transition hover:bg-editorial-paper"
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 min-h-[44px] rounded-none border border-ng-bone/30 bg-transparent px-4 py-2 text-center text-sm font-bold leading-snug text-ng-bone transition hover:bg-ng-bone/10"
         >
           <Globe className="h-4 w-4" /> {t('intl.noticeCta')}
         </a>

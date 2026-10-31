@@ -38,7 +38,8 @@ const walk = (dir) => readdirSync(dir).flatMap((entry) => {
 // place, over a sentence offering a bespoke request that had no button. A rule about empty states that
 // looks at one kind of empty screen is a rule that gets re-learned on the next one.
 const carts = walk(join(src, 'pages')).filter((file) => /(Cart|Checkout)\w*\.jsx$/.test(file));
-assert.ok(carts.length >= 6,
+// The phone storefront retired on 2026-10-31: one responsive page per screen now, so the floor halved.
+assert.ok(carts.length >= 3,
   `expected the cart and checkout pages, found ${carts.length} — the scan is broken, not the code`);
 
 // --- 1. A recommendation is a bottle that can be bought -------------------------------------------------
@@ -80,9 +81,11 @@ assert.ok(PROMISES_BESPOKE.length >= 2,
 for (const file of carts) {
   const source = strip(readFileSync(file, 'utf8'));
   if (!PROMISES_BESPOKE.some((key) => source.includes(key))) continue;
-  assert.match(source, /\/mobile\/bespoke/,
+  // One responsive shop since 2026-10-31, so the door is /bespoke on every screen. A /mobile/ door would
+  // now be a redirect hop, so it is no longer accepted.
+  assert.match(source, /['"`]\/bespoke['"`]/,
     `${relative(src, file)} prints a sentence offering a bespoke request and gives no way to start one`);
-  assert.match(source, /\/mobile\/catalog/, `${relative(src, file)} offers no way to the catalogue`);
+  assert.match(source, /['"`]\/catalog['"`]/, `${relative(src, file)} offers no way to the catalogue`);
 }
 
 // --- 3. It says it once ---------------------------------------------------------------------------------

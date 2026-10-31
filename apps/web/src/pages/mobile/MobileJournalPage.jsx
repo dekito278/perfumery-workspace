@@ -235,7 +235,7 @@ const MobileJournalPage = () => {
             {visiblePosts.map((post) => {
               const formula = formulaById.get(post.related_formula_id);
               const preview = getPreviewText(post);
-              const publicPath = getJournalPublicPath(post, { mobile: true });
+              const publicPath = getJournalPublicPath(post);
               return (
                 <article
                   key={post.id}

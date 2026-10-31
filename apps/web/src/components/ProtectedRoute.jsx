@@ -42,7 +42,8 @@ const ProtectedRoute = ({ children }) => {
   // Logged in but not an admin (e.g. a customer signed in with Google): keep them
   // out of studio and send them to their portal instead.
   if (!isAdmin) {
-    const portalPath = location.pathname.startsWith('/mobile') ? '/mobile/customer' : '/customer';
+    // One portal for every screen since the phone storefront retired (2026-10-31).
+    const portalPath = '/customer';
     return <Navigate to={portalPath} replace />;
   }
 

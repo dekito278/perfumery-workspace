@@ -97,7 +97,8 @@ const walkDrafters = (dir) => {
 walkDrafters('components'); walkDrafters('pages');
 // Three surfaces: the product page's enquiry button, and the two English cart pages that send the order.
 // The sticky bars stopped building drafts on 2026-10-06 when the order moved into the cart.
-assert.ok(drafters.length >= 3,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(drafters.length >= 2,
   `only ${drafters.length} draft surface(s) found (${drafters.join(', ')}) — the derivation broke`);
 assert.deepEqual(spellingTheirOwn, [],
   'these build a WhatsApp enquiry without going through quotedInternationalPrice, so an overseas buyer '

@@ -126,10 +126,7 @@ for (const [name, file] of [
 // --- 7. Every surface that printed the raw category now composes both --------------------------------
 // Five of them, and they have drifted apart before.
 for (const [name, file] of [
-  ['catalogue (phone)', ['pages', 'mobile', 'MobileCatalogPage.jsx']],
   ['catalogue (desktop)', ['pages', 'CatalogPage.jsx']],
-  ['home (phone)', ['pages', 'mobile', 'MobileStorefrontPage.jsx']],
-  ['product (phone)', ['pages', 'mobile', 'MobileProductDetailPage.jsx']],
   ['product (desktop)', ['pages', 'PublicProductDetailPage.jsx']],
 ]) {
   const source = read(...file);
@@ -225,7 +222,8 @@ const walkPills = (dir) => {
   }
 };
 walkPills('pages');
-assert.ok(pillScreens.length >= 2, `only ${pillScreens.length} catalogue pill screen(s) found — the derivation broke`);
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(pillScreens.length >= 1, `only ${pillScreens.length} catalogue pill screen(s) found — the derivation broke`);
 assert.deepEqual(byHand, [],
   'these screens build the pill list out of the category themselves, so the LIMITED pill disappears the '
   + `day the last perfume is re-filed into its family:\n  ${byHand.join('\n  ')}`);

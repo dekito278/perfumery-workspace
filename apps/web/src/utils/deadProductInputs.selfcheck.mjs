@@ -58,11 +58,11 @@ for (const field of Object.keys(STUDIO_ONLY)) {
 // Held by name as well as by the rule, because these are the ones with a history.
 assert.ok(carried('compareAtPriceNumber'), 'harga coret must reach the storefront');
 assert.ok(carried('intensity'), 'intensitas must reach the storefront');
-for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
+for (const page of [['pages', 'PublicProductDetailPage.jsx']]) {
   // The sentence around it is translated now, so the literal "Intensitas" moved into the message file.
   // What still has to hold is that the page RENDERS the field: carrying it through the mapper alone
   // renders nothing, which is the bug this assertion was written for.
-  assert.match(read(...page), /product\.intensity \? <span>\{t\('pdp\.intensity', \{ level: product\.intensity/,
+  assert.match(read(...page), /product\.intensity \? <(span|li)>\{t\('pdp\.intensity', \{ level: product\.intensity/,
     `${page.join('/')} must show intensity — carrying it through the mapper alone still renders nothing`);
 }
 assert.match(MESSAGES.id['pdp.intensity'], /Intensitas/, 'and the Indonesian wording is still the one Dekito wrote');

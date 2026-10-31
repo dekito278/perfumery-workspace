@@ -22,13 +22,14 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf8'));
 
-const page = read('pages', 'mobile', 'MobileCheckoutPage.jsx');
+// The control came over to the one checkout when the phone storefront retired (2026-10-31).
+const page = read('pages', 'CheckoutPage.jsx');
 
 // --- 1. Find the controls by what they DO, not by name -------------------------------------------------
 // Every element whose click opens the manual area search, and the message key it is labelled with.
-const openers = [...page.matchAll(/onClick=\{\(\) => setShowManualShippingArea\(true\)\}[\s\S]{0,320}?t\('([\w.]+)'\)/g)]
+const openers = [...page.matchAll(/onClick=\{\(\) => setManualArea\(true\)\}[\s\S]{0,320}?t\('([\w.]+)'\)/g)]
   .map((match) => match[1]);
-assert.ok(openers.length >= 2, `expected both controls that open the area search, found ${openers.length}`);
+assert.ok(openers.length >= 1, `expected the control that opens the area search, found ${openers.length}`);
 
 const PROMISES_A_PRICE = /(ongkir|biaya|tarif|harga|fee|price|cost)/i;
 const NAMES_THE_AREA = /(area|tujuan|destination|kecamatan|sub-?district)/i;
@@ -49,7 +50,7 @@ for (const key of openers) {
 // rule above would no longer be the honest one.
 assert.match(page, /placeholder=\{t\('checkout\.destinationPlaceholder'\)\}/,
   'the panel behind these controls must still be the destination search');
-assert.doesNotMatch(page, /showManualShippingArea[\s\S]{0,400}?shippingFeeInput|manualShippingFee/,
+assert.doesNotMatch(page, /manualArea[\s\S]{0,400}?shippingFeeInput|manualShippingFee/,
   'a manual fee field would make these labels honest again — and this rule wrong');
 
 // --- 3. The hint under the panel keeps explaining the real purpose --------------------------------------

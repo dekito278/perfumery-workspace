@@ -115,7 +115,6 @@ assert.deepEqual(rates, ['utils/usdPrice.js:USD_PRICE_RATE=16500'],
 // So the requirement is the opposite, and stricter: no storefront surface may hedge the dollar price, and
 // all three must take it from the one function that decides it.
 for (const file of [
-  ['components', 'storefront', 'OverseasPriceNote.jsx'],
   ['components', 'storefront', 'InternationalPrice.jsx'],
   ['components', 'storefront', 'CardPrice.jsx'],
 ]) {
@@ -126,7 +125,14 @@ for (const file of [
   assert.match(source, /usdPriceFor\(/,
     `${file.join('/')} must take the dollar price from usdPrice.js, not convert it on its own`);
 }
-const note = read('components', 'storefront', 'OverseasPriceNote.jsx');
+// The panel is InternationalPrice since 2026-10-31: OverseasPriceNote was imported by nothing on main by
+// then, so the rule below was guarding a file no buyer ever saw. Its sentence comes from the message file.
+const note = read('components', 'storefront', 'InternationalPrice.jsx');
+const noteSentence = (() => {
+  const messages = read('i18n', 'messages.js');
+  assert.match(note, /t\('intl\.priceNote'\)/, 'the panel prints its freight sentence from the message file');
+  return [...messages.matchAll(/"intl\.priceNote":\s*"([^"]+)"/g)].map((m) => m[1]).join('\n');
+})();
 // This rule has inverted twice, and what survives both inversions is the part worth checking: the panel
 // must SAY what happens about the freight, in the same direction the order is written.
 //
@@ -139,9 +145,9 @@ const note = read('components', 'storefront', 'OverseasPriceNote.jsx');
 //
 // A silent panel is the failure in every one of those states: a buyer who is surprised by a second bill
 // after paying is the complaint this sentence exists to prevent.
-assert.match(note, /[Ss]hipping is quoted separately/,
+assert.match(noteSentence, /[Ss]hipping is quoted separately/,
   'the panel must tell an overseas reader that the freight is quoted on top, before they press the button');
-assert.doesNotMatch(note, /Shipping is not\s+included|quote it by hand/i,
+assert.doesNotMatch(noteSentence, /Shipping is not\s+included|quote it by hand/i,
   'and it must not go back to promising a separate shipping bill');
 
 // --- 6. The guess must never move money ----------------------------------------------------------------
@@ -190,8 +196,17 @@ assert.match(hook, /let current = REGION_ID;/,
 // Rp 550.000 to anyone who signs in.
 const priceNote = read('components', 'storefront', 'PriceNote.jsx');
 const priceHook = read('hooks', 'useOverseasPrice.js');
-for (const [name, source] of [['the panel', note], ['PriceNote', priceNote]]) {
-  assert.match(source, /useOverseasPrice\(product, variant\)/, `${name} asks the shared hook`);
+assert.match(priceNote, /useOverseasPrice\(product, variant\)/, 'PriceNote asks the shared hook');
+// The panel takes its price as a prop; the pages that render it must get that price from the same hook.
+assert.doesNotMatch(note, /useOverseasPrice|useExportPrice|detectOverseasVisitor/,
+  'the panel must not decide for itself whether this visitor is abroad');
+for (const page of ['PublicProductDetailPage.jsx', 'ImmersiveProductPage.jsx']) {
+  const source = read('pages', page);
+  assert.match(source, /const exportPrice = useOverseasPrice\(product, selectedVariant\);/, `${page} asks the shared hook`);
+  assert.match(source, /<InternationalPrice price=\{exportPrice\}/, `${page} hands the panel that price`);
+  assert.doesNotMatch(source, /detectOverseasVisitor/, `${page} must not detect for itself`);
+}
+for (const [name, source] of [['PriceNote', priceNote]]) {
   assert.doesNotMatch(source, /detectOverseasVisitor/, `${name} must not detect for itself`);
 }
 assert.doesNotMatch(priceHook, /detectOverseasVisitor/,
@@ -202,20 +217,27 @@ assert.doesNotMatch(priceHook, /detectOverseasVisitor/,
 assert.match(priceNote, /if \(!overseasPrice && price && memberPrice && memberPrice < price\) \{/,
   'the member nudge is gated on NOT being quoted internationally');
 
-// There are TWO member nudges. The mobile sticky bar carries its own, outside PriceNote entirely, and it
-// went on offering Rp 550.000 under a Rp 1.400.000 panel until it was caught on the phone. Every place
-// that prints a member price has to be gated, so every place is counted here rather than spot-checked.
-const mobilePdp = read('pages', 'mobile', 'MobileProductDetailPage.jsx');
-assert.match(mobilePdp, /\{!overseasPrice && \(selectedVariant\?\.memberPriceNumber \|\| product\.memberPriceNumber\) \?/,
-  "the mobile sticky bar's own member nudge is gated too");
-// The hook must be called before this page's early returns, or React crashes on the loading render.
-assert.match(mobilePdp, /const overseasPrice = useOverseasPrice\(product, selectedVariant\);[\s\S]*?if \(!product && allProducts\.loading\)/,
-  'the hook runs above the early returns');
-for (const [name, source] of [['PriceNote', priceNote], ['the mobile sticky bar', mobilePdp]]) {
-  const printed = (source.match(/memberPriceNumber/g) || []).length;
-  const gated = (source.match(/!overseasPrice/g) || []).length;
-  assert.ok(gated >= 1, `${name} gates its member price on the export price`);
-  assert.ok(printed > 0, `${name} still has a member nudge to gate`);
+// There were TWO member nudges. The phone's sticky bar carried its own, outside PriceNote entirely, and it
+// went on offering Rp 550.000 under a Rp 1.400.000 panel until it was caught on the phone. That page retired
+// with the phone storefront (2026-10-31); what has to stay true is that no page prints a member price of
+// its own again. So: every storefront page and component is swept, and only the two shared price pieces
+// may name memberPriceNumber — each of them gated on the export price.
+{
+  const sweep = (dir) => readdirSync(join(root, dir), { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.jsx'))
+    .map((entry) => [`${dir}/${entry.name}`, read(...dir.split('/'), entry.name)]);
+  const printers = [...sweep('pages'), ...sweep('components/storefront')]
+    .filter(([, source]) => /memberPriceNumber/.test(source))
+    .map(([name]) => name);
+  assert.deepEqual(printers.sort(), ['components/storefront/CardPrice.jsx', 'components/storefront/PriceNote.jsx'],
+    'a page is printing a member price of its own — route it through PriceNote or CardPrice, which are gated');
+  const cardPrice = read('components', 'storefront', 'CardPrice.jsx');
+  assert.match(cardPrice, /if \(exportPrice\) \{?[\s\S]{0,200}?return[\s\S]*?memberPriceNumber/,
+    'CardPrice returns the export price BEFORE it reaches the member price');
+  for (const [name, source] of [['PriceNote', priceNote]]) {
+    const gated = (source.match(/!overseasPrice/g) || []).length;
+    assert.ok(gated >= 1, `${name} gates its member price on the export price`);
+  }
 }
 
 // toPublicFragrance rebuilds the public product field by field, so a price attached upstream has to be
@@ -238,7 +260,6 @@ assert.match(priceHook, /tierPricesForLine\(index, product\.slug, variant\?\.id 
 // price, and a cart that cannot ship to them.
 for (const page of [
   ['pages', 'PublicProductDetailPage.jsx'],
-  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   ['pages', 'ImmersiveProductPage.jsx'],
 ]) {
   const source = read(...page);
@@ -259,7 +280,6 @@ for (const page of [
 // Indonesian reader too.
 for (const page of [
   ['pages', 'PublicProductDetailPage.jsx'],
-  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   ['pages', 'ImmersiveProductPage.jsx'],
 ]) {
   const source = read(...page);
@@ -369,7 +389,15 @@ const draftBuilder = read('utils', 'overseasEnquiry.js');
     'the old price line must not also appear beside the total');
 }
 // A fixed height clipped the two-line English label half out of its own box on a 375px phone.
-assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows to fit a label that wraps');
+// Since the 2026-10-31 redesign the button is an `ng-btn`, whose height is a MIN-height in naskah.css.
+assert.match(button, /ng-btn/, 'the button is drawn by the shared ng-btn rule');
+{
+  const css = readFileSync(join(root, 'styles', 'naskah.css'), 'utf8');
+  const rule = css.match(/\n\.ng-btn \{([\s\S]*?)\n\}/);
+  assert.ok(rule, '.ng-btn is readable');
+  assert.match(rule[1], /min-height:/, 'the button grows to fit a label that wraps');
+  assert.doesNotMatch(rule[1], /\n\s*height:/, 'and is never pinned to a fixed height');
+}
 assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned to a fixed height again');
 assert.match(MESSAGES.en['export.waDraft'], /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
@@ -390,7 +418,6 @@ assert.match(MESSAGES.id['export.waCartDraft'], /belum ada botol yang ditahan/);
 // first; this is the guard that would have caught it.
 for (const file of [
   ['pages', 'PublicProductDetailPage.jsx'],
-  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   ['components', 'storefront', 'CardPrice.jsx'],
 ]) {
   const source = read(...file);
@@ -406,9 +433,8 @@ assert.match(button, /useExportPrice\(product, variant\)/,
 // A card must never print a raw price alongside CardPrice: a sabotage kept the component in a dead
 // branch and put the rupiah span back next to it, and every "does CardPrice appear?" check passed.
 for (const file of [
-  ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
-  ['pages', 'mobile', 'MobileStorefrontPage.jsx'], ['pages', 'HomePage.jsx'],
-  ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['pages', 'CatalogPage.jsx'], ['pages', 'HomePage.jsx'],
+  ['pages', 'PublicProductDetailPage.jsx'],
 ]) {
   const source = read(...file);
   const raw = source.match(/<span[^>]*card__price[^>]*>\{(?:product|item)[.?]/g) || [];
@@ -423,7 +449,7 @@ for (const file of [
 // to WhatsApp (englishShopOrdersOnWhatsApp.selfcheck holds that); what this block holds is that no
 // product page has quietly kept the old gate, which would hide the cart from exactly the buyer the cart
 // was reopened for.
-for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'], ['pages', 'ImmersiveProductPage.jsx']]) {
+for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'ImmersiveProductPage.jsx']]) {
   const source = read(...page);
   const carts = (source.match(/t\('pdp\.addToCart(?:WithPrice)?'/g) || []).length;
   assert.ok(carts > 0, `${page.join('/')} no longer offers a cart at all`);
@@ -490,8 +516,8 @@ for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
 
 // Every caller passes the variant. All 18 tier prices are keyed by variant, so a product-level lookup
 // finds nothing and the line silently never appears — the exact shape of the bug that shipped in #147.
-for (const caller of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
-  ['components', 'storefront', 'OverseasPriceNote.jsx']]) {
+for (const caller of [['pages', 'PublicProductDetailPage.jsx'],
+  ['pages', 'ImmersiveProductPage.jsx']]) {
   assert.match(read(...caller), /<OverseasInquiryButton[\s\S]{0,200}?variant=\{/,
     `${caller.join('/')} passes the variant to the enquiry button`);
 }

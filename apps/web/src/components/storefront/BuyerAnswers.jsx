@@ -57,15 +57,22 @@ const BuyerAnswers = ({ className = '' }) => {
     ];
 
   return (
-    <section className={`pdp-answers ${className}`.trim()} aria-labelledby="pdp-answers-title">
-      <h2 id="pdp-answers-title" className="editorial-eyebrow">{t('answers.title')}</h2>
-      {answers.map((answer) => (
-        <details key={answer.key} className="pdp-answer">
-          <summary className="pdp-answer__q">{answer.q}</summary>
-          <p className="pdp-answer__a">{answer.a}</p>
-          {answer.ask ?? null}
-        </details>
-      ))}
+    <section className={`ng-section ${className}`.trim()} aria-labelledby="pdp-answers-title">
+      <div className="ng-container grid gap-10 md:grid-cols-2 md:gap-[72px]">
+        <div className="flex flex-col gap-3.5">
+          <p className="ng-mono m-0 text-ng-ash">{t('answers.title')}</p>
+          <h2 id="pdp-answers-title" className="ng-display text-[44px] md:text-[56px]">{t('answers.ngHeading')} <em>{t('answers.ngHeadingEm')}</em></h2>
+        </div>
+        <div className="flex flex-col border-t border-ng-bone/20">
+          {answers.map((answer) => (
+            <details key={answer.key} className="ng-answer">
+              <summary className="ng-answer__q">{answer.q}</summary>
+              <p className="m-0 mb-6 max-w-[560px] text-[15px] leading-relaxed text-ng-dust">{answer.a}</p>
+              {answer.ask ?? null}
+            </details>
+          ))}
+        </div>
+      </div>
     </section>
   );
 };

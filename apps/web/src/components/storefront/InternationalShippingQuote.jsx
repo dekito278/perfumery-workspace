@@ -55,8 +55,8 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
   const groups = destinationOptions(region);
 
   return (
-    <div className={`rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] p-4 ${className}`}>
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-editorial-charcoal">
+    <div className={`rounded-none border border-ng-bone/15 bg-ng-deep p-4 ${className}`}>
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-ng-bone">
         <Globe className="h-3.5 w-3.5" aria-hidden="true" /> {t('intlQuote.heading')}
       </p>
 
@@ -69,7 +69,7 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
             id={countryId}
             value={country}
             onChange={(event) => setCountry(event.target.value)}
-            className="w-full rounded-xl border border-editorial-charcoal/20 bg-white px-3 py-2 text-sm font-semibold text-editorial-charcoal"
+            className="w-full rounded-none border border-ng-bone/20 bg-transparent px-3 py-2 text-sm font-semibold text-ng-bone"
           >
             <option value="">{t('intlQuote.selectCountry')}</option>
             {groups.map((group) => (
@@ -91,7 +91,7 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
             id={bottlesId}
             value={bottles}
             onChange={(event) => setBottles(event.target.value)}
-            className="w-full rounded-xl border border-editorial-charcoal/20 bg-white px-3 py-2 text-sm font-semibold text-editorial-charcoal"
+            className="w-full rounded-none border border-ng-bone/20 bg-transparent px-3 py-2 text-sm font-semibold text-ng-bone"
           >
             {/* Past the card's last tier there is one more option, and choosing it says so rather than
                 quoting the 5–6 price for eight bottles. */}
@@ -108,14 +108,14 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
 
       <dl className="mt-3 space-y-1 text-sm">
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-muted-foreground">
+          <dt className="text-ng-dust">
             {t('intlQuote.goodsLine', { count: bottles, size: bottleSizeLabel })}
           </dt>
-          <dd className="font-semibold text-editorial-charcoal">US${goodsUsd}</dd>
+          <dd className="font-semibold text-ng-bone">US${goodsUsd}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-muted-foreground">{t('intlQuote.shippingLine')}</dt>
-          <dd className="font-semibold text-editorial-charcoal">
+          <dt className="text-ng-dust">{t('intlQuote.shippingLine')}</dt>
+          <dd className="font-semibold text-ng-bone">
             {/* Three different "no number" cases, each saying WHICH one it is. "Quote on request" with no
                 reason reads as a refusal; with a reason it reads as a next step. */}
             {shippingUsd ? `US$${shippingUsd}` : t(`intlQuote.onRequest.${onRequest || 'country'}`)}
@@ -127,40 +127,40 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
           Shown only with a settled figure — "we cover US$30" over "quoted on request" is a promise about a
           parcel we have not priced. */}
       {shippingUsd && shippingSupportUsd ? (
-        <p className="mt-1 text-xs font-semibold leading-relaxed text-editorial-charcoal">
+        <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-bone">
           {t('intlQuote.support', { amount: shippingSupportUsd })}
         </p>
       ) : null}
 
       {totalUsd ? (
-        <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-editorial-charcoal/15 pt-2">
-          <span className="text-sm font-bold uppercase tracking-[0.08em] text-editorial-charcoal">
+        <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-ng-bone/15 pt-2">
+          <span className="text-sm font-bold uppercase tracking-[0.08em] text-ng-bone">
             {t('intlQuote.total')}
           </span>
-          <strong className="text-lg font-bold text-editorial-charcoal">US${totalUsd}</strong>
+          <strong className="text-lg font-bold text-ng-bone">US${totalUsd}</strong>
         </div>
       ) : null}
       {/* When it arrives, from the same table the draft reads — so the message says what the page said. */}
       {totalUsd && eta ? (
-        <p className="mt-1 text-xs font-semibold leading-relaxed text-editorial-charcoal">
+        <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-bone">
           {t('intlQuote.eta', { eta })}
         </p>
       ) : null}
 
       {/* The card's own footnotes, kept with the numbers they qualify — a total that hides the duties is
           the same surprise one step further along. */}
-      <p className="mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+      <p className="mt-3 text-xs font-semibold leading-relaxed text-ng-dust">
         {t('intlQuote.duties')}
       </p>
       {/* The condition that reached no screen at all until 2026-10-06, and the one that strands a parcel
           when it is missed: the courier telephones the RECIPIENT to clear customs, so their name, address
           and number have to be right. It was one of five sentences in a data file nobody imported. */}
-      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
         {t('intlQuote.recipient')}
       </p>
       {/* WHY THERE IS A GAP, said plainly instead of hoped past. Dekito's decision, 2026-10-05: an export
           price large enough to raise the question is better off answering it. */}
-      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+      <p className="mt-2 text-xs leading-relaxed text-ng-dust">
         {t('intlQuote.why')}
       </p>
     </div>

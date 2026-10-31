@@ -3,15 +3,13 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { BadgePercent, CheckCircle2, ChevronDown, CreditCard, Globe, Search, X } from 'lucide-react';
+import { BadgePercent, CheckCircle2, CreditCard, Globe, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { lookupCustomerByCode } from '@/services/customerService.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
-import TextReveal from '@/components/storefront/TextReveal.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { bespokeOccasionOptions } from '@/data/storefront.js';
-import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
@@ -42,6 +40,8 @@ const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 // removed all three on 2026-10-23 and confirmed it is permanent, so the step holds the size and
 // nothing else. The chip outside now says what the panel inside says.
 const stepKeys = ['bsp.scent', 'bsp.preferences', 'bsp.size', 'bsp.addressShort', 'bsp.pay'];
+// The steps are numbered as the canvas sets them; a numeral has nothing in it to translate.
+const ROMAN_STEPS = ['I', 'II', 'III', 'IV', 'V'];
 
 
 const checkoutCourierOptions = [
@@ -155,11 +155,11 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
           "Botol · Cap · Label" for ever — three categories named and none of them offered. `material`
           was already written this way; the other three now match it. */}
       <div className="editorial-bespoke-preview__meta">
-        {size ? <span className={activeGroup === 'size' ? 'is-active' : ''}>{size.label}</span> : null}
-        {bottle ? <span className={activeGroup === 'bottle' ? 'is-active' : ''}>{bottle.label}</span> : null}
-        {cap ? <span className={activeGroup === 'cap' ? 'is-active' : ''}>{cap.label}</span> : null}
-        {label ? <span className={activeGroup === 'label' ? 'is-active' : ''}>{label.label}</span> : null}
-        {material ? <span className={activeGroup === 'material' ? 'is-active' : ''}>{material.label}</span> : null}
+        {size?.label ? <span className={activeGroup === 'size' ? 'is-active' : ''}>{size.label}</span> : null}
+        {bottle?.label ? <span className={activeGroup === 'bottle' ? 'is-active' : ''}>{bottle.label}</span> : null}
+        {cap?.label ? <span className={activeGroup === 'cap' ? 'is-active' : ''}>{cap.label}</span> : null}
+        {label?.label ? <span className={activeGroup === 'label' ? 'is-active' : ''}>{label.label}</span> : null}
+        {material?.label ? <span className={activeGroup === 'material' ? 'is-active' : ''}>{material.label}</span> : null}
       </div>
     </div>
   );
@@ -168,7 +168,6 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
 const BespokePage = () => {
   const { t, isInternational } = useTranslate();
   const revealRef = useScrollReveal();
-  const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
@@ -704,64 +703,66 @@ const BespokePage = () => {
         <ScrollProgress />
         <PublicHeader />
 
-        <section className="bespoke-hero">
-          <div className="bespoke-hero__copy">
-            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t('bsp.eyebrow')}</p>
-            <TextReveal as="h1" text={t('bsp.title')} />
-            <p className="hero-animate-text hero-animate-text--d3">{t('bsp.lead')}</p>
+        <header className="ng-section relative overflow-hidden !pb-16 !pt-20 md:!pt-28">
+          <span className="ng-script-mark absolute bottom-[-40px] right-6 hidden text-[220px] lg:block" aria-hidden="true">ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀</span>
+          <div className="ng-container relative flex flex-col gap-7">
+            <p className="ng-eyebrow ng-mono m-0">{t('bsp.eyebrow')}</p>
+            <h1 className="ng-display ng-h1 max-w-[980px]">{t('bsp.title')}</h1>
+            <p className="ng-lead">{t('bsp.lead')}</p>
             {/* Same rule as the phone: a floor derived from Studio's own option prices, and never shown
                 to the English shop, whose bespoke path takes no payment and has no international price. */}
-            <p className="hero-animate-text hero-animate-text--d3 bespoke-hero__floor">
-              <strong>{isInternational ? t('bsp.floor') : t('bsp.floor', { price: formatRupiah(floorPrice) })}</strong>
+            <p className="m-0 text-[15px] text-ng-dust">
+              <strong className="font-medium text-ng-bone">{isInternational ? t('bsp.floor') : t('bsp.floor', { price: formatRupiah(floorPrice) })}</strong>
               {' '}
               <span>{t('bsp.floorNote')}</span>
             </p>
+            <ol className="ng-mono m-0 mt-2 flex list-none flex-wrap gap-x-8 gap-y-3 p-0 text-ng-ash">
+              {bespokeStepKeys(stepKeys, isInternational).map((stepKey, index) => (
+                <li key={stepKey}><span className="mr-2 text-ng-ember">{ROMAN_STEPS[index] || index + 1}</span>{t(stepKey)}</li>
+              ))}
+            </ol>
           </div>
-          <ol className="bespoke-hero__steps hero-animate-fade">
-            {bespokeStepKeys(stepKeys, isInternational).map((stepKey, index) => (
-              <li key={stepKey}><span>{index + 1}</span>{t(stepKey)}</li>
-            ))}
-          </ol>
-        </section>
+        </header>
 
-        <section className="editorial-section editorial-bespoke-flow editorial-section--compact" data-reveal>
-          <form className="editorial-form editorial-form--bespoke" onSubmit={submitRequest}>
-            <div className="editorial-bespoke-stage" data-reveal>
-              <div className="editorial-bespoke-stage__head">
-                <p className="editorial-eyebrow">{t('bsp.designFirst')}</p>
-                <h2>{t('bsp.designFirstTitle')}</h2>
-                <p>{t('bsp.designFirstBody')}</p>
+        <section className="ng-section" data-reveal>
+          <form className="ng-container flex flex-col gap-16" onSubmit={submitRequest}>
+            <div className="flex flex-col gap-10">
+              <div className="flex flex-col gap-3.5">
+                <p className="ng-mono m-0 text-ng-ash">{t('bsp.designFirst')}</p>
+                <h2 className="ng-display ng-h2">{t('bsp.designFirstTitle')}</h2>
+                <p className="ng-lead">{t('bsp.designFirstBody')}</p>
               </div>
-              <div className="editorial-bespoke-brief-grid">
-                <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--name">
-                  <span>{t('bsp.perfumeName')}</span>
-                  <input type="text" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} aria-label={t('bsp.perfumeName')} />
-                  <small>{t('bsp.perfumeNameHint')}</small>
+              <div className="grid gap-10 lg:grid-cols-3 lg:gap-8">
+                <label className="ng-label">
+                  <span className="ng-mono text-ng-dust">{t('bsp.perfumeName')}</span>
+                  <input type="text" className="ng-field !font-ng-display !text-[26px]" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} aria-label={t('bsp.perfumeName')} />
+                  <small className="text-[13px] text-ng-ash">{t('bsp.perfumeNameHint')}</small>
                 </label>
-                <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--scent">
-                  <span>{t('bsp.scentDirection')}</span>
-                  <textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} aria-label={t('bsp.scentDirection')} />
-                  <div className="editorial-bespoke-prompt-chips" aria-label={t('bsp.scentShortcuts')}>
+                <label className="ng-label">
+                  <span className="ng-mono text-ng-dust">{t('bsp.scentDirection')}</span>
+                  <textarea rows="4" className="ng-field" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} aria-label={t('bsp.scentDirection')} />
+                  <div className="flex flex-wrap gap-2" aria-label={t('bsp.scentShortcuts')}>
                     {scentDirectionPrompts.map((prompt) => (
                       <button
                         key={prompt}
                         type="button"
+                        className="ng-btn ng-btn--ghost !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal"
                         onClick={() => updateField('scentDescription', form.scentDescription.trim() ? `${form.scentDescription.trim()}, ${prompt}` : prompt)}
                       >
-                        {prompt}
+                        + {prompt}
                       </button>
                     ))}
                   </div>
                 </label>
-                <fieldset className="editorial-bespoke-brief-card editorial-bespoke-occasion">
-                  <legend>{t('bsp.moment')}</legend>
-                  <div className="editorial-bespoke-occasion-grid">
+                <fieldset className="ng-fieldset !gap-3">
+                  <legend className="ng-mono mb-2 p-0 text-ng-dust">{t('bsp.moment')}</legend>
+                  <div className="flex flex-wrap gap-2">
                     {bespokeOccasionOptions.map((option) => (
                       <button
                         key={option.value}
                         type="button"
                         aria-pressed={form.occasion === option.value}
-                        className={form.occasion === option.value ? 'is-active' : ''}
+                        className="ng-chip"
                         onClick={() => updateField('occasion', option.value)}
                       >
                         {t(option.labelKey)}
@@ -771,12 +772,12 @@ const BespokePage = () => {
                 </fieldset>
               </div>
             </div>
-            <div className="editorial-bespoke-choice-panel editorial-bespoke-choice-panel--compact" data-reveal>
-              <div className="editorial-bespoke-choice-panel__head">
-                <p className="editorial-eyebrow">{t('bsp.visualEyebrow')}</p>
-                <h3>{t('bsp.visualBody')}</h3>
+            <div className="flex flex-col gap-8 border-t border-ng-bone/15 pt-12" data-reveal>
+              <div className="flex flex-col gap-3">
+                <p className="ng-mono m-0 text-ng-ash">{t('bsp.visualEyebrow')}</p>
+                <h3 className="ng-display m-0 text-[36px] md:text-[44px]">{t('bsp.visualBody')}</h3>
               </div>
-              <div className="editorial-bespoke-customizer">
+              <div className="grid items-start gap-10 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <BespokeBottlePreview
                   activeGroup={activeChoice.key}
                   bottle={selectedBottle}
@@ -785,7 +786,7 @@ const BespokePage = () => {
                   material={selectedMaterial}
                   size={selectedSize}
                 />
-                <div className="editorial-bespoke-customizer__controls">
+                <div className="flex flex-col gap-6">
                   <div className="editorial-bespoke-tabs" role="tablist" aria-label={t('bsp.optionGroups')}>
                     {bespokeChoiceGroups.map((group) => (
                       <button
@@ -800,10 +801,10 @@ const BespokePage = () => {
                       </button>
                     ))}
                   </div>
-                  <div className="editorial-bespoke-choice-group editorial-bespoke-choice-group--inside" role="tabpanel" aria-label={activeChoice.title}>
-                    <div>
-                      <p className="editorial-eyebrow">{activeChoice.eyebrow}</p>
-                      <h3>{activeChoice.title}</h3>
+                  <div className="flex flex-col gap-5" role="tabpanel" aria-label={activeChoice.title}>
+                    <div className="flex flex-col gap-2">
+                      <p className="ng-mono m-0 text-ng-ember">{activeChoice.eyebrow}</p>
+                      <h3 className="ng-display m-0 text-[30px]">{activeChoice.title}</h3>
                     </div>
                     <div className={`editorial-bespoke-option-grid${activeChoice.key === 'size' ? ' editorial-bespoke-option-grid--compact' : ''}`}>
                       {activeChoice.options.map((option) => (
@@ -823,14 +824,14 @@ const BespokePage = () => {
               </div>
             </div>
 
-            <div className="editorial-bespoke-next" data-reveal>
-              <div className="editorial-bespoke-summary">
-                <p className="editorial-eyebrow">{t('bsp.summaryEyebrow')}</p>
-                <dl>
-                  <div><dt>{t('bsp.perfumeName')}</dt><dd>{form.perfumeName || t('bsp.notFilled')}</dd></div>
-                  <div><dt>{t('bsp.scent')}</dt><dd>{form.scentDescription || t('bsp.notFilled')}</dd></div>
-                  <div><dt>{t('bsp.bottle')}</dt><dd>{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
-                  <div><dt>{t('bsp.subtotal')}</dt><dd>{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
+            <div className="ng-panel grid items-end gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" data-reveal>
+              <div className="flex flex-col gap-5">
+                <p className="ng-mono m-0 text-ng-ash">{t('bsp.summaryEyebrow')}</p>
+                <p className="m-0 font-ng-display text-[36px] italic leading-tight">{form.perfumeName || t('bsp.notFilled')}</p>
+                <dl className="m-0 flex flex-col gap-3 border-t border-ng-bone/15 pt-4 text-[15px]">
+                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.scent')}</dt><dd className="m-0 text-right">{form.scentDescription || t('bsp.notFilled')}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.bottle')}</dt><dd className="m-0 text-right">{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
+                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0 font-ng-display text-[32px]">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
                 </dl>
               </div>
               {/* Where the two shops part. The Indonesian one opens its checkout; the English one hands
@@ -838,18 +839,18 @@ const BespokePage = () => {
                   shipping is quoted by hand. The old page showed this buyer a full checkout — Indonesian
                   couriers, a domestic voucher box, a rupiah total — directly under a notice saying
                   international orders are not placed through it. */}
-              <div className="editorial-bespoke-next__action">
+              <div className="flex flex-col gap-4 text-[15px] text-ng-dust">
                 {bespokeTakesPayment(isInternational) ? (
                   <>
-                    <p>{t('bsp.designOk')}</p>
-                    <button type="button" className="editorial-button editorial-button--primary magnetic-hover" onClick={() => setCheckoutOpen(true)} onMouseMove={magnetic}>
+                    <p className="m-0">{t('bsp.designOk')}</p>
+                    <button type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => setCheckoutOpen(true)}>
                       {t('bsp.toCheckout')}
                       <CreditCard className="h-4 w-4" />
                     </button>
                   </>
                 ) : (
                   <>
-                    <p>{t('bsp.waOrderWhy')}</p>
+                    <p className="m-0">{t('bsp.waOrderWhy')}</p>
                     <a
                       href={buildWhatsAppCheckoutUrl(buildBespokeEnquiryDraft({
                         t,
@@ -860,7 +861,7 @@ const BespokePage = () => {
                       }), getStorefrontWhatsAppNumber())}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="editorial-button editorial-button--primary magnetic-hover"
+                      className="ng-btn ng-btn--lg ng-btn--block"
                     >
                       {t('bsp.waOrder')}
                       <Globe className="h-4 w-4" />
@@ -871,80 +872,80 @@ const BespokePage = () => {
             </div>
 
             {checkoutOpen && bespokeTakesPayment(isInternational) ? (
-              <div className="editorial-bespoke-checkout" data-reveal>
-                <div className="editorial-bespoke-stage__head">
-                  <p className="editorial-eyebrow">{t('checkout.eyebrow')}</p>
-                  <h2>{t('bsp.contactSection')}</h2>
-                  <p>{t('bsp.contactSectionBody')}</p>
+              <div className="flex flex-col gap-10 border-t border-ng-bone/15 pt-12" data-reveal>
+                <div className="flex flex-col gap-3.5">
+                  <p className="ng-mono m-0 text-ng-ash">{t('checkout.eyebrow')}</p>
+                  <h2 className="ng-display ng-h2">{t('bsp.contactSection')}</h2>
+                  <p className="ng-lead">{t('bsp.contactSectionBody')}</p>
                 </div>
                 {/* Bespoke ships through the same domestic courier API as the product checkout, so the
                     same dead end waits here: a foreign city returns an empty area list with no error. */}
                 <InternationalCheckoutNotice quotedOnRequest className="mb-4" />
-                <div className="editorial-bespoke-checkout__fields">
+                <div className="grid gap-5 md:grid-cols-2">
                   {/* Optional, and above the name on purpose: filling it fills the two fields below. The
                       phone's version has a Paste button as well; on a laptop that is Ctrl+V. */}
-                  <label>
-                    {t('bsp.customerCode')}
-                    <div className="editorial-inline-field">
+                  <label className="ng-label md:col-span-2">
+                    <span className="ng-mono text-ng-dust">{t('bsp.customerCode')}</span>
+                    <div className="flex gap-2">
                       <input
                         type="text"
                         value={form.customerCode}
                         onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())}
                         placeholder={t('bsp.customerCodeField')}
                         aria-label={t('bsp.customerCodeField')}
-                        className="uppercase"
+                        className="ng-field uppercase placeholder:normal-case"
                       />
-                      <button type="button" className="editorial-button" onClick={lookupCustomer} disabled={codeLoading}>
+                      <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={lookupCustomer} disabled={codeLoading}>
                         {codeLoading ? t('bsp.checking') : t('bsp.check')}
                       </button>
                     </div>
                   </label>
-                  <label>{t('bsp.name')}<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} /></label>
-                  <label>{t('bsp.contact')}<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} /></label>
-                  <label>{t('bsp.address')}<textarea rows="4" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} /></label>
+                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input type="text" className="ng-field" autoComplete="name" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} /></label>
+                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input type="text" className="ng-field" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} /></label>
+                  <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} /></label>
                 </div>
-                <div className="editorial-voucher-panel">
-                  <div>
-                    <p className="editorial-eyebrow">{t('bsp.shippingLegend')}</p>
-                    <strong>{t('bsp.pickArea')}</strong>
+                <div className="ng-fieldset">
+                  <div className="flex flex-col gap-2">
+                    <p className="ng-mono m-0 text-ng-ember">{t('bsp.shippingLegend')}</p>
+                    <strong className="font-ng-display text-[30px] font-normal">{t('bsp.pickArea')}</strong>
                   </div>
-                  <div className="editorial-inline-field">
+                  <div className="flex gap-2">
                     <input
                       type="text"
+                      className="ng-field"
                       value={destinationSearch}
                       onChange={(event) => updateDestinationSearch(event.target.value)}
                       placeholder={t('bsp.areaPlaceholder')} aria-label={t('bsp.areaAria')}
                     />
-                    <button type="button" className="editorial-button" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
+                    <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
                       {shippingLoading ? t('bsp.searching') : t('bsp.search')}
                       <Search className="h-4 w-4" />
                     </button>
                   </div>
-                  <label className="editorial-select-shell">
-                    <span>{selectedCourier ? courierLabels[selectedCourier] : t('bsp.pickShippingCourier')}</span>
-                    <ChevronDown className="h-4 w-4" />
-                    <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')}>
+                  <label className="ng-label">
+                    <span className="ng-mono text-ng-dust">{selectedCourier ? courierLabels[selectedCourier] : t('bsp.pickShippingCourier')}</span>
+                    <select className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')}>
                       <option value="">{t('bsp.pickCourier')}</option>
                       {checkoutCourierOptions.map((courier) => (
                         <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
                       ))}
                     </select>
                   </label>
-                  <button type="button" className="editorial-button" onClick={() => autoCalculateShipping()} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
+                  <button type="button" className="ng-btn ng-btn--ghost self-start" onClick={() => autoCalculateShipping()} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
                     {shippingLoading ? t('bsp.calculating') : t('bsp.showRates')}
                   </button>
-                  {selectedDestination ? <p className="editorial-helper-text">{t('ship.area', { area: selectedDestination.label })}</p> : null}
+                  {selectedDestination ? <p className="ng-notice" role="status">{t('ship.area', { area: selectedDestination.label })}</p> : null}
                   {destinationOptions.length && !selectedDestination ? (
-                    <div className="editorial-option-grid">
+                    <div className="flex flex-wrap gap-2">
                       {destinationOptions.map((destination) => (
-                        <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)}>
+                        <button key={destination.id} type="button" className="ng-btn ng-btn--ghost !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal" onClick={() => loadShippingRates(destination)}>
                           {destination.label}
                         </button>
                       ))}
                     </div>
                   ) : null}
                   {visibleShippingOptions.length ? (
-                    <div className="editorial-option-grid">
+                    <div className="flex flex-col gap-2">
                       {visibleShippingOptions.map((rate) => {
                         const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
                         return (
@@ -952,13 +953,13 @@ const BespokePage = () => {
                             key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
                             type="button"
                             aria-pressed={active}
-                            className={active ? 'is-active' : ''}
+                            className="ng-choice"
                             onClick={() => setSelectedShipping(rate)}
                           >
                             {courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}
                             {' / '}
                             {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
-                              <s style={{ opacity: 0.55, marginRight: 6 }}>{formatRupiah(rate.originalCost)}</s>
+                              <s className="mr-1.5 text-ng-ash">{formatRupiah(rate.originalCost)}</s>
                             ) : null}
                             {formatRupiah(rate.cost)}
                           </button>
@@ -966,51 +967,52 @@ const BespokePage = () => {
                       })}
                     </div>
                   ) : null}
-                  {selectedShipping?.promotionApplied ? <p className="editorial-helper-text">{selectedShipping.promotionLabel}</p> : null}
-                  {shippingError ? <p role="status" className="editorial-helper-text editorial-helper-text--warning">{shippingError}</p> : null}
+                  {selectedShipping?.promotionApplied ? <p className="ng-notice" role="status">{selectedShipping.promotionLabel}</p> : null}
+                  {shippingError ? <p role="status" className="ng-notice ng-notice--error">{shippingError}</p> : null}
                 </div>
-                <div className="editorial-voucher-panel">
-                  <div>
-                    <p className="editorial-eyebrow">{t('bsp.voucher')}</p>
-                    <strong>{voucher.appliedVoucher ? t('bsp.voucherApplied', { code: voucher.appliedVoucher.code }) : t('bsp.voucherEnter')}</strong>
+                <div className="ng-fieldset">
+                  <div className="flex flex-col gap-2">
+                    <p className="ng-mono m-0 text-ng-ember">{t('bsp.voucher')}</p>
+                    <strong className="font-ng-display text-[30px] font-normal">{voucher.appliedVoucher ? t('bsp.voucherApplied', { code: voucher.appliedVoucher.code }) : t('bsp.voucherEnter')}</strong>
                   </div>
-                  <div className="editorial-inline-field">
+                  <div className="flex gap-2">
                     <input
                       type="text"
+                      className="ng-field uppercase placeholder:normal-case"
                       value={voucher.inputCode}
                       onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
                       aria-label={t('bsp.voucherPlaceholder')}
                       placeholder={t('bsp.voucherPlaceholder')}
                     />
-                    <button type="button" className="editorial-button" onClick={voucher.applyVoucher} disabled={voucher.loading}>
+                    <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={voucher.loading}>
                       {voucher.loading ? t('bsp.checking') : t('bsp.apply')}
                       <BadgePercent className="h-4 w-4" />
                     </button>
                   </div>
                   {voucher.appliedVoucher ? (
-                    <div role="status" className="editorial-voucher-applied">
-                      <span>{t('bsp.voucherDiscount')}</span>
-                      <strong>-{formatRupiah(discountAmount)}</strong>
-                      <button type="button" className="editorial-icon-button" onClick={voucher.removeVoucher} aria-label={t('bsp.voucherRemove')}>
+                    <div role="status" className="flex items-center justify-between gap-4 border border-ng-bone/20 px-4 py-2 text-[15px]">
+                      <span className="text-ng-dust">{t('bsp.voucherDiscount')}</span>
+                      <strong className="font-normal">-{formatRupiah(discountAmount)}</strong>
+                      <button type="button" className="grid h-11 w-11 place-items-center border-0 bg-transparent text-ng-bone" onClick={voucher.removeVoucher} aria-label={t('bsp.voucherRemove')}>
                         <X className="h-4 w-4" />
                       </button>
                     </div>
                   ) : voucher.message ? (
-                    <p role="status" className="editorial-helper-text editorial-helper-text--warning">{voucher.message}</p>
+                    <p role="status" className="ng-notice ng-notice--error">{voucher.message}</p>
                   ) : null}
                 </div>
-                <div className="editorial-cart-summary">
-                  <div className="editorial-cart-summary__row"><span>{t('bsp.subtotal')}</span><strong>{priceReady ? formatRupiah(estimatedTotal) : '—'}</strong></div>
-                  {discountAmount ? <div className="editorial-cart-summary__row"><span>{t('bsp.voucher')}</span><strong>-{formatRupiah(discountAmount)}</strong></div> : null}
-                  <div className="editorial-cart-summary__row"><span>{t('bsp.shipping')}</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
-                  <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>{t('bsp.transferTotal')}</span><strong>{priceReady ? formatRupiah(totalDue) : '—'}</strong></div>
-                </div>
-                <label>{t('bsp.payment')}<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
-                <label className="editorial-checkbox-row">
-                  <input type="checkbox" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
+                <dl className="ng-panel m-0 flex flex-col gap-3 text-[15px]">
+                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
+                  {discountAmount ? <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.voucher')}</dt><dd className="m-0 text-ng-sand">-{formatRupiah(discountAmount)}</dd></div> : null}
+                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.shipping')}</dt><dd className="m-0">{shippingFee ? formatRupiah(shippingFee) : '-'}</dd></div>
+                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.transferTotal')}</dt><dd className="m-0 font-ng-display text-[34px]">{priceReady ? formatRupiah(totalDue) : '—'}</dd></div>
+                </dl>
+                <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.payment')}</span><select className="ng-field" value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
+                <label className="flex items-start gap-3 text-[15px] leading-relaxed text-ng-sand">
+                  <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#d4573a]" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
                   {t('bsp.preorderConfirm')}
                 </label>
-                <button type="submit" className="editorial-button editorial-button--primary magnetic-hover" disabled={saving} onMouseMove={magnetic}>
+                <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={saving}>
                   {saving ? t('bsp.saving') : (isManualPayment ? t('bsp.orderUpload') : t('bsp.orderPay'))}
                   {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                 </button>

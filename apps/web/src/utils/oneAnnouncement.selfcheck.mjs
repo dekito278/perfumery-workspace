@@ -6,12 +6,14 @@
 // which is exactly where the sheet keeps "Lanjut belanja" and "Checkout": the second announcement covered
 // the way out of the first.
 //
-// The rule is about the screen, not about toasts: one event, one announcement. Where this page opens the
-// sheet, it may not also raise a toast — and the sheet has to carry what the toast was carrying.
+// The rule is about the screen, not about toasts: one event, one announcement, and nothing covering the
+// way out. The phone's product page and its sheet retired on 2026-10-31; the one product page announces
+// with a toast, and the app-wide gift prompt can open for the same add. On a phone that prompt is a
+// bottom sheet — so the toast goes to the TOP, where it covers nothing the buyer has to press.
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
@@ -19,88 +21,55 @@ import { MESSAGES } from '../i18n/messages.js';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf8'));
+const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((entry) => (
+  entry.isDirectory() ? walk(join(dir, entry.name)) : entry.name.endsWith('.jsx') ? [join(dir, entry.name)] : []
+));
 
-const page = read('pages', 'mobile', 'MobileProductDetailPage.jsx');
+// --- 1. Every screen that adds to the cart, found by what it does ----------------------------------------
+const adders = [...walk('pages'), ...walk('components')]
+  .map((file) => [file, read(file)])
+  .filter(([, source]) => /\baddItem\(\{/.test(source));
+assert.ok(adders.length >= 3, `only ${adders.length} screens add to the cart — the sweep is broken (catalogue, product, story)`);
 
-// --- 1. Whatever opens the sheet must not also toast -------------------------------------------------
-// Read the FUNCTION that opens it rather than naming it: a rename, or a second button that also adds to
-// the cart, inherits the rule.
-// One function at a time. A lazy match from the first `const x = () => {` runs from the component's own
-// opening brace to the first `\n  };` in the file, which swallowed every handler before the real one —
-// the check still caught the bug, but it named the wrong function and would have cried wolf over an
-// unrelated toast elsewhere on the page.
-const openers = [...page.matchAll(/\n  const (\w+) = \(\) => \{/g)].map((match) => {
-  const start = match.index + match[0].length;
-  const end = page.indexOf('\n  };', start);
-  return [match[0], match[1], page.slice(start, end === -1 ? page.length : end)];
-}).filter(([, , body]) => body.includes('setCartPromptOpen(true)'));
-assert.equal(openers.length, 1, `expected one function to open the added-to-cart sheet, found ${openers.length}`);
-for (const [, name, body] of openers) {
-  assert.ok(!/toast\.success\(/.test(body),
-    `${name}() opens the sheet AND raises a toast — the toast lands over the sheet's own buttons`);
-  // Failures are a different matter: those never open a sheet, and they still have to be said.
-  assert.match(body, /toast\.error\(/, `${name}() must still tell a buyer when the add did not happen`);
+for (const [file, source] of adders) {
+  // A screen that opens its own added-to-cart sheet again must come back through this check: the sheet
+  // is where the toast once covered the buttons, and where the gift prompt once covered the sheet.
+  assert.ok(!source.includes('setCartPromptOpen(true)'),
+    `${file} has grown an added-to-cart sheet — restore the sheet rules (no toast, announcedByScreen) before it ships`);
+  // Its one announcement, which carries the way forward.
+  const toast = source.match(/toast\.success\(t\('pdp\.addedToast'[\s\S]*?\n\s*\}\);/);
+  assert.ok(toast, `${file} adds to the cart and says nothing — a silent add reads as a missed tap`);
+  assert.match(toast[0], /action: \{ label: t\('pdp\.viewCart'\)/, `${file}'s toast must keep the way to the cart`);
+  // Not at the bottom: that is where the gift prompt's sheet keeps its aromas and its "later".
+  assert.match(toast[0], /position: 'top-center'/,
+    `${file}'s add-to-cart toast lands at the bottom, on top of the gift prompt's buttons on a phone`);
+  // Failures never open the prompt, and still have to be said.
+  assert.match(source, /toast\.error\(/, `${file} must still tell a buyer when the add did not happen`);
 }
+for (const key of ['pdp.addedToast', 'pdp.cartUpdated', 'pdp.viewCart']) {
+  for (const language of ['id', 'en']) assert.ok(MESSAGES[language][key], `${language}.${key} is missing`);
+}
+// The product page names the size, because two sizes of one perfume are two different lines.
+assert.match(read('pages', 'PublicProductDetailPage.jsx'), /t\('pdp\.addedToast', \{ name: `\$\{product\.name\} \(\$\{selectedSize\}\)` \}\)/,
+  'the product page toast must say which size went in');
 
-// --- 1b. And the app-wide gift prompt is not the second announcement either ---------------------------
-// Measured on the phone product page, 2026-10-17: ONE "Tambah ke keranjang" left two modals open, and
-// they stayed open.
-//
-//   .free-vial-prompt   role=dialog  z-index 70  top 0 -> 812   aria-hidden="true"
-//   the added-to-cart sheet          z-index 50  top 584        aria-hidden=null
-//
-// The full-screen gift prompt sat ON TOP of the sheet, covering the "Lanjut belanja" and "Lihat
-// keranjang" the comment above fought to keep clear — and the sheet's own modal machinery had marked the
-// prompt aria-hidden, so a screen reader was told the thing covering the screen was not there. Neither
-// held focus. On a phone this is not an edge case: the product page is the only place a phone can add to
-// the cart at all.
-//
-// So a screen that opens its own sheet says so when it adds, and the prompt stands down for that one
-// event. Everywhere else — the desktop catalogue's quick add, the cart page — the prompt is unchanged.
+// --- 2. The prompt is a bottom sheet on a phone — which is why the toast moved ---------------------------
+// If the prompt stopped rising from the bottom, the toast could go back; this ties the two together so
+// the reason is checked, not just the position.
+const css = readFileSync(join(root, 'styles', 'storefront.css'), 'utf8');
+assert.match(css, /\.free-vial-prompt \{[^}]*align-items: flex-end;/, 'the gift prompt rises from the bottom on a phone');
+assert.match(css, /@media \(min-width: 640px\) \{\s*\.free-vial-prompt \{ align-items: center; \}/,
+  'and is centred from 640px, where a bottom toast and a centred box do not meet');
+
+// --- 3. The mechanism a sheet would need is still there -------------------------------------------------
+// A screen that announces the add itself tells addItem so, and the prompt stands down for that one event.
 const cart = read('hooks', 'useCart.js');
 assert.match(cart, /addItem: \(product, quantity, \{ announcedByScreen = false \} = \{\}\) =>/,
   'addItem no longer lets a screen say it is announcing the add itself');
 assert.match(cart, /CART_ITEM_ADDED_EVENT, \{ detail: \{ announcedByScreen \} \}/,
   'the flag is not carried on the event, so nothing downstream can read it');
-
 const prompt = read('components', 'storefront', 'FreeVialPrompt.jsx');
 assert.match(prompt, /if \(event\.detail\?\.announcedByScreen\) return;/,
   'the gift prompt opens even when the screen has already announced the add — two modals for one event');
 
-// The page that opens a sheet passes it. Derived from the sheet, not from a list of pages: any screen
-// that opens the added-to-cart sheet must also tell addItem it is doing so.
-for (const [, name, body] of openers) {
-  assert.match(body, /announcedByScreen: true/,
-    `${name}() opens the added-to-cart sheet but still lets the app-wide gift prompt open over it`);
-}
-
-// --- 2. The sheet carries what the toast used to say ------------------------------------------------------
-// HELD AS THE RULE — the item carries a name, a size and a price — not as the one spelling of the price.
-// Pinned to `price: formatRupiah(selectedPrice)`, this failed the day the price learned to be the dollar
-// in the English shop (quotedInternationalPrice, 2026-10-06), which was the sheet getting MORE honest.
-const added = page.match(/setLastAddedItem\(\{([^}]*)\}\)/);
-assert.ok(added, 'the sheet no longer records what was added');
-for (const field of ['name: product.name', 'size: selectedSize', 'price: ']) {
-  assert.ok(added[1].includes(field), `the sheet must carry ${field.trim()} — more than the toast ever did: ${added[0]}`);
-}
-assert.match(page, /title=\{t\('pdp\.addedSheetTitle'\)\}/, 'and it still says what happened');
-for (const key of ['pdp.continueShopping', 'pdp.checkout']) {
-  // The key may sit inside a shop ternary — `t(isInternational ? 'pdp.viewCart' : 'pdp.checkout')` since
-  // 2026-10-06, because the English shop's cart is where the destination is picked and "Checkout" would
-  // name a page it never opens. What must hold is that the key is still a t() argument on this page.
-  assert.match(page, new RegExp(`t\\([^)]*'${key.replace('.', '\\.')}'\\)`), `the sheet must keep ${key} — the way forward is the point`);
-  for (const language of ['id', 'en']) {
-    assert.ok(MESSAGES[language][key], `${language}.${key} is missing`);
-  }
-}
-
-// --- 3. The surfaces with no sheet keep their toast -------------------------------------------------------
-// Desktop and the immersive story page have nothing else to announce with; removing their toast would
-// make an add-to-cart silent. The rule is "not twice", not "never".
-for (const file of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'ImmersiveProductPage.jsx']]) {
-  const source = read(...file);
-  assert.match(source, /toast\.success\(t\('pdp\.addedToast'/, `${file.join('/')} has no sheet, so its toast is the only word a buyer gets`);
-  assert.ok(!source.includes('setCartPromptOpen(true)'), `${file.join('/')} must not have grown a sheet without this check being told`);
-}
-
-console.log('oneAnnouncement selfcheck OK (one add to cart, one announcement, nothing covering the way out)');
+console.log(`oneAnnouncement selfcheck OK (${adders.length} screens add to the cart, each with one toast at the top, clear of the gift sheet)`);

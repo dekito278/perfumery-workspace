@@ -39,7 +39,7 @@ assert.match(infer, /if \(explicit\) return explicit;/, 'the explicit category i
 // it into one shared builder — which is the fix for the LIMITED pill vanishing as perfumes are re-filed
 // — read as a regression. What has to be true is that the pills come from the field the card prints,
 // wherever that sentence now lives.
-for (const page of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.jsx']) {
+for (const page of ['pages/CatalogPage.jsx']) {
   const text = strip(readFileSync(join(src, page), 'utf8'));
   assert.match(text, /catalogCategoryPills\(/,
     `${page}: the pill list is built by hand again instead of by the one shared builder`);
@@ -63,7 +63,7 @@ const desktop = strip(readFileSync(join(src, 'pages', 'CatalogPage.jsx'), 'utf8'
 // vocabularies still match; pinning the old shape made a correct change look like a regression.
 assert.match(
   desktop,
-  /catalog-card__category">\{(product\.(public)?[Cc]ategory|cardLabels\(product\))/,
+  /(catalog-card__category|ng-cat-row__label[^"]*)">\{(product\.(public)?[Cc]ategory|cardLabels\(product\))/,
   'the card label no longer prints a category field — check it still matches what the pills filter on',
 );
 

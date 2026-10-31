@@ -21,18 +21,19 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const css = readFileSync(join(root, 'styles', 'storefront.css'), 'utf8');
+// The header moved to naskah.css with the 2026-10-31 redesign; the rule did not change.
+const css = readFileSync(join(root, 'styles', 'naskah.css'), 'utf8');
 const header = readFileSync(join(root, 'components', 'storefront', 'PublicHeader.jsx'), 'utf8');
 
 // --- The header lays out by flex, and never wraps ----------------------------------------------------
-const rule = css.match(/\n\.editorial-header \{([\s\S]*?)\n\}/);
-assert.ok(rule, '.editorial-header is readable');
+const rule = css.match(/\n\.ng-header \{([\s\S]*?)\n\}/);
+assert.ok(rule, '.ng-header is readable');
 assert.match(rule[1], /display: flex/, 'the header is a flex row');
 assert.match(rule[1], /flex-wrap: nowrap/, 'and never wraps onto a second line');
 
 // A column count is the thing that broke. Not at the base rule, and not at any breakpoint either — the
 // 899px block set `1fr auto`, two columns for what was by then four children.
-for (const [, body] of css.matchAll(/\.editorial-header \{([\s\S]*?)\n(\s*)\}/g)) {
+for (const [, body] of css.matchAll(/\.ng-header \{([\s\S]*?)\n(\s*)\}/g)) {
   assert.doesNotMatch(body, /grid-template-columns/,
     'the header must not pin a column count: it has to be kept in sync with the number of children by hand, and it was not');
 }
@@ -49,18 +50,19 @@ const bodyOf = (selector) => {
   return css.slice(open + 1, close);
 };
 
-const nav = bodyOf('.editorial-header > .editorial-nav');
+const nav = bodyOf('.ng-header > .ng-header__nav');
 assert.match(nav, /flex: 1 1 auto/, 'the nav absorbs the slack, which is what the old 1fr column did');
 assert.match(nav, /min-width: 0/, 'and shrinks rather than shoving the buttons off the end');
 
-const actions = bodyOf('.editorial-header > .editorial-header__actions');
+const actions = bodyOf('.ng-header > .ng-header__actions');
 assert.match(actions, /margin-left: auto/,
   'the buttons stay pinned right even below 900px, where the nav is hidden entirely');
 
 // --- The markup still has the children this layout was written for --------------------------------------
 // Not a count — a count is what failed. These four just have to still be there, in this order, so the
 // rules above are aiming at something real.
-const order = ['editorial-wordmark', 'RegionSwitch', 'editorial-nav', 'editorial-header__actions'];
+// The region switch sits inside the actions since the redesign, so it is no longer its own child.
+const order = ['ng-header__wordmark', 'ng-header__nav', 'ng-header__actions', '<RegionSwitch'];
 let at = -1;
 for (const token of order) {
   const next = header.indexOf(token, at + 1);

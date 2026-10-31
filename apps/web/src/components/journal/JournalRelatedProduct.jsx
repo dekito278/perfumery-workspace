@@ -22,7 +22,7 @@ import { getProductStorefrontPath } from '@/services/productCatalogService.js';
  * catalogue is still loading — a broken link under a story is worse than no link, and a product can be
  * unpublished or renamed long after the article was written.
  */
-const JournalRelatedProduct = ({ post, mobile = false, className = '' }) => {
+const JournalRelatedProduct = ({ post, className = '' }) => {
   const { t } = useTranslate();
   const products = useStorefrontProducts();
   const slug = String(post?.related_product_slug || '').trim();
@@ -31,26 +31,24 @@ const JournalRelatedProduct = ({ post, mobile = false, className = '' }) => {
   const product = products.find((item) => item.slug === slug);
   if (!product) return null;
 
-  const path = getProductStorefrontPath(product, { mobile });
+  const path = getProductStorefrontPath(product);
   if (!path) return null;
 
   return (
-    <aside className={`journal-related-product ${className}`.trim()}>
-      <p className="editorial-eyebrow">{t('journal.relatedProductEyebrow')}</p>
-      <Link to={path} className="journal-related-product__card">
-        <ProductVisual product={product} className="journal-related-product__visual" label={false} sizes="96px" />
-        <span className="journal-related-product__text">
-          <strong className="journal-related-product__name">{product.name}</strong>
-          {/* CardPrice, not product.price. The card quoted the INDONESIAN price in the English shop —
-              Rp 297.000 under an article whose product page charges Rp 1.040.000 — so a reader clicked
-              through and watched the number quadruple. The same component already prices the catalogue
-              cards and both homes; this was the fifth surface and the only one hand-rolled. */}
-          <CardPrice product={product} className="journal-related-product__price" memberClassName="journal-related-product__price" />
-          <span className="journal-related-product__cta">
-            {t('journal.relatedProductCta')} <ArrowRight className="h-3.5 w-3.5" />
+    <aside className={`journal-related-product ng-section ng-section--deep ${className}`.trim()}>
+      <div className="ng-container grid max-w-[1100px] items-center gap-10 md:grid-cols-2 md:gap-14">
+        <ProductVisual product={product} className="aspect-[4/5] max-h-[460px] w-full" label={false} imageFit="cover" sizes="(max-width: 767px) 100vw, 520px" />
+        <div className="flex flex-col gap-5">
+          <p className="ng-mono m-0 text-ng-ember">{t('journal.relatedProductEyebrow')}</p>
+          <strong className="font-ng-display text-[44px] font-normal leading-none md:text-[60px]">{product.name}</strong>
+          <span className="flex flex-col gap-1 text-base">
+            <CardPrice product={product} memberClassName="ng-mono text-ng-dust" />
           </span>
-        </span>
-      </Link>
+          <Link to={path} className="ng-btn self-start">
+            {t('journal.relatedProductCta')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
     </aside>
   );
 };

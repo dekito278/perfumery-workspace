@@ -11,7 +11,6 @@
 // Import-free so the guard runs it.
 
 export const CURATED_LIMIT_DESKTOP = 6;
-export const CURATED_LIMIT_MOBILE = 4;
 
 export const pickCuratedProducts = (catalog = [], limit = CURATED_LIMIT_DESKTOP) => {
   const list = Array.isArray(catalog) ? catalog : [];

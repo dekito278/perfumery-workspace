@@ -196,7 +196,7 @@ for (const [file, pattern, why] of CHAIN) {
   assert.match(strip(read(...file.split('/'))), pattern, `${file}: ${why}`);
 }
 const service = strip(read('services', 'productCatalogService.js'));
-for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
+for (const page of [['pages', 'PublicProductDetailPage.jsx']]) {
   const source = strip(read(...page));
   assert.match(source, /product\.launchYear \?/,
     `${page.join('/')} does not show the year, and the other product page does — the two-copy habit`);

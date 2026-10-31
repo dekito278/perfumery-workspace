@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CreditCard, ExternalLink, FileText, Loader2, Printer, Search, ShieldCheck, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
-import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import {
   getCustomerPortalByCode,
   verifyCustomerPortalSecurity,
@@ -301,7 +300,6 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
 const CustomerInvoicePage = () => {
   const { t } = useTranslate();
   const { orderNumber } = useParams();
-  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCode = searchParams.get('code') || '';
   const [customerCode, setCustomerCode] = useState(initialCode.toUpperCase());
@@ -310,7 +308,8 @@ const CustomerInvoicePage = () => {
   const [searched, setSearched] = useState(false);
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [securityLoading, setSecurityLoading] = useState(false);
-  const isMobileRoute = location.pathname.startsWith('/mobile');
+  // One invoice address since the phone storefront retired (2026-10-31); /mobile/... redirects here.
+  const isMobileRoute = false;
 
   const order = useMemo(() => (
     portal?.orders?.find((item) => item.orderNumber === orderNumber) || null
@@ -470,15 +469,6 @@ const CustomerInvoicePage = () => {
       )}
     </main>
   );
-
-  if (isMobileRoute) {
-    return (
-      <MobileCommerceLayout>
-        <Helmet><title>{t('inv.tab', { order: orderNumber })}</title><meta name="robots" content="noindex,follow" /></Helmet>
-        {content}
-      </MobileCommerceLayout>
-    );
-  }
 
   return (
     <>

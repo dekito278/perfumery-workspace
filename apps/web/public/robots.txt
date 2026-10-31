@@ -16,8 +16,9 @@ Disallow: /pay/
 # had no desktop-shaped name to be caught by at all.
 #
 # An allowlist rather than a list of private paths: a mobile route added later is then invisible to
-# crawlers until someone says otherwise, and the cost of that is nothing, because every public mobile
-# page is a copy of a desktop page that IS indexed and that these pages now name as their canonical.
+# crawlers until someone says otherwise. The phone storefront retired on 2026-10-31; the paths opened
+# below now answer 308 with the page they meant (vercel.json), and stay open only so a crawler can see
+# that redirect and move the old address's standing onto the real one.
 Disallow: /mobile/
 Allow: /mobile/dashboard
 Allow: /mobile/home

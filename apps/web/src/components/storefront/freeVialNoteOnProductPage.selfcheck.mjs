@@ -34,7 +34,8 @@ const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entr
 const productPages = walk(PAGES).filter((file) => /ProductDetailPage\.jsx$/.test(path.basename(file)));
 
 // A floor, because a walk that finds nothing would otherwise pass every assertion below it by vacuity.
-assert.ok(productPages.length >= 2,
+  // The phone storefront retired on 2026-10-31: one responsive page per screen now, so the floor halved.
+assert.ok(productPages.length >= 1,
   `only ${productPages.length} product detail page(s) found under src/pages — the walk lost them, fix this guard`);
 
 /**

@@ -23,7 +23,7 @@ assert.ok(Number.isInteger(CATALOG_PAGE_SIZE) && CATALOG_PAGE_SIZE >= 18,
   + 'behind a button again');
 
 // One constant, read by both. A local number in either file is how the two shops start disagreeing.
-for (const page of [['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx']]) {
+for (const page of [['pages', 'CatalogPage.jsx']]) {
   const source = read(...page);
   const name = page.join('/');
   assert.match(source, /import \{ CATALOG_PAGE_SIZE \} from '@\/utils\/catalogPageSize\.js';/,

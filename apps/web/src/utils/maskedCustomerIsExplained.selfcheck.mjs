@@ -80,7 +80,8 @@ for (const file of portalScreens) {
     checked += 1;
   }
 }
-assert.ok(checked >= 3, `only ${checked} contact renders checked — the derivation lost them`);
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(checked >= 2, `only ${checked} contact renders checked — the derivation lost them`);
 
 // The masked notice has to exist in both shops, or one of them explains nothing.
 for (const key of ['cust.hiddenForSecurity', 'inv.maskedNote']) {

@@ -63,54 +63,57 @@ const StorefrontFooter = () => {
   };
 
   return (
-    <footer className="sf-footer">
-      <div className="sf-footer__inner">
-        <div className="sf-footer__brand">
-          <Link to="/home" className="sf-footer__wordmark">SOLIVAGANT</Link>
-          <p className="sf-footer__tagline">{t('nav.tagline')}</p>
-        </div>
+    <footer className="ng-footer">
+      <div className="ng-container">
+        <div className="ng-footer__grid">
+          <div>
+            <Link to="/home" className="ng-footer__wordmark">SOLIVAGANT</Link>
+            <p className="ng-footer__tagline">{t('nav.footerTagline')}</p>
+          </div>
 
-        <div className="sf-footer__columns">
           {footerColumns.map((col) => (
-            <div key={col.key} className="sf-footer__column">
-              <span className="sf-footer__column-title">{t(col.titleKey)}</span>
+            <div key={col.key} className="ng-footer__column">
+              <span className="ng-footer__heading ng-mono">{t(col.titleKey)}</span>
               {col.links.map((link) => (
-                <Link key={link.to} to={link.to}>{t(link.labelKey)}</Link>
+                <Link key={link.to} to={link.to} className="ng-link">{t(link.labelKey)}</Link>
               ))}
               {col.key === 'info' && whatsapp ? (
-                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">{t('nav.whatsapp')}</a>
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="ng-link">{t('nav.whatsapp')}</a>
               ) : null}
             </div>
           ))}
+
+          <div className="ng-footer__column">
+            <span className="ng-footer__heading ng-mono">{t('nav.stayInTouch')}</span>
+            {subscribed ? (
+              <p className="m-0 text-sm text-ng-sand">{t('nav.subscribeThanks')}</p>
+            ) : (
+              <form onSubmit={handleSubscribe} className="ng-footer__form" noValidate>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  aria-label={t('nav.emailPlaceholder')}
+                  placeholder={t('nav.emailPlaceholder')}
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
+                  required
+                  aria-invalid={error ? 'true' : undefined}
+                  className="ng-field"
+                />
+                <button type="submit" aria-label={t('nav.subscribeAria')}>
+                  <ArrowRight className="mx-auto h-4 w-4" />
+                </button>
+              </form>
+            )}
+            {error ? <p className="ng-error m-0 mt-2 text-sm" role="alert">{error}</p> : null}
+          </div>
         </div>
 
-        <div className="sf-footer__newsletter">
-          <span className="sf-footer__column-title">{t('nav.stayInTouch')}</span>
-          {subscribed ? (
-            <p className="sf-footer__subscribed">{t('nav.subscribeThanks')}</p>
-          ) : (
-            <form onSubmit={handleSubscribe} className="sf-footer__newsletter-form" noValidate>
-              <input
-                type="email"
-                aria-label={t('nav.emailPlaceholder')}
-                placeholder={t('nav.emailPlaceholder')}
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
-                required
-                aria-invalid={error ? 'true' : undefined}
-                className="sf-footer__newsletter-input"
-              />
-              <button type="submit" className="sf-footer__newsletter-btn" aria-label={t('nav.subscribeAria')}>
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </form>
-          )}
-          {error ? <p className="sf-footer__newsletter-error" role="alert">{error}</p> : null}
+        <div className="ng-footer__bottom ng-mono">
+          <small>&copy; {new Date().getFullYear()} SOLIVAGANT by Dekito</small>
+          <span>{t('nav.footerPlace')}</span>
         </div>
-      </div>
-
-      <div className="sf-footer__bottom">
-        <small>&copy; {new Date().getFullYear()} SOLIVAGANT by Dekito</small>
       </div>
     </footer>
   );

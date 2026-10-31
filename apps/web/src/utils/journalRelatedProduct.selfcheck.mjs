@@ -36,9 +36,10 @@ assert.match(service, /related_product_slug: postData\.related_product_slug/,
 // --- 2. Both surfaces offer it, from ONE component ---------------------------------------------------
 // Desktop and mobile drifting apart is this repo's commonest defect, and an article that offers the
 // perfume on one and not the other is the kind nobody reports.
+// One article page serves the phone too since the phone storefront retired (2026-10-31).
 const page = read('pages', 'PublicJournalArticlePage.jsx');
-assert.match(page, /<JournalRelatedProduct post=\{post\} mobile \/>/, 'the phone shows it');
-assert.match(page, /<JournalRelatedProduct post=\{post\} \/>/, 'and so does the desktop');
+assert.match(page, /<JournalRelatedProduct post=\{post\} \/>/, 'the article offers the perfume it is about');
+assert.doesNotMatch(page, /<JournalRelatedProduct[^>]*\bmobile\b/, 'with no phone variant left to ask for');
 
 // --- 3. A missing or stale link renders NOTHING ------------------------------------------------------
 // A product can be unpublished or re-slugged long after the article was written. A dead link under a
@@ -54,9 +55,9 @@ assert.doesNotMatch(card, /\{product\.price\}/, 'and it must not go back to prin
 assert.match(card, /if \(!slug\) return null;/, 'no product named, nothing rendered');
 assert.match(card, /if \(!product\) return null;/, 'a slug that matches nothing renders nothing');
 assert.match(card, /if \(!path\) return null;/, 'and a product with no address renders nothing');
-// The address comes from the shared helper, so the phone gets /mobile/products/<slug> for free.
-assert.match(card, /getProductStorefrontPath\(product, \{ mobile \}\)/,
-  'the link is built by the one helper that knows both surfaces');
+// The address comes from the shared helper, which knows the one product URL there now is.
+assert.match(card, /getProductStorefrontPath\(product\)/,
+  'the link is built by the one helper that knows the product address');
 
 // --- 4. Both languages, from the message file --------------------------------------------------------
 for (const key of ['journal.relatedProductEyebrow', 'journal.relatedProductCta']) {

@@ -393,7 +393,7 @@ const MobileDashboardPage = () => {
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">E-commerce</h2>
-                <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/dashboard')}>Lihat home</Button>
+                <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/home')}>Lihat home</Button>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <WorkflowButton icon={PackagePlus} label="Produk" helper="Tambah, daftar, kategori" tone="emerald" onClick={() => setProductMenuOpen(true)} />

@@ -35,7 +35,8 @@ const walk = (dir) => readdirSync(dir).flatMap((entry) => {
 // Studio is Dekito's own screen and is not in this rule — these are the pages a stranger reaches.
 const BUYER = /^(pages\/(Cart|Checkout|Bespoke)Page\.jsx|pages\/mobile\/Mobile(Cart|Checkout|Bespoke)Page\.jsx)$/;
 const pages = walk(join(src, 'pages')).filter((file) => BUYER.test(relative(src, file)));
-assert.equal(pages.length, 6,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.equal(pages.length, 3,
   `expected the six surfaces that ask for a voucher, found ${pages.length} — the scan is broken, not the code`);
 
 // An element opens with its tag and ends at the first `>` that is not inside a brace or a quote, so the
@@ -111,7 +112,8 @@ for (const file of pages) {
 // So the subject is the repo's own notice STYLING rather than a list of states: a paragraph wearing
 // `checkout-notice`, the amber pill, or the editorial warning is a notice by construction, and a notice
 // a screen reader never reports is not one.
-const NOTICE_PILL = /className="(?:[^"]*\b(?:checkout-notice|bg-amber-50)\b[^"]*|[^"]*editorial-helper-text--warning[^"]*)"/;
+// `ng-notice` is the redesign's (2026-10-31) notice styling; same rule.
+const NOTICE_PILL = /className="(?:[^"]*\b(?:checkout-notice|bg-amber-50|ng-notice)\b[^"]*|[^"]*editorial-helper-text--warning[^"]*)"/;
 let notices = 0;
 for (const file of walk(join(src, 'pages')).filter((f) => BUYER.test(relative(src, f)))) {
   const source = stripComments(readFileSync(file, 'utf8'));

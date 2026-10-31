@@ -22,12 +22,12 @@ const WearFilter = ({ products, selection, onChange }) => {
   if (!facets.length) return null;
 
   return (
-    <div className="wear-filter">
-      <p className="wear-filter__lede">{t('catalog.wearHeading')}</p>
+    <div className="flex flex-col gap-4">
+      <p className="ng-mono m-0 text-ng-dust">{t('catalog.wearHeading')}</p>
       {facets.map((facet) => (
-        <div key={facet} className="wear-filter__row">
-          <span className="wear-filter__label">{t(WEAR_FACETS[facet].labelKey)}</span>
-          <div className="catalog-pills" role="list" aria-label={t('catalog.filterBy', { facet: t(WEAR_FACETS[facet].labelKey).toLowerCase() })}>
+        <div key={facet} className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="ng-mono w-20 text-ng-ash">{t(WEAR_FACETS[facet].labelKey)}</span>
+          <div className="flex flex-wrap gap-2" role="list" aria-label={t('catalog.filterBy', { facet: t(WEAR_FACETS[facet].labelKey).toLowerCase() })}>
             {WEAR_FACETS[facet].options
               .filter((option) => available[facet].has(option.value))
               .map((option) => {
@@ -37,7 +37,7 @@ const WearFilter = ({ products, selection, onChange }) => {
                     key={option.value}
                     type="button"
                     aria-pressed={active}
-                    className={`catalog-pill ${active ? 'is-active' : ''}`}
+                    className="ng-chip ng-chip--quiet ng-filter"
                     onClick={() => onChange({ ...selection, [facet]: active ? '' : option.value })}
                   >
                     {t(option.labelKey)}

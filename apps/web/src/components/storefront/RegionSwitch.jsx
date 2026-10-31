@@ -20,31 +20,20 @@ const RegionSwitch = ({ className = '' }) => {
   const { t } = useTranslate();
 
   return (
-    <div
-      role="group"
-      aria-label={t('region.label')}
-      className={`inline-flex items-center rounded-full border border-editorial-stone/25 bg-white/90 p-0.5 text-[11px] font-bold ${className}`}
-    >
+    <div role="group" aria-label={t('region.label')} className={`ng-region ${className}`.trim()}>
       {[
         { value: REGION_ID, label: 'ID', title: t('region.idTitle') },
         { value: REGION_EN, label: 'EN', title: t('region.enTitle') },
       ].map((option) => (
+        // 44px both ways: these two switch the whole shop into a language the reader may not read, so
+        // they are the last pair on the page that can be allowed to be small (measured 31 and 35px wide
+        // on the phone before the mobile UI audit).
         <button
           key={option.value}
           type="button"
           onClick={() => setRegion(option.value)}
           aria-pressed={region === option.value}
           title={option.title}
-          // min-w-[44px]: mobile.css has set `min-height: 44px` on every button in the app since the
-          // mobile UI audit, and never the other axis. Measured on the live phone shop, these two were
-          // 31 and 35 CSS px wide with a 1px overlap between them — two adjacent targets, both under
-          // the minimum, whose effect is to switch the whole shop into a language the reader may not
-          // read. The header has 68px of free space at 375px, so the pair can afford it.
-          className={`inline-flex min-w-[44px] items-center justify-center rounded-full px-2.5 py-1 transition ${
-            region === option.value
-              ? 'bg-editorial-charcoal text-white'
-              : 'text-editorial-charcoal/60'
-          }`}
         >
           {option.label}
         </button>

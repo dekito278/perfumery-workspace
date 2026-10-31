@@ -25,7 +25,7 @@ import CheckoutPage from '@/pages/CheckoutPage.jsx';
 import PublicTrackingPage from '@/pages/PublicTrackingPage.jsx';
 import PublicJournalPage from '@/pages/PublicJournalPage.jsx';
 import NotFoundPage from '@/pages/NotFoundPage.jsx';
-import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
+import { fromRetiredMobileStorefront, isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
 import PwaOfflineBanner from '@/components/mobile/PwaOfflineBanner.jsx';
@@ -126,15 +126,9 @@ const SiteImageManagerPage = lazyRoute(() => import('@/pages/SiteImageManagerPag
 const ExportShippingCalculatorPage = lazyRoute(() => import('@/pages/ExportShippingCalculatorPage.jsx'));
 const StoryEditorPage = lazyRoute(() => import('@/pages/StoryEditorPage.jsx'));
 const MobileLoginPage = lazyRoute(() => import('@/pages/mobile/MobileLoginPage.jsx'));
-const MobileCommerceTabsPage = lazyRoute(() => import('@/pages/mobile/MobileCommerceTabsPage.jsx'));
-const MobileProductDetailPage = lazyRoute(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
 const AboutPage = lazyRoute(() => import('@/pages/AboutPage.jsx'));
-const MobileBespokePage = lazyRoute(() => import('@/pages/mobile/MobileBespokePage.jsx'));
 // The international cart is lazy like the phone's: it is one shop's page, not every visitor's.
 const InternationalCartPage = lazyRoute(() => import('@/pages/InternationalCartPage.jsx'));
-const MobileCartPage = lazyRoute(() => import('@/pages/mobile/MobileCartPage.jsx'));
-const MobileInternationalCartPage = lazyRoute(() => import('@/pages/mobile/MobileInternationalCartPage.jsx'));
-const MobileCheckoutPage = lazyRoute(() => import('@/pages/mobile/MobileCheckoutPage.jsx'));
 const MobileProductListPage = lazyRoute(() => import('@/pages/mobile/MobileProductListPage.jsx'));
 const MobileProductWearTaggingPage = lazyRoute(() => import('@/pages/mobile/MobileProductWearTaggingPage.jsx'));
 const MobileProductCreatePage = lazyRoute(() => import('@/pages/mobile/MobileProductCreatePage.jsx'));
@@ -231,14 +225,14 @@ const HomeRouteFallback = () => {
   const { t } = useTranslate();
 
   return (
-    <main className="min-h-screen bg-editorial-ivory text-editorial-charcoal">
-      <StorefrontHeader className="border-editorial-charcoal/10 bg-editorial-ivory text-editorial-charcoal" />
-      <section className="mx-auto grid min-h-[68vh] max-w-6xl content-center px-6 py-16">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#b08b4f]">{t('home.eyebrow')}</p>
-        <h1 className="mt-4 max-w-3xl font-serif text-6xl font-medium leading-none text-editorial-charcoal">
+    <main className="min-h-screen bg-ng-ink font-ng-body text-ng-bone">
+      <StorefrontHeader />
+      <section className="mx-auto grid min-h-[68vh] max-w-[1344px] content-center px-5 py-16 sm:px-8 lg:px-12">
+        <p className="font-ng-mono text-[11px] uppercase tracking-[0.22em] text-ng-ash">{t('home.eyebrow')}</p>
+        <h1 className="mt-6 max-w-4xl font-ng-display text-6xl font-light leading-[0.95] sm:text-8xl">
           {t('home.heroTitle').split('\n').join(' ')}
         </h1>
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-editorial-muted">{t('home.lead')}</p>
+        <p className="mt-6 max-w-xl text-lg leading-relaxed text-ng-dust">{t('home.lead')}</p>
       </section>
     </main>
   );
@@ -320,12 +314,12 @@ const RouteFallback = () => {
   );
 };
 
-const RootRedirect = () => {
-  if (isMobileBrowser()) {
-    return <Navigate to="/mobile/dashboard" replace />;
-  }
+// A phone opening the shop gets the shop: since 2026-10-31 there is one responsive set of pages.
+const RootRedirect = () => <HomePage />;
 
-  return <HomePage />;
+const RetiredMobileStorefront = () => {
+  const { pathname, search, hash } = useLocation();
+  return <Navigate to={`${fromRetiredMobileStorefront(pathname) || '/home'}${search}${hash}`} replace />;
 };
 
 const LegacyJournalRedirect = ({ mode = 'detail' }) => {
@@ -378,51 +372,23 @@ const MobileBrowserRedirect = () => {
   return <Navigate to={`${mobilePath}${separator}${normalizedSearch}${hash}`} replace />;
 };
 
-const mobileTabOrder = ['/mobile/dashboard', '/mobile/catalog', '/mobile/articles'];
+// Studio's phone screens only: the phone storefront retired on 2026-10-31, and with it the tab order and
+// the commerce paths that used to be exempt from these transitions.
 const mobileDetailPatterns = [
-  /^\/mobile\/products\/[^/]+$/,
-  /^\/mobile\/articles\/[^/]+$/,
   /^\/mobile\/studio\/orders\/[^/]+$/,
-
   /^\/mobile\/journal\/[^/]+$/,
   /^\/mobile\/raw-material\/[^/]+$/,
   /^\/mobile\/formulas\/[^/]+$/,
 ];
-const mobileCommercePatterns = [
-  /^\/mobile\/dashboard$/,
-  /^\/mobile\/catalog$/,
-  /^\/mobile\/articles$/,
-  /^\/mobile\/products\/[^/]+$/,
-  /^\/mobile\/articles\/[^/]+$/,
-  /^\/mobile\/bespoke$/,
-  /^\/mobile\/cart$/,
-  /^\/mobile\/checkout$/,
-  /^\/mobile\/payment$/,
-  /^\/mobile\/customer$/,
-  /^\/mobile\/customer\/invoice\/[^/]+$/,
-];
 
-const getMobileRouteMeta = (pathname) => {
-  const isMobile = pathname.startsWith('/mobile/');
-  const isTab = mobileTabOrder.includes(pathname);
-  const isDetail = mobileDetailPatterns.some((pattern) => pattern.test(pathname));
-  const isCommerce = mobileCommercePatterns.some((pattern) => pattern.test(pathname));
-
-  return {
-    isMobile,
-    isCommerce,
-    isTab,
-    isDetail,
-    depth: pathname.split('/').filter(Boolean).length,
-    tabIndex: mobileTabOrder.indexOf(pathname),
-  };
-};
+const getMobileRouteMeta = (pathname) => ({
+  isMobile: pathname.startsWith('/mobile/'),
+  isDetail: mobileDetailPatterns.some((pattern) => pattern.test(pathname)),
+});
 
 const pageTransitionClassNames = {
   push: 'mobile-route-transition-push',
   pop: 'mobile-route-transition-pop',
-  tabForward: 'mobile-route-transition-tab-forward',
-  tabBackward: 'mobile-route-transition-tab-backward',
   fade: 'mobile-route-transition-fade',
 };
 
@@ -442,8 +408,6 @@ const MobileRouteTransition = ({ children }) => {
       transitionKind = 'push';
     } else if (previousMeta.isDetail && !currentMeta.isDetail) {
       transitionKind = 'pop';
-    } else if (previousMeta.isTab && currentMeta.isTab) {
-      transitionKind = currentMeta.tabIndex >= previousMeta.tabIndex ? 'tabForward' : 'tabBackward';
     }
   }
 
@@ -451,7 +415,7 @@ const MobileRouteTransition = ({ children }) => {
     previousMetaRef.current = currentMeta;
   }, [currentMeta]);
 
-  if (!currentMeta.isMobile || (currentMeta.isCommerce && previousMeta.isCommerce)) {
+  if (!currentMeta.isMobile) {
     return children;
   }
 
@@ -550,36 +514,23 @@ function AppRoutes() {
         <Route path="/mobile/login" element={<MobileLoginPage />} />
         <Route path="/mobile/reset-password" element={<ResetPasswordPage mobile />} />
 
-        <Route path="/mobile" element={
-          <Navigate to="/mobile/dashboard" replace />
-        } />
-
-        <Route path="/mobile/home" element={
-          <Navigate to="/mobile/dashboard" replace />
-        } />
-
-        <Route path="/mobile/dashboard" element={<MobileCommerceTabsPage />} />
-
-        <Route path="/mobile/catalog" element={<MobileCommerceTabsPage />} />
-
-        <Route path="/mobile/articles" element={<MobileCommerceTabsPage />} />
-
-        <Route path="/mobile/products/:slug" element={<MobileProductDetailPage />} />
-
-        <Route path="/mobile/articles/:slug" element={<PublicJournalArticlePage mobile />} />
-
-        <Route path="/mobile/about" element={<AboutPage mobile />} />
-        <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
-
-        <Route path="/mobile/cart" element={<ByShop domestic={<MobileCartPage />} international={<MobileInternationalCartPage />} />} />
-        <Route path="/mobile/checkout" element={<DomesticOnly><MobileCheckoutPage /></DomesticOnly>} />
-
-        <Route path="/mobile/payment" element={<PaymentPage />} />
-
-        <Route path="/mobile/welcome" element={<WelcomePage mobile />} />
-        <Route path="/mobile/customer" element={<CustomerPortalPage />} />
-
-        <Route path="/mobile/customer/invoice/:orderNumber" element={<CustomerInvoicePage />} />
+        {/* The phone storefront retired on 2026-10-31 — one responsive shop. Its addresses still redirect,
+            because messages already sent and parcel QR codes carry them. */}
+        <Route path="/mobile" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/home" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/dashboard" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/catalog" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/articles" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/products/:slug" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/articles/:slug" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/about" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/bespoke" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/cart" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/checkout" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/payment" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/welcome" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/customer" element={<RetiredMobileStorefront />} />
+        <Route path="/mobile/customer/invoice/:orderNumber" element={<RetiredMobileStorefront />} />
 
         <Route path="/mobile/studio" element={
           <ProtectedRoute>

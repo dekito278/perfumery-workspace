@@ -67,7 +67,6 @@ assert.equal((hook.match(/rememberPaymentSession\(\{/g) || []).length, 3,
   // Each button still refuses a second press on its own.
   for (const [file, pattern] of [
     ['CheckoutPage.jsx', /disabled=\{[^}]*\bsaving\b/],
-    [join('mobile', 'MobileCheckoutPage.jsx'), /disabled=\{[^}]*\bsaving\b/],
   ]) {
     const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', file), 'utf8');
     assert.match(page, pattern, `${file}: the submit button must still be disabled while saving`);
@@ -89,17 +88,7 @@ assert.equal((hook.match(/rememberPaymentSession\(\{/g) || []).length, 3,
       `CheckoutPage's missingFields never mentions ${name}, so blocking on it shows a red line that names nothing`);
   }
 
-  // The phone's list is allowed to leave out the payment method for one reason only: it cannot be empty,
-  // because useCheckoutFlow defaults it. If that default ever goes, the exemption goes with it.
-  const mobile = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', 'mobile', 'MobileCheckoutPage.jsx'), 'utf8');
-  const mobileList = mobile.slice(mobile.indexOf('const checkoutRequirements = ['), mobile.indexOf('];', mobile.indexOf('const checkoutRequirements = [')));
-  assert.match(hook, /useState\(savedDraft\.selectedPaymentMethod \|\| MANUAL_TRANSFER_PAYMENT\.id\)/,
-    'the payment method is defaulted; the phone list leaves it out on exactly that basis');
-  for (const name of conditions) {
-    if (name === 'selectedPaymentMethod') continue;
-    assert.ok(mobileList.includes(name),
-      `MobileCheckoutPage's checkoutRequirements never mentions ${name}, so the phone blocks on something it never names`);
-  }
+  // The phone checkout's own requirement list retired with the phone storefront (2026-10-31).
 }
 
 // The same honesty, one screen later. The payment panel flips to "blocked" on a timer, and a timer that

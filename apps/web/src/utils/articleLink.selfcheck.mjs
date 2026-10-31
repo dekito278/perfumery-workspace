@@ -18,10 +18,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf8'));
 
-// Both journal surfaces, read as a pair: the asymmetry between them is the bug.
+// The journal list. It had a phone twin until 2026-10-31; one responsive page since.
 const surfaces = [
   ['pages', 'PublicJournalPage.jsx'],
-  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
 ];
 
 for (const parts of surfaces) {
@@ -39,20 +38,5 @@ for (const parts of surfaces) {
   assert.doesNotMatch(source, /navigate\((?:path|getJournalPublicPath)/,
     `${name}: an article is opened with navigate() instead of being linked`);
 }
-
-// --- 3. The phone card keeps what the button carried ------------------------------------------------------
-const phone = read('pages', 'mobile', 'MobileArticlesPage.jsx');
-assert.match(phone, /import \{ Link, useLocation, useNavigate \} from 'react-router-dom';/,
-  'the phone page must import Link');
-// Every card, not just the first one: dropping the state from one of the two left the other carrying it,
-// and a single match said yes.
-const phoneCards = [...phone.matchAll(/<Link\s+to=\{articlePath\([^)]*\)\}([^>]*)>/g)];
-assert.ok(phoneCards.length >= 2, `expected the featured card and the list card, found ${phoneCards.length}`);
-for (const [tag, attributes] of phoneCards) {
-  assert.match(attributes, /state=\{fromState\}/,
-    `the "back" state the button passed must survive the change to a link — ${tag.slice(0, 60)}`);
-}
-assert.match(phone, /const articlePath = \(post\) => getJournalPublicPath\(post, \{ mobile: true \}\) \|\| '';/,
-  'and the phone still links to the phone route, not the desktop one');
 
 console.log('articleLink selfcheck OK (an article card is a link on both surfaces)');

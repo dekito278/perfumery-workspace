@@ -1,13 +1,10 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, Clock3, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, MessageCircle, QrCode, RefreshCw, ShieldCheck, Smartphone, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
-import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -70,32 +67,32 @@ const paymentStatusKeys = {
 
 const paymentStatusTone = {
   unpaid: {
-    className: 'border-amber-200 bg-amber-50 text-amber-900',
+    className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember',
     titleKey: 'pay.awaiting',
     bodyKey: 'pay.createdBody',
   },
   pending: {
-    className: 'border-amber-200 bg-amber-50 text-amber-900',
+    className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember',
     titleKey: 'pay.awaiting',
     bodyKey: 'pay.createdBody',
   },
   paid: {
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    className: 'border-[#8fd0a4]/40 bg-[#14231a] text-[#9fdcb2]',
     titleKey: 'pay.received',
     bodyKey: 'pay.paidBody',
   },
   expired: {
-    className: 'border-rose-200 bg-rose-50 text-rose-800',
+    className: 'border-[#f0a090]/40 bg-[#3a1814] text-[#f0a090]',
     titleKey: 'pay.expiredTitle',
     bodyKey: 'pay.expiredBody',
   },
   failed: {
-    className: 'border-rose-200 bg-rose-50 text-rose-800',
+    className: 'border-[#f0a090]/40 bg-[#3a1814] text-[#f0a090]',
     titleKey: 'pay.failedTitle',
     bodyKey: 'pay.failedBody',
   },
   refunded: {
-    className: 'border-slate-200 bg-slate-50 text-slate-700',
+    className: 'border-ng-bone/20 bg-ng-deep text-ng-dust',
     titleKey: 'pay.refundTitle',
     bodyKey: 'pay.refundBody',
   },
@@ -170,7 +167,7 @@ const buildDokuSessionFromCheckout = (order, checkout) => ({
   createdAt: order.createdAt || new Date().toISOString(),
 });
 
-const PaymentTotalBreakdown = ({ session, compact = false }) => {
+const PaymentTotalBreakdown = ({ session }) => {
   const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(session);
   const shippingFee = Number(session.shippingFee || 0);
@@ -185,7 +182,7 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
   const displayedSubtotalAfterVoucher = subtotalAfterVoucher || fallbackProductsSubtotal;
 
   return (
-    <div className={`mt-4 rounded-2xl border border-editorial-stone/10 bg-white/80 ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-editorial-charcoal`}>
+    <div className={`mt-4 rounded-none border border-ng-bone/10 bg-transparent p-4 text-sm font-bold text-ng-bone`}>
       <div className="flex justify-between gap-3">
         <span>{t("pay.subtotalProducts")}</span>
         <span>{formatTotal(productsSubtotal)}</span>
@@ -196,27 +193,27 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
             <span>Voucher {voucherSnapshot.code}</span>
             <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
           </div>
-          <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+          <div className="mt-2 flex justify-between gap-3 text-ng-dust">
             <span>{t("pay.subtotalAfterVoucher")}</span>
             <span>{formatTotal(displayedSubtotalAfterVoucher)}</span>
           </div>
         </>
       ) : null}
       {shouldShowShipping ? (
-        <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+        <div className="mt-2 flex justify-between gap-3 text-ng-dust">
           <span>{shippingPromotionLabel ? t("pay.shippingAfterPromo") : t("pay.shipping")}</span>
           <span>{formatTotal(shippingFee)}</span>
         </div>
       ) : null}
-      {shippingPromotionLabel ? <p className="mt-1 text-[11px] font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
-      <div className="mt-3 flex justify-between gap-3 border-t border-editorial-stone/10 pt-3 text-editorial-charcoal">
+      {shippingPromotionLabel ? <p className="mt-1 text-[11px] font-bold text-[#9fdcb2]">{shippingPromotionLabel}</p> : null}
+      <div className="mt-3 flex justify-between gap-3 border-t border-ng-bone/10 pt-3 text-ng-bone">
         <span>{t("pay.totalDue")}</span>
         <span className="text-right">
           {payableAmount(session)}
           {/* The rupiah stays visible under a dollar total — it is what the shop books, and a buyer
               comparing it to the product page should find the same pair of numbers there. */}
           {Number(session.amountUsd || 0) > 0
-            ? <span className="ml-2 font-semibold text-[#6b7280]">{formatTotal(session.amount)}</span>
+            ? <span className="ml-2 font-semibold text-ng-dust">{formatTotal(session.amount)}</span>
             : null}
         </span>
       </div>
@@ -227,25 +224,25 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
 // Shared success state. A paid order must never be shown a live payment panel again — the DOKU return
 // URL lands back here with the order already paid, and the iframe invited a second payment for the same
 // invoice (audit round 7).
-const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, method }) => {
+const PaymentSuccessPanel = ({ orderNumber, customerCode, method }) => {
   const { t } = useTranslate();
   return (
-  <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
+  <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
     <div className="p-6 text-center sm:p-10">
-      <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+      <span className="mx-auto grid h-14 w-14 place-items-center rounded-none bg-[#14231a] text-[#9fdcb2]">
         <CheckCircle2 className="h-7 w-7" />
       </span>
-      <h1 className={compact ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>{t("pay.received")}</h1>
-      <p className="mt-2 text-sm font-semibold leading-relaxed text-[#54604d]">
+      <h1 className="mt-4 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.received")}</h1>
+      <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
         {t('pay.thanks', { method: method ? ` ${method}` : '', order: orderNumber })}
       </p>
       <div className="mt-5 flex justify-center gap-2">
         {customerCode ? (
-          <Link to={compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`} className="inline-flex h-11 items-center rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-paper">
+          <Link to={`/customer?code=${customerCode}`} className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
             {t('track.title')}
           </Link>
         ) : null}
-        <Link to={compact ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
+        <Link to="/catalog" className="inline-flex h-11 items-center rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
           {t('pay.shopAgain')}
         </Link>
       </div>
@@ -254,7 +251,7 @@ const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, metho
 );
 };
 
-const PaymentFrame = ({ session, compact = false }) => {
+const PaymentFrame = ({ session }) => {
   const { t } = useTranslate();
   const [frameStatus, setFrameStatus] = useState('loading');
 
@@ -275,7 +272,6 @@ const PaymentFrame = ({ session, compact = false }) => {
   if (session.paymentStatus === 'paid') {
     return (
       <PaymentSuccessPanel
-        compact={compact}
         orderNumber={session.orderNumber || session.invoiceNumber}
         customerCode={session.customerCode || ''}
       />
@@ -294,23 +290,23 @@ const PaymentFrame = ({ session, compact = false }) => {
       icon: <Loader2 className="h-4 w-4 animate-spin" />,
       titleKey: 'pay.loadingPanel',
       bodyKey: 'pay.loadingPanelBody',
-      className: 'border-editorial-stone/10 bg-editorial-ivory text-editorial-charcoal',
+      className: 'border-ng-bone/10 bg-ng-ink text-ng-bone',
     },
     ready: {
       icon: <CheckCircle2 className="h-4 w-4" />,
       titleKey: 'pay.panelReady',
       bodyKey: 'pay.panelReadyBody',
-      className: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+      className: 'border-[#8fd0a4]/40 bg-[#14231a] text-[#9fdcb2]',
     },
     failed: {
       icon: <AlertCircle className="h-4 w-4" />,
       titleKey: 'pay.panelBlocked',
       bodyKey: 'pay.panelBlockedBody',
-      className: 'border-amber-200 bg-amber-50 text-amber-800',
+      className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember',
     },
   }[frameStatus];
   const customerCode = session.customerCode || '';
-  const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
+  const orderTrackingPath = `/customer?code=${customerCode}`;
   const currentPaymentTone = paymentStatusTone[session.paymentStatus || 'pending'] || paymentStatusTone.pending;
   // Not session.paymentExpiresAt: manual transfer never has one, and it is the path where somebody is
   // about to move money into a reservation that expires.
@@ -322,42 +318,42 @@ const PaymentFrame = ({ session, compact = false }) => {
   };
 
   return (
-    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
-      <div className={compact ? 'border-b border-editorial-stone/10 bg-editorial-ivory p-4' : 'border-b border-editorial-stone/10 bg-editorial-ivory p-5'}>
+    <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
+      <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.secureCheckout")}</div>
-            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
-            <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.secureCheckout")}</div>
+            <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
+            <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {t('pay.savedBody')}
             </p>
           </div>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none bg-transparent text-ng-bone">
             <ShieldCheck className="h-5 w-5" />
           </span>
         </div>
-        <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-editorial-charcoal' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">{t('pay.order')}</div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
             <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
           </div>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">{t('pay.customer')}</div>
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
             <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
           </div>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">Total</div>
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">Total</div>
             <div className="mt-1">{payableAmount(session)}</div>
           </div>
           {session.paymentStatus ? (
-            <div className="rounded-2xl bg-white/80 px-4 py-3">
-              <div className="text-[10px] uppercase text-editorial-muted">{t('pay.status')}</div>
+            <div className="rounded-none bg-transparent px-4 py-3">
+              <div className="text-[10px] uppercase text-ng-dust">{t('pay.status')}</div>
               <div className="mt-1 truncate">{paymentStatusKeys[session.paymentStatus] ? t(paymentStatusKeys[session.paymentStatus]) : session.paymentStatus}</div>
             </div>
           ) : null}
         </div>
-        <PaymentTotalBreakdown session={session} compact={compact} />
-        <div className={`mt-4 rounded-2xl border px-4 py-3 ${currentPaymentTone.className}`}>
+        <PaymentTotalBreakdown session={session} />
+        <div className={`mt-4 rounded-none border px-4 py-3 ${currentPaymentTone.className}`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="text-xs font-bold">{t(currentPaymentTone.titleKey)}</div>
@@ -370,15 +366,15 @@ const PaymentFrame = ({ session, compact = false }) => {
               ) : null}
             </div>
             {customerCode ? (
-              <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 px-4 text-xs font-bold text-editorial-charcoal">
+              <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-none bg-transparent px-4 text-xs font-bold text-ng-bone">
                 {t('track.title')}
               </Link>
             ) : null}
           </div>
         </div>
       </div>
-      <div className="border-b border-editorial-stone/10 bg-white px-4 py-3">
-        <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${statusCopy.className}`}>
+      <div className="border-b border-ng-bone/10 bg-transparent px-4 py-3">
+        <div className={`flex items-start gap-3 rounded-none border px-4 py-3 ${statusCopy.className}`}>
           <span className="mt-0.5 shrink-0">{statusCopy.icon}</span>
           <div>
             <div className="text-xs font-bold">{t(statusCopy.titleKey)}</div>
@@ -386,7 +382,7 @@ const PaymentFrame = ({ session, compact = false }) => {
           </div>
         </div>
       </div>
-      <div className={compact ? 'h-[68dvh] bg-white' : 'h-[74dvh] bg-white'}>
+      <div className="h-[74dvh] bg-transparent">
         <iframe
           src={session.paymentUrl}
           title={t("pay.panel")}
@@ -398,29 +394,29 @@ const PaymentFrame = ({ session, compact = false }) => {
         />
       </div>
       {customerCode ? (
-        <div className="flex items-center justify-between gap-3 border-t border-editorial-stone/10 bg-white px-4 py-3">
+        <div className="flex items-center justify-between gap-3 border-t border-ng-bone/10 bg-transparent px-4 py-3">
           <div className="min-w-0">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.customerCode")}</span>
-            <div className="select-text text-lg font-bold tracking-[0.12em] text-editorial-charcoal">{customerCode}</div>
-            <p className="text-[11px] font-semibold text-[#54604d]">{t("pay.saveCode")}</p>
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.customerCode")}</span>
+            <div className="select-text text-lg font-bold tracking-[0.12em] text-ng-bone">{customerCode}</div>
+            <p className="text-[11px] font-semibold text-ng-dust">{t("pay.saveCode")}</p>
           </div>
-          <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
+          <Button type="button" variant="outline" className="shrink-0 rounded-none bg-ng-ink gap-2" onClick={copyCustomerCode}>
             <Copy className="h-4 w-4" />
             {t('pay.copy')}
           </Button>
         </div>
       ) : null}
-      <div className={compact ? 'grid gap-2 border-t border-editorial-stone/10 bg-[#fbfaf7] p-3' : 'flex flex-wrap items-center justify-between gap-3 border-t border-editorial-stone/10 bg-[#fbfaf7] p-4'}>
-        <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ng-bone/10 bg-ng-deep p-4">
+        <p className="text-xs font-semibold leading-relaxed text-ng-dust">
           {t('pay.fallbackHint')}
         </p>
         <div className="flex flex-wrap gap-2">
           {customerCode ? (
-            <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-editorial-charcoal">
+            <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-none border border-ng-bone/30 bg-transparent px-4 text-sm font-bold text-ng-bone">
               {t('track.title')}
             </Link>
           ) : null}
-          <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
+          <Button type="button" variant="outline" className="rounded-none bg-transparent gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
             <ExternalLink className="h-4 w-4" />
             {t('pay.openPayment')}
           </Button>
@@ -434,7 +430,7 @@ const EWALLET_HINTS = ['GoPay', 'OVO', 'DANA', 'ShopeePay', 'LinkAja', 'm-bankin
 
 // Native QRIS — renders the DOKU QR string in our own UI (no DOKU hosted page). Payment is confirmed
 // by the DOKU notification webhook flipping the order to paid; we poll the public order for that.
-const QrisPanel = ({ session, compact = false, onPaid }) => {
+const QrisPanel = ({ session, onPaid }) => {
   const { t } = useTranslate();
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [remainingMs, setRemainingMs] = useState(() => {
@@ -491,91 +487,91 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
   };
 
   if (paid) {
-    return <PaymentSuccessPanel compact={compact} orderNumber={orderNumber} customerCode={customerCode} method="QRIS" />;
+    return <PaymentSuccessPanel orderNumber={orderNumber} customerCode={customerCode} method="QRIS" />;
   }
 
   return (
-    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
-      <div className={compact ? 'border-b border-editorial-stone/10 bg-editorial-ivory p-4' : 'border-b border-editorial-stone/10 bg-editorial-ivory p-5'}>
+    <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
+      <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.qris")}</div>
-            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
-            <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.qris")}</div>
+            <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
+            <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {t('pay.qrHint')}
             </p>
           </div>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none bg-transparent text-ng-bone">
             <QrCode className="h-5 w-5" />
           </span>
         </div>
-        <div className={compact ? 'mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-editorial-charcoal' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">{t('pay.order')}</div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
             <div className="mt-1 truncate">{orderNumber}</div>
           </div>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">{t('pay.customer')}</div>
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
             <div className="mt-1 truncate">{customerCode || session.customerName || '-'}</div>
           </div>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">Total</div>
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">Total</div>
             <div className="mt-1">{payableAmount(session)}</div>
           </div>
         </div>
-        <PaymentTotalBreakdown session={session} compact={compact} />
+        <PaymentTotalBreakdown session={session} />
       </div>
 
       <div className="grid gap-4 p-4 sm:p-6">
         {session.paymentExpiresAt ? (
-          <div className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${expired ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+          <div className={`flex items-center justify-center gap-2 rounded-none border px-4 py-2 text-sm font-bold ${expired ? 'border-[#f0a090]/40 bg-[#3a1814] text-[#f0a090]' : 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember'}`}>
             <Clock3 className="h-4 w-4" />
             {expired ? t("pay.qrExpired") : t("pay.finishIn", { time: `${pad(mins)}:${pad(secs)}` })}
           </div>
         ) : null}
 
-        <div className="mx-auto w-full max-w-[360px] rounded-[24px] border border-editorial-stone/15 bg-white p-4 text-center shadow-sm">
-          <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-editorial-muted">
-            <span className="grid h-5 w-5 place-items-center rounded-md bg-[#c0392b] text-[9px] font-bold text-white">Q</span>
+        <div className="mx-auto w-full max-w-[360px] rounded-none border border-ng-bone/15 bg-transparent p-4 text-center">
+          <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-ng-dust">
+            <span className="grid h-5 w-5 place-items-center rounded-none bg-[#c0392b] text-[9px] font-bold text-white">Q</span>
             {t('pay.qrisOne')}
           </div>
-          <div className="mt-3 grid aspect-square w-full place-items-center rounded-2xl bg-white">
+          <div className="mt-3 grid aspect-square w-full place-items-center rounded-none bg-transparent">
             {qrDataUrl ? (
-              <img src={qrDataUrl} alt={t("pay.qrisCode")} className="h-full w-full rounded-xl object-contain" />
+              <img src={qrDataUrl} alt={t("pay.qrisCode")} className="h-full w-full rounded-none object-contain" />
             ) : (
-              <div className="flex flex-col items-center gap-2 text-editorial-muted">
+              <div className="flex flex-col items-center gap-2 text-ng-dust">
                 <Loader2 className="h-6 w-6 animate-spin" />
                 <span className="text-xs font-semibold">{t("pay.preparingQr")}</span>
               </div>
             )}
           </div>
-          <div className="mt-3 text-[10px] font-bold uppercase text-editorial-muted">{t("pay.totalDue")}</div>
-          <div className="text-2xl font-bold text-[#c0392b]">{payableAmount(session)}</div>
+          <div className="mt-3 text-[10px] font-bold uppercase text-ng-dust">{t("pay.totalDue")}</div>
+          <div className="text-2xl font-bold text-[#f0a090]">{payableAmount(session)}</div>
         </div>
 
         <div className="mx-auto flex max-w-[360px] flex-wrap items-center justify-center gap-1.5">
           {EWALLET_HINTS.map((name) => (
-            <span key={name} className="rounded-full border border-editorial-stone/15 bg-editorial-ivory px-2.5 py-1 text-[11px] font-bold text-editorial-charcoal">{name}</span>
+            <span key={name} className="rounded-full border border-ng-bone/15 bg-ng-ink px-2.5 py-1 text-[11px] font-bold text-ng-bone">{name}</span>
           ))}
         </div>
 
-        <div className="mx-auto flex max-w-[360px] items-start gap-2 rounded-2xl border border-editorial-stone/10 bg-[#fbfaf7] px-4 py-3 text-xs font-semibold leading-relaxed text-[#54604d]">
-          <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-editorial-charcoal" />
+        <div className="mx-auto flex max-w-[360px] items-start gap-2 rounded-none border border-ng-bone/10 bg-ng-deep px-4 py-3 text-xs font-semibold leading-relaxed text-ng-dust">
+          <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-ng-bone" />
           {t('pay.qrSteps')}
         </div>
 
-        <div className="mx-auto flex max-w-[360px] items-center justify-center gap-2 text-xs font-bold text-editorial-muted">
+        <div className="mx-auto flex max-w-[360px] items-center justify-center gap-2 text-xs font-bold text-ng-dust">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           {t('pay.awaitingEllipsis')}
         </div>
 
         {customerCode ? (
-          <div className="mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-2xl border border-editorial-stone/10 bg-white px-4 py-3">
+          <div className="mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-none border border-ng-bone/10 bg-transparent px-4 py-3">
             <div className="min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.customerCode")}</span>
-              <div className="select-text text-lg font-bold tracking-[0.12em] text-editorial-charcoal">{customerCode}</div>
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.customerCode")}</span>
+              <div className="select-text text-lg font-bold tracking-[0.12em] text-ng-bone">{customerCode}</div>
             </div>
-            <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
+            <Button type="button" variant="outline" className="shrink-0 rounded-none bg-ng-ink gap-2" onClick={copyCustomerCode}>
               <Copy className="h-4 w-4" />
               {t('pay.copy')}
             </Button>
@@ -586,12 +582,12 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
   );
 };
 
-const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => {
+const ManualTransferPanel = ({ session, onProofSubmitted }) => {
   const { t } = useTranslate();
   const [proofFile, setProofFile] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const customerCode = session.customerCode || '';
-  const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
+  const orderTrackingPath = `/customer?code=${customerCode}`;
   const orderNumber = session.orderNumber || session.invoiceNumber;
   // One source for the number, the same one the footer reads. Rendered only when configured.
   const whatsappNumber = getStorefrontWhatsAppNumber();
@@ -685,7 +681,6 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   if (session.paymentStatus === 'paid') {
     return (
       <PaymentSuccessPanel
-        compact={compact}
         orderNumber={orderNumber}
         customerCode={customerCode}
       />
@@ -693,57 +688,53 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   }
 
   return (
-    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
-      <div className={compact ? 'border-b border-editorial-stone/10 bg-editorial-ivory p-4' : 'border-b border-editorial-stone/10 bg-editorial-ivory p-5'}>
+    <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
+      <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.manualTransfer")}</div>
-            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
-            <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.manualTransfer")}</div>
+            <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
+            <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {/* The lead sentence told a buyer to transfer to the account below. On a cancelled order
                   the account below is gone, so the sentence had to go with it. */}
               {t(closedForPayment ? 'pay.closedHint' : 'pay.manualHint')}
             </p>
           </div>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none bg-transparent text-ng-bone">
             <CreditCard className="h-5 w-5" />
           </span>
         </div>
-        {!compact ? (
-          <>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">{t('pay.order')}</div>
-                <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
-              </div>
-              <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">{t('pay.customer')}</div>
-                <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
-              </div>
-              <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">{t("pay.transferTotal")}</div>
-                <div className="mt-1">{payableAmount(session)}</div>
-              </div>
-            </div>
-            <PaymentTotalBreakdown session={session} compact={compact} />
-          </>
-        ) : null}
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
+            <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
+          </div>
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
+            <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
+          </div>
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t("pay.transferTotal")}</div>
+            <div className="mt-1">{payableAmount(session)}</div>
+          </div>
+        </div>
+        <PaymentTotalBreakdown session={session} />
       </div>
 
-      <div className={compact ? 'grid gap-3 p-4' : 'grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]'}>
+      <div className="grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]">
         {customerCode ? (
-          <div className={compact ? 'rounded-2xl border border-editorial-stone/15 bg-editorial-ivory p-4' : 'rounded-2xl border border-editorial-stone/15 bg-editorial-ivory p-5 lg:col-span-2'}>
+          <div className="rounded-none border border-ng-bone/15 bg-ng-ink p-5 lg:col-span-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.customerCode")}</div>
-                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-editorial-charcoal' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-editorial-charcoal'}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.customerCode")}</div>
+                <div className="mt-1 select-text text-3xl font-bold tracking-[0.16em] text-ng-bone">
                   {customerCode}
                 </div>
-                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
                   {t('pay.keepCode')}
                 </p>
               </div>
-              <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-white gap-2" onClick={() => copyValue(t("pay.customerCode"), customerCode)}>
+              <Button type="button" variant="outline" className="shrink-0 rounded-none bg-transparent gap-2" onClick={() => copyValue(t("pay.customerCode"), customerCode)}>
                 <Copy className="h-4 w-4" />
                 {t('pay.copyCode')}
               </Button>
@@ -752,7 +743,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
         ) : null}
 
         {awaitingShippingQuote ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-4 text-ng-ember">
             <div className="text-xs font-bold uppercase">{t('pay.quoteTitle')}</div>
             <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.quoteBody')}</p>
             <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.quoteNoTransfer')}</p>
@@ -764,75 +755,75 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(t('pay.quoteWaDraft', { order: orderNumber }))}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-editorial-charcoal px-4 text-sm font-bold text-editorial-paper"
+                className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-none bg-ng-bone px-4 text-sm font-bold text-ng-ink"
               >
                 <MessageCircle className="mr-2 h-4 w-4" />
                 {t('pay.quoteConfirm')}
               </a>
             ) : null}
             {customerCode ? (
-              <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-amber-300 bg-white px-4 text-sm font-bold text-amber-900">
+              <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-none border border-ng-ember/40 bg-transparent px-4 text-sm font-bold text-ng-ember">
                 {t('track.title')}
               </Link>
             ) : null}
           </div>
         ) : closedForPayment ? (
-          <div className="rounded-2xl border border-[#fecaca] bg-[#fef2f2] p-4 text-[#b91c1c]">
+          <div className="rounded-none border border-[#f0a090]/40 bg-[#3a1814] p-4 text-[#f0a090]">
             <div className="text-xs font-bold uppercase">{t('pay.closedTitle')}</div>
             <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.closedBody')}</p>
             <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.closedTransferred')}</p>
-            <AskAtelierButton orderNumber={orderNumber} className="mt-3 w-full border-[#fecaca] bg-white text-[#b91c1c]" />
-            <Link to={compact ? '/mobile/catalog' : '/catalog'} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-[#fecaca] bg-white px-4 text-sm font-bold text-[#b91c1c]">
+            <AskAtelierButton orderNumber={orderNumber} className="mt-3 w-full border-[#f0a090]/40 bg-transparent text-[#f0a090]" />
+            <Link to="/catalog" className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-none border border-[#f0a090]/40 bg-transparent px-4 text-sm font-bold text-[#f0a090]">
               {t('pay.closedShopAgain')}
             </Link>
           </div>
         ) : (
           <>
-        <div className="rounded-2xl border border-editorial-stone/10 bg-[#fbfaf7] p-4">
-          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.bankAccount")}</div>
+        <div className="rounded-none border border-ng-bone/10 bg-ng-deep p-4">
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.bankAccount")}</div>
           <div className="mt-3 grid gap-3">
-            <div className="rounded-2xl bg-white p-4">
-              <div className="text-xs font-bold uppercase text-muted-foreground">Bank</div>
-              <div className="mt-1 text-xl font-bold text-editorial-charcoal">{transfer.bankName}</div>
+            <div className="rounded-none bg-transparent p-4">
+              <div className="text-xs font-bold uppercase text-ng-dust">Bank</div>
+              <div className="mt-1 text-xl font-bold text-ng-bone">{transfer.bankName}</div>
             </div>
-            <button type="button" onClick={() => copyValue(t("pay.accountNumber"), transfer.accountNumber)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
+            <button type="button" onClick={() => copyValue(t("pay.accountNumber"), transfer.accountNumber)} className="rounded-none border border-ng-bone/10 bg-transparent p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-bold uppercase text-muted-foreground">{t("pay.accountNumber")}</div>
-                  <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-editorial-charcoal">{transfer.accountNumber}</div>
+                  <div className="text-xs font-bold uppercase text-ng-dust">{t("pay.accountNumber")}</div>
+                  <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-ng-bone">{transfer.accountNumber}</div>
                 </div>
-                <Copy className="h-4 w-4 text-editorial-charcoal" />
+                <Copy className="h-4 w-4 text-ng-bone" />
               </div>
             </button>
             {transfer.swift ? (
-              <button type="button" onClick={() => copyValue(t("pay.swift"), transfer.swift)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
+              <button type="button" onClick={() => copyValue(t("pay.swift"), transfer.swift)} className="rounded-none border border-ng-bone/10 bg-transparent p-4 text-left">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-bold uppercase text-muted-foreground">{t("pay.swift")}</div>
-                    <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-editorial-charcoal">{transfer.swift}</div>
+                    <div className="text-xs font-bold uppercase text-ng-dust">{t("pay.swift")}</div>
+                    <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-ng-bone">{transfer.swift}</div>
                   </div>
-                  <Copy className="h-4 w-4 text-editorial-charcoal" />
+                  <Copy className="h-4 w-4 text-ng-bone" />
                 </div>
               </button>
             ) : null}
-            <button type="button" onClick={() => copyValue(t("pay.accountNameLabel"), transfer.accountName)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
+            <button type="button" onClick={() => copyValue(t("pay.accountNameLabel"), transfer.accountName)} className="rounded-none border border-ng-bone/10 bg-transparent p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-bold uppercase text-muted-foreground">{t("pay.accountName")}</div>
-                  <div className="mt-1 text-lg font-bold text-editorial-charcoal">{transfer.accountName}</div>
+                  <div className="text-xs font-bold uppercase text-ng-dust">{t("pay.accountName")}</div>
+                  <div className="mt-1 text-lg font-bold text-ng-bone">{transfer.accountName}</div>
                 </div>
-                <Copy className="h-4 w-4 text-editorial-charcoal" />
+                <Copy className="h-4 w-4 text-ng-bone" />
               </div>
             </button>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+        <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-4 text-ng-ember">
           {transfer.swift ? (
             /* Dekito's own line, off the invoice he already sends by hand. "OUR" makes the SENDER pay every
                fee in the chain, so the amount arrives whole instead of losing $15-25 to an intermediary
                bank — an exact fix where the rounding in usdPrice.js is only a cushion. */
-            <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-amber-900">
+            <p className="mb-3 rounded-none border border-ng-ember/40 bg-ng-ember/10 p-3 text-xs font-semibold leading-relaxed text-ng-ember">
               {t('pay.ourCharges')}
             </p>
           ) : null}
@@ -843,17 +834,17 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <li>{t('pay.step3')}</li>
             <li>{t('pay.step4')}</li>
           </ol>
-          <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue(t("pay.transferTotal"), Number(session.amount || 0))}>
+          <Button type="button" className="mt-4 w-full rounded-none gap-2" onClick={() => copyValue(t("pay.transferTotal"), Number(session.amount || 0))}>
             <Copy className="h-4 w-4" />
             {t('pay.copyTotal')}
           </Button>
           {customerCode && hasSubmittedProof ? (
-            <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-editorial-stone/15 bg-white px-4 text-sm font-bold text-editorial-charcoal">
+            <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-none border border-ng-bone/15 bg-transparent px-4 text-sm font-bold text-ng-bone">
               {t('track.title')}
             </Link>
           ) : null}
           {customerCode && needsProofUpload ? (
-            <div className="mt-2 flex items-start gap-2 rounded-2xl border border-amber-200 bg-white px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
+            <div className="mt-2 flex items-start gap-2 rounded-none border border-ng-ember/40 bg-transparent px-4 py-3 text-xs font-bold leading-relaxed text-ng-ember">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               {t('pay.proofBeforeTracking')}
             </div>
@@ -868,7 +859,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
               href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(t('pay.stuckDraft', { order: orderNumber }))}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-white px-4 text-sm font-bold text-amber-900"
+              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-none border border-ng-ember/40 bg-transparent px-4 text-sm font-bold text-ng-ember"
             >
               <MessageCircle className="h-4 w-4" />
               {t('pay.stuck')}
@@ -878,34 +869,18 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </>
         )}
 
-        {compact ? (
-          <div className="rounded-2xl border border-editorial-stone/10 bg-white p-4">
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.orderSummary")}</div>
-            <div className="mt-3 grid gap-2 text-xs font-bold text-editorial-charcoal">
-              <div className="rounded-2xl bg-editorial-ivory px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">{t('pay.order')}</div>
-                <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
-              </div>
-              <div className="rounded-2xl bg-editorial-ivory px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">{t('pay.customer')}</div>
-                <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
-              </div>
-            </div>
-            <PaymentTotalBreakdown session={session} compact />
-          </div>
-        ) : null}
 
-        <div id="mobile-payment-proof-section" className="rounded-2xl border border-editorial-stone/10 bg-white p-4">
+        <div id="mobile-payment-proof-section" className="rounded-none border border-ng-bone/10 bg-transparent p-4">
           <div className="flex items-start gap-3">
-            <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${hasSubmittedProof ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+            <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-none ${hasSubmittedProof ? 'bg-[#14231a] text-[#9fdcb2]' : 'bg-ng-ember/10 text-ng-ember'}`}>
               {hasSubmittedProof ? <FileCheck2 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <div className="text-xs font-bold uppercase text-editorial-muted">{t("pay.proof")}</div>
-                {needsProofUpload ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">{t('pay.requiredTag')}</span> : null}
+                <div className="text-xs font-bold uppercase text-ng-dust">{t("pay.proof")}</div>
+                {needsProofUpload ? <span className="rounded-full bg-ng-ember/10 px-2 py-0.5 text-[10px] font-bold uppercase text-ng-ember">{t('pay.requiredTag')}</span> : null}
               </div>
-              <p className="mt-1 text-sm font-semibold leading-relaxed text-editorial-charcoal">
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-ng-bone">
                 {proofStatus === 'rejected'
                   ? t("pay.proofRejected")
                   : hasSubmittedProof
@@ -913,18 +888,18 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                   : t("pay.proofRequired")}
               </p>
               {proofStatus === 'rejected' && session.paymentProofNotes ? (
-                <div className="mt-3 rounded-2xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold leading-relaxed text-rose-800">
-                  <span className="block text-[10px] font-bold uppercase text-rose-700">{t("pay.adminReason")}</span>
+                <div className="mt-3 rounded-none border border-[#f0a090]/40 bg-[#3a1814] px-3 py-2 text-xs font-semibold leading-relaxed text-[#f0a090]">
+                  <span className="block text-[10px] font-bold uppercase text-[#f0a090]">{t("pay.adminReason")}</span>
                   {session.paymentProofNotes}
                 </div>
               ) : null}
               {session.paymentProofFileName ? (
-                <div className="mt-2 truncate rounded-xl bg-editorial-ivory px-3 py-2 text-xs font-bold text-editorial-charcoal">
+                <div className="mt-2 truncate rounded-none bg-ng-ink px-3 py-2 text-xs font-bold text-ng-bone">
                   {session.paymentProofFileName}
                 </div>
               ) : null}
               {session.paymentProofUploadedAt ? (
-                <div className="mt-1 text-[11px] font-semibold text-editorial-muted">
+                <div className="mt-1 text-[11px] font-semibold text-ng-dust">
                   {t("pay.sentOn", { date: formatDateTime(session.paymentProofUploadedAt, t) })}
                 </div>
               ) : null}
@@ -942,19 +917,19 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 disabled={uploadingProof}
                 required={needsProofUpload}
                 aria-required={needsProofUpload}
-                className="block w-full rounded-2xl border border-editorial-stone/15 bg-[#fbfaf7] px-3 py-2 text-sm font-semibold text-editorial-charcoal file:mr-3 file:rounded-xl file:border-0 file:bg-editorial-charcoal file:px-3 file:py-2 file:text-xs file:font-bold file:text-editorial-paper"
+                className="block w-full rounded-none border border-ng-bone/15 bg-ng-deep px-3 py-2 text-sm font-semibold text-ng-bone file:mr-3 file:rounded-none file:border-0 file:bg-ng-card file:px-3 file:py-2 file:text-xs file:font-bold file:text-ng-bone"
               />
             </label>
             {proofFile ? (
-              <div className="truncate text-xs font-semibold text-editorial-muted">
+              <div className="truncate text-xs font-semibold text-ng-dust">
                 {proofFile.name}
               </div>
             ) : null}
-            <Button type="button" className="h-11 rounded-2xl gap-2" onClick={submitProof} disabled={uploadingProof || !proofFile}>
+            <Button type="button" className="h-11 rounded-none gap-2" onClick={submitProof} disabled={uploadingProof || !proofFile}>
               {uploadingProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {hasSubmittedProof ? t("pay.reuploadProof") : t("pay.uploadProof")}
             </Button>
-            <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+            <p className="text-[11px] font-semibold leading-relaxed text-ng-dust">
               {t('pay.fileFormats')}
             </p>
           </div>
@@ -964,19 +939,19 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   );
 };
 
-const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading = false, onRefresh }) => {
+const EmptyPaymentState = ({ orderNumber, orderFound = null, loading = false, onRefresh }) => {
   const { t } = useTranslate();
   return (
-  <section className={isMobile ? 'mobile-card p-5 text-center' : 'mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-sm'}>
-    <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
+  <section className="mx-auto max-w-xl rounded-none border border-ng-bone/30 bg-transparent p-8 text-center">
+    <span className="mx-auto grid h-12 w-12 place-items-center rounded-none bg-ng-ink text-ng-bone">
       {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
     </span>
-    <h1 className={isMobile ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>
+    <h1 className="mt-4 font-ng-display text-4xl font-normal text-ng-bone">
       {orderNumber
         ? (orderFound === false ? t("pay.orderNotFound") : t("pay.processing"))
         : t("pay.noSession")}
     </h1>
-    <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
+    <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
       {orderNumber
         ? (orderFound === false
           ? t("pay.orderMissing", { order: orderNumber })
@@ -984,14 +959,14 @@ const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading =
         : t("pay.noSessionBody")}
     </p>
     <div className="mt-5 flex justify-center gap-2">
-      <Link to={isMobile ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-paper">
+      <Link to="/catalog" className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
         {t('mcheckout.openCatalog')}
       </Link>
-      <Link to={isMobile ? '/mobile/customer' : '/customer'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
+      <Link to="/customer" className="inline-flex h-11 items-center rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
         {t('track.title')}
       </Link>
       {orderNumber && onRefresh ? (
-        <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
+        <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
           <RefreshCw className="h-4 w-4" />
           {t('pay.refresh')}
         </button>
@@ -1001,27 +976,8 @@ const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading =
 );
 };
 
-const MobilePaymentSkeleton = () => (
-  <section className="mobile-card overflow-hidden p-0" aria-busy="true">
-    <div className="border-b border-editorial-stone/10 bg-editorial-ivory p-4">
-      <div className="mobile-catalog-skeleton h-4 w-32 rounded-full" />
-      <div className="mobile-catalog-skeleton mt-3 h-7 w-56 rounded-full" />
-      <div className="mt-4 grid gap-2">
-        <div className="mobile-catalog-skeleton h-14 rounded-2xl" />
-        <div className="mobile-catalog-skeleton h-14 rounded-2xl" />
-      </div>
-    </div>
-    <div className="grid gap-3 p-4">
-      <div className="mobile-catalog-skeleton h-28 rounded-2xl" />
-      <div className="mobile-catalog-skeleton h-40 rounded-2xl" />
-      <div className="mobile-catalog-skeleton h-12 rounded-2xl" />
-    </div>
-  </section>
-);
-
-const PaymentPageContent = ({ isMobile }) => {
+const PaymentPageContent = () => {
   const { t } = useTranslate();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [session, setSession] = useState(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
@@ -1067,7 +1023,7 @@ const PaymentPageContent = ({ isMobile }) => {
         customerName: order.customerName,
         contact: order.contact,
         items: order.items || [],
-        callbackPath: isMobile ? '/mobile/payment' : '/payment',
+        callbackPath: '/payment',
       });
       // api/doku/checkout.js already persisted this payment session server-side with the service role;
       // the browser copy was filtered by RLS for every buyer and now throws (audit round 9).
@@ -1078,7 +1034,7 @@ const PaymentPageContent = ({ isMobile }) => {
       console.warn('Failed to recover DOKU payment session:', error.message || error);
       return null;
     }
-  }, [isMobile]);
+  }, []);
 
   const loadPaymentSession = useCallback(async ({ syncStatus = false } = {}) => {
     const storedSession = readPaymentSession();
@@ -1187,52 +1143,6 @@ const PaymentPageContent = ({ isMobile }) => {
     }
   };
 
-  if (isMobile) {
-    return (
-      <MobileCommerceLayout>
-        <Helmet>
-          <title>{t("pay.tab")}</title>
-        </Helmet>
-        <main className="mobile-page mobile-payment-page space-y-4">
-          <MobileTopBar
-            title={t('mcheckout.title')}
-            subtitle={session?.orderNumber || orderNumber || 'SOLIVAGANT'}
-            eyebrow={t('pay.secureEyebrow')}
-            onBack={() => navigate('/mobile/cart')}
-            backLabel={t('a11y.back')}
-            action={<CreditCard className="h-5 w-5 text-amber-700" />}
-          />
-          {(loadingOrder || refreshingStatus) && !session ? <MobilePaymentSkeleton /> : isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
-            <ManualTransferPanel session={session} compact onProofSubmitted={setSession} />
-          ) : session?.qrContent ? <QrisPanel session={session} compact onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
-          {/* The same rule as the panel above: a paid order is not offered a way to pay. The bar
-              would otherwise sit under the success panel with the total and an Upload button. */}
-          {session && !sessionIsQris && session.paymentStatus !== 'paid' ? (
-            <StickyBottomActionBar
-              fixed
-              reserveSpace
-              aria-label={t("pay.actions")}
-              className="mobile-payment-action-bar"
-              contentClassName="rounded-2xl border-editorial-stone/10 bg-white/95"
-            >
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase text-[#8b949e]">{sessionIsManual ? t("pay.manualTransfer") : t("pay.dokuPayment")}</p>
-                  <p className="truncate text-lg font-bold leading-tight text-editorial-charcoal">{payableAmount(session)}</p>
-                  <p className="truncate text-[10px] font-bold text-amber-700">{t(paymentStatusKeys[session.paymentStatus || 'pending'] || 'pay.awaiting')}</p>
-                </div>
-                <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={openPrimaryPaymentAction}>
-                  {sessionIsManual ? <Upload className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />}
-                  {sessionIsManual ? t("pay.uploadShort") : t("pay.payDoku")}
-                </Button>
-              </div>
-            </StickyBottomActionBar>
-          ) : null}
-        </main>
-      </MobileCommerceLayout>
-    );
-  }
-
   return (
     <>
       <Helmet>
@@ -1240,22 +1150,37 @@ const PaymentPageContent = ({ isMobile }) => {
       </Helmet>
       <main className="solivagant-editorial-home">
         <PublicHeader />
-        <section className="tracking-content" style={{ paddingTop: 'var(--space-block)' }}>
-          {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
-            <ManualTransferPanel session={session} onProofSubmitted={setSession} />
-          ) : session?.qrContent ? <QrisPanel session={session} onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+        <section className="ng-section">
+          <div className="ng-container max-w-[960px]">
+            {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
+              <ManualTransferPanel session={session} onProofSubmitted={setSession} />
+            ) : session?.qrContent ? <QrisPanel session={session} onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+          </div>
         </section>
         <StorefrontFooter />
       </main>
+      {/* The phone's action bar, as the phone payment page had it: the amount, the status and the one thing
+          to do next. The same rule as the panel: a paid order is not offered a way to pay. */}
+      {session && !sessionIsQris && session.paymentStatus !== 'paid' ? (
+        <div className="ng-buybar is-visible lg:hidden" role="region" aria-label={t("pay.actions")}>
+          <div className="ng-buybar__inner">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="ng-mono text-ng-ash">{sessionIsManual ? t("pay.manualTransfer") : t("pay.dokuPayment")}</span>
+              <span className="truncate text-lg">{payableAmount(session)}</span>
+              <span className="truncate text-xs text-ng-ember">{t(paymentStatusKeys[session.paymentStatus || 'pending'] || 'pay.awaiting')}</span>
+            </div>
+            <button type="button" className="ng-btn shrink-0" onClick={openPrimaryPaymentAction}>
+              {sessionIsManual ? <Upload className="h-4 w-4" aria-hidden="true" /> : <ExternalLink className="h-4 w-4" aria-hidden="true" />}
+              {sessionIsManual ? t("pay.uploadShort") : t("pay.payDoku")}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 };
 
-const PaymentPage = () => {
-  const location = useLocation();
-  const isMobile = useMemo(() => location.pathname.startsWith('/mobile'), [location.pathname]);
-
-  return <PaymentPageContent isMobile={isMobile} />;
-};
+// One payment page for every screen since the phone storefront retired (2026-10-31).
+const PaymentPage = () => <PaymentPageContent />;
 
 export default PaymentPage;

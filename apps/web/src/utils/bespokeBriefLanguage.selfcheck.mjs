@@ -73,7 +73,7 @@ for (const option of bespokeOccasionOptions) {
 }
 
 // --- 4. Both bespoke surfaces translate before they send ----------------------------------------------
-for (const file of [['pages', 'BespokePage.jsx'], ['pages', 'mobile', 'MobileBespokePage.jsx']]) {
+for (const file of [['pages', 'BespokePage.jsx']]) {
   const source = read(...file);
   assert.match(source, /occasion: bespokeOccasionLabel\(t, form\.occasion, bespokeOccasionOptions\)/,
     `${file.join('/')} sends the raw stored value instead of the label the reader chose`);

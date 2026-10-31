@@ -126,7 +126,7 @@ assert.match(mapper, /descriptionEn: product\.descriptionEn \|\| '',/,
   'the mapper carries the English copy raw; the fallback belongs to productCopyFor alone');
 
 // --- 6. Both product pages read through it ------------------------------------------------------------------
-for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
+for (const page of [['pages', 'PublicProductDetailPage.jsx']]) {
   const source = read(...page);
   assert.match(source, /const copy = productCopyFor\(product, region\);/, `${page.join('/')} resolves the copy`);
   // AFTER `product` is declared. Putting it above threw "Cannot access 'product' before initialization"
@@ -138,8 +138,6 @@ for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile'
   assert.doesNotMatch(source, /text=\{product\.story \|\| product\.description\}|text=\{product\.story\}/,
     `${page.join('/')} must not read the raw Indonesian description around productCopyFor`);
 }
-assert.match(read('pages', 'mobile', 'MobileProductDetailPage.jsx'), /\{copy\.topNotes\.join\(', '\)\}/,
-  'the phone pyramid reads the resolved notes');
 assert.match(read('pages', 'PublicProductDetailPage.jsx'), /<ScentPyramid product=\{\{ \.\.\.product, \.\.\.copy \}\} \/>/,
   'the desktop pyramid is handed the resolved notes');
 

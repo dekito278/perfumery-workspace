@@ -53,7 +53,9 @@ let gated = 0;
 for (const [parts, source] of surfaces) {
   // `to="/mobile/studio"` AND `{ labelKey, to: '/mobile/studio' }`: the header and footer keep their links
   // as objects, so an attribute-only scan never saw the rows that actually build the shop's navigation.
-  for (const link of source.matchAll(/(?:to|href|path)\s*[:=]\s*["'`](\/(?:mobile\/)?studio[^"'`]*)/g)) {
+  // Any quoted Studio path, not only `to="…"`: the header's link is a ternary in braces and its owner tap
+  // is a navigate() call, and both are Studio doors on a buyer screen.
+  for (const link of source.matchAll(/["'`](\/(?:mobile\/)?studio[^"'`]*)["'`]/g)) {
     gated += 1;
     const before = source.slice(Math.max(0, link.index - WINDOW), link.index);
     assert.match(before, /isAdmin/,
@@ -64,10 +66,13 @@ for (const [parts, source] of surfaces) {
 assert.ok(gated >= 1, 'the scan found no Studio link at all — it is no longer looking at the right thing');
 
 // --- 3. And the hidden owner tap sends a buyer somewhere that exists ---------------------------------------
-const layout = read('layouts', 'MobileCommerceLayout.jsx');
-assert.match(layout, /navigate\(isAdmin \? '\/mobile\/studio' : '\/mobile\/login'\)/,
+// In the one storefront header since the phone storefront retired (2026-10-31).
+const layout = read('components', 'storefront', 'PublicHeader.jsx');
+assert.match(layout, /navigate\(isAdmin \? \(phone \? '\/mobile\/studio' : '\/studio'\) : \(phone \? '\/mobile\/login' : '\/login'\)\)/,
   'the triple-tap owner access must not send a signed-in buyer to a page that throws them out again');
-assert.doesNotMatch(layout, /\{isAuthenticated \? \(\s*<Link\s+to="\/mobile\/studio"/,
-  'and the floating link must never go back to the "any signed-in person" gate');
+assert.match(layout, /\{isAdmin \? \(\s*<Link to=\{isMobileBrowser\(\) \? '\/mobile\/studio' : '\/studio'\}/,
+  'the Studio link in the header is the owner\'s, gated on isAdmin');
+assert.doesNotMatch(layout, /\{isAuthenticated \? \(\s*<Link/,
+  'and the Studio link must never go back to the "any signed-in person" gate');
 
 console.log('studioEntry selfcheck OK (the owner door is the owner\'s, on a shop that asks everyone to sign in)');

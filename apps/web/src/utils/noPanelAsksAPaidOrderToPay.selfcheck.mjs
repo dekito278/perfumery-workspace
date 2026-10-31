@@ -27,23 +27,15 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const page = readFileSync(join(root, 'pages', 'PaymentPage.jsx'), 'utf8');
 
 // ── The subject: whatever the page hands a payment session to ───────────────────────────────────────
-// Both shops choose separately — the phone's ternary and the desktop's — so the two lists are collected
-// apart and compared. A panel wired into one shop only is the shape half this codebase's parity bugs
-// have taken.
+// There were two choosers — the phone's ternary and the desktop's — compared for parity. One page serves
+// every screen since the phone storefront retired (2026-10-31), so the subject is the one chooser: every
+// component this page hands the session to and that may ask for money. The breakdown only prints totals.
 const chooserPanels = (source) => [...source.matchAll(/<([A-Z]\w+)\s+session=\{session\}/g)].map((m) => m[1]);
-
-const mobileBlock = page.match(/if \(isMobile\) \{([\s\S]*?)\n  \}\n/);
-assert.ok(mobileBlock, "could not find the phone's branch — this guard's parse is broken, not the page");
-const desktopBlock = page.slice(page.indexOf('\n  return (\n    <>\n', mobileBlock.index));
-
-const mobilePanels = [...new Set(chooserPanels(mobileBlock[1]))].sort();
-const desktopPanels = [...new Set(chooserPanels(desktopBlock))].sort();
-assert.ok(mobilePanels.length >= 3, `only ${mobilePanels.length} payment panels found on the phone — the parse is broken`);
-assert.deepEqual(
-  mobilePanels,
-  desktopPanels,
-  `the two shops offer different payment panels — phone ${mobilePanels.join(', ')} vs desktop ${desktopPanels.join(', ')}`,
-);
+const PRINTS_ONLY = new Set(['PaymentTotalBreakdown']);
+assert.doesNotMatch(page, /if \(isMobile\) \{/, 'a phone branch is back — it would need its own panels checked');
+const mobilePanels = [...new Set(chooserPanels(page))].filter((name) => !PRINTS_ONLY.has(name)).sort();
+assert.ok(mobilePanels.length >= 3, `only ${mobilePanels.length} payment panels found — the parse is broken`);
+assert.ok(chooserPanels(page).includes('PaymentTotalBreakdown'), 'the exemption names a component the page no longer renders');
 
 // ── Every one of them refuses a paid order, before it renders anything else ─────────────────────────
 const componentBody = (name) => {
@@ -89,7 +81,9 @@ for (const name of mobilePanels) {
 // ── The phone's sticky bar is a fourth way to pay ───────────────────────────────────────────────────
 // It sits outside the panels, carries the amount, and its button scrolls the proof uploader into view
 // and opens the file picker. Under a success panel it read "Total transfer … Upload bukti".
-const bar = page.match(/\{session && [^?]*\? \(\s*\n\s*<StickyBottomActionBar/);
+// The phone's bar is the page's own .ng-buybar since 2026-10-31 (StickyBottomActionBar left with the phone
+// storefront); the condition that opens it is what is held.
+const bar = page.match(/\{session && [^?]*\? \(\s*\n\s*<div className="ng-buybar\b/);
 assert.ok(bar, "could not find the phone's payment action bar — this guard's parse is broken, not the page");
 assert.match(
   bar[0],
@@ -106,4 +100,4 @@ for (const forbidden of ['accountNumber', 'pay.bankAccount', 'pay.totalDue', 'pa
   );
 }
 
-console.log(`noPanelAsksAPaidOrderToPay: ok — ${mobilePanels.length} panels (${mobilePanels.join(', ')}), both shops, each turning a paid order away before it renders`);
+console.log(`noPanelAsksAPaidOrderToPay: ok — ${mobilePanels.length} panels (${mobilePanels.join(', ')}), one chooser, each turning a paid order away before it renders`);

@@ -17,9 +17,9 @@ import { dirname, join } from 'node:path';
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
 const read = (...parts) => readFileSync(join(src, ...parts), 'utf8');
 
+// One catalogue serves every screen since the phone storefront retired (2026-10-31).
 const pages = [
   ['CatalogPage.jsx', read('pages', 'CatalogPage.jsx')],
-  ['MobileCatalogPage.jsx', read('pages', 'mobile', 'MobileCatalogPage.jsx')],
 ];
 
 // --- 1. Both catalogues offer it, through one component ---------------------------------------------
@@ -28,7 +28,7 @@ for (const [name, page] of pages) {
   assert.match(page, /import SkipToResults from '@\/components\/storefront\/SkipToResults\.jsx'/,
     `${name} must use the shared component rather than its own anchor`);
   // Before the filters, or it skips nothing.
-  assert.ok(page.indexOf('<SkipToResults') < page.search(/catalog-pills|m-editorial-catalog-pills/),
+  assert.ok(page.indexOf('<SkipToResults') < page.search(/catalog-pills|m-editorial-catalog-pills|ng-filter/),
     `${name} puts the skip link after the filters, so it skips nothing`);
 }
 
@@ -57,4 +57,4 @@ const messages = read('i18n', 'messages.js');
 const carrying = messages.split('\n').filter((line) => line.includes('catalog.skipToResults'));
 assert.equal(carrying.length, 2, `catalog.skipToResults must exist in both shops; found ${carrying.length}`);
 
-console.log('theCatalogueCanBeSkippedPast OK (one link past twenty-six tab stops, on both catalogues)');
+console.log('theCatalogueCanBeSkippedPast OK (one link past twenty-six tab stops, on the catalogue)');

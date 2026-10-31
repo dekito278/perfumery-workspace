@@ -81,7 +81,8 @@ for (const file of surfaces.files) {
       + 'On /en that names the Indonesian url, which asks a crawler to drop the English page');
   }
 }
-assert.ok(checked >= 12, `only ${checked} canonicals were found on buyer surfaces — the sweep used to `
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(checked >= 7, `only ${checked} canonicals were found on buyer surfaces — the sweep used to `
   + 'find 13, so it has gone blind and this check passes on nothing');
 assert.ok(journalExempt >= 1 && journalExempt < checked,
   `${journalExempt} of ${checked} canonicals were treated as the journal — if that is all of them, the `

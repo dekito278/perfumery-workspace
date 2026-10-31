@@ -75,7 +75,6 @@ assert.deepEqual(rolled, [],
 for (const name of [
   'pages/PublicJournalPage.jsx',
   'pages/HomePage.jsx',
-  'pages/mobile/MobileArticlesPage.jsx',
 ]) {
   const text = readFileSync(join(src, name), 'utf8');
   assert.match(text, /articleExcerpt\(/,
