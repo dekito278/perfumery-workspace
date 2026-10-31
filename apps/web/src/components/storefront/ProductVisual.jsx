@@ -9,20 +9,9 @@ import { LineVessel } from '@/components/line/LineArt.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { showsSoldOutBadge } from '@/utils/soldOutBadge.js';
 
-const fallbackGradients = [
-  'linear-gradient(135deg,#f5d78f 0%,#f8efe1 52%,#d7b98b 100%)',
-  'linear-gradient(135deg,#f0b6c2 0%,#fff2f4 52%,#b97f88 100%)',
-  'linear-gradient(135deg,#a7d8d3 0%,#effaf8 52%,#efd37c 100%)',
-  'linear-gradient(135deg,#e6bd82 0%,#fff4df 52%,#b8885b 100%)',
-  'linear-gradient(135deg,#bad7b6 0%,#f6fbf0 52%,#d8c89b 100%)',
-  'linear-gradient(135deg,#9fb8b3 0%,#eef5f2 52%,#8e806d 100%)',
-];
-
-const getFallbackGradient = (product) => {
-  const value = String(product?.slug || product?.name || product?.category || 'solivagant');
-  const index = Math.abs(value.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0)) % fallbackGradients.length;
-  return fallbackGradients[index];
-};
+// One dark ground for every product without a photo. The pastel gradients this replaced were picked per
+// slug for the light storefront; on the dark one they read as six unrelated colour swatches.
+const FALLBACK_GROUND = 'radial-gradient(ellipse 60% 50% at 50% 60%, rgba(237,230,214,0.07), rgba(22,19,16,0) 70%), #161310';
 
 const loadedProductImages = new Set();
 
@@ -62,23 +51,22 @@ const ProductVisual = ({
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-2xl bg-[#121110]', className)}
-      style={{ background: getFallbackGradient(product) }}
+      className={cn('relative overflow-hidden border border-ng-bone/10', className)}
+      style={{ background: FALLBACK_GROUND }}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_14%,rgba(255,255,255,0.34),transparent_34%),linear-gradient(180deg,rgba(5,7,5,0.02),rgba(5,7,5,0.36))]" />
       {/* Placeholder while a photo loads, and the whole picture for a product that has none yet. The
           drawn vessel says "bottle" where the wordmark only said "brand" — and the wordmark already
           sits in the header on every one of these pages. */}
       <div className="absolute inset-0 flex items-center justify-center p-6">
         <LineVessel
           className={cn(
-            'h-full w-auto max-w-[62%] text-[#1b1a16] transition-opacity duration-200',
-            hasImage && imageLoaded ? 'opacity-0' : 'opacity-30',
+            'h-full w-auto max-w-[62%] text-ng-bone transition-opacity duration-200',
+            hasImage && imageLoaded ? 'opacity-0' : 'opacity-20',
           )}
         />
       </div>
       {hasImage && !imageLoaded ? (
-        <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0.05),rgba(255,255,255,0.24),rgba(255,255,255,0.05))]" />
+        <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(237,230,214,0.02),rgba(237,230,214,0.08),rgba(237,230,214,0.02))]" />
       ) : null}
       {hasImage ? (
         <img
@@ -114,24 +102,20 @@ const ProductVisual = ({
           }}
         />
       ) : (
-        <>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(238,242,232,0.12),transparent_38%)]" />
-          <div className="absolute bottom-4 left-4 rounded-2xl bg-white/10 px-3 py-2 text-[10px] font-bold uppercase text-editorial-paper shadow-sm backdrop-blur">
-            Solivagant
-          </div>
-        </>
+        <div className="absolute bottom-4 left-4 font-ng-mono text-[10px] uppercase tracking-[0.2em] text-ng-ash">
+          Solivagant
+        </div>
       )}
-      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/45 to-transparent" />
       {label && product ? (
-        <div className="absolute bottom-3 right-3 rounded-2xl bg-white/12 px-3 py-2 text-right text-editorial-paper shadow-sm backdrop-blur">
-          <div className="text-[10px] font-bold uppercase text-[#b7c6b1]">{product?.category}</div>
-          <div className="text-xs font-bold">{product?.size}</div>
+        <div className="absolute bottom-3 right-3 bg-ng-ink/80 px-3 py-2 text-right font-ng-mono text-[10px] uppercase tracking-[0.16em] text-ng-bone">
+          <div className="text-ng-dust">{product?.category}</div>
+          <div>{product?.size}</div>
         </div>
       ) : null}
       {/* A span, not a div: both card stylesheets carry `.<card>__visual > div { width: 100%; height: 100% }`
           for the image layers, and a div here was stretched by it to cover the whole photo. */}
       {showSoldOut ? (
-        <span className="absolute left-3 top-3 rounded-full bg-black/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-editorial-paper backdrop-blur">
+        <span className="absolute left-3 top-3 bg-ng-ink/90 px-2.5 py-1 font-ng-mono text-[10px] uppercase tracking-[0.16em] text-ng-bone">
           {t('catalog.soldOutShort')}
         </span>
       ) : null}

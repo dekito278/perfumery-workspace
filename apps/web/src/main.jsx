@@ -6,6 +6,7 @@ import '@/index.css';
 import '@/styles/studio.css';
 import '@/styles/mobile.css';
 import '@/styles/storefront.css';
+import '@/styles/naskah.css';
 import '@/styles/print.css';
 import { applyStandaloneClass, installConnectivityEvents, installStaleShellRecovery, registerServiceWorker } from '@/utils/pwa.js';
 import { installRevealSafetyNet } from '@/utils/revealSafetyNet.js';

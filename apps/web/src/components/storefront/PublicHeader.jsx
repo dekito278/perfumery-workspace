@@ -1,7 +1,7 @@
 import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import React, {useEffect, useState, useRef, useCallback} from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, ChevronDown, X, Menu, UserRound } from 'lucide-react';
+import { X, Menu } from 'lucide-react';
 import BackToTop from '@/components/storefront/BackToTop.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -88,33 +88,48 @@ const PublicHeader = () => {
   }, [megaOpen]);
 
   const toggleMega = useCallback(() => setMegaOpen((prev) => !prev), []);
+  const navLinks = [
+    { labelKey: 'nav.catalog', to: '/catalog' },
+    { labelKey: 'nav.journal', to: '/journal' },
+    { labelKey: 'nav.bespokeShort', to: '/bespoke' },
+  ];
+  const isCurrent = (to) => location.pathname === to || location.pathname.startsWith(`${to}/`);
 
   return (
-    <div ref={menuRef} className={`editorial-header-wrap${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`}>
+    <div ref={menuRef} className={`ng-header-wrap${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`}>
       <PriceChangeNotice />
-      <header className="editorial-header">
-        <Link to="/home" className="editorial-wordmark" aria-label={t('nav.wordmarkAria')}>
+      <header className="ng-header">
+        <Link to="/home" className="ng-header__wordmark" aria-label={t('nav.wordmarkAria')}>
           SOLIVAGANT
         </Link>
 
-        <RegionSwitch className="mr-1" />
-        <nav className="editorial-nav" aria-label={t('nav.storefrontAria')}>
-          <button
-            type="button"
-            className="editorial-nav__trigger"
-            onClick={toggleMega}
-            aria-expanded={megaOpen}
-            aria-haspopup="true"
-          >
-            {t('nav.shop')} <ChevronDown className={`editorial-nav__chevron ${megaOpen ? 'is-open' : ''}`} />
-          </button>
-          <Link to="/journal">{t('nav.journal')}</Link>
+        <nav className="ng-header__nav ng-mono" aria-label={t('nav.storefrontAria')}>
+          {navLinks.map((link) => (
+            <Link key={link.to} to={link.to} aria-current={isCurrent(link.to) ? 'page' : undefined}>{t(link.labelKey)}</Link>
+          ))}
         </nav>
 
-        <div className="editorial-header__actions">
+        <div className="ng-header__actions ng-mono">
+          <RegionSwitch />
+          {/* The one door to the account, on every storefront page. The only entry used to be "Lacak
+              Pesanan" in the menu — framed as tracking, so nobody signed in for the price. */}
+          <Link
+            to="/customer"
+            className="ng-header__account"
+            aria-label={t(currentUser ? 'nav.account' : 'nav.accountSub')}
+            title={t(currentUser ? 'nav.account' : 'nav.accountSub')}
+          >
+            {t(currentUser ? 'nav.accountShort' : 'nav.signIn')}
+          </Link>
+          {/* Both shops have a cart since 2026-10-06. In the English shop it opens the international
+              cart — dollars, a destination, the shipping — and hands the order to WhatsApp; the icon
+              was hidden there from 18 Sep to 6 Oct, when the English shop sold only by enquiry. */}
+          <Link to="/cart" className="ng-header__cart" aria-label={t('nav.cartAria', { count: summary.boughtQuantity })}>
+            {t('nav.cartLabel', { count: summary.boughtQuantity })}
+          </Link>
           <button
             type="button"
-            className="editorial-nav__hamburger"
+            className="ng-header__menu-button"
             onClick={toggleMega}
             aria-expanded={megaOpen}
             aria-haspopup="true"
@@ -122,32 +137,15 @@ const PublicHeader = () => {
           >
             {megaOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          {/* The one door to the account, on every storefront page. The only entry used to be "Lacak
-              Pesanan" in the menu — framed as tracking, so nobody signed in for the price. */}
-          <Link
-            to="/customer"
-            className="editorial-cart-button"
-            aria-label={t(currentUser ? 'nav.account' : 'nav.accountSub')}
-            title={t(currentUser ? 'nav.account' : 'nav.accountSub')}
-          >
-            <UserRound className="h-4 w-4" />
-          </Link>
-          {/* Both shops have a cart since 2026-10-06. In the English shop it opens the international
-              cart — dollars, a destination, the shipping — and hands the order to WhatsApp; the icon
-              was hidden there from 18 Sep to 6 Oct, when the English shop sold only by enquiry. */}
-          <Link to="/cart" className="editorial-cart-button" aria-label={t('nav.cartAria', { count: summary.boughtQuantity })}>
-            <ShoppingBag className="h-4 w-4" />
-            {summary.boughtQuantity > 0 ? <span className="editorial-cart-count">{summary.boughtQuantity}</span> : null}
-          </Link>
         </div>
       </header>
 
       {megaOpen && (
-        <div className="editorial-mega-menu" role="menu">
-          <div className="editorial-mega-menu__inner">
+        <div className="ng-menu" role="menu">
+          <div className="ng-menu__inner">
             {megaMenuColumns.map((col) => (
-              <div key={col.titleKey} className="editorial-mega-menu__column">
-                <span className="editorial-mega-menu__heading">{t(col.titleKey)}</span>
+              <div key={col.titleKey} className="ng-menu__column">
+                <span className="ng-menu__heading ng-mono">{t(col.titleKey)}</span>
                 {col.links.map((link) => (
                   <Link key={`${col.titleKey}-${link.to}`} to={link.to} role="menuitem" onClick={() => setMegaOpen(false)}>
                     {link.labelKey ? t(link.labelKey) : link.label}
@@ -155,10 +153,10 @@ const PublicHeader = () => {
                 ))}
               </div>
             ))}
+            <div className="ng-menu__column ng-mono">
+              <RegionSwitch />
+            </div>
           </div>
-          <button type="button" className="editorial-mega-menu__close" onClick={() => setMegaOpen(false)} aria-label={t('nav.closeMenu')}>
-            <X className="h-4 w-4" />
-          </button>
         </div>
       )}
 

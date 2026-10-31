@@ -1,12 +1,11 @@
 import React from 'react';
-import { WandSparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { Spinner } from '@/components/ui/spinner.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import { cn } from '@/lib/utils.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
-const previewCards = Array.from({ length: 3 }, (_, index) => `storefront-loading-card-${index}`);
+const previewRows = Array.from({ length: 4 }, (_, index) => `storefront-loading-row-${index}`);
 
 const StorefrontLoadingState = ({
   className,
@@ -23,58 +22,42 @@ const StorefrontLoadingState = ({
 
   return (
     <main
-      className={cn('storefront-loading min-h-screen bg-editorial-ivory text-editorial-charcoal', className)}
+      className={cn('storefront-loading min-h-screen bg-ng-ink font-ng-body text-ng-bone', className)}
       role="status"
       aria-live="polite"
       aria-busy="true"
     >
       <StorefrontHeader />
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start lg:px-8">
-        <div className="rounded-[28px] border border-editorial-stone/12 bg-white/86 p-5 shadow-sm">
-          <div className="inline-flex items-center gap-2 rounded-full border border-editorial-stone/15 bg-editorial-ivory px-3 py-1 text-xs font-bold uppercase text-editorial-charcoal">
+      <section className="mx-auto grid max-w-[1344px] gap-10 px-5 py-14 sm:px-8 lg:grid-cols-2 lg:items-start lg:px-12">
+        <div>
+          <p className="inline-flex items-center gap-3 font-ng-mono text-[11px] uppercase tracking-[0.2em] text-ng-ash">
             <Spinner className="h-4 w-4" aria-hidden="true" />
             {t('pdp.loading')}
-          </div>
-          <h1 className="mt-5 text-4xl font-bold leading-none sm:text-5xl">{heading}</h1>
-          <p className="mt-4 max-w-xl text-sm font-semibold leading-relaxed text-muted-foreground sm:text-base">
-            {body}
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Skeleton className="h-11 w-36 rounded-2xl" />
-            <Skeleton className="h-11 w-32 rounded-2xl" />
-          </div>
+          <h1 className="mt-6 font-ng-display text-5xl font-light leading-none sm:text-6xl">{heading}</h1>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-ng-dust">{body}</p>
         </div>
 
         {mode === 'product' ? (
-          <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-            <Skeleton className="min-h-[520px] rounded-[28px]" />
-            <div className="rounded-[28px] border border-editorial-stone/12 bg-white/82 p-5">
-              <Skeleton className="h-8 w-32 rounded-full" />
-              <Skeleton className="mt-6 h-12 w-3/4" />
-              <Skeleton className="mt-4 h-4 w-full" />
-              <Skeleton className="mt-3 h-4 w-5/6" />
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                <Skeleton className="h-24 rounded-2xl" />
-                <Skeleton className="h-24 rounded-2xl" />
-                <Skeleton className="h-24 rounded-2xl" />
-              </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="aspect-[4/5] rounded-none bg-ng-card" />
+            <div className="flex flex-col gap-4">
+              <Skeleton className="h-4 w-32 rounded-none bg-ng-card" />
+              <Skeleton className="h-14 w-3/4 rounded-none bg-ng-card" />
+              <Skeleton className="h-4 w-full rounded-none bg-ng-card" />
+              <Skeleton className="h-4 w-5/6 rounded-none bg-ng-card" />
+              <Skeleton className="mt-6 h-14 w-full rounded-none bg-ng-card" />
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-3">
-            {previewCards.map((card) => (
-              <div key={card} className="rounded-[28px] border border-editorial-stone/12 bg-white/82 p-3 shadow-sm">
-                <Skeleton className="aspect-[4/3] rounded-2xl" />
-                <div className="p-3">
-                  <Skeleton className="h-5 w-4/5" />
-                  <Skeleton className="mt-3 h-4 w-full" />
-                  <div className="mt-5 flex items-center justify-between gap-3">
-                    <Skeleton className="h-8 w-24 rounded-full" />
-                    <span className="grid h-10 w-10 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
-                      <WandSparkles className="h-4 w-4" />
-                    </span>
-                  </div>
+          <div className="flex flex-col">
+            {previewRows.map((row) => (
+              <div key={row} className="grid grid-cols-[72px_1fr] items-center gap-6 border-b border-ng-bone/10 py-5">
+                <Skeleton className="h-[90px] w-[72px] rounded-none bg-ng-card" />
+                <div className="flex flex-col gap-3">
+                  <Skeleton className="h-7 w-1/2 rounded-none bg-ng-card" />
+                  <Skeleton className="h-3 w-1/3 rounded-none bg-ng-card" />
                 </div>
               </div>
             ))}

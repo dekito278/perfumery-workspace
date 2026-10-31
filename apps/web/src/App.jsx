@@ -231,14 +231,14 @@ const HomeRouteFallback = () => {
   const { t } = useTranslate();
 
   return (
-    <main className="min-h-screen bg-editorial-ivory text-editorial-charcoal">
-      <StorefrontHeader className="border-editorial-charcoal/10 bg-editorial-ivory text-editorial-charcoal" />
-      <section className="mx-auto grid min-h-[68vh] max-w-6xl content-center px-6 py-16">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#b08b4f]">{t('home.eyebrow')}</p>
-        <h1 className="mt-4 max-w-3xl font-serif text-6xl font-medium leading-none text-editorial-charcoal">
+    <main className="min-h-screen bg-ng-ink font-ng-body text-ng-bone">
+      <StorefrontHeader />
+      <section className="mx-auto grid min-h-[68vh] max-w-[1344px] content-center px-5 py-16 sm:px-8 lg:px-12">
+        <p className="font-ng-mono text-[11px] uppercase tracking-[0.22em] text-ng-ash">{t('home.eyebrow')}</p>
+        <h1 className="mt-6 max-w-4xl font-ng-display text-6xl font-light leading-[0.95] sm:text-8xl">
           {t('home.heroTitle').split('\n').join(' ')}
         </h1>
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-editorial-muted">{t('home.lead')}</p>
+        <p className="mt-6 max-w-xl text-lg leading-relaxed text-ng-dust">{t('home.lead')}</p>
       </section>
     </main>
   );

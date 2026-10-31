@@ -33,36 +33,27 @@ const StorefrontHeader = ({
   );
 
   return (
-    <section className={cn('border-b border-editorial-stone/15 bg-[#121110] text-editorial-paper', className)}>
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <section className={cn('border-b border-ng-bone/10 bg-ng-ink text-ng-bone', className)}>
+      <div className="mx-auto flex max-w-[1344px] items-center justify-between gap-4 px-5 py-4 sm:px-8 lg:px-12">
         {backLabel ? (
           onBack ? (
-            <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm font-bold text-editorial-paper">
+            <button type="button" onClick={onBack} className="inline-flex min-h-[44px] items-center gap-2 font-ng-mono text-[11px] uppercase tracking-[0.18em] text-ng-bone">
               {backContent}
             </button>
           ) : (
-            <Link to={backTo || '/home'} className="inline-flex items-center gap-2 text-sm font-bold text-editorial-paper">
+            <Link to={backTo || '/home'} className="inline-flex min-h-[44px] items-center gap-2 font-ng-mono text-[11px] uppercase tracking-[0.18em] text-ng-bone">
               {backContent}
             </Link>
           )
         ) : showLogo ? (
-          <Link to="/home" className="inline-flex items-center gap-2 rounded-2xl bg-editorial-ivory px-3 py-2 shadow-sm shadow-black/20">
-            <img
-              src="/brand/solivagant-logo.png"
-              alt="Solivagant"
-              className="h-6 w-6 rounded-full object-contain"
-              loading="eager"
-              decoding="async"
-              width="24"
-              height="24"
-            />
-            <span className="text-sm font-bold tracking-[0.12em] text-editorial-charcoal">Solivagant</span>
+          <Link to="/home" className="font-ng-display text-[20px] font-medium tracking-[0.28em] text-ng-bone no-underline">
+            SOLIVAGANT
           </Link>
         ) : <span aria-hidden="true" />}
 
         <div className="flex items-center gap-2">
           {previewLabel ? (
-            <span className="rounded-2xl border border-amber-200/40 bg-amber-300/15 px-4 py-2 text-sm font-bold text-amber-100">
+            <span className="border border-ng-ember/60 px-4 py-2 font-ng-mono text-[11px] uppercase tracking-[0.16em] text-ng-bone">
               {previewLabel}
             </span>
           ) : null}
@@ -84,8 +75,8 @@ const StorefrontHeader = ({
             );
             const actionClassName = cn(
               action.iconOnly
-                ? 'grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/8 text-editorial-paper'
-                : 'inline-flex h-10 items-center gap-2 rounded-2xl border border-white/15 bg-white/8 px-4 text-sm font-bold text-editorial-paper',
+                ? 'grid h-11 w-11 place-items-center border border-ng-bone/30 text-ng-bone'
+                : 'inline-flex min-h-[44px] items-center gap-2 border border-ng-bone/30 px-4 font-ng-mono text-[11px] uppercase tracking-[0.18em] text-ng-bone',
               action.className
             );
 

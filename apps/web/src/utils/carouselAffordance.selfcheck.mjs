@@ -17,39 +17,11 @@ import { MESSAGES } from '../i18n/messages.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...p) => readFileSync(join(root, ...p), 'utf8');
-const hook = read('hooks', 'useCarouselPosition.js');
-const home = read('pages', 'HomePage.jsx');
 const css = read('styles', 'storefront.css');
 
-// --- 1. The two signals must agree at the end -------------------------------------------------------
-assert.match(hook, /const atEnd = remaining <= 1;/, 'the hook decides atEnd once');
-assert.match(hook, /index: atEnd\s*\?\s*Math\.max\(itemCount - 1, 0\)/,
-  'at the end the counter must name the LAST item, or it contradicts the arrow beside it');
-
-// --- 2. The arrows actually go dead ------------------------------------------------------------------
-assert.match(home, /home-carousel__arrow--left[\s\S]{0,200}?disabled=\{carousel\.atStart\}/,
-  'the left arrow is disabled at the start');
-assert.match(home, /home-carousel__arrow--right[\s\S]{0,200}?disabled=\{carousel\.atEnd\}/,
-  'the right arrow is disabled at the end');
-assert.match(css, /\.home-carousel__arrow:disabled \{[\s\S]*?opacity: 0\.28/, 'and looks it');
-
-// --- 3. The counter is a translated sentence, not glued-together numbers -----------------------------
-assert.match(home, /t\('home\.carouselPosition', \{ current: carousel\.index \+ 1, total: collectionProducts\.length \}\)/,
-  'the counter reads through the translator');
-for (const region of ['id', 'en']) {
-  assert.ok(MESSAGES[region]['home.carouselPosition'], `home.carouselPosition exists in ${region}`);
-  assert.match(MESSAGES[region]['home.carouselPosition'], /\{current\}[\s\S]*\{total\}/,
-    `${region} keeps both placeholders, in that order`);
-}
-assert.notEqual(MESSAGES.id['home.carouselPosition'], MESSAGES.en['home.carouselPosition'],
-  '"dari" is not "of"');
-// A screen reader cannot see the track move. Without this the position changes in silence.
-assert.match(home, /className="home-carousel__counter" aria-live="polite"/, 'the counter announces itself');
-
-// --- 4. Reduced motion gets the jump, not the glide ---------------------------------------------------
-// scrollBy honours prefers-reduced-motion nowhere on its own: `behavior: 'smooth'` animates regardless.
-assert.match(hook, /prefers-reduced-motion: reduce/, 'the hook asks');
-assert.match(hook, /behavior: reduced \? 'auto' : 'smooth'/, 'and switches the behaviour on the answer');
+// Sections 1-4 guarded the desktop home's arrow carousel and its hook. The 2026-10-31 redesign replaced
+// that carousel with a numbered list that hides nothing, so there are no arrows to go dead and no
+// position to announce; the hook had no other caller and was deleted with it.
 
 // --- 5. The phone shelf shows the next card's edge ----------------------------------------------------
 const mobileHome = read('pages', 'mobile', 'MobileStorefrontPage.jsx');

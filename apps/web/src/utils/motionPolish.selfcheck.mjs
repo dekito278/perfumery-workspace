@@ -45,8 +45,9 @@ assert.doesNotMatch(reveal[1], /filter:/,
   '[data-reveal] must not filter: it wraps whole sections, and filter breaks sticky descendants inside them');
 
 // --- 3. The dark band is full-width WITHOUT 100vw ---------------------------------------------------
-assert.match(home, /home-section home-section--flush home-section--dark/,
-  'the journal is the full-width dark chapter break');
+// The desktop home's dark journal band went with the 2026-10-31 redesign: the whole storefront is the
+// dark ground now, so there is no light page for a band to break. The phone one stays until the phone
+// storefront retires.
 assert.match(css, /\.home-section--dark \{[\s\S]*?background: var\(--editorial-charcoal\)/, 'it is dark');
 // And the phone's own storefront, which is a different component and would otherwise get none of this.
 const mobileHome = readFileSync(join(root, 'pages', 'mobile', 'MobileStorefrontPage.jsx'), 'utf8');

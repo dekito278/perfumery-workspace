@@ -67,7 +67,8 @@ assert.match(MESSAGES.id['home.note'], /Harga member, langsung dari atelier\./, 
 assert.doesNotMatch(MESSAGES.en['home.note'], /member/i, 'the English hero must not promise a member price');
 assert.ok(MESSAGES.en['home.note'].length > 20, 'but it must still give a reason to buy here');
 
-assert.match(home, /to="\/customer"[\s\S]{0,240}?\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)\.toUpperCase\(\)\}/, 'desktop hero second CTA follows the session');
+// The redesign uppercases in CSS, so the call is optional; following the session is not.
+assert.match(home, /to="\/customer"[\s\S]{0,240}?\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)(\.toUpperCase\(\))?\}/, 'desktop hero second CTA follows the session');
 assert.match(home, /\{t\('home\.seeCollection'\)\}/, 'the original CTA stays — the reason is added, not swapped in');
 assert.match(mobile, /to="\/mobile\/customer"[\s\S]{0,240}?\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)\}/, 'phone hero second CTA follows the session');
 
