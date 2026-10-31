@@ -163,7 +163,7 @@ const CartPage = () => {
                       id="cart-voucher"
                       type="text"
                       aria-label={t('cart.voucherPlaceholder')}
-                      className="ng-field !min-h-[48px] uppercase"
+                      className="ng-field !min-h-[48px] uppercase placeholder:normal-case"
                       value={voucher.inputCode}
                       onChange={(event) => voucher.setInputCode(event.target.value)}
                       placeholder={t('cart.voucherPlaceholder')}

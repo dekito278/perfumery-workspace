@@ -111,7 +111,8 @@ for (const file of pages) {
 // So the subject is the repo's own notice STYLING rather than a list of states: a paragraph wearing
 // `checkout-notice`, the amber pill, or the editorial warning is a notice by construction, and a notice
 // a screen reader never reports is not one.
-const NOTICE_PILL = /className="(?:[^"]*\b(?:checkout-notice|bg-amber-50)\b[^"]*|[^"]*editorial-helper-text--warning[^"]*)"/;
+// `ng-notice` is the redesign's (2026-10-31) notice styling; same rule.
+const NOTICE_PILL = /className="(?:[^"]*\b(?:checkout-notice|bg-amber-50|ng-notice)\b[^"]*|[^"]*editorial-helper-text--warning[^"]*)"/;
 let notices = 0;
 for (const file of walk(join(src, 'pages')).filter((f) => BUYER.test(relative(src, f)))) {
   const source = stripComments(readFileSync(file, 'utf8'));

@@ -55,16 +55,17 @@ const PaymentInstructionsPage = () => {
         <title>{orderNumber ? t('pay.link.tab', { order: orderNumber }) : t('pay.link.eyebrowTab')}</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
-      <PublicHeader />
       <main className="solivagant-editorial-home">
-        <section className="pdp-main">
-          <p className="editorial-eyebrow">{t('pay.link.eyebrow')}</p>
+        <PublicHeader />
+        <section className="ng-section">
+          <div className="ng-container pay-link flex max-w-[760px] flex-col gap-6">
+          <p className="ng-eyebrow ng-mono m-0">{t('pay.link.eyebrow')}</p>
 
           {!loaded || !order ? (
             <p className="pay-link__note">{loaded ? t('pay.link.notFound') : ''}</p>
           ) : (
             <>
-              <h1>{t('pay.link.title', { order: orderNumber })}</h1>
+              <h1 className="ng-display text-[44px] md:text-[64px]">{t('pay.link.title', { order: orderNumber })}</h1>
               <p className="pay-link__amount">
                 <span>{t('pay.link.amount')}</span>
                 {/* The dollar figure, with the shop's own rounding — the same number the quote carried. */}
@@ -117,6 +118,7 @@ const PaymentInstructionsPage = () => {
               <p className="pay-link__note">{t('pay.link.after')}</p>
             </>
           )}
+          </div>
         </section>
       </main>
       <StorefrontFooter />
