@@ -9,7 +9,7 @@ import {
 } from '@/utils/journalCategoryUrl.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
-import TextReveal from '@/components/storefront/TextReveal.jsx';
+import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import {
   getJournalCategoryLabel,
@@ -136,99 +136,95 @@ const PublicJournalPage = () => {
         <ScrollProgress />
         <PublicHeader />
 
-        <section className="journal-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t("journal.eyebrow")}</p>
-          <TextReveal as="h1" text={t("journal.title")} />
-          <p className="hero-animate-text hero-animate-text--d3">{t("journal.lead")}</p>
-        </section>
-
-        {/* Category filter tabs — only the ones with something behind them, each carrying its count */}
-        <nav className="journal-tabs hero-animate-fade">
-          {categories.map((cat) => (
-            <Link
-              key={cat}
-              to={journalTabPath(cat)}
-              aria-current={effectiveCategory === cat ? 'page' : undefined}
-              className={`journal-tab${effectiveCategory === cat ? ' is-active' : ''}`}
-            >
-              {cat === JOURNAL_ALL_TAB ? t("journal.all") : cat}
-              <span className="journal-tab__count">{tabCounts[cat] ?? 0}</span>
-            </Link>
-          ))}
-        </nav>
-
-        {/* The journal has no English twin: journal_posts has one set of columns, so /en/journal shows
-            the Indonesian articles rather than a translation that does not exist. robots.txt keeps
-            crawlers off it for that reason, but the link is in the English shop's own nav, so a reader
-            does reach it — and finds Indonesian titles with nothing saying why. One line, said plainly,
-            rather than hiding the writing from them or pretending it is translated. */}
-        {isInternational ? (
-          <p className="journal-language-note">{t('journal.indonesianOnly')}</p>
-        ) : null}
-
-        <section className="journal-content">
-          {loading ? (
-            <div className="journal-grid" aria-hidden="true">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="skel-card">
-                  <div className="editorial-skel skel-card__img" style={{ aspectRatio: '16 / 10' }} />
-                  <div className="editorial-skel skel-line skel-line--sm" />
-                  <div className="editorial-skel skel-line skel-line--lg" />
-                  <div className="editorial-skel skel-line skel-line--md" />
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">{t('journal.failedEyebrow')}</p>
-              <h2>{error}</h2>
-            </div>
-          ) : !filtered.length ? (
-            <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">{t("journal.emptyEyebrow")}</p>
-              <h2>{effectiveCategory !== 'All' ? t('journal.emptyCategory', { category: effectiveCategory }) : t('journal.emptyAll')}</h2>
-            </div>
-          ) : (
-            <>
-              {/* Featured article — large */}
-              {featured ? (
-                <Link to={getJournalPublicPath(featured)} className="journal-featured card-lift" data-reveal>
-                  <div className="journal-featured__body">
-                    <span className="journal-featured__category">{getJournalCategoryLabel(featured.category)}</span>
-                    <h2>{featured.title}</h2>
-                    <p>{getExcerpt(featured)}</p>
-                    <div className="journal-featured__meta">
-                      <time>{formatDate(featured.published_at || featured.updated || featured.created, t('fmt.dateLocale'))}</time>
-                      <span className="journal-featured__read">{t('journal.read')} <ArrowRight className="h-4 w-4" /></span>
-                    </div>
-                  </div>
+        <header className="ng-section !pb-12 !pt-16 md:!pt-24">
+          <div className="ng-container flex flex-col gap-8">
+            <p className="ng-eyebrow ng-mono m-0">{t("journal.eyebrow")}</p>
+            <h1 className="ng-display ng-h1">{t("journal.title")}</h1>
+            <p className="ng-lead">{t("journal.lead")}</p>
+            {/* Category filter tabs — only the ones with something behind them, each carrying its count */}
+            <nav className="flex flex-wrap gap-2.5" aria-label={t('journal.breadcrumb')}>
+              {categories.map((cat) => (
+                <Link
+                  key={cat}
+                  to={journalTabPath(cat)}
+                  aria-current={effectiveCategory === cat ? 'page' : undefined}
+                  className="ng-chip ng-filter"
+                >
+                  {cat === JOURNAL_ALL_TAB ? t("journal.all") : cat}
+                  <span className="ng-chip__count">{tabCounts[cat] ?? 0}</span>
                 </Link>
-              ) : null}
+              ))}
+            </nav>
+            {/* The journal has no English twin: journal_posts has one set of columns, so /en/journal shows
+                the Indonesian articles rather than a translation that does not exist. One line, said
+                plainly, rather than hiding the writing from them or pretending it is translated. */}
+            {isInternational ? (
+              <p className="m-0 text-sm text-ng-dust">{t('journal.indonesianOnly')}</p>
+            ) : null}
+          </div>
+        </header>
 
-              {/* Grid of remaining articles */}
-              {remaining.length ? (
-                <div className="journal-grid" data-reveal data-stagger-children>
-                  {remaining.map((article) => (
-                    <Link key={article.id} to={getJournalPublicPath(article)} className="journal-card card-lift">
-                      <span className="journal-card__category">{getJournalCategoryLabel(article.category)}</span>
-                      <h3>{article.title}</h3>
-                      <p>{getExcerpt(article)}</p>
-                      <time>{formatDate(article.published_at || article.updated || article.created, t('fmt.dateLocale'))}</time>
-                    </Link>
-                  ))}
-                </div>
-              ) : null}
+        <section className="ng-section !pt-12">
+          <div className="ng-container">
+            {loading ? (
+              <div className="flex flex-col" aria-hidden="true">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3 border-b border-ng-bone/10 py-8">
+                    <span className="editorial-skel block h-3 w-32" />
+                    <span className="editorial-skel block h-8 w-2/3" />
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="flex flex-col gap-4 py-14">
+                <p className="ng-mono m-0 text-ng-ash">{t('journal.failedEyebrow')}</p>
+                <h2 className="ng-display text-[36px] font-normal">{error}</h2>
+              </div>
+            ) : !filtered.length ? (
+              <div className="flex flex-col gap-4 py-14">
+                <p className="ng-mono m-0 text-ng-ash">{t("journal.emptyEyebrow")}</p>
+                <h2 className="ng-display text-[36px] font-normal">{effectiveCategory !== 'All' ? t('journal.emptyCategory', { category: effectiveCategory }) : t('journal.emptyAll')}</h2>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-16">
+                {/* Featured article — large */}
+                {featured ? (
+                  <Link to={getJournalPublicPath(featured)} className="grid items-center gap-10 text-ng-bone no-underline md:grid-cols-2 md:gap-[72px]" data-reveal>
+                    <JournalCoverFrame post={featured} className="ng-cover border-ng-bone/10" imageClassName="aspect-[5/4]" />
+                    <span className="flex flex-col gap-5">
+                      <span className="ng-mono text-ng-ember">{getJournalCategoryLabel(featured.category)} · {formatDate(featured.published_at || featured.updated || featured.created, t('fmt.dateLocale'))}</span>
+                      <span className="font-ng-display text-[40px] leading-[1.02] md:text-[60px]">{featured.title}</span>
+                      <span className="max-w-[520px] text-[17px] leading-relaxed text-ng-dust">{getExcerpt(featured)}</span>
+                      <span className="ng-mono inline-flex items-center gap-2">{t('journal.read')} <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
+                    </span>
+                  </Link>
+                ) : null}
 
-              {visibleCount < filtered.length ? (
-                <div className="journal-load-more">
-                  <button type="button" onClick={() => setVisibleCount((c) => c + 9)}>
-                    {t('journal.showMore')}
-                  </button>
-                  <span>{t('journal.shownOf', { shown: Math.min(visibleCount, filtered.length), total: filtered.length })}</span>
-                </div>
-              ) : null}
-            </>
-          )}
+                {/* The rest, as a list */}
+                {remaining.length ? (
+                  <div className="flex flex-col border-t border-ng-bone/30" data-reveal>
+                    {remaining.map((article) => (
+                      <Link key={article.id} to={getJournalPublicPath(article)} className="ng-journal-row">
+                        <span className="ng-mono text-ng-ash">{getJournalCategoryLabel(article.category)}</span>
+                        <span className="font-ng-display text-[28px] leading-[1.1] md:text-[32px]">{article.title}</span>
+                        <span className="text-[15px] leading-relaxed text-ng-dust">{getExcerpt(article)}</span>
+                        <time className="ng-mono text-ng-ash">{formatDate(article.published_at || article.updated || article.created, t('fmt.dateLocale'))}</time>
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
+
+                {visibleCount < filtered.length ? (
+                  <div className="flex flex-wrap items-center gap-6">
+                    <button type="button" className="ng-btn ng-btn--ghost" onClick={() => setVisibleCount((c) => c + 9)}>
+                      {t('journal.showMore')}
+                    </button>
+                    <span className="ng-mono text-ng-ash">{t('journal.shownOf', { shown: Math.min(visibleCount, filtered.length), total: filtered.length })}</span>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
         </section>
 
         <StorefrontFooter />

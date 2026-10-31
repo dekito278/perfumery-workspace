@@ -2,7 +2,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, CalendarDays, Copy, ExternalLink, Share2, Timer } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Copy, ExternalLink, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
@@ -282,110 +282,74 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
         <PublicHeader />
 
         {loading ? (
-          <section className="notfound-content">
-            <div className="reveal-divider" style={{ width: 40, margin: '0 auto 20px' }} />
-            <p className="editorial-eyebrow">{t('journal.loadingEyebrow')}</p>
-            <h1 style={{ fontSize: 'var(--text-section)' }}>{t("journal.loading")}</h1>
+          <section className="ng-section grid min-h-[50vh] place-items-center">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <p className="ng-mono m-0 text-ng-ash">{t('journal.loadingEyebrow')}</p>
+              <h1 className="ng-display text-[40px]">{t("journal.loading")}</h1>
+            </div>
           </section>
         ) : failed ? (
-          <section className="notfound-content">
-            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t('journal.eyebrowWord')}</p>
-            <h1 className="hero-animate-text hero-animate-text--d2">{t("journal.unavailable")}</h1>
-            <p className="hero-animate-text hero-animate-text--d3">{t("journal.unavailableBody")}</p>
-            <div className="notfound-actions hero-animate-text hero-animate-text--d4">
-              <Link to="/home" className="editorial-button editorial-button--primary">
-                <ArrowLeft className="h-4 w-4" /> {t('notfound.home')}
+          <section className="ng-section">
+            <div className="ng-container flex flex-col items-start gap-6">
+              <p className="ng-mono m-0 text-ng-ash">{t('journal.eyebrowWord')}</p>
+              <h1 className="ng-display ng-h2">{t("journal.unavailable")}</h1>
+              <p className="ng-lead">{t("journal.unavailableBody")}</p>
+              <Link to="/home" className="ng-btn">
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t('notfound.home')}
               </Link>
             </div>
           </section>
         ) : (
-          <>
-            {/* Article header */}
-            <header className="journal-article-header" data-reveal>
-              <div className="journal-article-header__badges">
-                <span className="journal-article-badge journal-article-badge--category">
-                  {getJournalCategoryLabel(post.category)}
-                </span>
-                <span className="journal-article-badge journal-article-badge--status">
-                  {t('journal.published')}
-                </span>
+          <article>
+            <header className="ng-section !border-b-0 !pb-14 !pt-20 md:!pt-28">
+              <div className="mx-auto flex max-w-[880px] flex-col items-center gap-7 text-center">
+                <p className="ng-mono m-0 flex flex-wrap justify-center gap-x-3.5 gap-y-1 text-ng-ash">
+                  <Link to={`/journal`} className="text-ng-ember no-underline">{getJournalCategoryLabel(post.category)}</Link>
+                  <span aria-hidden="true">·</span>
+                  <span>{formatDate(post.published_at || post.updated || post.created, t('fmt.dateLocale'))}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{t('journal.minutesRead', { n: readingMinutes })}</span>
+                </p>
+                <h1 className="ng-display text-[44px] leading-[1.02] md:text-[80px]">{post.title}</h1>
+                {post.excerpt ? (
+                  <p className="m-0 max-w-[600px] font-ng-display text-[22px] italic leading-snug text-ng-sand md:text-[24px]">{post.excerpt}</p>
+                ) : null}
               </div>
-
-              <h1 className="hero-animate-text hero-animate-text--d1">{post.title}</h1>
-
-              {post.excerpt ? (
-                <p className="journal-article-header__excerpt hero-animate-text hero-animate-text--d2">{post.excerpt}</p>
-              ) : null}
-
-              <div className="journal-article-header__meta hero-animate-text hero-animate-text--d3">
-                <span className="journal-article-meta-pill">
-                  <CalendarDays />
-                  {formatDate(post.published_at || post.updated || post.created, t('fmt.dateLocale'))}
-                </span>
-                <span className="journal-article-meta-pill">
-                  <Timer />
-                  {t('journal.minutesRead', { n: readingMinutes })}
-                </span>
-              </div>
-
-              {tags.length ? (
-                <div className="journal-article-header__tags hero-animate-fade">
-                  {tags.map((tag) => <span key={tag} className="journal-article-tag">{tag}</span>)}
-                </div>
-              ) : null}
             </header>
 
-            {/* Cover image */}
-            <div className="journal-article-cover" data-reveal="scale">
-              <JournalCoverFrame
-                post={post}
-                className="img-hover-zoom"
-                imageClassName="aspect-[16/8]"
-                eager
-              />
+            <div className="px-[var(--ng-gutter)]">
+              <JournalCoverFrame post={post} className="ng-cover mx-auto max-w-[1200px] border-ng-bone/10" imageClassName="aspect-[16/8]" eager />
             </div>
 
-            {/* Body + sidebar */}
-            <div className="journal-article-layout">
-              <section className="journal-article-body" data-reveal>
-                {post.content ? (
-                  <JournalMarkdownContent content={post.content} />
-                ) : (
-                  <div className="editorial-empty-state">
-                    <p className="editorial-eyebrow">{t("journal.noContentEyebrow")}</p>
-                    <h2>{t("journal.noContent")}</h2>
-                  </div>
-                )}
-                <JournalRelatedProduct post={post} />
-              </section>
-
-              <aside className="journal-article-sidebar" data-reveal="right">
-                <div className="journal-article-share">
-                  <div className="journal-article-share__image">
-                    <img src={shareImageUrl} alt="" loading="lazy" decoding="async" width="1200" height="630" />
-                  </div>
-                  <div className="journal-article-share__body">
-                    <span className="journal-article-share__label">
-                      <Share2 /> {t('journal.sharePreview')}
-                    </span>
-                    <h2>{title}</h2>
-                    <p className="journal-article-share__desc">{description}</p>
-                    <div className="journal-article-share__url">{canonicalUrl}</div>
-                    <div className="journal-article-share__actions">
-                      <button type="button" onClick={copyArticleLink}>
-                        <Copy />
-                        {copyState === 'copied' ? t("journal.copied") : copyState === 'failed' ? t("journal.copyFailed") : t("journal.copy")}
-                      </button>
-                      <a href={canonicalUrl} target="_blank" rel="noreferrer">
-                        <ExternalLink />
-                        {t('journal.openLink')}
-                      </a>
-                    </div>
-                  </div>
+            <div className="ng-section">
+              <div className="mx-auto flex max-w-[680px] flex-col gap-10">
+                <div className="ng-article">
+                  {post.content ? (
+                    <JournalMarkdownContent content={post.content} />
+                  ) : (
+                    <p className="m-0 text-ng-dust">{t("journal.noContent")}</p>
+                  )}
                 </div>
-              </aside>
+                {tags.length ? (
+                  <ul className="ng-tags">
+                    {tags.map((tag) => <li key={tag}>{tag}</li>)}
+                  </ul>
+                ) : null}
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" className="ng-btn ng-btn--ghost" onClick={copyArticleLink}>
+                    <Copy className="h-4 w-4" aria-hidden="true" />
+                    {copyState === 'copied' ? t("journal.copied") : copyState === 'failed' ? t("journal.copyFailed") : t("journal.copy")}
+                  </button>
+                  <a href={canonicalUrl} target="_blank" rel="noreferrer" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2">
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                    {t('journal.openLink')}
+                  </a>
+                </div>
+              </div>
             </div>
-          </>
+
+            <JournalRelatedProduct post={post} />
+          </article>
         )}
 
         <StorefrontFooter />

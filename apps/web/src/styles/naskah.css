@@ -1028,6 +1028,94 @@ a.ng-row:hover {
   }
 }
 
+/* --- Journal -------------------------------------------------------------------------------------- */
+
+.ng-journal-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) minmax(0, 1fr) 120px;
+  gap: 32px;
+  align-items: baseline;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--ng-line);
+  color: var(--ng-bone);
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.ng-journal-row:hover {
+  background: rgba(237, 230, 214, 0.03);
+  color: var(--ng-bone);
+}
+
+/* The cover frame is shared with the Studio journal, which stays light; on the shop its no-photo
+   fallback (a pastel per category) is replaced by the dark card. */
+.ng-cover {
+  background-image: none !important;
+  background-color: var(--ng-card) !important;
+  color: var(--ng-bone) !important;
+}
+
+.ng-cover figcaption {
+  font-family: var(--ng-font-display) !important;
+  font-weight: 400 !important;
+}
+
+.ng-cover span {
+  border-color: var(--ng-line-strong) !important;
+  background: transparent !important;
+  color: var(--ng-dust) !important;
+}
+
+/* The article body is rendered by JournalMarkdownContent, which the Studio preview shares and which
+   carries light-theme colours of its own. These selectors are one step more specific than its classes,
+   so the shop reads dark without the Studio preview changing. */
+.ng-article > div {
+  color: var(--ng-sand);
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.ng-article :is(h2, h3, h4, strong) {
+  color: var(--ng-bone);
+  font-family: var(--ng-font-display);
+  font-weight: 400;
+}
+
+.ng-article strong {
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.ng-article a {
+  color: var(--ng-bone);
+  text-decoration-color: var(--ng-ember);
+}
+
+.ng-article code {
+  background: var(--ng-card);
+  color: var(--ng-bone);
+}
+
+.ng-article blockquote {
+  border-left-color: var(--ng-ember);
+  background: transparent;
+  color: var(--ng-bone);
+  font-family: var(--ng-font-display);
+  font-size: 26px;
+  line-height: 1.35;
+}
+
+.ng-article :is(hr, img) {
+  border-color: var(--ng-line);
+}
+
+@media (max-width: 899px) {
+  .ng-journal-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+
 /* --- Product page ---------------------------------------------------------------------------------- */
 
 .ng-prose strong {
