@@ -143,7 +143,8 @@ for (const gone of [
 // of them. The sticker on the mockup printed "Label" the same way. Found on the live desktop page after
 // the phone had already been checked and passed: the two pages fail differently.
 for (const part of ['size', 'bottle', 'cap', 'label', 'material']) {
-  assert.match(desktop, new RegExp(`\\{${part} \\? <span`),
+  // `part?.label` since the redesign: a part that exists but has no name is not printed as an empty box.
+  assert.match(desktop, new RegExp(`\\{${part}(\\?\\.label)? \\? <span`),
     `the preview still prints a ${part} span unconditionally, so it names a part that may not exist`);
 }
 assert.doesNotMatch(desktop, /\{label\?\.label \|\| t\('bsp\.label'\)\}/,
