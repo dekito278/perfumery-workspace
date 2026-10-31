@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Globe, Minus, Plus, ShoppingBag, X } from 'lucide-react';
+import { ArrowRight, Globe, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import { useCart } from '@/hooks/useCart.js';
