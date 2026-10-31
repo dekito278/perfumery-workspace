@@ -233,6 +233,14 @@
   color: var(--ng-sand);
 }
 
+/* A choice in plain words (a perfume's name), not a mono label. */
+.ng-chip--plain {
+  font-family: var(--ng-font-body);
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .ng-chip__count {
   opacity: 0.6;
 }
@@ -855,6 +863,91 @@ a.ng-row:hover {
   }
 }
 
+.ng-panel {
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--ng-line);
+  background: var(--ng-deep);
+}
+
+.ng-sticky {
+  position: sticky;
+  top: 96px;
+}
+
+/* --- Cart ------------------------------------------------------------------------------------------ */
+
+.ng-cart-line {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 150px 140px;
+  gap: 24px;
+  align-items: center;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--ng-line);
+}
+
+.ng-cart-line__image {
+  display: block;
+  width: 96px;
+  height: 120px;
+}
+
+.ng-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--ng-line-strong);
+}
+
+.ng-stepper button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--ng-bone);
+  cursor: pointer;
+}
+
+.ng-stepper button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.ng-stepper span {
+  min-width: 32px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 899px) {
+  .ng-sticky {
+    position: static;
+  }
+
+  .ng-cart-line {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px 16px;
+    align-items: start;
+  }
+
+  .ng-cart-line__image {
+    width: 80px;
+    height: 100px;
+    grid-row: span 3;
+  }
+
+  .ng-cart-line__qty,
+  .ng-cart-line__sum {
+    grid-column: 2;
+  }
+
+  .ng-cart-line__sum {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
 /* --- Product page ---------------------------------------------------------------------------------- */
 
 .ng-prose strong {
@@ -979,6 +1072,11 @@ a.ng-row:hover {
 /* The bar is fixed over the bottom of the page; the footer leaves it room so the last line is not under it. */
 body:has(.ng-buybar.is-visible) .ng-footer {
   padding-bottom: 120px;
+}
+
+/* And the back-to-top button rises above it rather than sitting on its buy button. */
+body:has(.ng-buybar.is-visible) .back-to-top {
+  bottom: calc(96px + env(safe-area-inset-bottom));
 }
 
 .ng-buybar__inner {

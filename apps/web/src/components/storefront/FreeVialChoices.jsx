@@ -1,5 +1,6 @@
 import React from 'react';
 import { buildFreeVialCartItem, freeVialChoices } from '@/utils/freeVial.js';
+import { splitScriptName } from '@/utils/scriptName.js';
 
 /**
  * The aroma buttons, and the three behaviours that go with them.
@@ -17,18 +18,20 @@ const FreeVialChoices = ({ vialProduct, gift, onPick, className = '' }) => {
   if (!choices.length) return null;
 
   return (
-    <div className={`free-vial__choices ${className}`.trim()} role="group">
+    <div className={`flex flex-wrap gap-2 ${className}`.trim()} role="group">
       {choices.map((choice) => {
         const chosen = gift?.variantId === choice.variantId;
         return (
           <button
             key={choice.variantId}
             type="button"
-            className={`free-vial__choice${chosen ? ' is-chosen' : ''}`}
+            className="ng-chip ng-chip--plain"
             aria-pressed={chosen}
             onClick={() => onPick(chosen ? null : buildFreeVialCartItem({ vialProduct, choice }))}
           >
-            {choice.label}
+            {/* The Latin name only: a chip is too small to set the aksara legibly, and the product page
+                already does. */}
+            {splitScriptName(choice.label).name}
           </button>
         );
       })}

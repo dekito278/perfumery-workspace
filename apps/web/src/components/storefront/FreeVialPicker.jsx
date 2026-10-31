@@ -29,15 +29,15 @@ const FreeVialPicker = ({ items = [], products = [], onPick }) => {
   if (!vialProduct || !choices.length || !lines.length) return null;
 
   return (
-    <section className="free-vial" aria-label={t('cart.giftTitle')}>
-      <p className="free-vial__head">
-        <Gift className="h-4 w-4" aria-hidden="true" />
-        <strong>{t('cart.giftTitle')}</strong>
+    <section className="flex flex-col gap-4" aria-label={t('cart.giftTitle')}>
+      <p className="m-0 flex items-center gap-3 font-ng-display text-[32px] leading-none">
+        <Gift className="h-5 w-5 text-ng-ember" aria-hidden="true" />
+        {t('cart.giftTitle')}
       </p>
-      <p className="free-vial__body">{gift ? t('cart.giftChosen', { name: gift.size }) : t('cart.giftBody')}</p>
+      <p className="m-0 text-[15px] leading-relaxed text-ng-dust" role="status">{gift ? t('cart.giftChosen', { name: gift.size }) : t('cart.giftBody')}</p>
       <FreeVialChoices vialProduct={vialProduct} gift={gift} onPick={onPick} />
       {gift ? (
-        <button type="button" className="free-vial__clear" onClick={() => onPick(null)}>
+        <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => onPick(null)}>
           {t('cart.giftRemove')}
         </button>
       ) : null}

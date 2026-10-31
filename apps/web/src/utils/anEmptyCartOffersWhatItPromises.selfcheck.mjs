@@ -80,9 +80,11 @@ assert.ok(PROMISES_BESPOKE.length >= 2,
 for (const file of carts) {
   const source = strip(readFileSync(file, 'utf8'));
   if (!PROMISES_BESPOKE.some((key) => source.includes(key))) continue;
-  assert.match(source, /\/mobile\/bespoke/,
+  // One responsive shop since 2026-10-31, so the door is /bespoke on every screen; /mobile/ stays accepted
+  // until the phone pages are deleted.
+  assert.match(source, /['"`]\/(mobile\/)?bespoke['"`]/,
     `${relative(src, file)} prints a sentence offering a bespoke request and gives no way to start one`);
-  assert.match(source, /\/mobile\/catalog/, `${relative(src, file)} offers no way to the catalogue`);
+  assert.match(source, /['"`]\/(mobile\/)?catalog['"`]/, `${relative(src, file)} offers no way to the catalogue`);
 }
 
 // --- 3. It says it once ---------------------------------------------------------------------------------
