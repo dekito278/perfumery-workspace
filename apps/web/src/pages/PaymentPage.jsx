@@ -185,7 +185,7 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
   const displayedSubtotalAfterVoucher = subtotalAfterVoucher || fallbackProductsSubtotal;
 
   return (
-    <div className={`mt-4 rounded-none border border-ng-bone/10 bg-transparent ${compact ? 'p-3 text-xs' : 'p-4 text-sm'}font-bold text-ng-bone`}>
+    <div className={`mt-4 rounded-none border border-ng-bone/10 bg-transparent ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-ng-bone`}>
       <div className="flex justify-between gap-3">
         <span>{t("pay.subtotalProducts")}</span>
         <span>{formatTotal(productsSubtotal)}</span>
