@@ -49,15 +49,13 @@ const ProductStoryLink = ({ product, mobile = false, className = '' }) => {
   if (!path) return null;
 
   return (
-    <aside className={`product-story-link ${className}`.trim()}>
-      <p className="editorial-eyebrow">{t('pdp.storyEyebrow')}</p>
-      <Link to={path} className="product-story-link__card">
-        <span className="product-story-link__text">
-          <strong className="product-story-link__title">{post.title}</strong>
-          {post.excerpt ? <span className="product-story-link__excerpt">{post.excerpt}</span> : null}
-          <span className="product-story-link__cta">
-            {t('pdp.storyCta')} <ArrowRight className="h-3.5 w-3.5" />
-          </span>
+    <aside className={`product-story-link flex flex-col gap-4 ${className}`.trim()}>
+      <p className="ng-mono m-0 text-ng-ash">{t('pdp.storyEyebrow')}</p>
+      <Link to={path} className="ng-specimen !min-h-0">
+        <strong className="font-ng-display text-[30px] font-normal leading-tight">{post.title}</strong>
+        {post.excerpt ? <span className="text-[15px] leading-relaxed text-ng-dust">{post.excerpt}</span> : null}
+        <span className="ng-mono inline-flex items-center gap-2">
+          {t('pdp.storyCta')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
       </Link>
     </aside>

@@ -56,7 +56,7 @@ const ShareProductButton = ({ product, className = '', compact = false }) => {
       type="button"
       onClick={share}
       // min-h, not h: "Bagikan wangi ini" wraps on a 375px screen.
-      className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-transparent px-4 py-2 text-center text-sm font-bold leading-snug text-editorial-charcoal transition hover:bg-editorial-paper ${compact ? 'min-h-[2.75rem]' : 'min-h-[3rem]'} ${className}`}
+      className={`ng-btn ng-btn--ghost ng-btn--block ${compact ? '!min-h-[44px]' : ''} ${className}`}
     >
       {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
       {copied ? t('pdp.shareCopied') : t('pdp.share')}

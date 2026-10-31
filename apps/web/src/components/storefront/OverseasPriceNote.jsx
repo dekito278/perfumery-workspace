@@ -20,22 +20,22 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
   const usd = usdPriceFor(price);
 
   return (
-    <div className={`mt-3 rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] p-4 ${className}`}>
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-editorial-charcoal">
+    <div className={`mt-3 rounded-none border border-ng-bone/15 bg-ng-deep p-4 ${className}`}>
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-ng-bone">
         <Globe className="h-3.5 w-3.5" /> Shipping outside Indonesia
       </p>
       <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         {/* The dollar alone — see the note at the top of InternationalPrice.jsx. The Indonesian price
             this panel says it is "separate from" is still on the page above it, which is the only
             rupiah figure a reader here should be comparing against. */}
-        <span className="text-lg font-bold text-editorial-charcoal">{usd ? `US$${usd}` : formatRupiah(price)}</span>
+        <span className="text-lg font-bold text-ng-bone">{usd ? `US$${usd}` : formatRupiah(price)}</span>
       </p>
       {/* Written in English on purpose, in both shops: this panel exists for a reader who is abroad.
           It said "Shipping is included" from 19 Sep until 25 Sep 2026, on the strength of RaySpeed's
           Rp 90.000 kilo to Malaysia. The carrier bills a one-kilo MINIMUM, so a single 30 ml bottle to
           Los Angeles costs Rp 670.500 to send out of a US$80 price — the promise only ever held on a
           full parcel. Shipping is quoted from the published card now, on every destination. */}
-      <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">
+      <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-dust">
         International orders are priced separately from the Indonesian price above. Shipping is quoted separately, once we know where the parcel is going.
       </p>
       <OverseasInquiryButton

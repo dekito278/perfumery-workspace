@@ -22,12 +22,12 @@ const SwitchToIndonesiaHint = ({ className = '' }) => {
   if (!isInternational) return null;
 
   return (
-    <p className={`text-xs font-semibold leading-relaxed text-muted-foreground ${className}`}>
+    <p className={`text-xs font-semibold leading-relaxed text-ng-dust ${className}`}>
       {t('intl.fromIndonesia')}{' '}
       <button
         type="button"
         onClick={() => setRegion(REGION_ID)}
-        className="font-bold text-editorial-charcoal underline underline-offset-2"
+        className="font-bold text-ng-bone underline underline-offset-2"
       >
         {t('intl.switchToId')}
       </button>

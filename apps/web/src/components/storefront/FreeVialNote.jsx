@@ -28,10 +28,10 @@ const FreeVialNote = ({ products = [], className = '' }) => {
   if (freeVialChoices(vialProduct).length === 0) return null;
 
   return (
-    <p className={`pdp-vial-note ${className}`.trim()}>
-      <Gift className="pdp-vial-note__icon" aria-hidden="true" />
+    <p className={`m-0 flex items-start gap-3.5 border border-ng-bone/20 px-5 py-4 text-sm leading-normal text-ng-dust ${className}`.trim()}>
+      <Gift className="mt-0.5 h-4 w-4 shrink-0 text-ng-bone" aria-hidden="true" />
       <span>
-        <strong>{t('cart.giftTitle')}</strong>{' '}
+        <strong className="font-medium text-ng-bone">{t('cart.giftTitle')}</strong>{' '}
         {t('cart.giftBody')}
       </span>
     </p>

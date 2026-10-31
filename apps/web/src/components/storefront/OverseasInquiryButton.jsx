@@ -76,7 +76,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
       rel="noopener noreferrer"
       // min-h, not h: the label wraps to two lines on a 375px phone — the English one certainly, the
       // Indonesian one on a narrow screen — and a fixed height clipped it half out of its own box.
-      className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/20 bg-white px-4 py-2 text-center text-sm font-bold leading-snug text-editorial-charcoal transition hover:bg-editorial-paper ${compact ? 'min-h-[2.75rem]' : 'min-h-[3rem]'} ${className}`}
+      className={`ng-btn ng-btn--ghost ng-btn--block ${compact ? '!min-h-[44px]' : ''} ${className}`}
     >
       <Globe className="h-4 w-4" />
       {/* One label for one action. The panel and the always-visible button used to carry different
@@ -89,10 +89,10 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
 
   return (
     <div>
-      <p className="mb-2 mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+      <p className="mb-2 mt-3 text-xs font-semibold leading-relaxed text-ng-dust">
         {t('export.priceLine')}{' '}
         {/* The dollar, like everywhere else this buyer looks — see the note in InternationalPrice.jsx. */}
-        <strong className="font-bold text-editorial-charcoal">{quoted}</strong>
+        <strong className="font-bold text-ng-bone">{quoted}</strong>
         {' '}{t('export.notIncluded')}
       </p>
       {link}

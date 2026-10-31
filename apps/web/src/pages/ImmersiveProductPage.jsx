@@ -8,7 +8,6 @@ import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { useCart } from '@/hooks/useCart.js';
-import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
@@ -38,7 +37,6 @@ import { toast } from 'sonner';
 const ImmersiveProductPage = ({ product, story, mobile = false, stale = false }) => {
   const { addItem } = useCart();
   const { t, region } = useTranslate();
-  const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
   const [selectedVariantId, setSelectedVariantId] = useState('');
@@ -364,7 +362,7 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
 
           {/* Both shops add to the cart since 2026-10-06 — the English cart prices the basket in dollars
               and hands the order to WhatsApp. */}
-          <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
+          <button type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={handleAddToCart} disabled={soldOut}>
             {soldOut ? (
               <>{t('pdp.soldOut')}</>
             ) : lastAddedSlug === product.slug ? (

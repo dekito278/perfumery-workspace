@@ -63,7 +63,7 @@ for (const page of ['PublicProductDetailPage.jsx', 'ImmersiveProductPage.jsx']) 
     `${page} must state the export price to Google, converted the way the page displays it`);
   assert.match(source, /pdp\.syntheticAccords/,
     `${page} must carry the customs line — a US shipment was held over the word oud`);
-  assert.match(source, /exportPrice \? <p className="pdp-synthetic-accords"/,
+  assert.match(source, /exportPrice \? <p className="pdp-synthetic-accords[^"]*"/,
     `${page} shows that line only where it is quoting internationally`);
 }
 

@@ -7,7 +7,10 @@
  * Every text colour below clears 4.5:1 at 11px. The ember was assumed to fail and does not.
  */
 
-.solivagant-editorial-home {
+:root {
+  /* On :root, not on the page wrapper: the header, footer and immersive story render outside
+     .solivagant-editorial-home on some routes, and a var() with no definition falls back to nothing —
+     the header lost its padding and its typeface on the story page before this moved. */
   --ng-ink: #0e0c0a;
   --ng-deep: #110f0c;
   --ng-card: #161310;
@@ -21,7 +24,11 @@
   --ng-line-strong: rgba(237, 230, 214, 0.3);
   --ng-gutter: clamp(20px, 4vw, 48px);
   --ng-max: 1344px;
+  --ng-font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --ng-font-body: Inter, system-ui, sans-serif;
+}
 
+.solivagant-editorial-home {
   /* The legacy editorial tokens, remapped so a rule not yet rewritten still lands light-on-dark rather
      than charcoal-on-ink. */
   --editorial-ivory: var(--ng-ink);
@@ -33,8 +40,8 @@
   --editorial-brass: var(--ng-ember);
   --editorial-brass-text: var(--ng-ember);
   --editorial-border: var(--ng-line);
-  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --font-body: Inter, system-ui, sans-serif;
+  --font-display: var(--ng-font-display);
+  --font-body: var(--ng-font-body);
 
   background: var(--ng-ink);
   color: var(--ng-bone);
@@ -71,7 +78,7 @@
 
 .ng-display {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--ng-font-display);
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.01em;
@@ -145,6 +152,16 @@
 .ng-btn[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.ng-btn--lg {
+  min-height: 56px;
+  font-size: 12px;
+}
+
+.ng-btn--block {
+  display: flex;
+  width: 100%;
 }
 
 .ng-btn--ghost {
@@ -302,13 +319,13 @@ select.ng-field option {
   background: rgba(14, 12, 10, 0.94);
   backdrop-filter: blur(14px);
   color: var(--ng-bone);
-  font-family: var(--font-body);
+  font-family: var(--ng-font-body);
 }
 
 .ng-header__wordmark {
   flex: 0 0 auto;
   color: var(--ng-bone);
-  font-family: var(--font-display);
+  font-family: var(--ng-font-display);
   font-size: 22px;
   font-weight: 500;
   letter-spacing: 0.28em;
@@ -452,7 +469,7 @@ select.ng-field option {
   align-items: center;
   min-height: 44px;
   color: var(--ng-bone);
-  font-family: var(--font-display);
+  font-family: var(--ng-font-display);
   font-size: 26px;
   text-decoration: none;
 }
@@ -514,7 +531,7 @@ select.ng-field option {
   padding: 80px var(--ng-gutter) 40px;
   background: var(--ng-ink);
   color: var(--ng-bone);
-  font-family: var(--font-body);
+  font-family: var(--ng-font-body);
 }
 
 .ng-footer__grid {
@@ -525,7 +542,7 @@ select.ng-field option {
 
 .ng-footer__wordmark {
   color: var(--ng-bone);
-  font-family: var(--font-display);
+  font-family: var(--ng-font-display);
   font-size: 22px;
   font-weight: 500;
   letter-spacing: 0.28em;
@@ -836,6 +853,183 @@ a.ng-row:hover {
     padding: 28px 0;
     border-left: 0;
   }
+}
+
+/* --- Product page ---------------------------------------------------------------------------------- */
+
+.ng-prose strong {
+  color: var(--ng-bone);
+}
+
+.ng-pdp__info {
+  position: sticky;
+  top: 96px;
+}
+
+.ng-pyramid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  border-top: 1px solid var(--ng-line-strong);
+}
+
+.ng-pyramid__tier {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 32px 32px 32px 0;
+}
+
+.ng-pyramid__tier + .ng-pyramid__tier {
+  padding-left: 32px;
+  border-left: 1px solid var(--ng-line);
+}
+
+.ng-pyramid__meter {
+  display: block;
+  height: 2px;
+  background: var(--ng-line);
+}
+
+.ng-pyramid__fill {
+  display: block;
+  height: 100%;
+  background: var(--ng-ember);
+}
+
+.ng-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ng-tags li {
+  padding: 8px 12px;
+  border: 1px solid rgba(237, 230, 214, 0.2);
+  color: var(--ng-sand);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ng-answer {
+  border-bottom: 1px solid var(--ng-line);
+}
+
+.ng-answer__q {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--ng-font-display);
+  font-size: 26px;
+}
+
+.ng-answer__q::-webkit-details-marker {
+  display: none;
+}
+
+.ng-answer__q::after {
+  content: "+";
+  color: var(--ng-ember);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 16px;
+}
+
+.ng-answer[open] .ng-answer__q::after {
+  content: "\2212";
+}
+
+.ng-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--ng-bone);
+  text-decoration: none;
+}
+
+.ng-card:hover {
+  color: #fff;
+}
+
+.ng-buybar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  border-top: 1px solid var(--ng-line-strong);
+  background: rgba(14, 12, 10, 0.97);
+  color: var(--ng-bone);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.ng-buybar.is-visible {
+  transform: translateY(0);
+}
+
+/* The bar is fixed over the bottom of the page; the footer leaves it room so the last line is not under it. */
+body:has(.ng-buybar.is-visible) .ng-footer {
+  padding-bottom: 120px;
+}
+
+.ng-buybar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: var(--ng-max);
+  margin: 0 auto;
+  padding: 12px var(--ng-gutter);
+}
+
+@media (max-width: 899px) {
+  .ng-pdp__info {
+    position: static;
+  }
+
+  .ng-pyramid__tier,
+  .ng-pyramid__tier + .ng-pyramid__tier {
+    padding: 24px 0;
+    border-left: 0;
+    border-bottom: 1px solid var(--ng-line);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ng-buybar {
+    transition: none;
+  }
+}
+
+/* --- Immersive story page ------------------------------------------------------------------------- */
+
+/* Its own palette predates the redesign (a plum ground); the variables it reads are re-pointed rather
+   than every rule rewritten, so the story keeps its layout and joins the rest of the shop's colours. */
+.immersive-page {
+  --imm-bg: var(--ng-ink);
+  --imm-text: var(--ng-bone);
+  --imm-accent: var(--ng-ember);
+  --imm-muted: var(--ng-dust);
+  --imm-border: var(--ng-line);
+  /* Its rules read these two, which were only ever defined on the storefront wrapper — so the story's
+     headings fell through to the body font. */
+  --font-display: var(--ng-font-display);
+  --font-body: var(--ng-font-body);
+  font-family: var(--ng-font-body);
+}
+
+.immersive-page :is(.imm-hero__title, .imm-text-image h2, .imm-quote blockquote) {
+  font-family: var(--ng-font-display);
+  font-weight: 300;
 }
 
 /* --- Catalogue ------------------------------------------------------------------------------------- */

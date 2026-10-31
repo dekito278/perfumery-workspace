@@ -26,25 +26,24 @@ const ScentPyramid = ({ product, className = '' }) => {
   if (!tiers.length) return null;
 
   return (
-    <div className={`scent-pyramid ${className}`.trim()}>
-      <p className="editorial-eyebrow">{t('pyramid.title')}</p>
-      <div className="scent-pyramid__tiers">
+    <div className={`flex flex-col gap-6 ${className}`.trim()}>
+      <p className="ng-mono m-0 text-ng-ash">{t('pyramid.title')}</p>
+      <div className="ng-pyramid">
         {tiers.map((tier) => (
-          <div key={tier.key} className="scent-tier">
-            <div className="scent-tier__head">
-              <span className="scent-tier__label">{tier.label}</span>
-              <span className="scent-tier__caption">{t(tier.caption)}</span>
+          <div key={tier.key} className="ng-pyramid__tier">
+            <div className="flex flex-col gap-2.5">
+              <span className="ng-mono text-ng-ember">{tier.label} · {t(tier.caption)}</span>
               <span
-                className="scent-tier__meter"
+                className="ng-pyramid__meter"
                 role="img"
                 aria-label={t('pyramid.strengthLabel', { tier: tier.label, percent: tier.strength })}
               >
-                <span className="scent-tier__meter-fill" style={{ width: `${tier.strength}%` }} />
+                <span className="ng-pyramid__fill" style={{ width: `${tier.strength}%` }} />
               </span>
             </div>
-            <ul className="scent-tier__notes">
+            <ul className="m-0 flex list-none flex-col gap-1 p-0">
               {tier.notes.map((note) => (
-                <li key={note} className="scent-note">{note}</li>
+                <li key={note} className="font-ng-display text-[26px] leading-tight md:text-[30px]">{note}</li>
               ))}
             </ul>
           </div>

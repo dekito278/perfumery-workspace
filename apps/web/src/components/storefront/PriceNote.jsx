@@ -27,13 +27,13 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   const retail = Number(variant?.retailPriceNumber ?? product?.retailPriceNumber ?? 0);
   if (tierLabelKey && retail && price && retail !== price) {
     return (
-      <p className={`mt-1 flex flex-wrap items-baseline gap-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-700 ${className}`}>
+      <p className={`mt-1 flex flex-wrap items-baseline gap-2 text-xs font-bold uppercase tracking-[0.12em] text-ng-ember ${className}`}>
         {t(tierLabelKey)}
         {/* The struck number needs to say what it IS. "Harga member" beside a lone crossed-out Rp 310.000
             reads as if the member price were the 310.000 — the thing being struck out — when it is the
             number above it. Naming the retail price costs two words and removes the whole ambiguity. */}
         {retail > price ? (
-          <span className="font-semibold normal-case tracking-normal text-muted-foreground">
+          <span className="font-semibold normal-case tracking-normal text-ng-dust">
             {t('price.retailLabel')} <span className="line-through">{formatRupiah(retail)}</span>
           </span>
         ) : null}
@@ -53,9 +53,9 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   const memberPrice = Number(variant?.memberPriceNumber ?? product?.memberPriceNumber ?? 0);
   if (!overseasPrice && price && memberPrice && memberPrice < price) {
     return (
-      <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-amber-700 ${className}`}>
+      <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-ng-ember ${className}`}>
         <span>{t('price.memberIs', { price: formatRupiah(memberPrice) })}</span>
-        <span className="font-semibold normal-case tracking-normal text-muted-foreground">{t('price.saveShort', { amount: formatRupiah(price - memberPrice) })}</span>
+        <span className="font-semibold normal-case tracking-normal text-ng-dust">{t('price.saveShort', { amount: formatRupiah(price - memberPrice) })}</span>
         <button
           type="button"
           onClick={() => loginWithGoogle(window.location.href).catch(() => {})}
@@ -75,8 +75,8 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   if (!price || !(compareAt > price)) return null;
 
   return (
-    <p className={`mt-1 flex flex-wrap items-baseline gap-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-700 ${className}`}>
-      <span className="font-semibold normal-case tracking-normal text-muted-foreground line-through">{formatRupiah(compareAt)}</span>
+    <p className={`mt-1 flex flex-wrap items-baseline gap-2 text-xs font-bold uppercase tracking-[0.12em] text-ng-ember ${className}`}>
+      <span className="font-semibold normal-case tracking-normal text-ng-dust line-through">{formatRupiah(compareAt)}</span>
       {t('price.save', { amount: formatRupiah(compareAt - price) })}
     </p>
   );

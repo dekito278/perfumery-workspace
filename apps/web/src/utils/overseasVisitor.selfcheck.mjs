@@ -369,7 +369,15 @@ const draftBuilder = read('utils', 'overseasEnquiry.js');
     'the old price line must not also appear beside the total');
 }
 // A fixed height clipped the two-line English label half out of its own box on a 375px phone.
-assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows to fit a label that wraps');
+// Since the 2026-10-31 redesign the button is an `ng-btn`, whose height is a MIN-height in naskah.css.
+assert.match(button, /ng-btn/, 'the button is drawn by the shared ng-btn rule');
+{
+  const css = readFileSync(join(root, 'styles', 'naskah.css'), 'utf8');
+  const rule = css.match(/\n\.ng-btn \{([\s\S]*?)\n\}/);
+  assert.ok(rule, '.ng-btn is readable');
+  assert.match(rule[1], /min-height:/, 'the button grows to fit a label that wraps');
+  assert.doesNotMatch(rule[1], /\n\s*height:/, 'and is never pinned to a fixed height');
+}
 assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned to a fixed height again');
 assert.match(MESSAGES.en['export.waDraft'], /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
