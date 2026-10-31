@@ -33,7 +33,7 @@ const AskAtelierButton = ({ orderNumber = '', className = '', labelKey = 'track.
       target="_blank"
       rel="noopener noreferrer"
       // min-h, not h: the label wraps on a narrow phone.
-      className={`inline-flex items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/20 bg-white px-4 py-2 text-center text-sm font-bold leading-snug text-editorial-charcoal transition hover:bg-editorial-paper min-h-[2.75rem] ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-none border border-ng-bone/20 bg-transparent px-4 py-2 text-center text-sm font-bold leading-snug text-ng-bone transition hover:bg-ng-card min-h-[2.75rem] ${className}`}
     >
       <MessageCircle className="h-4 w-4" />
       {t(labelKey)}

@@ -32,32 +32,32 @@ const WelcomeContent = ({ mobile, currentUser, signIn }) => {
   return (
     <>
       <p className={mobile ? 'm-editorial-eyebrow' : 'editorial-eyebrow'}>{t('welcome.eyebrow')}</p>
-      <h1 className={mobile ? 'mt-2 text-2xl font-bold text-editorial-charcoal' : 'storefront-display-heading mt-3 text-4xl font-bold sm:text-5xl'}>
+      <h1 className={mobile ? 'mt-2 text-2xl font-bold text-ng-bone' : 'ng-display mt-5 text-5xl sm:text-6xl'}>
         {t('welcome.heading')}
       </h1>
-      <p className={mobile ? 'mt-3 text-sm font-medium leading-relaxed text-[#6b7280]' : 'mt-4 max-w-xl text-base font-medium leading-relaxed text-muted-foreground'}>
+      <p className={mobile ? 'mt-3 text-sm font-medium leading-relaxed text-ng-dust' : 'mt-4 max-w-xl text-base font-medium leading-relaxed text-ng-dust'}>
         {t('welcome.lead')}
       </p>
       <div className={`mt-6 flex flex-wrap gap-3${mobile ? ' flex-col' : ''}`}>
         {currentUser ? (
-          <Link to={`${prefix}/catalog`} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-ivory">
+          <Link to={`${prefix}/catalog`} className="inline-flex h-12 items-center justify-center gap-2 rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
             {t('welcome.alreadyMember')} <ArrowRight className="h-4 w-4" />
           </Link>
         ) : (
-          <Button type="button" onClick={signIn} className="h-12 rounded-2xl gap-2 px-5 text-sm font-bold">
+          <Button type="button" onClick={signIn} className="h-auto min-h-12 max-w-full whitespace-normal rounded-none gap-2 px-5 py-3 text-left text-sm font-bold">
             <UserRound className="h-4 w-4" /> {t('welcome.signIn')}
           </Button>
         )}
-        <Link to={`${prefix}/catalog`} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/20 bg-white px-5 text-sm font-bold text-editorial-charcoal">
+        <Link to={`${prefix}/catalog`} className="inline-flex h-12 items-center justify-center gap-2 rounded-none border border-ng-bone/20 bg-transparent px-5 text-sm font-bold text-ng-bone">
           {t('welcome.browse')} <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
       {isInternational ? null : (
-        <div className="mt-8 rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] p-4">
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-editorial-charcoal">
+        <div className="mt-8 rounded-none border border-ng-bone/15 bg-ng-deep p-4">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-ng-bone">
             <Ticket className="h-3.5 w-3.5" /> {t('welcome.voucherEyebrow')}
           </p>
-          <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-sm font-medium leading-relaxed text-ng-dust">
             {t('welcome.voucherBody')}
           </p>
         </div>
@@ -105,7 +105,7 @@ const WelcomePage = ({ mobile = false }) => {
       {head}
       <main className="solivagant-editorial-home" ref={revealRef}>
         <PublicHeader />
-        <section className="tracking-content">
+        <section className="tracking-content !pt-16">
           <div className="tracking-card">
             <WelcomeContent mobile={false} currentUser={currentUser} signIn={signIn} />
           </div>

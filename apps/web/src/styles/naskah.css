@@ -49,6 +49,48 @@
   overflow-x: clip;
 }
 
+/* The shadcn components (Button, Input, Select…) read these. Studio keeps the light values from
+   index.css; inside the shop — and the member portal, which shares its header — they are the dark ones,
+   so a shadcn button on a storefront page is a bone button with ink text rather than the Studio green. */
+.solivagant-editorial-home,
+.ng-scope {
+  --background: 30 17% 5%;
+  --foreground: 42 39% 88%;
+  --card: 30 16% 7%;
+  --card-foreground: 42 39% 88%;
+  --popover: 30 16% 7%;
+  --popover-foreground: 42 39% 88%;
+  --primary: 42 39% 88%;
+  --primary-foreground: 30 17% 5%;
+  --secondary: 30 14% 15%;
+  --secondary-foreground: 42 39% 88%;
+  --muted: 30 14% 15%;
+  --muted-foreground: 39 15% 67%;
+  --accent: 30 14% 15%;
+  --accent-foreground: 42 39% 88%;
+  --border: 30 14% 15%;
+  --input: 30 14% 22%;
+  --ring: 42 39% 88%;
+  --radius: 0px;
+}
+
+.ng-scope {
+  font-family: var(--ng-font-body);
+}
+
+/* Fields with no background class of their own fall back to the browser's white. In the shop that is a
+   white box on ink; one element-level rule catches every such field, including the shared Studio-era
+   components the portal uses. */
+:is(.solivagant-editorial-home, .ng-scope) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea, select) {
+  background-color: transparent;
+  color: var(--ng-bone);
+}
+
+/* StateBlock (components/ui) is shared with Studio and prints its heading in the light theme's charcoal. */
+:is(.solivagant-editorial-home, .ng-scope) section > h2.text-editorial-charcoal {
+  color: var(--ng-bone);
+}
+
 .solivagant-editorial-home ::selection {
   background: rgba(212, 87, 58, 0.35);
   color: var(--ng-bone);
