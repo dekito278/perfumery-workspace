@@ -21,7 +21,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * Renders nothing when there is no story, when the fetch fails, or while it is still loading — a
  * heading with an empty space under it is worse than no heading.
  */
-const ProductStoryLink = ({ product, mobile = false, className = '' }) => {
+const ProductStoryLink = ({ product, className = "" }) => {
   const { t } = useTranslate();
   const [post, setPost] = useState(null);
   const slug = String(product?.slug || '').trim();
@@ -45,7 +45,7 @@ const ProductStoryLink = ({ product, mobile = false, className = '' }) => {
   }, [slug]);
 
   if (!post) return null;
-  const path = getJournalPublicPath(post, { mobile });
+  const path = getJournalPublicPath(post);
   if (!path) return null;
 
   return (

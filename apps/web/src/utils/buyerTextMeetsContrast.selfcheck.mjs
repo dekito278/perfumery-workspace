@@ -3,7 +3,8 @@
 // Small text on a brand colour, where the two halves live in different files and neither is wrong on
 // its own. Each pair below was measured on the live phone shop before it was fixed.
 //
-// 1. THE BOTTOM NAVIGATION. The bar at the bottom of the phone shop is on every buyer screen, and five of its six labels were
+// 1. THE BOTTOM NAVIGATION (retired 2026-10-31 with the phone storefront; see section 1 below for what replaced
+// it). The bar at the bottom of the phone shop was on every buyer screen, and five of its six labels were
 // grey #8b949e on a 98%-white bar at 9px bold: a contrast ratio of 3.08:1, where WCAG AA asks 4.5 for
 // text that size. Measured on the live shop, not estimated. The sixth — the active one — is near-black
 // and reads 17.41.
@@ -35,24 +36,30 @@ const hex = (value) => {
   return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
 };
 
-// Both halves, read where they are actually written.
-const layout = read('layouts', 'MobileCommerceLayout.jsx');
-const inactive = layout.match(/active \? '[^']*' : 'text-\[(#[0-9a-fA-F]{3,6})\]'/);
-assert.ok(inactive, 'cannot find the inactive label colour in the commerce bottom nav — this check reads '
-  + 'it out of the layout, so a refactor that moves it has to update this line too');
-
-const mobileCss = read('styles', 'mobile.css');
-const navBlock = mobileCss.slice(mobileCss.indexOf('\n.mobile-bottom-nav {'));
-const background = navBlock.slice(0, navBlock.indexOf('}')).match(/background:\s*rgba?\(([^)]+)\)/);
-assert.ok(background, 'cannot find the bottom bar background in mobile.css');
-const backgroundRgb = background[1].split(',').slice(0, 3).map((n) => Number(n.trim()));
-
-// 9px bold is not "large text" under WCAG, so the bar for it is 4.5, not 3.
-const ratio = contrastRatio(hex(inactive[1]), backgroundRgb);
-assert.ok(ratio >= 4.5,
-  `the inactive labels in the phone bottom nav read ${ratio.toFixed(2)}:1 (${inactive[1]} on `
-  + `rgb(${backgroundRgb.join(', ')})), and WCAG AA asks 4.5 for 9px text. Those five labels are on `
-  + 'every buyer screen there is');
+// 1 (since 2026-10-31). THE NASKAH GELAP PALETTE. The phone storefront and its bottom nav retired with the
+// redesign; what every buyer screen now reads is one dark palette, set in naskah.css. Every text colour
+// it offers must clear AA on every ground it offers, read from the stylesheet so a palette change is
+// measured rather than trusted. ember was assumed to fail small text when the palette was drawn; measured,
+// it reads 4.86 on ink — so it is a text colour, and this holds it to that.
+const naskah = read('styles', 'naskah.css');
+const ngToken = (name) => {
+  const match = naskah.match(new RegExp(`--ng-${name}:\\s*(#[0-9a-fA-F]{6})`));
+  assert.ok(match, `--ng-${name} is no longer a hex in naskah.css — this check reads it from there`);
+  return match[1];
+};
+const grounds = ['ink', 'deep', 'card'];
+const textColours = ['bone', 'sand', 'dust', 'ash', 'faint', 'ember'];
+let weakest = { ratio: Infinity, pair: '' };
+for (const ground of grounds) {
+  for (const colour of textColours) {
+    const value = contrastRatio(hex(ngToken(colour)), hex(ngToken(ground)));
+    if (value < weakest.ratio) weakest = { ratio: value, pair: `${colour} on ${ground}` };
+    assert.ok(value >= 4.5,
+      `--ng-${colour} reads ${value.toFixed(2)}:1 on --ng-${ground}; WCAG AA asks 4.5 for the 11px labels it is used for`);
+  }
+}
+const ratio = weakest.ratio;
+const inactive = [null, weakest.pair];
 
 // The sanity check in the other direction: a known-failing pair must fail, or the arithmetic above is
 // not doing anything. #8b949e on white is exactly the 3.08 that was measured on the live shop.
@@ -112,5 +119,5 @@ assert.ok(contrastRatio(hex(tokenValue('editorial-brass')), hex(ivory)) < 4.5,
   + 'distinction this pair exists for is gone');
 
 console.log(`buyerTextMeetsContrast selfcheck OK (small-text brass ${brassText} clears AA on both `
-  + `storefront backgrounds, bottom nav ${inactive[1]} = ${ratio.toFixed(2)}:1, `
+  + `storefront backgrounds, weakest Naskah pair ${inactive[1]} = ${ratio.toFixed(2)}:1, `
   + `selected chip white on ${selected[1]} = ${chipRatio.toFixed(2)}:1; AA needs 4.5)`);

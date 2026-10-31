@@ -90,7 +90,7 @@ assert.match(studio, /useBespokeSettings\(\)/, 'Studio must read the raw rows it
 assert.doesNotMatch(studio, /useBespokeSettings\(\{[^}]*forShop/,
   'Studio asked for translated rows; the next save would write English over the Indonesian label');
 
-for (const page of [['pages', 'BespokePage.jsx'], ['pages', 'mobile', 'MobileBespokePage.jsx']]) {
+for (const page of [['pages', 'BespokePage.jsx']]) {
   assert.match(read(...page), /useBespokeSettings\(\{ forShop: true \}\)/,
     `${page.join('/')} reads the options without asking for the shop's language`);
 }

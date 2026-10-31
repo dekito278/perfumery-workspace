@@ -52,7 +52,7 @@ assert.equal(memberSavingForCart([{ productSlug: 'la-rose', priceNumber: 200000,
   "a member's own line has nothing left to save");
 
 // ── 2. Both carts ask the predicate, and neither draws the line any other way ────────────────────
-for (const file of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx']) {
+for (const file of ['pages/CartPage.jsx']) {
   const source = read(...file.split('/'));
   assert.match(
     source,
@@ -75,7 +75,7 @@ for (const file of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx']) {
 // ── 3. The two checkout screens were always right, and must stay that way ────────────────────────
 // Their nudge is the label of the sign-in button, so a session removes it. Pinned, because moving that
 // line out of the ternary would reintroduce the bug on the louder screen.
-for (const file of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
+for (const file of ['pages/CheckoutPage.jsx']) {
   const source = read(...file.split('/'));
   const at = source.indexOf('checkout.signInSaving');
   assert.notEqual(at, -1, `${file} no longer names the member saving at sign-in`);

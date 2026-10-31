@@ -85,7 +85,8 @@ const dispatchJournalPostsChanged = (post) => {
   window.dispatchEvent(new CustomEvent(JOURNAL_POSTS_CHANGED_EVENT, { detail: post }));
 };
 
-export const getJournalPublicPath = (post, { mobile = false } = {}) => {
+// One address for every screen since the phone storefront retired (2026-10-31).
+export const getJournalPublicPath = (post) => {
   if (post?.status !== 'published') {
     return '';
   }
@@ -95,7 +96,7 @@ export const getJournalPublicPath = (post, { mobile = false } = {}) => {
     return '';
   }
 
-  return `${mobile ? '/mobile' : ''}/articles/${articleKey}`;
+  return `/articles/${articleKey}`;
 };
 
 const ensurePublishedShareFields = async (post) => {

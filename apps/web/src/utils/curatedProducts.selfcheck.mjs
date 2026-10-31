@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
-import { CURATED_LIMIT_DESKTOP, CURATED_LIMIT_MOBILE, hasCuration, pickCuratedProducts } from './curatedProducts.js';
+import { CURATED_LIMIT_DESKTOP, hasCuration, pickCuratedProducts } from './curatedProducts.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -41,7 +41,6 @@ assert.deepEqual(pickCuratedProducts(undefined, 4), []);
 assert.deepEqual(pickCuratedProducts(catalog, 0), [], 'a cap of zero shows nothing');
 assert.deepEqual(pickCuratedProducts(catalog, 'abc'), [], 'garbage cap shows nothing rather than everything');
 assert.ok(CURATED_LIMIT_DESKTOP >= 4 && CURATED_LIMIT_DESKTOP <= 6, 'desktop shows a curation, not the catalogue');
-assert.ok(CURATED_LIMIT_MOBILE >= 2 && CURATED_LIMIT_MOBILE <= 4, 'the phone shows fewer');
 
 // --- 5. The mapper carries the real flag, not a forced one -------------------------------------------------
 const mapper = read('data', 'publicStorefront.js');
@@ -52,15 +51,12 @@ assert.doesNotMatch(mapper, /index < 3/, 'the first three must not be forced to 
 const home = read('pages', 'HomePage.jsx');
 assert.match(home, /pickCuratedProducts\(publicCatalog, CURATED_LIMIT_DESKTOP\)/, 'desktop home must curate by the flag');
 assert.doesNotMatch(home, /publicCatalog\.slice\(0, 8\)/, 'and not take the first eight');
-const mobile = read('pages', 'mobile', 'MobileStorefrontPage.jsx');
-assert.match(mobile, /pickCuratedProducts\(publicCatalog, CURATED_LIMIT_MOBILE\)/, 'phone home must curate by the flag');
-assert.doesNotMatch(mobile, /publicCatalog\.slice\(0, 4\)/, 'and not take the first four');
+// The phone home retired with the phone storefront (2026-10-31); one home, one cap.
 
 // --- 7. The hero says why, and offers the way in — on both homes, following the session -----------------
 // The hero line moved into the message file when the storefront learned English. Both surfaces must
 // still carry a reason to buy here, and the second CTA must still follow the session.
 assert.match(home, /\{t\('home\.note'\)\}/, 'desktop hero must give the reason to buy here');
-assert.match(mobile, /\{t\('home\.note'\)\}/, 'phone hero must give the reason too');
 assert.match(MESSAGES.id['home.note'], /Harga member, langsung dari atelier\./, 'and in Indonesian it is the member price');
 // In English it cannot be the member price: an international order does not get one. It still has to say
 // something — a hero with no reason is the state this guard was written to prevent.
@@ -70,6 +66,5 @@ assert.ok(MESSAGES.en['home.note'].length > 20, 'but it must still give a reason
 // The redesign uppercases in CSS, so the call is optional; following the session is not.
 assert.match(home, /to="\/customer"[\s\S]{0,240}?\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)(\.toUpperCase\(\))?\}/, 'desktop hero second CTA follows the session');
 assert.match(home, /\{t\('home\.seeCollection'\)\}/, 'the original CTA stays — the reason is added, not swapped in');
-assert.match(mobile, /to="\/mobile\/customer"[\s\S]{0,240}?\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)\}/, 'phone hero second CTA follows the session');
 
 console.log('curatedProducts selfcheck OK (the featured flag decides the home; the hero says why to buy here)');

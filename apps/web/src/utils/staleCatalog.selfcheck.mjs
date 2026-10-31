@@ -98,9 +98,7 @@ assert.doesNotMatch(notice, /disabled|return null;\s*\}\s*$/m, 'it informs, it d
 
 for (const [page, variable] of [
   [['pages', 'CatalogPage.jsx'], 'fetchedProducts'],
-  [['pages', 'mobile', 'MobileCatalogPage.jsx'], 'catalogProducts'],
   [['pages', 'PublicProductDetailPage.jsx'], 'studioProducts'],
-  [['pages', 'mobile', 'MobileProductDetailPage.jsx'], 'allProducts'],
 ]) {
   const source = read(...page);
   assert.match(source, new RegExp(`<StaleCatalogNotice stale=\\{${variable}\\.stale\\}`),
@@ -124,17 +122,15 @@ const NOT_WHERE_A_PRICE_IS_ACTED_ON = new Map([
   ['ProductListPage.jsx', 'Studio: the catalogue is the thing being edited, and a failed fetch there already fails loudly'],
   ['MobileProductListPage.jsx', 'Studio, same'],
   ['CartPage.jsx', 'lines already chosen; cartPriceChange is the guard that reprices them against the live catalogue'],
-  ['MobileCartPage.jsx', 'same'],
   ['CheckoutPage.jsx', 'same, and the order endpoint prices the order itself'],
-  ['MobileCheckoutPage.jsx', 'same'],
   ['HomePage.jsx', 'a doorway: every card leads to the catalogue or the product page, which carry the notice'],
-  ['MobileStorefrontPage.jsx', 'same doorway'],
 ]);
 const showsAProduct = walkPages(pagesRoot)
   .filter((file) => file.endsWith('.jsx'))
   .map((file) => [file.slice(pagesRoot.length + 1), readFileSync(file, 'utf8')])
   .filter(([, source]) => /<ProductVisual/.test(source));
-assert.ok(showsAProduct.length >= 10,
+// Floor lowered when the phone storefront retired (2026-10-31): its catalogue, product and cart pages went.
+assert.ok(showsAProduct.length >= 9,
   `only ${showsAProduct.length} pages render the product visual — the scan is broken, not the code`);
 
 let actingSurfaces = 0;
@@ -145,7 +141,8 @@ for (const [name, source] of showsAProduct) {
     + 'That is the VPN incident this guard was written for, on a page it could not see.');
   actingSurfaces += 1;
 }
-assert.ok(actingSurfaces >= 5,
+// Floor lowered when the phone storefront retired (2026-10-31): its catalogue, product and cart pages went.
+assert.ok(actingSurfaces >= 4,
   `only ${actingSurfaces} surfaces checked — the exemptions swallowed them`);
 
 // The notice on a stand-in page is only as alive as the flag it is handed. A page that renders one of
@@ -156,7 +153,8 @@ const standIns = walkPages(pagesRoot)
   .flatMap((file) => [...readFileSync(file, 'utf8').matchAll(/<(\w*ProductPage)\b([^>]*)>/g)]
     .filter(([, name]) => name !== 'ProductPage')
     .map(([, name, props]) => [file.slice(pagesRoot.length + 1), name, props]));
-assert.ok(standIns.length >= 2, `only ${standIns.length} pages render a stand-in product page — the scan is broken`);
+// Floor lowered when the phone storefront retired (2026-10-31): its catalogue, product and cart pages went.
+assert.ok(standIns.length >= 1, `only ${standIns.length} pages render a stand-in product page — the scan is broken`);
 for (const [where, name, props] of standIns) {
   // A spread forwards it: the immersive page's own shell renders itself as `<ImmersiveProductPage
   // {...props} />`, which passes the flag along rather than dropping it.
@@ -241,7 +239,7 @@ assert.deepEqual(staleExemptions, [],
   `these exemptions no longer read the catalogue — delete them:\n  ${staleExemptions.join('\n  ')}`);
 
 // The pages behind the exempted hook, each of which must carry the notice itself.
-for (const page of [['pages', 'InternationalCartPage.jsx'], ['pages', 'mobile', 'MobileInternationalCartPage.jsx']]) {
+for (const page of [['pages', 'InternationalCartPage.jsx']]) {
   assert.match(read(...page), /<StaleCatalogNotice stale=\{/,
     `${page.join('/')} prices a basket from the catalogue and cannot say the catalogue came from this device`);
 }

@@ -201,7 +201,7 @@ assert.match(MESSAGES.en['region.label'], /Wilayah harga/);
 // On both storefronts. Desktop and mobile drifting apart is this repo's commonest defect, and a switch on
 // one of them teaches the visitor the other surface has no choice.
 assert.match(read('components', 'storefront', 'PublicHeader.jsx'), /<RegionSwitch /, 'in the desktop header');
-assert.match(read('layouts', 'MobileCommerceLayout.jsx'), /<RegionSwitch \/>/, 'and in the mobile one');
+// The phone's own header retired with the phone storefront (2026-10-31): the header above is the phone's too.
 
 // --- The boot screen must know the English shop exists too ---------------------------------------------
 // index.html renders a per-route fallback synchronously, before React mounts — it is what every visitor

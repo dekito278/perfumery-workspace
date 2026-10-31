@@ -223,7 +223,9 @@ for (const line of messages.split('\n')) {
   assert.doesNotMatch(line, /ongkir sudah termasuk|shipping included|shipping is included|free shipping|gratis ongkir/i,
     `this line still promises the freight is in the price:\n  ${line.trim()}`);
 }
-assert.doesNotMatch(read('components', 'storefront', 'OverseasPriceNote.jsx'), /[Ss]hipping is included/,
+// The panel under the dollar price is InternationalPrice now (OverseasPriceNote was already unused on main
+// when the phone storefront retired, 2026-10-31). Its sentence lives in the message file, held above.
+assert.doesNotMatch(read('components', 'storefront', 'InternationalPrice.jsx'), /[Ss]hipping is included|ongkir sudah termasuk/,
   'the price panel still promises the freight is in the price');
 
 // --- 6. The card ADVISES the Studio page; Dekito decides ----------------------------------------------

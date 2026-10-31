@@ -16,6 +16,96 @@
       "source": "/en/products/:slug",
       "destination": "/en/catalog/:slug",
       "permanent": true
+    },
+    {
+      "source": "/mobile",
+      "destination": "/home",
+      "permanent": true
+    },
+    {
+      "source": "/mobile/home",
+      "destination": "/home",
+      "permanent": true
+    },
+    {
+      "source": "/mobile/dashboard",
+      "destination": "/home",
+      "permanent": true
+    },
+    {
+      "source": "/mobile/catalog",
+      "destination": "/catalog",
+      "permanent": true
+    },
+    {
+      "source": "/mobile/articles",
+      "destination": "/journal",
+      "permanent": true
+    },
+    {
+      "source": "/mobile/products/:slug",
+      "destination": "/catalog/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/mobile/articles/:slug",
+      "destination": "/articles/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/mobile/:page(about|bespoke|cart|checkout|payment|welcome|customer)",
+      "destination": "/:page",
+      "permanent": true
+    },
+    {
+      "source": "/mobile/customer/invoice/:order",
+      "destination": "/customer/invoice/:order",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile",
+      "destination": "/en/home",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile/home",
+      "destination": "/en/home",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile/dashboard",
+      "destination": "/en/home",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile/catalog",
+      "destination": "/en/catalog",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile/articles",
+      "destination": "/en/journal",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile/products/:slug",
+      "destination": "/en/catalog/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile/articles/:slug",
+      "destination": "/en/articles/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile/:page(about|bespoke|cart|checkout|payment|welcome|customer)",
+      "destination": "/en/:page",
+      "permanent": true
+    },
+    {
+      "source": "/en/mobile/customer/invoice/:order",
+      "destination": "/en/customer/invoice/:order",
+      "permanent": true
     }
   ],
   "headers": [

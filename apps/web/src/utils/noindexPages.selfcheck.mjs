@@ -112,12 +112,15 @@ for (const route of ['/articles/:slug', '/track/:code', '*']) {
     + 'either it moved or this check is now blind to it');
 }
 
-// Both invoice branches (mobile and desktop) render their own head, so both have to say it.
-assert.equal(
-  read('src/pages/CustomerInvoicePage.jsx').match(new RegExp(NOINDEX.source, 'g'))?.length,
-  2,
-  'CustomerInvoicePage returns a separate tree for the mobile route; each one needs the meta.',
-);
+// The invoice had a phone branch with its own head until 2026-10-31; one tree now, and every head it
+// renders still has to say it — counted against the Helmets, so a branch that comes back is caught.
+{
+  const invoice = read('src/pages/CustomerInvoicePage.jsx');
+  const heads = (invoice.match(/<Helmet>/g) || []).length;
+  assert.ok(heads >= 1, 'CustomerInvoicePage renders no head at all');
+  assert.equal(invoice.match(new RegExp(NOINDEX.source, 'g'))?.length, heads,
+    'every head CustomerInvoicePage renders must refuse indexing — an invoice is a private document');
+}
 
 // A canonical URL is a claim that the page is real. The ghost-article branch must not make it.
 const article = read('src/pages/PublicJournalArticlePage.jsx');

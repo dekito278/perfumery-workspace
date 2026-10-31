@@ -1,102 +1,76 @@
 // `node src/utils/mobileCanonical.selfcheck.mjs`
 //
-// The mobile storefront is a SECOND set of URLs for the same shop, and RootRedirect sends every phone
-// to /mobile/dashboard. Google crawls mobile-first, so its crawler lands on the duplicate rather than
-// on the prerendered page the sitemap advertises.
-//
+// The mobile storefront was a SECOND set of URLs for the same shop, and Google crawls mobile-first, so
+// its crawler landed on the duplicate rather than on the prerendered page the sitemap advertises.
 // Measured on the live site with an iPhone user agent: /mobile/dashboard, /mobile/catalog and
-// /mobile/products/<slug> carried NO canonical and NO robots meta. And robots.txt matches from the
-// start of a path, so "Disallow: /cart" never covered /mobile/cart — nor did anything cover the mobile
-// Studio (batches, formulas, raw materials, production costing).
+// /mobile/products/<slug> carried NO canonical and NO robots meta.
+//
+// The phone storefront retired on 2026-10-31. A canonical on a page that no longer renders would be
+// nothing, so the duplicate is closed the stronger way: every old address answers 308 at the edge with
+// the page it always meant. What this holds:
+//
+//   1. every /mobile path robots.txt opens to crawlers is permanently redirected in vercel.json, in both
+//      shops — a crawlable path that rendered the SPA shell would be the duplicate again;
+//   2. each redirect lands where the router's own mapping lands, so the edge and the app cannot disagree;
+//   3. no redirect reaches a Studio screen, and the mobile tree stays closed to crawlers by default.
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { desktopCanonicalPath } from './seo.js';
+import { fromRetiredMobileStorefront } from './deviceRouting.js';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const walkFiles = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (
-  entry.isDirectory() ? walkFiles(join(dir, entry.name)) : [join(dir, entry.name)]
-));
 const read = (...p) => readFileSync(join(webRoot, ...p), 'utf8');
 
-// --- the mapping ------------------------------------------------------------------------------------
-assert.equal(desktopCanonicalPath('/mobile/dashboard'), '/home', 'the phone landing page is a copy of /home');
-assert.equal(desktopCanonicalPath('/mobile/home'), '/home');
-assert.equal(desktopCanonicalPath('/mobile/catalog'), '/catalog');
-assert.equal(desktopCanonicalPath('/mobile/bespoke'), '/bespoke');
-assert.equal(desktopCanonicalPath('/mobile/articles'), '/journal');
-assert.equal(desktopCanonicalPath('/mobile/products/maskumambang'), '/catalog/maskumambang',
+const { redirects = [] } = JSON.parse(read('vercel.json'));
+// path-to-regexp, the subset vercel.json uses here: :name and :name(a|b).
+const toRegex = (source) => new RegExp(`^${source
+  .replace(/:(\w+)\(([^)]+)\)/g, '(?<$1>$2)')
+  .replace(/:(\w+)/g, '(?<$1>[^/]+)')}$`);
+const edge = (path) => {
+  for (const rule of redirects) {
+    const match = path.match(toRegex(rule.source));
+    if (!match) continue;
+    const to = rule.destination.replace(/:(\w+)/g, (_, name) => match.groups?.[name] ?? '');
+    return { to, permanent: rule.permanent === true };
+  }
+  return null;
+};
+
+// --- 1 + 2. The old phone addresses, at the edge and in the router -----------------------------------
+const SAMPLES = ['/mobile', '/mobile/dashboard', '/mobile/home', '/mobile/catalog', '/mobile/articles',
+  '/mobile/products/maskumambang', '/mobile/articles/kisah-x', '/mobile/bespoke', '/mobile/about',
+  '/mobile/cart', '/mobile/checkout', '/mobile/payment', '/mobile/welcome', '/mobile/customer',
+  '/mobile/customer/invoice/SOLI09232'];
+for (const shop of ['', '/en']) {
+  for (const path of SAMPLES) {
+    const app = fromRetiredMobileStorefront(path);
+    assert.ok(app, `${path} is not an old storefront address in the router — the sample list is stale`);
+    const hop = edge(`${shop}${path}`);
+    assert.ok(hop, `${shop}${path} is not redirected at the edge, so a crawler still gets the SPA shell there`);
+    assert.ok(hop.permanent, `${shop}${path} must redirect permanently, or search keeps the old address`);
+    assert.equal(hop.to, `${shop}${app}`, `${shop}${path}: the edge sends ${hop.to}, the router ${shop}${app}`);
+  }
+}
+assert.equal(edge('/mobile/products/maskumambang').to, '/catalog/maskumambang',
   'the product twin must be the PRERENDERED url, the one the sitemap lists');
-assert.equal(desktopCanonicalPath('/mobile/articles/kisah-x'), '/articles/kisah-x');
-// Query strings and trailing slashes are the same page.
-assert.equal(desktopCanonicalPath('/mobile/catalog?sort=new'), '/catalog');
-assert.equal(desktopCanonicalPath('/mobile/catalog/'), '/catalog');
-// A Studio page has no public twin and must never be handed one.
-for (const studio of ['/mobile/batches', '/mobile/formulas/12', '/mobile/raw-materials', '/mobile/cart', '']) {
-  assert.equal(desktopCanonicalPath(studio), '', `${studio || '(empty)'} has no desktop twin to point at`);
+
+// --- 3. The Studio is never swept up ------------------------------------------------------------------
+for (const studio of ['/mobile/studio', '/mobile/studio/orders/12', '/mobile/batches', '/mobile/formulas/12',
+  '/mobile/raw-materials', '/mobile/login', '/mobile/journal/new', '/en/mobile/studio']) {
+  assert.equal(edge(studio), null, `${studio} is a Studio screen and must not be redirected at the edge`);
 }
 
-// --- the pages actually declare it --------------------------------------------------------------------
-for (const [file, expected] of [
-  ['MobileStorefrontPage.jsx', "desktopCanonicalPath('/mobile/dashboard')"],
-  ['MobileCatalogPage.jsx', "desktopCanonicalPath('/mobile/catalog')"],
-  ['MobileBespokePage.jsx', "desktopCanonicalPath('/mobile/bespoke')"],
-]) {
-  const source = read('src', 'pages', 'mobile', file);
-  assert.ok(source.includes(expected), `${file} must declare its desktop canonical`);
-  // shopCanonicalUrl, not toAbsoluteUrl: the desktop twin of a phone page is /catalog on the Indonesian
-  // shop and /en/catalog on the English one, and toAbsoluteUrl named the Indonesian url on both. The
-  // path is still the one asserted above; only the shop prefix is new. See eachShopSpeaksForItself.
-  assert.match(source, /<link rel="canonical" href=\{shopCanonicalUrl\(/,
-    `${file} must emit an absolute canonical that knows which shop it is in`);
-}
-assert.match(read('src', 'pages', 'mobile', 'MobileProductDetailPage.jsx'),
-  /desktopCanonicalPath\(`\/mobile\/products\/\$\{product\.slug\}`\)/,
-  'the mobile product page must point at its prerendered desktop twin');
-
-// --- robots: the mobile tree is private by default ----------------------------------------------------
 const robots = read('public', 'robots.txt');
 assert.match(robots, /^Disallow: \/mobile\/$/m,
   'the mobile tree must be closed by default — a new mobile Studio route would otherwise be crawlable');
-// ...with exactly the public pages opened back up, and nothing else.
-const allowed = [...robots.matchAll(/^Allow: (\/mobile\/\S*)$/gm)].map((m) => m[1]).sort();
-assert.deepEqual(allowed,
-  ['/mobile/articles', '/mobile/bespoke', '/mobile/catalog', '/mobile/dashboard', '/mobile/home', '/mobile/products/'],
-  'only the storefront pages may be crawlable, and each one must have a canonical above');
-// Every opened path must be one the mapping knows, or it would be crawled with no canonical to follow.
+assert.match(robots, /^Disallow: \/en\/mobile\/$/m, 'in the English shop too');
+const allowed = [...robots.matchAll(/^Allow: ((?:\/en)?\/mobile\/\S*)$/gm)].map((m) => m[1]);
+assert.ok(allowed.length >= 6, `only ${allowed.length} old phone paths left open — the 308s would be invisible to crawlers`);
 for (const path of allowed) {
   const probe = path.endsWith('/') ? `${path}x` : path;
-  assert.ok(desktopCanonicalPath(probe), `${path} is crawlable but has no desktop twin — that is the duplicate again`);
+  const hop = edge(probe);
+  assert.ok(hop?.permanent, `robots.txt opens ${path} to crawlers but nothing redirects it — that is the duplicate again`);
 }
 
-// ...and a twin in the MAPPING is not a canonical on the PAGE. The list above checked four pages by
-// hand while robots.txt opened six paths, and /mobile/articles was the one in the gap: crawlable, with
-// a known desktop twin, and emitting no canonical at all. Exactly the state the three pages named in
-// this guard's header were measured in.
-//
-// So the two halves are joined: the allowed paths ARE the subject, and each has to be declared by some
-// page. Found by searching for the declaration rather than by naming files, because /mobile/dashboard
-// and /mobile/home are one page and the three tabs live in one shell.
-const pageSources = walkFiles(join(webRoot, 'src', 'pages'))
-  .filter((file) => file.endsWith('.jsx'))
-  .map((file) => readFileSync(file, 'utf8'));
-const declared = new Set();
-for (const source of pageSources) {
-  for (const [, path] of source.matchAll(/desktopCanonicalPath\('([^']+)'\)/g)) declared.add(path);
-  // The product page builds its path from the slug; record the prefix it stands for.
-  if (/desktopCanonicalPath\(`\/mobile\/products\/\$\{/.test(source)) declared.add('/mobile/products/');
-}
-assert.ok(declared.size >= 5, `only ${declared.size} mobile canonicals are declared anywhere — the scan is broken`);
-
-for (const path of allowed) {
-  // /mobile/dashboard and /mobile/home are the same screen; declaring either covers both.
-  const covered = declared.has(path)
-    || (path === '/mobile/home' && declared.has('/mobile/dashboard'))
-    || (path === '/mobile/dashboard' && declared.has('/mobile/home'));
-  assert.ok(covered,
-    `robots.txt opens ${path} to crawlers but no page declares its desktop canonical, so Google lands `
-    + 'on the duplicate with nothing saying which address is the real one');
-}
-
-console.log(`mobileCanonical selfcheck OK (${allowed.length} mobile pages crawlable, each pointing at its desktop twin)`);
+console.log(`mobileCanonical selfcheck OK (${SAMPLES.length * 2} old phone addresses 308 to their page in both shops, ${allowed.length} left crawlable so the redirect is seen)`);

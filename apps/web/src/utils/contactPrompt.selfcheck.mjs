@@ -87,14 +87,16 @@ const portal = read('pages', 'CustomerPortalPage.jsx');
 // and had no WhatsApp link at all, which is the surface nearly every overseas reader is on. The phone
 // hero does not even carry the sentence about arranging an order, so nothing would have complained.
 const portalButtons = [...portal.matchAll(/<AskAtelierButton[\s\S]{0,240}?\/>/g)].map((m) => m[0]);
-assert.equal(portalButtons.length, 2,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.equal(portalButtons.length, 1,
   `the account page has a phone tree and a desktop tree; found ${portalButtons.length} contact button(s), expected one in each`);
 for (const button of portalButtons) {
   assert.match(button, /labelKey="intl\.noticeCta"/,
     'labelled as arranging an order, not as asking about a parcel that does not exist yet');
   assert.match(button, /draftKey="intl\.noticeMessage"/, 'and drafted the same way');
 }
-assert.equal((portal.match(/\{isInternational \? \(\s*<AskAtelierButton/g) || []).length, 2,
+// One portal tree since the phone storefront retired (2026-10-31).
+assert.equal((portal.match(/\{isInternational \? \(\s*<AskAtelierButton/g) || []).length, 1,
   'and both belong to the English shop only — the Indonesian account page has a checkout to spend a member price in');
 
 // --- 4. The button keeps its promise ---------------------------------------------------------------------

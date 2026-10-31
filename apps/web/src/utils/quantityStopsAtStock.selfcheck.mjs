@@ -58,7 +58,8 @@ walk('pages');
 const steppers = pages
   .map((rel) => [rel, readFileSync(join(src, rel), 'utf8')])
   .filter(([, body]) => /updateQuantity\([^)]*\.quantity \+ 1\)/.test(body) || /nextQuantityUp\(/.test(body));
-assert.ok(steppers.length >= 5,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(steppers.length >= 2,
   `only ${steppers.length} pages raise a cart quantity; the search has stopped matching. `
   + 'There were five on 2026-10-23: two carts, two international carts, and the phone checkout — which '
   + 'this guard found on its first run, after four had been fixed by hand.');

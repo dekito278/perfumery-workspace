@@ -62,11 +62,13 @@ assert.equal(new Set(WHY_DIRECT_REASONS.map((r) => r.key)).size, WHY_DIRECT_REAS
 const comp = read('components', 'storefront', 'WhyBuyDirect.jsx');
 assert.match(comp, /getStorefrontWhatsAppNumber\(\)/, 'the number comes from the one source');
 assert.match(comp, /filter\(\(reason\) => !reason\.whatsapp \|\| whatsapp\)/, 'the WhatsApp card is hidden when no number is configured');
-assert.match(comp, /to=\{`\$\{prefix\}\$\{reason\.to\}`\}/, 'links are prefixed for the phone');
+// One shop since 2026-10-31: the link is the reason's own path. A '/mobile' prefix would now land on a
+// redirect, and on the Studio's phone routes behind it.
+assert.match(comp, /to=\{reason\.to\}/, 'links go straight to the reason\'s page');
+assert.doesNotMatch(comp, /\/mobile/, 'and never through the retired phone storefront');
 assert.match(comp, /whyDirectReasons\(region\)/, 'the component asks for the reasons of the shop being read');
 assert.doesNotMatch(comp, /\d{9,}/, 'no hardcoded number in the component');
 assert.match(read('pages', 'HomePage.jsx'), /<WhyBuyDirect \/>/, 'desktop home renders it');
-assert.match(read('pages', 'mobile', 'MobileStorefrontPage.jsx'), /<WhyBuyDirect mobile \/>/, 'phone home renders it, as mobile');
 
 // --- 3. The footer reaches the atelier, from the same source -------------------------------------------
 const footer = read('components', 'storefront', 'StorefrontFooter.jsx');
@@ -90,18 +92,23 @@ assert.match(MESSAGES.en['home.collabMessage'], /Hello Dekito/);
 // home does not, and the safety net only rescues what is already on screen at 1.2/3/6 s. A section below
 // the fold on the phone therefore stayed invisible for good — found live, from computed style, after this
 // had shipped. Fourth time for this class of bug (see revealSafetyNet.js for the first three).
-assert.match(comp, /data-reveal=\{mobile \? undefined : true\}/, 'the phone variant must not start hidden — nothing on that page would reveal it');
-
-// Generalised: no page under pages/mobile may put data-reveal on anything but a LineDivider (which observes
-// itself) unless the page has a useScrollReveal container.
-const mobileDir = join(root, 'pages', 'mobile');
+// One shop since 2026-10-31, so the component always starts hidden — and every page that renders it, or
+// puts data-reveal on anything but a LineDivider (which observes itself), must own a useScrollReveal
+// container. Swept over every page, phone Studio pages included: the subject is the page, not the folder.
+assert.match(comp, /data-reveal\b/, 'the section still reveals on scroll');
+const pageFiles = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (
+  entry.isDirectory() ? pageFiles(join(dir, entry.name)) : entry.name.endsWith('.jsx') ? [join(dir, entry.name)] : []
+));
 const offenders = [];
-for (const name of readdirSync(mobileDir)) {
-  if (!/\.jsx$/.test(name)) continue;
-  const text = read('pages', 'mobile', name);
-  const nonDividerReveals = text.split('\n').filter((line) => /data-reveal/.test(line) && !/LineDivider|LineMark/.test(line));
-  if (nonDividerReveals.length && !/useScrollReveal\(/.test(text)) offenders.push(name);
+let revealing = 0;
+for (const file of pageFiles(join(root, 'pages'))) {
+  const text = stripComments(readFileSync(file, 'utf8'));
+  const nonDividerReveals = text.split('\n').filter((line) => /data-reveal\b/.test(line) && !/LineDivider|LineMark/.test(line));
+  if (!nonDividerReveals.length && !/<WhyBuyDirect\b/.test(text)) continue;
+  revealing += 1;
+  if (!/useScrollReveal\(/.test(text)) offenders.push(file.slice(root.length + 1));
 }
-assert.deepEqual(offenders, [], `these phone pages hide sections with data-reveal but have no useScrollReveal container to show them again: ${offenders.join(', ')}`);
+assert.ok(revealing >= 3, `only ${revealing} pages reveal on scroll — the sweep is broken, not the pages`);
+assert.deepEqual(offenders, [], `these pages hide sections with data-reveal but have no useScrollReveal container to show them again: ${offenders.join(', ')}`);
 
 console.log('whyDirect selfcheck OK (one set of reasons on both homes; the atelier number has one source)');

@@ -37,8 +37,10 @@ for (const key of ['nav.account', 'nav.accountSub', 'nav.trackOrder']) {
 assert.match(MESSAGES.id['nav.accountSub'], /harga member/, 'and the Indonesian one still names the price');
 
 // --- 2. Phone nav: "Akun", not "Cek Order" -------------------------------------------------------------
-const mobileNav = read('layouts', 'MobileCommerceLayout.jsx');
-assert.match(mobileNav, /\{ path: '\/mobile\/customer', labelKey: 'nav\.accountShort', icon: UserRound \}/, 'the phone tab must be the account');
+// The phone's tab bar retired with the phone storefront (2026-10-31); the header is the navigation on a
+// phone now, and its account link reads "Akun" to a signed-in buyer.
+const mobileNav = read('components', 'storefront', 'PublicHeader.jsx');
+assert.match(mobileNav, /t\(currentUser \? 'nav\.accountShort' : 'nav\.signIn'\)/, 'the header names the account once signed in');
 assert.match(MESSAGES.id['nav.accountShort'], /Akun/, 'and it is still called "Akun" in Indonesian');
 assert.doesNotMatch(mobileNav, /Cek Order/, '"Cek Order" framed the account as tracking; it must not come back');
 
@@ -46,8 +48,9 @@ assert.doesNotMatch(mobileNav, /Cek Order/, '"Cek Order" framed the account as t
 // The sentences moved into the message file when the account page learned English, so the guard now
 // checks the WIRING on the page and the WORDS in the messages — the pair is what the buyer reads.
 const portal = read('pages', 'CustomerPortalPage.jsx');
-assert.equal((portal.match(/\{t\('cust\.signInMember'\)\}/g) || []).length, 2,
-  'both sign-in buttons (desktop and phone) must say what signing in is for');
+// One portal tree since the phone storefront retired (2026-10-31).
+assert.equal((portal.match(/\{t\('cust\.signInMember'\)\}/g) || []).length, 1,
+  'the sign-in button must say what signing in is for');
 assert.match(MESSAGES.id['cust.signInMember'], /harga member/, 'and the Indonesian button still names the price');
 // The English half of this rule ENDED when the English shop stopped having a checkout. A member price
 // cannot be spent there — there is no cart and no catalogue checkout — so naming it on the button is
@@ -55,7 +58,8 @@ assert.match(MESSAGES.id['cust.signInMember'], /harga member/, 'and the Indonesi
 assert.doesNotMatch(MESSAGES.en['cust.signInMember'], /member price/i,
   'the English button offers a member price the English shop has no way to charge');
 assert.doesNotMatch(portal, /Dashboard tampil di sini/, 'the empty state must not describe a dashboard nobody asked for');
-assert.equal((portal.match(/t\('cust\.memberWaiting'\)/g) || []).length, 2, 'both empty states must lead with the price');
+// One portal tree since the phone storefront retired (2026-10-31).
+assert.equal((portal.match(/t\('cust\.memberWaiting'\)/g) || []).length, 1, 'the empty state must lead with the price');
 assert.match(MESSAGES.id['cust.memberWaiting'], /Harga member/, 'and that empty state is about the price in Indonesian');
 assert.doesNotMatch(MESSAGES.en['cust.memberWaiting'], /Member price/i,
   'the English empty state still leads with a price that cannot be spent in that shop');
@@ -86,7 +90,7 @@ assert.match(MESSAGES.id['cust.memberActive'], /Harga member aktif/, 'and the ba
 // mind halfway down is read as the thing it says first.
 assert.doesNotMatch(portal, /Cek order dengan kode unik/, 'the hero must not lead with tracking');
 assert.doesNotMatch(portal, /<title>Cek Order - Solivagant<\/title>/, 'the tab title must not call the account "Cek Order"');
-assert.equal((portal.match(/<title>\{t\('cust\.tab'\)\}<\/title>/g) || []).length, 2, 'both variants title the page as the member account');
+assert.equal((portal.match(/<title>\{t\('cust\.tab'\)\}<\/title>/g) || []).length, 1, 'the page is titled as the member account');
 assert.match(MESSAGES.id['cust.tab'], /Akun Member/, 'and the tab is named for the account, not for tracking');
 assert.match(portal, /\{t\('cust\.heroTitle'\)\}/, 'the hero leads with what signing in does to the price');
 assert.match(MESSAGES.id['cust.heroTitle'], /harga member/, 'and says so in Indonesian');
@@ -113,21 +117,17 @@ assert.match(MESSAGES.id['cust.heroBody'], /di bawah/, 'saying where the box is'
 // That is what this checks: the copy has to equal what the nav actually renders.
 const shell = readFileSync(join(root, '..', 'index.html'), 'utf8');
 
-const navLabelKeys = [...mobileNav.matchAll(/labelKey: '([^']+)'/g)].map((match) => match[1]);
-assert.ok(navLabelKeys.length >= 6, `only ${navLabelKeys.length} phone tabs parsed — the derivation broke`);
-const navLabels = navLabelKeys.map((key) => {
-  assert.ok(MESSAGES.id[key], `${key} has no Indonesian label`);
-  return MESSAGES.id[key];
-});
-
-const fallbackLists = [...shell.matchAll(/items: \[('Beranda'[^\]]*)\]/g)]
-  .map((match) => [...match[1].matchAll(/'([^']+)'/g)].map((entry) => entry[1]));
-assert.ok(fallbackLists.length >= 3, `only ${fallbackLists.length} mobile boot lists found in index.html`);
-for (const list of fallbackLists) {
-  assert.deepEqual(list, navLabels,
-    'the boot screen lists the phone tabs, and it has drifted from them before — it said "Custom" for a '
-    + 'tab now called Bespoke and "Cek Order" for one now called Akun:\n'
-    + `  boot: ${list.join(', ')}\n  nav:  ${navLabels.join(', ')}`);
+// The phone tab bar retired with the phone storefront (2026-10-31), and so did the three copies of it in
+// the boot screen. What must not happen is a copy surviving the thing it copied: a boot list of tabs no
+// screen renders is the drift this section was written for, in its purest form.
+const fallbackLists = [...shell.matchAll(/items: \[('Beranda'[^\]]*)\]/g)];
+assert.equal(fallbackLists.length, 0,
+  'index.html still lists the retired phone tabs on its boot screen — there is no tab bar for it to match');
+// The doors the boot screen does offer have to be doors the header offers too.
+const bootDoors = [...shell.matchAll(/href: route\.prefix \+ '(\/[\w-]+)'/g)].map((match) => match[1]);
+assert.ok(bootDoors.length >= 2, `only ${bootDoors.length} boot links parsed — the derivation broke`);
+for (const door of bootDoors) {
+  assert.match(mobileNav, new RegExp(`to: '${door}'|to="${door}"`), `the boot screen offers ${door}, which the header does not`);
 }
 
 // --- 7. "Cek Order" is gone from everything a BUYER reads ----------------------------------------------

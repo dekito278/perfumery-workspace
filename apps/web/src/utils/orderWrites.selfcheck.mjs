@@ -121,11 +121,8 @@ const BUYER_FACING = [
   'pages/BespokePage.jsx',
   'pages/PaymentPage.jsx',
   'pages/CustomerPortalPage.jsx',
-  'pages/mobile/MobileBespokePage.jsx',
-  'pages/mobile/MobileCheckoutPage.jsx',
   'pages/CheckoutPage.jsx',
   'pages/CartPage.jsx',
-  'pages/mobile/MobileCartPage.jsx',
 ];
 const ADMIN_ONLY_WRITERS = [
   'updateOrderStatus',

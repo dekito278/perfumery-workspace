@@ -95,20 +95,15 @@ for (const page of ['pages/VoucherManagementPage.jsx', 'pages/mobile/MobileVouch
     `${page} must clamp a percent voucher to 100 before saving`);
 }
 
-// The product story renders through BriefText on BOTH surfaces. Desktop has always split paragraphs;
-// mobile printed a bare {product.story}, and the browser collapses every newline — so a story written in
-// paragraphs arrived on the phone as one unbroken wall. Caught the day the 18 descriptions were written.
+// The product story renders through BriefText. Desktop always split paragraphs; the phone's own product
+// page printed a bare {product.story}, and the browser collapses every newline — so a story written in
+// paragraphs arrived on the phone as one unbroken wall. That page retired on 2026-10-31; the one product
+// page serves the phone now, and it is the one that has to keep the paragraphs.
 {
-  const desktop = read('pages/PublicProductDetailPage.jsx');
-  const mobile = read('pages/mobile/MobileProductDetailPage.jsx');
-  // The text now comes from productCopyFor, so both surfaces read `copy.description`. What this guard
-  // holds is unchanged: it goes through BriefText on BOTH, because a bare <p> collapses the paragraphs
-  // and a multi-paragraph story arrives on the phone as one unbroken wall.
-  assert.match(desktop, /<BriefText text=\{copy\.description\}/, 'desktop renders the story through BriefText');
-  assert.match(mobile, /<BriefText text=\{copy\.description\}/,
-    'and so does mobile — a bare <p> there collapses the paragraphs');
-  assert.doesNotMatch(mobile, /<p className="m-editorial-pdp__story">\{(product\.story|copy\.description)/,
-    'the bare paragraph must not come back');
+  const page = read('pages/PublicProductDetailPage.jsx');
+  assert.match(page, /<BriefText text=\{copy\.description\}/, 'the product page renders the story through BriefText');
+  assert.doesNotMatch(page, /<p[^>]*>\{(product\.story|copy\.description)\}/,
+    'a bare paragraph collapses the story into one wall on every screen');
 }
 
-console.log('mobileParityFixes selfcheck OK (5 fixes held on both the desktop and the mobile copy)');
+console.log('mobileParityFixes selfcheck OK (5 fixes held wherever a screen still exists twice)');

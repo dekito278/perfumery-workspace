@@ -52,7 +52,8 @@ const walk = (dir) => readdirSync(dir).flatMap((entry) => {
   return /\.jsx$/.test(entry) ? [full] : [];
 });
 const carts = walk(join(src, 'pages')).filter((file) => /Cart\w*\.jsx$/.test(file));
-assert.ok(carts.length >= 4,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(carts.length >= 2,
   `expected the cart pages, found ${carts.length} — the scan is broken, not the code`);
 
 const showing = [];
@@ -77,7 +78,8 @@ for (const file of carts) {
       + `drift again:\n  ${line.trim().slice(0, 140)}`);
   }
 }
-assert.ok(showing.length >= 3,
+// Floor lowered when the phone storefront retired (2026-10-31): the two phone carts went with it.
+assert.ok(showing.length >= 2,
   `only ${showing.length} cart page(s) show notes at all; expected the rule to bind on at least three`);
 
 // --- 3. THE FIELD AS IT ACTUALLY ARRIVES ---------------------------------------------------------------

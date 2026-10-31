@@ -2,7 +2,6 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Ticket, UserRound } from 'lucide-react';
-import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import WhyBuyDirect from '@/components/storefront/WhyBuyDirect.jsx';
@@ -20,8 +19,8 @@ import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 // marketplace listings are priced higher), and signing in lowers them again to the member price. Stated as
 // policy, never as a number or against a named marketplace: a figure goes stale and a name is a legal
 // risk, and a landing page that lies once is not believed twice.
-const WelcomeContent = ({ mobile, currentUser, signIn }) => {
-  const prefix = mobile ? '/mobile' : '';
+const WelcomeContent = ({ currentUser, signIn }) => {
+  const prefix = '';
   const { t } = useTranslate();
   // The card's code is a VOUCHER thing, and the English cart has no voucher box: an international order
   // is confirmed on WhatsApp, where a domestic discount code has nothing to apply to. Telling that reader
@@ -31,14 +30,14 @@ const WelcomeContent = ({ mobile, currentUser, signIn }) => {
   const { isInternational } = useStorefrontRegion();
   return (
     <>
-      <p className={mobile ? 'm-editorial-eyebrow' : 'editorial-eyebrow'}>{t('welcome.eyebrow')}</p>
-      <h1 className={mobile ? 'mt-2 text-2xl font-bold text-ng-bone' : 'ng-display mt-5 text-5xl sm:text-6xl'}>
+      <p className="ng-eyebrow ng-mono m-0">{t('welcome.eyebrow')}</p>
+      <h1 className="ng-display mt-5 text-5xl sm:text-6xl">
         {t('welcome.heading')}
       </h1>
-      <p className={mobile ? 'mt-3 text-sm font-medium leading-relaxed text-ng-dust' : 'mt-4 max-w-xl text-base font-medium leading-relaxed text-ng-dust'}>
+      <p className="mt-4 max-w-xl text-base font-medium leading-relaxed text-ng-dust">
         {t('welcome.lead')}
       </p>
-      <div className={`mt-6 flex flex-wrap gap-3${mobile ? ' flex-col' : ''}`}>
+      <div className="mt-6 flex flex-wrap gap-3">
         {currentUser ? (
           <Link to={`${prefix}/catalog`} className="inline-flex h-12 items-center justify-center gap-2 rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
             {t('welcome.alreadyMember')} <ArrowRight className="h-4 w-4" />
@@ -66,7 +65,7 @@ const WelcomeContent = ({ mobile, currentUser, signIn }) => {
   );
 };
 
-const WelcomePage = ({ mobile = false }) => {
+const WelcomePage = () => {
   const { currentUser, loginWithGoogle } = useAuth();
   const { t, region } = useTranslate();
   const revealRef = useScrollReveal();
@@ -75,7 +74,7 @@ const WelcomePage = ({ mobile = false }) => {
   // stored region so the page still read English, but the /en address, its canonical and its
   // hreflang twin were all left behind.
   const signIn = () => loginWithGoogle(
-    `${window.location.origin}${shopPrefixForRegion(region)}${mobile ? '/mobile/customer' : '/customer'}`,
+    `${window.location.origin}${shopPrefixForRegion(region)}/customer`,
   ).catch(() => {});
 
   const head = (
@@ -86,20 +85,6 @@ const WelcomePage = ({ mobile = false }) => {
     </Helmet>
   );
 
-  if (mobile) {
-    return (
-      <MobileCommerceLayout>
-        {head}
-        <main className="mobile-page m-editorial-page">
-          <section className="mobile-card m-editorial-section p-5">
-            <WelcomeContent mobile currentUser={currentUser} signIn={signIn} />
-          </section>
-          <WhyBuyDirect mobile />
-        </main>
-      </MobileCommerceLayout>
-    );
-  }
-
   return (
     <>
       {head}
@@ -107,7 +92,7 @@ const WelcomePage = ({ mobile = false }) => {
         <PublicHeader />
         <section className="tracking-content !pt-16">
           <div className="tracking-card">
-            <WelcomeContent mobile={false} currentUser={currentUser} signIn={signIn} />
+            <WelcomeContent currentUser={currentUser} signIn={signIn} />
           </div>
         </section>
         <WhyBuyDirect />

@@ -39,7 +39,7 @@ assert.match(infer, /if \(explicit\) return explicit;/, 'the explicit category i
 // it into one shared builder — which is the fix for the LIMITED pill vanishing as perfumes are re-filed
 // — read as a regression. What has to be true is that the pills come from the field the card prints,
 // wherever that sentence now lives.
-for (const page of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.jsx']) {
+for (const page of ['pages/CatalogPage.jsx']) {
   const text = strip(readFileSync(join(src, page), 'utf8'));
   assert.match(text, /catalogCategoryPills\(/,
     `${page}: the pill list is built by hand again instead of by the one shared builder`);

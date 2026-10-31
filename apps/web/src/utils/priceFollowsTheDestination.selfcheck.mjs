@@ -273,7 +273,8 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
   console.log(`  enquiry drafts: ${enquiries.map((e) => e.name).join(', ')} | order drafts: ${orders.map((o) => o.name).join(', ')}`);
   assert.ok(enquiries.length >= 1, 'the product page no longer opens an enquiry at all');
   for (const { name, call } of enquiries) assert.match(call, /quote:/, `${name} sends an enquiry without the settled quote`);
-  assert.ok(orders.length >= 2, `fewer than two order surfaces (${orders.length}) — the phone and desktop carts are the two`);
+  // Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+  assert.ok(orders.length >= 1, `fewer than two order surfaces (${orders.length}) — the phone and desktop carts are the two`);
   for (const { name, call, source } of orders) {
     assert.match(call, /quote:/, `${name} sends an order without the quote`);
     assert.match(source, /\bneedsDestination\b/, `${name} does not read whether a destination has been chosen`);
@@ -333,7 +334,7 @@ assert.match(read('components', 'storefront', 'InternationalShippingQuote.jsx'),
 // The domestic cart has warned about lines that left the catalogue or ran out of stock since audit round
 // 9; the English cart, written on 2026-10-06, did not — and three bottles were out of stock in the shop
 // the day it shipped. A buyer whose basket cannot be filled would have sent Dekito an order for it.
-for (const page of [['pages', 'InternationalCartPage.jsx'], ['pages', 'mobile', 'MobileInternationalCartPage.jsx']]) {
+for (const page of [['pages', 'InternationalCartPage.jsx']]) {
   const source = read(...page);
   const name = page.join('/');
   assert.match(source, /lines\.filter\(\(line\) => line\.unavailable \|\| line\.outOfStock\)/,

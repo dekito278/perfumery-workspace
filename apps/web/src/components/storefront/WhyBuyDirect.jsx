@@ -5,25 +5,24 @@ import { whyDirectReasons } from '@/data/whyDirect.js';
 import { getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
-// "Kenapa beli langsung" — one component for the desktop and phone homes, so the reasons cannot drift.
+// "Kenapa beli langsung" — one component for the home and the welcome page, so the reasons cannot drift.
 // The WhatsApp card is hidden when no number is configured, the same rule OverseasInquiryButton uses:
 // a chat button that opens wa.me with no recipient is worse than no button.
 // Numbered, as the canvas sets them. A numeral, not a word, so there is nothing in it to translate.
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 
-const WhyBuyDirect = ({ mobile = false }) => {
+const WhyBuyDirect = () => {
   const whatsapp = getStorefrontWhatsAppNumber();
-  const prefix = mobile ? '/mobile' : '';
   const { t, region } = useTranslate();
   const reasons = whyDirectReasons(region).filter((reason) => !reason.whatsapp || whatsapp);
 
   return (
     // data-reveal starts a section at opacity 0 and relies on the page's useScrollReveal container to
-    // bring it back. The home page has one; the phone home did not, and this section stayed invisible
-    // there for good — so the phone variant still leaves it off.
+    // bring it back. The retired phone home had none, and this section stayed invisible there for good;
+    // whyDirect.selfcheck now holds that every page rendering it has the container.
     <section
       className="ng-section ng-section--deep"
-      data-reveal={mobile ? undefined : true}
+      data-reveal
       aria-labelledby="why-direct-title"
     >
       <div className="ng-container flex flex-col gap-14">
@@ -47,7 +46,7 @@ const WhyBuyDirect = ({ mobile = false }) => {
                   <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /> {t(reason.ctaKey)}
                 </a>
               ) : (
-                <Link to={`${prefix}${reason.to}`} className="ng-link ng-mono mt-auto inline-flex min-h-[44px] items-center gap-2">
+                <Link to={reason.to} className="ng-link ng-mono mt-auto inline-flex min-h-[44px] items-center gap-2">
                   {t(reason.ctaKey)} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
               )}

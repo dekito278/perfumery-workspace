@@ -100,18 +100,19 @@ assert.ok([...appSource.matchAll(/'@\/pages\/[^']+'/g)].length >= 30,
 assert.ok(routed.length >= 20, `only ${routed.length} public routes resolved — the parse is broken`);
 assert.ok(surfaces.length >= 60,
   `only ${surfaces.length} buyer-facing files reached — the derivation lost most of them`);
-for (const name of ['MobileArticlesPage', 'InternationalCartPage']) {
+// MobileArticlesPage (reached through a tabs page) and MobileStatePanel (three levels down) proved these
+// two traps until the phone storefront retired on 2026-10-31. The traps outlive them, so the proofs move
+// to what is left: a page reached only because another page RETURNS it, and one behind a <ByShop>.
+for (const name of ['ImmersiveProductPage', 'InternationalCartPage']) {
   assert.ok(surfaces.some((file) => basename(file, '.jsx') === name),
-    `${name} fell out of the sweep. It is reached through another element — a tabs page in one case, a `
-    + '<ByShop> wrapper in the other — which is exactly what the two earlier versions of this '
-    + 'derivation lost');
+    `${name} fell out of the sweep. It is reached through another element — returned by the product `
+    + 'page in one case, a <ByShop> wrapper in the other — which is exactly what the two earlier '
+    + 'versions of this derivation lost');
 }
-// And the walk must keep queueing what it finds. A walk that stopped one level in still reached 67
-// files and still found the articles screen, so neither the count nor the names above can tell. The
-// panel those screens hand their error message to is three levels from the route.
-assert.ok(depthOf('MobileStatePanel') >= 3,
-  'MobileStatePanel is reachable in fewer than three steps, so the walk is not following imports all '
-  + 'the way: it is the panel the phone screens print their error message in');
+// And the walk must keep queueing what it finds: the article body is two steps from its route, and the
+// state block the cart and catalogue print their errors in is a shared ui file, not a page.
+assert.ok(depthOf('JournalMarkdownContent') >= 2 && depthOf('state-block') >= 2,
+  'the walk is not following imports past the routed file, so a screen\'s own components go unread');
 
 // Showing a caught error means putting its .message where a reader can see it: a state setter, a toast,
 // or interpolated into a sentence. console.* is not showing it to anybody, so it is removed first —

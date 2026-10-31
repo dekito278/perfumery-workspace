@@ -58,10 +58,9 @@ const OWNER_DOOR = new Set(['LoginPage', 'MobileLoginPage', 'ResetPasswordPage']
 const SELF_GATED = new Set(['PwaUpdatePrompt', 'ConfirmHost', 'Toaster']);
 
 const ALLOWED = new Map([
-  ['SOLIVAGANT', 'the brand name, which is the same word in both shops and must not be translated'],
-  ['Solivagant', 'the brand name on the desktop header logo'],
-  ['Kembali ke dashboard Studio', 'rendered only inside {isAdmin ? ...} — Studio is Indonesian, and a '
-    + 'buyer never sees this control'],
+  // 'SOLIVAGANT', 'Solivagant' and 'Kembali ke dashboard Studio' were exempt here until 2026-10-31: the
+  // first and last sat in the retired phone storefront's layout, the second on the old desktop logo. None
+  // is written into a spoken prop any more, and an exemption nothing uses is a hole kept open for later.
   ['081234567890', 'an Indonesian phone-number example on a checkout that is domestic-only; not prose'],
   ['SOLI09232', 'an order-code example — a code format, the same characters in either language'],
   ['123456', 'a six-digit code example'],
@@ -77,22 +76,24 @@ const { files, routed, depthOf, resolve: resolveComponent, appSource } = buyerSu
 assert.ok(routed.length >= 20,
   `only ${routed.length} public pages resolved from the route table — the derivation is broken, not the `
   + 'shop. The lazyRoute trap produces exactly this symptom');
-for (const name of ['InternationalCartPage', 'MobileInternationalCartPage']) {
+for (const name of ['InternationalCartPage']) {
   assert.ok(routed.some((file) => file.endsWith(`${name}.jsx`)),
     `${name} is routed for the English shop but fell out of the sweep — it is nested inside another `
     + 'element, which is exactly what a route block cut at its first "/>" loses');
 }
-assert.ok(files.some((file) => file.endsWith(join('mobile-ui', 'MobileSearchBar.jsx'))),
-  'the shared search bar is not in the sweep, so the walk is only going one level deep: it is reached '
-  + 'through MobileCommerceTabsPage -> MobileArticlesPage -> MobileSearchBar');
-assert.ok(depthOf('MobileSearchBar') >= 3,
-  'the search bar is reachable in fewer than three steps, so either the router changed or the walk is '
-  + 'no longer measuring depth — the named file above stops proving anything');
+// The phone storefront retired on 2026-10-31, and with it the three-level path these proofs used to name
+// (MobileCommerceTabsPage -> MobileArticlesPage -> MobileSearchBar). The same two traps are still proved,
+// on what is left: a screen reached only by the import walk, and a file three steps down.
+assert.ok(files.some((file) => file.endsWith('ImmersiveProductPage.jsx')),
+  'the immersive story page is not in the sweep — no route mounts it; the product page RETURNS it for a '
+  + 'product with a story, so only the import walk can find it');
+// Nothing in the buyer graph sits three steps down any more (measured: the deepest is two), so the proof
+// is that the walk goes past the routed file at all — which is what a one-level sweep could not do.
+assert.ok(depthOf('ImmersiveProductPage') >= 2 && depthOf('JournalMarkdownContent') >= 2,
+  'the stand-in story page and the article body are not reached past the routed file, so the walk is no '
+  + 'longer following imports');
 assert.ok(files.length >= 60,
   `only ${files.length} buyer files found — this guard's file set is broken, not the shop`);
-assert.ok(files.some((file) => file.endsWith('MobileCatalogPage.jsx')),
-  'the mobile catalog is not in the sweep — it is mounted as a child of MobileCommerceTabsPage, so only '
-  + 'the import walk can find it, and that is the hole this closure exists to close');
 
 const leaks = [];
 const seen = new Set();
@@ -155,7 +156,10 @@ for (const file of files) {
 }
 const defaultedProps = [...spokenDefaults.values()].flat().map((entry) => entry.prop);
 const declaredDefaults = new Set([...spokenDefaults.values()].flat().map((entry) => entry.value));
-for (const prop of ['clearLabel', 'backLabel']) {
+// clearLabel (MobileSearchBar) and backLabel (MobileTopBar) left the buyer scope with the phone storefront
+// on 2026-10-31. The spinner's quoted 'aria-label' default is the one still in scope, and it is the harder
+// case for the regex: a quoted key renamed on destructure.
+for (const prop of ['aria-label']) {
   assert.ok(defaultedProps.includes(prop),
     `the default scan never found ${prop}, which is declared with a string default in a file in scope — `
     + 'it has stopped reading defaults, so the check below is passing on nothing');
@@ -198,7 +202,7 @@ assert.deepEqual(defaultLeaks, [],
 // proof runs THROUGH the same regex: the strings the allowlist exempts are real literals in these files,
 // so the scan must have seen them. Checking the raw file text instead proves nothing about the regex —
 // which is exactly how a sabotaged pattern walked past the first version of this file.
-const MUST_BE_SEEN = ['SOLIVAGANT', 'Kembali ke dashboard Studio'];
+const MUST_BE_SEEN = ['081234567890', 'SOLI09232'];
 for (const value of MUST_BE_SEEN) {
   assert.ok(ALLOWED.has(value), `${value} must stay on the allowlist with its reason`);
   assert.ok(seen.has(value),
@@ -208,10 +212,12 @@ for (const value of MUST_BE_SEEN) {
 
 // --- The keys the fixed labels now use must exist in BOTH shops --------------------------------------
 // A missing key renders the key itself, which is worse than either language.
+// a11y.productAction, a11y.back, a11y.clearSearch and pay.secureEyebrow left with the phone storefront
+// (2026-10-31); storefrontMessages refuses a key nothing reads, so they are gone from the file too.
 const PAIRED_KEYS = [
   'a11y.backToTop', 'a11y.galleryPrevImage', 'a11y.galleryNextImage',
-  'a11y.galleryCloseZoom', 'a11y.galleryPrev', 'a11y.galleryNext', 'a11y.productAction',
-  'a11y.breadcrumb', 'a11y.back', 'a11y.clearSearch', 'bsp.contactPlaceholder', 'pay.secureEyebrow',
+  'a11y.galleryCloseZoom', 'a11y.galleryPrev', 'a11y.galleryNext',
+  'a11y.breadcrumb', 'bsp.contactPlaceholder',
   'a11y.galleryShowImage', 'a11y.gallerySelectImage', 'a11y.galleryZoom',
 ];
 for (const key of PAIRED_KEYS) {
@@ -460,12 +466,15 @@ for (const file of files) {
       + 'will be described in the other shop\'s language');
   }
 }
-assert.ok(describedPages >= 14,
+// Floor lowered from 14 when the phone storefront retired (2026-10-31): five phone pages and two phone
+// branches (the article view and the member portal) each carried their own description. Measured: 11.
+assert.ok(describedPages >= 11,
   `only ${describedPages} buyer pages were checked for a description — the sweep used to find 17, so it `
   + 'has gone blind');
 
 // --- And the wordmark must not advertise the owner's door --------------------------------------------
-const layout = readFileSync(join(src, 'layouts', 'MobileCommerceLayout.jsx'), 'utf8');
+// The owner tap lives on the shared header's wordmark since the phone storefront retired (2026-10-31).
+const layout = readFileSync(join(src, 'components', 'storefront', 'PublicHeader.jsx'), 'utf8');
 assert.ok(!/aria-label="[^"]*owner access"/i.test(layout),
   'the brand wordmark announces the owner entrance again — three taps on it opens Studio, and saying so '
   + 'in its label tells every screen-reader buyer about a door meant to be quiet');

@@ -99,7 +99,8 @@ for (const page of pages) {
   assert.match(source, /\.filter\(isProductVisibleInStorefront\)|filter\(\(?\w+\)? => isProductVisibleInStorefront/,
     `${page} imports the visibility helper but does not filter with it`);
 }
-assert.ok(listings >= 8, `only ${listings} product listings found — the walk lost them`);
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(listings >= 7, `only ${listings} product listings found — the walk lost them`);
 
 // --- 5. Out of the automatic member/export pricing -----------------------------------------------------
 // The obvious fixture does NOT test this. A vial variant priced at Rp 0 is dropped by retailByVariant
@@ -204,7 +205,7 @@ assert.equal(splitFreeVialLines([chosen, { ...chosen, slug: 'x' }]).lines.length
 assert.deepEqual(splitFreeVialLines().lines, [], 'called with nothing, no crash');
 
 // Both carts render the bought lines, never the raw cart, and both hand the picker the same writer.
-for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx']) {
+for (const page of ['pages/CartPage.jsx']) {
   const source = read(...page.split('/'));
   assert.match(source, /const \{ lines: boughtLines \} = splitFreeVialLines\(items\);/,
     `${page} must separate the gift from what was bought`);
@@ -281,7 +282,7 @@ for (const page of orderScreens) {
 }
 
 // And the two checkout summaries, which compute the amount themselves instead of reading item.price.
-for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
+for (const page of ['pages/CheckoutPage.jsx']) {
   assert.match(read(...page.split('/')), /isFreeVialLine\(item\) \? FREE_VIAL_PRICE_LABEL :/,
     `${page} computes the line total itself, so it has to say the word itself`);
 }
@@ -327,9 +328,9 @@ assert.deepEqual(getCartSummary([]), { quantity: 0, boughtQuantity: 0, subtotal:
 // Every badge and item-count a buyer reads uses the bought count; the ORDER keeps the parcel count.
 for (const screen of [
   'components/storefront/PublicHeader.jsx',
-  'layouts/MobileCommerceLayout.jsx',
-  'pages/mobile/MobileCartPage.jsx',
-  'pages/mobile/MobileCheckoutPage.jsx',
+  // The phone layout's badge retired with it (2026-10-31); the phone pay bars now live in these two.
+  'pages/CartPage.jsx',
+  'pages/CheckoutPage.jsx',
 ]) {
   const source = read(...screen.split('/'));
   assert.match(source, /summary\.boughtQuantity/, `${screen} shows the buyer a count, so it counts what they are buying`);

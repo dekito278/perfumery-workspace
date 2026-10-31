@@ -122,20 +122,14 @@ assert.match(cardPrice, /price\.memberIs', \{ price: formatRupiah\(product\.memb
   "and formats it with the app's own formatter");
 // Every surface that renders a product CARD, related-product strips included: those sat outside the four
 // obvious ones and kept showing Indonesian prices under an English product page.
-for (const surface of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.jsx', 'pages/mobile/MobileStorefrontPage.jsx',
-  'pages/HomePage.jsx', 'pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
+for (const surface of ['pages/CatalogPage.jsx',
+  'pages/HomePage.jsx', 'pages/PublicProductDetailPage.jsx']) {
   assert.match(read(...surface.split('/')), /<CardPrice product=\{(?:product|item)\}/,
     `${surface} shows a price, so it must go through CardPrice`);
 }
-for (const surface of ['pages/mobile/MobileProductDetailPage.jsx']) {
-  const source = read(...surface.split('/'));
-  assert.match(source, /memberPriceNumber/, `${surface} shows a price, so it must show the member price beside it`);
-  // Either the raw literal (catalogue cards, still to be translated) or the translated key — what is
-  // being held is that the amount goes through the app's own Rupiah formatter, not a template string.
-  assert.match(source, /Member \{formatRupiah\(|price\.memberIs', \{ price: formatRupiah\(/,
-    `${surface} must format it with the app's own formatter`);
-}
-for (const pdp of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
+// The phone's own product page printed its member price inline; it retired with the phone storefront
+// (2026-10-31). overseasVisitor.selfcheck now holds that no page prints one of its own.
+for (const pdp of ['pages/PublicProductDetailPage.jsx']) {
   assert.match(read(...pdp.split('/')), /<PriceNote product=\{product\} variant=\{selectedVariant\}/, `${pdp} must hand PriceNote the chosen variant`);
 }
 
@@ -156,21 +150,19 @@ const NOT_SELLING_A_PRICE = new Map([
   ['ProductListPage.jsx', 'Studio: pricing a product to manage it, not offering one to a reader'],
   ['MobileProductListPage.jsx', 'Studio, same'],
   ['CartPage.jsx', 'a line already chosen; the member saving is on the checkout button, checked in section 9'],
-  ['MobileCartPage.jsx', 'same'],
   ['CheckoutPage.jsx', 'same'],
-  ['MobileCheckoutPage.jsx', 'same'],
   // The English cart. The member discount does not travel (Dekito, 2026-09-24): every line is priced at
   // its export price in dollars, so there is no member price to put beside it — naming one would promise
   // a figure the buyer can never be charged. THE CONDITION: englishShopOrdersOnWhatsApp.selfcheck holds
   // that these two pages never reach memberSavingForCart at all.
   ['InternationalCartPage.jsx', 'the English cart: priced in dollars, where no member price exists'],
-  ['MobileInternationalCartPage.jsx', 'same'],
 ]);
 const showsAProduct = walkPages(pagesRoot)
   .filter((file) => file.endsWith('.jsx'))
   .map((file) => [file.slice(pagesRoot.length + 1), stripComments(readFileSync(file, 'utf8'))])
   .filter(([, source]) => /<ProductVisual/.test(source));
-assert.ok(showsAProduct.length >= 10,
+// Floor lowered from 10 when the phone storefront retired (2026-10-31): its product, catalogue and cart pages went.
+assert.ok(showsAProduct.length >= 9,
   `only ${showsAProduct.length} pages render the product visual — the scan is broken, not the code`);
 
 let sellingPages = 0;
@@ -181,7 +173,8 @@ for (const [name, source] of showsAProduct) {
     + 'learns one exists, which is the whole point of the nudge.');
   sellingPages += 1;
 }
-assert.ok(sellingPages >= 6, `only ${sellingPages} selling pages checked — the exemptions swallowed them`);
+// Floor lowered from 6 when the phone storefront retired (2026-10-31): home, catalogue, product and story remain.
+assert.ok(sellingPages >= 4, `only ${sellingPages} selling pages checked — the exemptions swallowed them`);
 
 // --- 9. The cart saving on the checkout button ----------------------------------------------------------
 // A cart line's `slug` is the cartSlug (product slug + variant suffix). The index is keyed by product
@@ -201,7 +194,7 @@ assert.equal(memberSavingForCart([{ productSlug: 'lintang', variantId: '30-ml', 
 assert.equal(memberSavingForCart(undefined, cartIdx), 0, 'no crash on nothing');
 
 // --- 10. Both checkout pages say the number, and only when there is one --------------------------------
-for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
+for (const page of ['pages/CheckoutPage.jsx']) {
   const source = read(...page.split('/'));
   assert.match(source, /memberSavingForCart\(items, memberIndex\)/, `${page} must compute the real saving from the cart`);
   assert.match(source, /memberSaving > 0\s*\?/, `${page} must fall back to the ordinary copy when there is nothing to save`);
@@ -226,13 +219,20 @@ for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.j
 //
 // The shared Button sets whitespace-nowrap, so a fixed height cannot wrap and clips instead. The phone is
 // the surface with no room to spare, and the English labels are longer than the Indonesian ones.
-const phoneCheckout = read('pages', 'mobile', 'MobileCheckoutPage.jsx');
-const memberButton = phoneCheckout.match(/<Button[^>]*onClick=\{handleGoogleLogin\}/);
-assert.ok(memberButton, 'the phone checkout must still offer the member sign-in');
-assert.match(memberButton[0], /min-h-12/, 'a fixed height cannot grow with the sentence — min-h can');
-assert.match(memberButton[0], /whitespace-normal/, 'and the shared Button forbids wrapping unless this says otherwise');
+// One checkout serves the phone since 2026-10-31, so the button checked is the one in CheckoutPage. It is
+// a native <button class="ng-btn">, and .ng-btn sets min-height, never height or nowrap — both are held.
+const phoneCheckout = read('pages', 'CheckoutPage.jsx');
+const memberButton = phoneCheckout.match(/<(?:Button|button)[^>]*onClick=\{handleGoogleLogin\}[^>]*>/);
+assert.ok(memberButton, 'the checkout must still offer the member sign-in');
+assert.match(memberButton[0], /min-h-/, 'a fixed height cannot grow with the sentence — min-h can');
+assert.doesNotMatch(memberButton[0], /whitespace-nowrap|truncate/, 'and nothing on it may forbid the sentence to wrap');
 // (?<!min-) because \b sits between the hyphen and the h, so a naive \bh-12\b matches inside min-h-12.
-assert.doesNotMatch(memberButton[0], /className="[^"]*(?<!min-)h-12/, 'the fixed height must not come back alongside it');
+assert.doesNotMatch(memberButton[0], /className="[^"]*(?<![\w-])h-(?:\d|\[)/, 'the fixed height must not come back alongside it');
+if (/\bng-btn\b/.test(memberButton[0])) {
+  const btnRule = (read('styles', 'naskah.css').match(/^\.ng-btn \{[^}]*\}/m) || [''])[0];
+  assert.ok(btnRule, 'the .ng-btn rule must be findable');
+  assert.doesNotMatch(btnRule, /white-space:\s*nowrap|(?:^|[^-])height:/, '.ng-btn itself must not fix the height or forbid wrapping');
+}
 
 // --- 10b. And the CART, which is where the total is actually weighed ------------------------------------
 // Every other storefront surface names the member price — home, catalog, product, the account page — and
@@ -241,7 +241,7 @@ assert.doesNotMatch(memberButton[0], /className="[^"]*(?<!min-)h-12/, 'the fixed
 // cart, then stated in full on the very next screen.
 //
 // Built from the keys the other pages already use, so there is no second wording to keep in step.
-for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx']) {
+for (const page of ['pages/CartPage.jsx']) {
   const source = read(...page.split('/'));
   assert.match(source, /memberSavingForCart\(items, memberIndex\)/,
     `${page} must compute the real saving from the cart, the same way both checkouts do`);

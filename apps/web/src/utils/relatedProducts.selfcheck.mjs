@@ -71,7 +71,6 @@ assert.deepEqual(relatedFor({ slug: 'solo', category: 'Floral' }, [{ slug: 'solo
 // first four and nothing else.
 for (const [name, file] of [
   ['desktop', ['pages', 'PublicProductDetailPage.jsx']],
-  ['phone', ['pages', 'mobile', 'MobileProductDetailPage.jsx']],
 ]) {
   const source = read(...file);
   assert.match(source, /relatedFor\(product, catalog\)/, `${name} must ask the shared rule`);

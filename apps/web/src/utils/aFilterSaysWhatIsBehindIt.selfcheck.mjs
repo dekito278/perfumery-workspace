@@ -62,7 +62,8 @@ const filterSurfaces = walkPages(join(src, 'pages'))
   .filter((file) => /className=\{?[`"'][^`"']*(catalog-pill|journal-tab|m-editorial-pill|ng-filter)/.test(readFileSync(file, 'utf8')))
   .map((file) => relative(src, file).split(sep).join('/'));
 
-assert.ok(filterSurfaces.length >= 3,
+// The phone storefront retired on 2026-10-31: one responsive page per screen now, so the floor halved.
+assert.ok(filterSurfaces.length >= 2,
   `only ${filterSurfaces.length} filter surfaces found — this walk is looking in the wrong place`);
 
 const uncounted = filterSurfaces.filter((name) => {
@@ -78,7 +79,6 @@ assert.deepEqual(uncounted, [],
 // edit that quietly passes the full shelf back in.
 for (const [name, page] of [
   ['CatalogPage.jsx', read('pages', 'CatalogPage.jsx')],
-  ['MobileCatalogPage.jsx', read('pages', 'mobile', 'MobileCatalogPage.jsx')],
 ]) {
   assert.match(page, /catalogPillCounts\(\s*narrowed/,
     `${name} must count the pills against the narrowed list, not the whole catalogue`);
@@ -93,7 +93,6 @@ for (const [name, page] of [
 // --- 3. The card says what it smells of, with the clamp the cart already uses ------------------------
 for (const [name, page] of [
   ['CatalogPage.jsx', read('pages', 'CatalogPage.jsx')],
-  ['MobileCatalogPage.jsx', read('pages', 'mobile', 'MobileCatalogPage.jsx')],
 ]) {
   assert.match(page, /shortNoteList\(product\.notes, CARD_NOTE_LIMIT\)/,
     `${name} must show the notes through the shared clamp, not its own slice`);

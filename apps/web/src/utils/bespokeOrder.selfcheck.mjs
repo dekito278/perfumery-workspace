@@ -206,7 +206,6 @@ assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mentio
 
   for (const [name, file] of [
     ['desktop', ['pages', 'BespokePage.jsx']],
-    ['phone', ['pages', 'mobile', 'MobileBespokePage.jsx']],
   ]) {
     const source = strip(readFileSync(join(here, '..', ...file), 'utf8'));
     for (const group of ['bottleSizeOptions', 'bottleTypeOptions', 'capDesignOptions', 'labelDesignOptions']) {
@@ -253,7 +252,6 @@ assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mentio
 
   for (const [name, file] of [
     ['desktop', ['pages', 'BespokePage.jsx']],
-    ['phone', ['pages', 'mobile', 'MobileBespokePage.jsx']],
   ]) {
     const source = strip(readFileSync(join(here, '..', ...file), 'utf8'));
     assert.match(source, /optionExtraPrice\(option, group\)/,
@@ -266,12 +264,6 @@ assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mentio
     assert.ok(passes >= 1, `${name} computes the extra price but never renders it`);
   }
 
-  // The phone passes it per group; the desktop renders one group at a time through a single card.
-  const phone = strip(readFileSync(join(here, '..', 'pages', 'mobile', 'MobileBespokePage.jsx'), 'utf8'));
-  for (const group of ['bottleSizeOptions', 'bottleTypeOptions', 'capDesignOptions', 'labelDesignOptions']) {
-    assert.match(phone, new RegExp(`extra=\\{optionPriceLabel\\(option, ${group}\\)\\}`),
-      `the phone shows no added price on ${group} — the cap group is exactly where the silent Rp 45.000 lived`);
-  }
 }
 
 console.log('bespokeOrder self-check OK');

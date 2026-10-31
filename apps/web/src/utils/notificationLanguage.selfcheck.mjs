@@ -120,7 +120,11 @@ assert.doesNotMatch(buildNotificationMessage(codeless, 'order_created'), /Invoic
 assert.match(buildNotificationMessage(codeless, 'order_created'), /Track your order: /);
 assert.match(buildNotificationMessage({ ...codeless, clientContext: { shop: 'id' } }, 'order_created'), /Lacak pesanan: /);
 // An order that DOES have a code keeps the invoice, and keeps the word.
-assert.match(buildNotificationMessage(enOrder, 'order_created'), /Invoice: \S*\/mobile\/customer\/invoice\//);
+// In the shop it was placed in. An order placed on a phone used to get a /mobile/ link; the phone storefront
+// retired on 2026-10-31, so the surface no longer changes the address.
+assert.match(buildNotificationMessage(enOrder, 'order_created'), /Invoice: \S*\/en\/customer\/invoice\//);
+assert.doesNotMatch(buildNotificationMessage(enOrder, 'order_created'), /\/mobile\//,
+  'a link sent to a buyer must not go through the retired phone storefront');
 
 // --- 5. The email subject follows the same order ------------------------------------------------------
 assert.match(buildNotificationSubject(enOrder, 'shipped'), /Order shipped/, 'the English buyer gets an Indonesian subject line');

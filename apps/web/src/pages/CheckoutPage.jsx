@@ -138,7 +138,11 @@ const CheckoutPage = () => {
               <p className="ng-lead">{t('checkout.emptyTitle')}</p>
               {/* The heading already says the cart is empty; what is left is the instruction and the way out. */}
               <p className="m-0 flex items-center gap-3 text-ng-dust"><ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('checkout.emptyBody')}</p>
-              <Link to="/catalog" className="ng-btn">{t('home.seeCollection')}</Link>
+              {/* Both doors, as the phone checkout always offered: a bottle from the shelf, or one made to order. */}
+              <div className="flex flex-wrap gap-3.5">
+                <Link to="/catalog" className="ng-btn">{t('home.seeCollection')}</Link>
+                <Link to="/bespoke" className="ng-btn ng-btn--ghost">{t('cart.bespoke')}</Link>
+              </div>
             </div>
           </section>
           <StorefrontFooter />

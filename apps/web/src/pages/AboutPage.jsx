@@ -4,7 +4,6 @@ import { brandFacts } from '@/data/brandProfile.js';
 import { shopCanonicalUrl } from '@/utils/seo.js';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -20,7 +19,7 @@ import { isProductVisibleInStorefront } from '@/services/productCatalogService.j
 //
 // The fragrance count is COUNTED from the live catalogue rather than written down. A number typed into
 // a page is right on the day it is typed, and this one changes every time Dekito publishes a bottle.
-const AboutContent = ({ mobile }) => {
+const AboutContent = () => {
   const { t } = useTranslate();
   const catalog = useCatalogProducts();
   const fragranceCount = useMemo(
@@ -32,11 +31,11 @@ const AboutContent = ({ mobile }) => {
   return (
     <>
       <p className="ng-eyebrow ng-mono m-0">{t('about.eyebrow')}</p>
-      <h1 className={`ng-display mt-5 text-ng-bone ${mobile ? 'text-4xl' : 'text-6xl'}`}>
+      <h1 className="ng-display mt-5 text-4xl text-ng-bone sm:text-6xl">
         {t('about.title')}
       </h1>
 
-      <div className={`mt-6 grid gap-4 text-ng-dust ${mobile ? 'text-[0.95rem] leading-7' : 'text-lg leading-8'}`}>
+      <div className="mt-6 grid gap-4 text-base leading-7 text-ng-dust sm:text-lg sm:leading-8">
         <p>{t('about.p1')}</p>
         <p>{t('about.p2')}</p>
         <p>{t('about.p3')}</p>
@@ -46,7 +45,7 @@ const AboutContent = ({ mobile }) => {
           copying it into a form, and a fact buried in a paragraph gets copied wrong. */}
       <section className="mt-8 rounded-none border border-ng-bone/12 bg-transparent p-5">
         <h2 className="text-[11px] font-black uppercase tracking-[0.18em] text-ng-bone">{t('about.factsTitle')}</h2>
-        <dl className={`mt-3 grid gap-x-6 gap-y-2 ${mobile ? '' : 'grid-cols-2'}`}>
+        <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
           {facts.map((fact) => (
             <div key={fact.key} className="flex flex-wrap items-baseline gap-2 border-b border-ng-bone/8 pb-2">
               <dt className="text-xs font-bold uppercase tracking-[0.1em] text-ng-dust">{t(`about.fact.${fact.key}`)}</dt>
@@ -75,7 +74,7 @@ const AboutContent = ({ mobile }) => {
   );
 };
 
-const AboutPage = ({ mobile = false }) => {
+const AboutPage = () => {
   const { t, region } = useTranslate();
   const head = (
     <Helmet>
@@ -86,19 +85,6 @@ const AboutPage = ({ mobile = false }) => {
     </Helmet>
   );
 
-  if (mobile) {
-    return (
-      <MobileCommerceLayout>
-        {head}
-        <main className="mobile-page m-editorial-page">
-          <section className="mobile-card m-editorial-section p-5">
-            <AboutContent mobile />
-          </section>
-        </main>
-      </MobileCommerceLayout>
-    );
-  }
-
   return (
     <>
       {head}
@@ -106,7 +92,7 @@ const AboutPage = ({ mobile = false }) => {
         <PublicHeader />
         <section className="tracking-content !pt-16">
           <div className="tracking-card">
-            <AboutContent mobile={false} />
+            <AboutContent />
           </div>
         </section>
         <StorefrontFooter />

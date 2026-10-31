@@ -60,7 +60,8 @@ for (const dir of ['pages', join('pages', 'mobile')]) {
   }
 }
 const productSurfaces = pageFiles.filter(([dir, name]) => read(dir, name).includes('<OverseasInquiryButton'));
-assert.ok(productSurfaces.length >= 3, 'expected the desktop, phone and immersive product pages to be found');
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(productSurfaces.length >= 2, 'expected the desktop, phone and immersive product pages to be found');
 for (const [dir, name] of productSurfaces) {
   assert.match(read(dir, name), /<ShareProductButton/,
     `${dir}/${name} shows a buyer one bottle but gives them no way to send it to anyone`);

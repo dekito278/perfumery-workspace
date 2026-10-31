@@ -1,6 +1,6 @@
 import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import React, {useEffect, useState, useRef, useCallback} from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { X, Menu } from 'lucide-react';
 import BackToTop from '@/components/storefront/BackToTop.jsx';
 import { useCart } from '@/hooks/useCart.js';
@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { storefrontCategories } from '@/data/storefront.js';
 import PriceChangeNotice from '@/components/storefront/PriceChangeNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { isMobileBrowser } from '@/utils/deviceRouting.js';
 
 // `titleKey`/`labelKey` go through the message file; a category name is product data, not copy, so it
 // stays as it is written in Studio.
@@ -39,7 +40,9 @@ const megaMenuColumns = [
 const PublicHeader = () => {
   const { summary } = useCart();
   const { t } = useTranslate();
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const ownerTapRef = useRef({ count: 0, lastTapAt: 0 });
   // The header used to delete any cart line whose slug was not in the visible catalog, silently. A shopper
   // whose product went out of stock or got unpublished just found their cart shorter, with no reason given
   // — and it ran only here, so desktop and mobile disagreed. reconcileCartLines now flags those lines
@@ -88,6 +91,21 @@ const PublicHeader = () => {
   }, [megaOpen]);
 
   const toggleMega = useCallback(() => setMegaOpen((prev) => !prev), []);
+
+  // Three quick taps on the wordmark are the OWNER's way into Studio — the gesture the phone storefront's
+  // header carried until it retired (2026-10-31), now on the one header every screen shares. The first
+  // tap still goes home, as a wordmark should. isAdmin, not isAuthenticated: a signed-in buyer sent to
+  // Studio is bounced straight back out by ProtectedRoute, so for anyone else the door is the sign-in page.
+  const openOwnerAccess = (event) => {
+    const now = Date.now();
+    const count = now - ownerTapRef.current.lastTapAt > 1800 ? 1 : ownerTapRef.current.count + 1;
+    ownerTapRef.current = { count, lastTapAt: now };
+    if (count < 3) return;
+    event.preventDefault();
+    ownerTapRef.current = { count: 0, lastTapAt: 0 };
+    const phone = isMobileBrowser();
+    navigate(isAdmin ? (phone ? '/mobile/studio' : '/studio') : (phone ? '/mobile/login' : '/login'));
+  };
   const navLinks = [
     { labelKey: 'nav.catalog', to: '/catalog' },
     { labelKey: 'nav.journal', to: '/journal' },
@@ -99,7 +117,7 @@ const PublicHeader = () => {
     <div ref={menuRef} className={`ng-header-wrap${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`}>
       <PriceChangeNotice />
       <header className="ng-header">
-        <Link to="/home" className="ng-header__wordmark" aria-label={t('nav.wordmarkAria')}>
+        <Link to="/home" className="ng-header__wordmark" aria-label={t('nav.wordmarkAria')} onClick={openOwnerAccess}>
           SOLIVAGANT
         </Link>
 
@@ -111,6 +129,11 @@ const PublicHeader = () => {
 
         <div className="ng-header__actions ng-mono">
           <RegionSwitch />
+          {/* The owner's way back to Studio — for the owner only; isAdmin is the gate ProtectedRoute uses
+              on the destination. A buyer who signed in for the member price never sees it. */}
+          {isAdmin ? (
+            <Link to={isMobileBrowser() ? '/mobile/studio' : '/studio'} className="ng-header__account">Studio</Link>
+          ) : null}
           {/* The one door to the account, on every storefront page. The only entry used to be "Lacak
               Pesanan" in the menu — framed as tracking, so nobody signed in for the price. */}
           <Link

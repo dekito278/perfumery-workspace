@@ -72,7 +72,7 @@ const getTrackingUrl = (order) => {
 const getCustomerDashboardUrl = (order) => {
   if (typeof window === 'undefined') return '';
   if (!order?.customerCode) return getTrackingUrl(order);
-  return `${window.location.origin}${shopPrefix(order)}/mobile/customer?code=${encodeURIComponent(order.customerCode)}`;
+  return `${window.location.origin}${shopPrefix(order)}/customer?code=${encodeURIComponent(order.customerCode)}`;
 };
 
 const getInvoiceUrl = (order) => {
@@ -80,7 +80,7 @@ const getInvoiceUrl = (order) => {
   // The invoice page is behind the customer code too. Without one, the tracking page is what this buyer
   // can actually open — and a link they can use beats a line they cannot.
   if (!order?.customerCode) return getTrackingUrl(order);
-  return `${window.location.origin}${shopPrefix(order)}/mobile/customer/invoice/${encodeURIComponent(order.orderNumber)}?code=${encodeURIComponent(order.customerCode)}`;
+  return `${window.location.origin}${shopPrefix(order)}/customer/invoice/${encodeURIComponent(order.orderNumber)}?code=${encodeURIComponent(order.customerCode)}`;
 };
 
 const getManualPaymentUploadUrl = (order) => {

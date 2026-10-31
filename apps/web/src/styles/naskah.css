@@ -181,13 +181,18 @@
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.12s ease;
 }
 
 .ng-btn:hover {
   background: #fff;
   border-color: #fff;
   color: var(--ng-ink);
+}
+
+/* A press answers, so a slow tap does not read as a missed one. */
+.ng-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .ng-btn:disabled,

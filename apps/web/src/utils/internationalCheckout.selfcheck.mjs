@@ -34,7 +34,7 @@ assert.match(destinations, /domestic-destination/,
   'the destination search is gone from rates.js — it was folded in there, so either it moved again or '
   + 'it was lost in the fold');
 assert.match(destinations, /rajaongkir/i, 'destinations still come from the Indonesian domestic courier API');
-for (const form of [['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx']]) {
+for (const form of [['pages', 'CheckoutPage.jsx']]) {
   const source = read(...form);
   assert.doesNotMatch(source, /autoComplete="country"|name="country"|<select[^>]*country/i,
     `${form.join('/')} still has no country field — the day it gets one, this notice needs rewriting`);
@@ -88,7 +88,6 @@ assert.doesNotMatch(MESSAGES.en['intl.quotedOnRequest'], /product page/i,
 // quoted by hand would be just as wrong in the other direction.
 for (const [file, expected] of [
   ['pages/BespokePage.jsx', true],
-  ['pages/mobile/MobileBespokePage.jsx', true],
 ]) {
   const source = read(...file.split('/'));
   const tag = (source.match(/<InternationalCheckoutNotice[^/]*\/>/) || [''])[0];
@@ -115,13 +114,13 @@ assert.doesNotMatch(notice, /\d{9,}/, 'no hardcoded number');
 //
 // Bespoke is the real case: reachable in the English shop, with the same domestic-only courier search
 // inside it.
-for (const page of [['pages', 'BespokePage.jsx'], ['pages', 'mobile', 'MobileBespokePage.jsx']]) {
+for (const page of [['pages', 'BespokePage.jsx']]) {
   assert.match(read(...page), /<InternationalCheckoutNotice /, `${page.join('/')} shows the notice`);
 }
 // And it must not come back where it cannot render. Held as the RULE — a page the English shop never
 // opens cannot carry a notice only the English shop would see.
-for (const page of [['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
-  ['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx']]) {
+for (const page of [['pages', 'CartPage.jsx'],
+  ['pages', 'CheckoutPage.jsx']]) {
   assert.doesNotMatch(read(...page), /<InternationalCheckoutNotice /,
     `${page.join('/')} is domestic-only, so the international notice there can never render`);
 }

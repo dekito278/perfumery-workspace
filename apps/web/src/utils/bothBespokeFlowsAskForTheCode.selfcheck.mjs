@@ -54,7 +54,8 @@ walk('pages');
 // word" would have dragged it in.
 const flows = files.filter((rel) => /createBespokeRequest\(/.test(strip(readFileSync(join(src, rel), 'utf8'))));
 console.log(`  bespoke flows: ${flows.join(', ')}`);
-assert.ok(flows.length >= 2,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(flows.length >= 1,
   `expected the desktop and phone bespoke flows; found ${flows.length}: ${flows.join(', ')}. A third one `
   + 'has to be caught by this too.');
 

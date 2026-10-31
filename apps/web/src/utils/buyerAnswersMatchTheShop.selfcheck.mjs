@@ -36,7 +36,8 @@ const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entr
   return entry.isDirectory() ? walk(full) : [full];
 });
 const productPages = walk(PAGES).filter((file) => /ProductDetailPage\.jsx$/.test(path.basename(file)));
-assert.ok(productPages.length >= 2, `only ${productPages.length} product page(s) found — the walk lost them`);
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(productPages.length >= 1, `only ${productPages.length} product page(s) found — the walk lost them`);
 for (const file of productPages) {
   // The delimiter matters: /<BuyerAnswers/ alone also matches <BuyerAnswersX, so renaming the component
   // out of a page left this green.

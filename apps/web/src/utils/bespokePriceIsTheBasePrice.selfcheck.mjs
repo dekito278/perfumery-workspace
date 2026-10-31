@@ -75,13 +75,8 @@ const desktop = read('pages', 'BespokePage.jsx');
 assert.match(desktop, /\]\.filter\(\(group\) => group\.options\.length > 0\)/,
   'the desktop page must drop a choice group with no options rather than render an empty tab');
 
-const phone = read('pages', 'mobile', 'MobileBespokePage.jsx');
-assert.match(phone, /hidden: !\(bottleTypeOptions\.length \|\| capDesignOptions\.length \|\| labelDesignOptions\.length\)/,
-  'the look step must mark itself hidden when it has nothing to show');
-assert.match(phone, /\]\.filter\(\(step\) => !step\.hidden\)/,
-  'and the flow must actually drop the hidden step');
-assert.doesNotMatch(phone, /isComplete: \(\) => Boolean\(form\.bottleType && form\.capDesign && form\.labelDesign\)/,
-  'the look step must not demand three fields the buyer has no way to fill');
+// The phone wizard's look step retired with the phone storefront (2026-10-31); the desktop rule above is
+// the whole of it now.
 
 // --- 4. The copy may not name a choice the buyer cannot make ------------------------------------------
 // Switching the options off left two sentences behind that the live page still printed, word for word:
@@ -102,7 +97,8 @@ const copy = read('i18n', 'messages.js');
 // EVERY line carrying the key, not the first: these pages render in both shops, and the English copy
 // named the same three choices. Checking only the Indonesian line would have passed while /en/bespoke
 // still said "Choose the direction, size, bottle, cap, label and materials first."
-const SENTENCES = ['bsp.floorNote', 'bsp.flowLead', 'bsp.lead', 'bsp.designFirstTitle', 'bsp.designFirstBody'];
+// bsp.flowLead was the phone wizard's and left with it (2026-10-31).
+const SENTENCES = ['bsp.floorNote', 'bsp.lead', 'bsp.designFirstTitle', 'bsp.designFirstBody'];
 const lines = copy.split('\n');
 
 // WHAT IS BANNED IS THE LIST, NOT THE WORD. A first attempt banned each word outright and fired on the

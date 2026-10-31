@@ -169,13 +169,13 @@ export const getProductPublishChecklist = (product = {}) => {
  * JSON-LD. WhatsApp and Facebook do not run JavaScript, so a link shared from Studio's "Salin link
  * produk" previewed as "SOLIVAGANT - Artisan Perfumery Atelier" instead of the perfume.
  *
- * Mobile keeps /mobile/products/<slug>: there is no /mobile/catalog/:slug route, and those pages are
- * not prerendered or indexed anyway.
+ * One address for every screen since the phone storefront retired (2026-10-31); the old phone address
+ * redirects here.
  */
-export const getProductStorefrontPath = (product = {}, { mobile = false } = {}) => {
+export const getProductStorefrontPath = (product = {}) => {
   const slug = toSlug(product.slug || product.name);
   if (!slug) return '';
-  return mobile ? `/mobile/products/${slug}` : `/catalog/${slug}`;
+  return `/catalog/${slug}`;
 };
 
 export const getProductSlugConflicts = (product = {}, products = []) => {

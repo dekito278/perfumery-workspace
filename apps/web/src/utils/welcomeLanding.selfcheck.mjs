@@ -16,19 +16,21 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
-import { isMobileCommercePath } from './mobileFirstScreen.js';
+import { fromRetiredMobileStorefront, toMobilePath } from './deviceRouting.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf8'));
 
-// --- 1. Reachable on both surfaces, and a phone opening the desktop URL lands on the phone page -----------
+// --- 1. One page for every screen; the old phone address still lands on it -----------------------------
 const app = read('App.jsx');
 assert.match(app, /<Route path="\/welcome" element=\{<WelcomePage \/>\} \/>/, 'desktop route');
-assert.match(app, /<Route path="\/mobile\/welcome" element=\{<WelcomePage mobile \/>\} \/>/, 'phone route');
+// The phone storefront retired on 2026-10-31. Cards printed before that carry the old address, so it has
+// to keep landing on the page rather than on a 404.
+assert.match(app, /<Route path="\/mobile\/welcome" element=\{<RetiredMobileStorefront \/>\} \/>/, 'the old phone address redirects');
+assert.equal(fromRetiredMobileStorefront('/mobile/welcome'), '/welcome', 'and it redirects to the welcome page');
 assert.match(app, /'\/welcome',\n\s*'\/track',/, '/welcome is a storefront route, so its loading fallback is the storefront one');
-assert.match(read('utils', 'deviceRouting.js'), /\[\/\^\\\/welcome\$\/, '\/mobile\/welcome'\]/, 'a phone that opens the card URL must be sent to the phone page');
-assert.equal(isMobileCommercePath('/mobile/welcome'), true, 'the phone page gets the wordmark splash, not "Loading workspace"');
+assert.equal(toMobilePath('/welcome'), null, 'a phone that opens the card URL stays on the one responsive page');
 
 // --- 2. The page itself ---------------------------------------------------------------------------------
 const page = read('pages', 'WelcomePage.jsx');
@@ -40,12 +42,11 @@ assert.match(page, /<meta name="robots" content="noindex,follow" \/>/, 'a door f
 assert.match(MESSAGES.id['welcome.signIn'], /harga member/, 'the Indonesian way in says what it is for');
 // On the right surface AND in the right shop. Built from the origin alone, an English visitor who
 // signed in from /en/welcome came back to the Indonesian /customer, leaving the /en address behind.
-assert.match(page, /loginWithGoogle\(\s*`\$\{window\.location\.origin\}\$\{shopPrefixForRegion\(region\)\}\$\{mobile \? '\/mobile\/customer' : '\/customer'\}`/,
-  'signing in lands on the account, on the right surface, in the shop the visitor came from');
+assert.match(page, /loginWithGoogle\(\s*`\$\{window\.location\.origin\}\$\{shopPrefixForRegion\(region\)\}\/customer`/,
+  'signing in lands on the account, in the shop the visitor came from');
 assert.match(page, /currentUser \? \(/, 'a buyer already signed in is not asked to sign in again');
-assert.match(page, /<WhyBuyDirect mobile \/>/, 'the reasons come from the one shared source on the phone');
-assert.match(page, /<WhyBuyDirect \/>/, 'and on desktop');
-assert.match(page, /useScrollReveal\(\)/, 'the desktop shell has a reveal container — WhyBuyDirect carries data-reveal on desktop');
+assert.match(page, /<WhyBuyDirect \/>/, 'the reasons come from the one shared source');
+assert.match(page, /useScrollReveal\(\)/, 'the page has a reveal container — WhyBuyDirect carries data-reveal');
 
 // --- 3. Price claims: true, as policy, never as a number or a name ---------------------------------------
 // Dekito confirmed on 2026-09-15 that his marketplace listings are priced above the shop's retail, so

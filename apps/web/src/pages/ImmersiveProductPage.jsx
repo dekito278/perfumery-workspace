@@ -6,7 +6,6 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
-import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
@@ -24,17 +23,11 @@ import { getPrimaryVariant } from '@/services/productCatalogService.js';
 import { toast } from 'sonner';
 
 /**
- * @param mobile  render inside the phone's shell instead of the desktop one.
- *
- * The story itself needed nothing: the stylesheet has stacked the text-image sections into one column
- * below 768px since the page was written. What was missing is that /mobile/products/:slug never reached
- * here at all — so the one perfume with a story showed it only to desktop visitors, which is most of a
- * phone-first shop's buyers seeing none of it.
- *
- * One component, two shells, for the reason this repo keeps relearning: a second copy is a second place
- * to fix the English shop's missing cart, and only one of them would get fixed.
+ * The story page, for every screen. It had a phone shell of its own until the phone storefront retired
+ * (2026-10-31); the stylesheet has stacked the text-image sections into one column below 768px since the
+ * page was written, so the shell was the only difference.
  */
-const ImmersiveProductPage = ({ product, story, mobile = false, stale = false }) => {
+const ImmersiveProductPage = ({ product, story, stale = false }) => {
   const { addItem } = useCart();
   const { t, region } = useTranslate();
   const navigate = useNavigate();
@@ -134,6 +127,9 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
     toast.success(t('pdp.addedToast', { name: product.name }), {
       description: t('pdp.cartUpdated'),
       action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
+      // Top, not the default bottom: on a phone the gift prompt this add opens is a bottom sheet, and a
+      // toast at the bottom lands on its buttons. See oneAnnouncement.selfcheck.
+      position: 'top-center',
     });
     setTimeout(() => {
       setLastAddedSlug((c) => (c === product.slug ? '' : c));
@@ -181,11 +177,9 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
       </Helmet>
 
-      <div className={`immersive-page${mobile ? ' immersive-page--mobile' : ''}`} ref={pageRef}>
-        {/* The phone already carries a top bar and a tab row from MobileCommerceLayout; adding the
-            desktop header and footer here would stack two of each. */}
-        {mobile ? null : <ScrollProgress />}
-        {mobile ? null : <PublicHeader />}
+      <div className="immersive-page" ref={pageRef}>
+        <ScrollProgress />
+        <PublicHeader />
 
         {/* ── Hero ── */}
         <section className="imm-hero">
@@ -378,23 +372,16 @@ const ImmersiveProductPage = ({ product, story, mobile = false, stale = false })
 
         {/* ── Back to catalog ── */}
         <nav className="imm-back" data-imm-reveal>
-          <Link to={mobile ? '/mobile/catalog' : '/catalog'}>
+          <Link to="/catalog">
             <ChevronRight className="h-3 w-3" style={{ transform: 'rotate(180deg)' }} />
             {t('pdp.backToCollection')}
           </Link>
         </nav>
 
-        {mobile ? null : <StorefrontFooter />}
+        <StorefrontFooter />
       </div>
     </>
   );
 };
 
-/** The phone's shell around the same story. */
-const ImmersiveProductPageShell = (props) => (
-  props.mobile
-    ? <MobileCommerceLayout><ImmersiveProductPage {...props} /></MobileCommerceLayout>
-    : <ImmersiveProductPage {...props} />
-);
-
-export default ImmersiveProductPageShell;
+export default ImmersiveProductPage;

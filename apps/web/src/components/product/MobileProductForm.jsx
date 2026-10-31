@@ -280,7 +280,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
       price: formatRupiah(previewPrice),
       tags: getTagsForVisibility(form.tags, form.catalogVisible),
     }, products);
-    navigate(getProductStorefrontPath(preview, { mobile: true }), {
+    navigate(getProductStorefrontPath(preview), {
       state: {
         previewProduct: preview,
         previewMode: true,
@@ -540,7 +540,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
               <div className="text-xs font-bold">{canPublish ? 'Siap publish ke katalog' : 'Belum siap tampil di katalog'}</div>
               <p className="mt-1 text-[11px] font-semibold leading-relaxed opacity-80">
                 {canPublish
-                  ? `Slug publik: /mobile/products/${publishChecklist.slug}`
+                  ? `Slug publik: /catalog/${publishChecklist.slug}`
                   : publishChecklist.blocking.map((item) => item.label).join(', ')}
               </p>
             </div>

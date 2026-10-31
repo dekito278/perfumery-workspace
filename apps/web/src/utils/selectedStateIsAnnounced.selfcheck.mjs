@@ -64,7 +64,8 @@ for (const rel of files) {
 }
 
 console.log(`  buttons whose look depends on a selected flag: ${announced.length + silent.length}`);
-assert.ok(announced.length >= 10,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(announced.length >= 9,
   `expected the app's selectable buttons to be found; got ${announced.length}. Either they stopped using `
   + 'a selected class, or this sweep no longer sees them.');
 assert.deepEqual(silent, [],

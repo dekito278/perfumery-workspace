@@ -60,14 +60,15 @@ const candidates = [
 
 // --- 1. One address, two carts; the checkout stays domestic --------------------------------------
 const app = read('App.jsx');
-for (const path of ['/cart', '/mobile/cart']) {
+// /mobile/cart and /mobile/checkout only redirect since the phone storefront retired (2026-10-31).
+for (const path of ['/cart']) {
   const line = app.split('\n').find((entry) => entry.includes(`path="${path}"`));
   assert.ok(line, `the route ${path} has disappeared from App.jsx`);
   assert.match(line, /<ByShop /, `${path} must render one cart or the other by shop`);
   assert.match(line, /international=\{<(Mobile)?InternationalCartPage/, `${path} must hand the English shop its own cart page`);
   assert.doesNotMatch(line, /DomesticOnly/, `${path} is still closed to the English shop`);
 }
-for (const path of ['/checkout', '/mobile/checkout']) {
+for (const path of ['/checkout']) {
   const line = app.split('\n').find((entry) => entry.includes(`path="${path}"`));
   assert.ok(line, `the route ${path} has disappeared from App.jsx`);
   assert.match(line, /<DomesticOnly>/, `${path} is reachable from the English shop — a dollar basket would meet a rupiah till`);
@@ -76,7 +77,7 @@ const byShop = (app.match(/const ByShop = [\s\S]*?\n\};/) || [''])[0];
 assert.match(byShop, /isInternational \? international : domestic/, 'ByShop must choose by the shop and nothing else');
 
 // --- 2. The English cart can reach the dollar, the destination and WhatsApp — and nothing domestic --
-for (const page of ['pages/InternationalCartPage.jsx', 'pages/mobile/MobileInternationalCartPage.jsx']) {
+for (const page of ['pages/InternationalCartPage.jsx']) {
   const source = readCode(page);
   // FreeVialPicker is NOT on this list since 2026-10-06: Dekito opened the gift to both shops, and every
   // word the picker shows comes from the message file, so it reads in English. What it must do here is
@@ -117,7 +118,7 @@ for (const page of ['pages/InternationalCartPage.jsx', 'pages/mobile/MobileInter
 }
 // The domestic carts never touch the international quote: a rupiah basket that starts quoting dollars
 // is the mirror of the leak this guard was first written for.
-for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx', 'pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
+for (const page of ['pages/CartPage.jsx', 'pages/CheckoutPage.jsx']) {
   assert.doesNotMatch(readCode(page), /useCartInternationalQuote|buildInternationalCartDraft/, `${page} is the domestic till and must not quote internationally`);
 }
 
@@ -131,13 +132,8 @@ for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx', 'pa
 //
 // Held on the LIST, not on the layout's words: the tab must be there unconditionally.
 {
-  const layout = readCode('layouts/MobileCommerceLayout.jsx');
-  const items = (layout.match(/const COMMERCE_NAV_ITEMS = \[[\s\S]*?\n\];/) || [''])[0];
-  assert.ok(items, 'the phone nav no longer declares its tabs as one list');
-  assert.match(items, /path: '\/mobile\/cart'/, 'the phone nav has no cart tab at all');
-  assert.doesNotMatch(items, /isInternational/,
-    'the phone nav drops a tab depending on the shop again — the English shop has a cart to reach');
-  // The desktop headers are the same question, asserted where they live.
+  // The phone's bottom nav retired with the phone storefront (2026-10-31): the header below is the
+  // navigation on every screen now, phones included, so it is the one that must carry the cart.
   for (const header of ['components/storefront/PublicHeader.jsx', 'components/storefront/StorefrontHeader.jsx']) {
     const source = readCode(header);
     assert.match(source, /'\/cart'|to="\/cart"/, `${header} no longer links to the cart`);
@@ -152,7 +148,7 @@ assert.match(keys, /export const overseasDraftKeys = \(\) => \(\{ labelKey: 'exp
 const messages = read('i18n/messages.js');
 assert.doesNotMatch(messages, /'export\.waOrderDraft'|'export\.order'/, 'the order-from-product-page copy is retired with the button');
 assert.match(messages, /'export\.waCartDraft'/, 'the cart order draft must exist');
-for (const page of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx', 'pages/ImmersiveProductPage.jsx']) {
+for (const page of ['pages/PublicProductDetailPage.jsx', 'pages/ImmersiveProductPage.jsx']) {
   const source = readCode(page);
   assert.doesNotMatch(source, /buildWhatsAppCheckoutUrl\(|buildOverseasDraft\(/, `${page} builds its own WhatsApp link — the enquiry button is the one surface for that`);
   // The button's own price. Found on the first local run: "Add to cart — Rp 359.000" in the English shop,
@@ -212,9 +208,9 @@ assert.ok(payChecked >= 2, `the payment-surface scan only found ${payChecked} fi
   const before = portal.slice(Math.max(0, at - 400), at);
   assert.doesNotMatch(before, /isInternational \? null :/,
     'the Reorder button is hidden from the English shop again — that shop has a cart now');
-  assert.match(portal, /if \(isInternational\) navigate\(isMobileRoute \? '\/mobile\/cart' : '\/cart'\);/,
+  assert.match(portal, /if \(isInternational\) navigate\('\/cart'\);/,
     'reorder must land an English customer in the CART — /checkout is domestic-only and would bounce them');
-  assert.match(portal, /navigate\(isMobileRoute \? '\/mobile\/checkout' : '\/checkout'\)/,
+  assert.match(portal, /navigate\('\/checkout'\)/,
     'and an Indonesian customer must still land in the checkout');
 }
 
@@ -239,7 +235,6 @@ assert.equal(bespokeStepKeys(['a', 'b', 'c', 'd', 'e'], false).length, 5);
 // The three surfaces must ROUTE THROUGH those functions rather than each re-deciding.
 for (const [page, needles] of [
   ['pages/BespokePage.jsx', [/checkoutOpen && bespokeTakesPayment\(isInternational\)/, /bespokeStepKeys\(stepKeys, isInternational\)/]],
-  ['pages/mobile/MobileBespokePage.jsx', [/bespokeFlowSteps\(allFlowSteps, isInternational\)/]],
 ]) {
   const source = read(page);
   for (const needle of needles) {
@@ -253,7 +248,8 @@ for (const [page, needles] of [
 {
   const messages = read('i18n', 'messages.js');
   const en = messages.slice(messages.lastIndexOf('"bsp.toCheckout"') - 20000);
-  for (const key of ['bsp.flowLead']) {
+  // The phone wizard's lead (bsp.flowLead) retired with it (2026-10-31); the page's own lead is the one left.
+  for (const key of ['bsp.lead']) {
     const line = en.split('\n').find((row) => row.includes(`"${key}"`));
     assert.ok(line, `${key} has gone missing from the English block`);
     assert.doesNotMatch(line, /\bpayment\b/i,

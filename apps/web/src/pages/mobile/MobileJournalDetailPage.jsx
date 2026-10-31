@@ -89,7 +89,7 @@ const MobileJournalDetailPage = () => {
 
   const readingMinutes = useMemo(() => getReadingMinutes(post?.content), [post?.content]);
   const articleTitle = post?.seo_title || post?.title;
-  const publicPath = useMemo(() => getJournalPublicPath(post, { mobile: true }), [post]);
+  const publicPath = useMemo(() => getJournalPublicPath(post), [post]);
   const publicUrl = publicPath ? `${window.location.origin}${publicPath}` : '';
 
   const handleCopyLink = async () => {

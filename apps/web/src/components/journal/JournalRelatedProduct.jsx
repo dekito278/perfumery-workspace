@@ -22,7 +22,7 @@ import { getProductStorefrontPath } from '@/services/productCatalogService.js';
  * catalogue is still loading — a broken link under a story is worse than no link, and a product can be
  * unpublished or renamed long after the article was written.
  */
-const JournalRelatedProduct = ({ post, mobile = false, className = '' }) => {
+const JournalRelatedProduct = ({ post, className = '' }) => {
   const { t } = useTranslate();
   const products = useStorefrontProducts();
   const slug = String(post?.related_product_slug || '').trim();
@@ -31,7 +31,7 @@ const JournalRelatedProduct = ({ post, mobile = false, className = '' }) => {
   const product = products.find((item) => item.slug === slug);
   if (!product) return null;
 
-  const path = getProductStorefrontPath(product, { mobile });
+  const path = getProductStorefrontPath(product);
   if (!path) return null;
 
   return (

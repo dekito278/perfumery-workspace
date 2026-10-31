@@ -35,7 +35,8 @@ const walk = (dir) => readdirSync(dir).flatMap((entry) => {
 // Studio is Dekito's own screen and is not in this rule — these are the pages a stranger reaches.
 const BUYER = /^(pages\/(Cart|Checkout|Bespoke)Page\.jsx|pages\/mobile\/Mobile(Cart|Checkout|Bespoke)Page\.jsx)$/;
 const pages = walk(join(src, 'pages')).filter((file) => BUYER.test(relative(src, file)));
-assert.equal(pages.length, 6,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.equal(pages.length, 3,
   `expected the six surfaces that ask for a voucher, found ${pages.length} — the scan is broken, not the code`);
 
 // An element opens with its tag and ends at the first `>` that is not inside a brace or a quote, so the

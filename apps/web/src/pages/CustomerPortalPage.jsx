@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -12,7 +12,6 @@ import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import { PORTAL_STEP_KEYS, orderHasShipped, portalActiveStepIndex } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
-import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import {
   claimCustomerCode,
   getCustomerAccount,
@@ -128,7 +127,7 @@ const progressStepLabelKeys = {
 };
 const progressSteps = PORTAL_STEP_KEYS.map((key) => ({ key, labelKey: progressStepLabelKeys[key] }));
 
-const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
+const buildPaymentPath = ({ order }) => `/payment?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
 const CUSTOMER_CODE_LAST_STORAGE_KEY = 'dekito.storefront.customerCode.last.v1';
 const DOKU_PAYMENT_TTL_MINUTES = 60;
 const isDokuPayment = (order) => order?.paymentProvider === 'doku';
@@ -270,8 +269,8 @@ const getPaymentExperienceState = (order, t) => {
         label: t('cust.awaitingCheck'),
         title: t('cust.proofSentTitle'),
         description: t('cust.proofSentBody'),
-        className: 'border-sky-200 bg-sky-50 text-sky-900',
-        iconClassName: 'bg-transparent text-sky-700',
+        className: 'border-ng-bone/20 bg-ng-card text-ng-sand',
+        iconClassName: 'bg-transparent text-ng-bone',
         action: t('cust.viewProof'),
       };
     }
@@ -279,7 +278,7 @@ const getPaymentExperienceState = (order, t) => {
       label: t('cust.manualUnpaid'),
       title: t('cust.uploadProof'),
       description: t('cust.manualUnpaidBody'),
-      className: 'border-ng-ember/40 bg-ng-ember/10 text-amber-950',
+      className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-sand',
       iconClassName: 'bg-transparent text-ng-ember',
       action: t('cust.uploadProofShort'),
     };
@@ -298,7 +297,7 @@ const getPaymentExperienceState = (order, t) => {
     label: t('cust.unpaid'),
     title: t('cust.awaitingPaymentTitle'),
     description: t('cust.awaitingPaymentBody'),
-    className: 'border-ng-ember/40 bg-ng-ember/10 text-amber-950',
+    className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-sand',
     iconClassName: 'bg-transparent text-ng-ember',
     action: t('cust.payNow'),
   };
@@ -327,34 +326,6 @@ const PaymentExperiencePanel = ({ compact = false, order }) => {
     </div>
   );
 };
-
-const MobileCustomerPortalSkeleton = () => (
-  <>
-    <section className="mobile-card p-4" aria-busy="true">
-      <div className="mobile-catalog-skeleton h-4 w-32 rounded-full" />
-      <div className="mobile-catalog-skeleton mt-3 h-7 w-48 rounded-full" />
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <div className="mobile-catalog-skeleton h-16 rounded-none" />
-        <div className="mobile-catalog-skeleton h-16 rounded-none" />
-        <div className="mobile-catalog-skeleton h-16 rounded-none" />
-      </div>
-    </section>
-    <section className="space-y-3">
-      <div className="mobile-catalog-skeleton h-5 w-32 rounded-full" />
-      <article className="mobile-card overflow-hidden p-0">
-        <div className="border-b border-[#e5e7eb] bg-transparent p-4">
-          <div className="mobile-catalog-skeleton h-5 w-36 rounded-full" />
-          <div className="mobile-catalog-skeleton mt-2 h-3 w-24 rounded-full" />
-        </div>
-        <div className="grid gap-3 p-4">
-          <div className="mobile-catalog-skeleton h-24 rounded-none" />
-          <div className="mobile-catalog-skeleton h-28 rounded-none" />
-          <div className="mobile-catalog-skeleton h-12 rounded-none" />
-        </div>
-      </article>
-    </section>
-  </>
-);
 
 const PaymentProofPanel = ({ order, compact = false }) => {
   const { t } = useTranslate();
@@ -404,7 +375,6 @@ const PaymentProofPanel = ({ order, compact = false }) => {
 
 const PaymentTaskPanel = ({
   compact = false,
-  isMobileRoute,
   onRenewDokuPayment,
   order,
   renewing = false,
@@ -412,7 +382,7 @@ const PaymentTaskPanel = ({
   const { t } = useTranslate();
   if (!order || !isPayableOrder(order)) return null;
 
-  const paymentPath = buildPaymentPath({ isMobileRoute, order });
+  const paymentPath = buildPaymentPath({ order });
   const manualPayment = isManualTransferPayment(order.paymentProvider);
   const dokuPayment = isDokuPayment(order);
   const dokuExpired = isDokuPaymentExpired(order);
@@ -437,7 +407,7 @@ const PaymentTaskPanel = ({
       : t('cust.openPayLink');
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-none border border-ng-ember/40 bg-ng-ember/10 text-amber-950`}>
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-none border border-ng-ember/40 bg-ng-ember/10 text-ng-sand`}>
       <div className="flex items-start gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-none bg-transparent text-ng-ember">
           <CreditCard className="h-4 w-4" />
@@ -534,9 +504,9 @@ const OrderTimeline = ({ order, compact = false }) => {
   return (
     <div className={compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
       {timeline.map((step, index) => (
-        <div key={step.key} className={`rounded-none border px-3 py-3 ${step.done ? 'border-ng-bone/20 bg-transparent' : 'border-stone-200 bg-stone-50'} ${step.current ? 'ring-2 ring-editorial-charcoal/15' : ''}`}>
+        <div key={step.key} className={`rounded-none border px-3 py-3 ${step.done ? 'border-ng-bone/20 bg-transparent' : 'border-ng-bone/10 bg-transparent'} ${step.current ? 'ring-1 ring-ng-bone/40' : ''}`}>
           <div className="flex items-start gap-3">
-            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.done ? 'bg-ng-bone text-ng-ink' : 'bg-stone-200 text-stone-500'}`}>
+            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.done ? 'bg-ng-bone text-ng-ink' : 'bg-ng-card text-ng-ash'}`}>
               {index + 1}
             </span>
             <div className="min-w-0">
@@ -686,7 +656,7 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
           const done = activeStep >= index;
           return (
             <div key={step} className="min-w-0">
-              <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-ng-bone' : 'bg-stone-200'}`} />
+              <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-ng-bone' : 'bg-ng-bone/15'}`} />
               <div className={`mt-1 truncate font-bold uppercase ${compact ? 'text-[7px]' : 'text-[9px]'} ${done ? 'text-ng-bone' : 'text-ng-dust'}`}>
                 {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, step, t)}
               </div>
@@ -763,7 +733,6 @@ const ShipmentPanel = ({ order, compact = false }) => {
 
 const SelfServiceActions = ({
   compact = false,
-  isMobileRoute,
   invoicePath,
   onReorder,
   onRefreshPayment,
@@ -771,7 +740,7 @@ const SelfServiceActions = ({
   refreshing = false,
 }) => {
   const { t, region } = useTranslate();
-  const paymentPath = buildPaymentPath({ isMobileRoute, order });
+  const paymentPath = buildPaymentPath({ order });
   // Reorder fills the cart and sends the buyer to it. It was hidden in the English shop until
   // 2026-10-06, when that shop had no cart to fill; Dekito opened it with the cart. What had to change
   // with it is where it LANDS — see handleReorder: the English basket is finished in the cart and sent
@@ -786,8 +755,8 @@ const SelfServiceActions = ({
   const buttonClass = compact
     ? 'flex h-11 items-center justify-center gap-2 rounded-none text-xs font-bold'
     : 'inline-flex h-11 items-center justify-center gap-2 rounded-none px-4 text-sm font-bold';
-  const outlineClass = `${buttonClass} border border-editorial-charcoal/15 bg-white text-editorial-charcoal`;
-  const primaryClass = `${buttonClass} bg-editorial-charcoal text-editorial-ivory`;
+  const outlineClass = `${buttonClass} border border-ng-bone/25 bg-transparent text-ng-bone`;
+  const primaryClass = `${buttonClass} bg-ng-bone text-ng-ink`;
   const courierSearchUrl = buildCourierTrackingSearchUrl({
     courierName: order.courierName,
     trackingNumber: order.trackingNumber,
@@ -844,7 +813,6 @@ const SelfServiceActions = ({
 const CustomerPortalPage = () => {
   const { t, isInternational, region } = useTranslate();
   const navigate = useNavigate();
-  const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode } = useAuth();
   // Stays on the page: a buyer signing out mid-checkout keeps their place, and a refused sign-out says so.
   const { signOut } = useSignOut(null);
@@ -867,12 +835,11 @@ const CustomerPortalPage = () => {
   const [refreshingPaymentOrder, setRefreshingPaymentOrder] = useState('');
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
   const [accountPanelOpen, setAccountPanelOpen] = useState(false);
-  const [codeSearchOpen, setCodeSearchOpen] = useState(false);
   const [lastCustomerCode, setLastCustomerCode] = useState(() => readLastCustomerCode());
 
   const latestOrder = portal?.orders?.[0];
-  const isMobileRoute = location.pathname.startsWith('/mobile');
-  const invoicePath = (orderNumber) => `${isMobileRoute ? '/mobile/customer/invoice' : '/customer/invoice'}/${orderNumber}?code=${encodeURIComponent(portal?.customer?.customerCode || customerCode)}`;
+  // One portal address since the phone storefront retired (2026-10-31); /mobile/customer redirects here.
+  const invoicePath = (orderNumber) => `/customer/invoice/${orderNumber}?code=${encodeURIComponent(portal?.customer?.customerCode || customerCode)}`;
   const activeOrders = useMemo(() => (
     portal?.orders?.filter((order) => !['completed', 'cancelled'].includes(order.status)) || []
   ), [portal]);
@@ -970,7 +937,7 @@ const CustomerPortalPage = () => {
     try {
       // With the shop prefix, or an English visitor comes back to the Indonesian address.
       await loginWithGoogle(
-        `${window.location.origin}${shopPrefixForRegion(region)}${isMobileRoute ? '/mobile/customer' : '/customer'}`,
+        `${window.location.origin}${shopPrefixForRegion(region)}/customer`,
       );
     } catch (error) {
       toast.error(publicErrorMessage(error, t('cust.googleFail')));
@@ -1231,11 +1198,11 @@ const CustomerPortalPage = () => {
         // Not sent: the portal order carries neither, and the masked name would be worse than nothing.
         // api/doku/checkout.js reads the real ones off the order row with the service role.
         items: order.items || [],
-        callbackPath: isMobileRoute ? '/mobile/payment' : '/payment',
+        callbackPath: '/payment',
       });
       await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
       toast.success(t('cust.dokuReady'));
-      navigate(buildPaymentPath({ isMobileRoute, order: { ...order, paymentProvider: 'doku' } }));
+      navigate(buildPaymentPath({ order: { ...order, paymentProvider: 'doku' } }));
     } catch (error) {
       toast.error(publicErrorMessage(error, t('cust.dokuFailed')));
     } finally {
@@ -1306,291 +1273,10 @@ const CustomerPortalPage = () => {
     // The English basket is finished in the CART — destination, shipping, then WhatsApp — and /checkout
     // is domestic-only, so sending an English customer there would bounce them to the catalogue with a
     // full basket and no explanation.
-    if (isInternational) navigate(isMobileRoute ? '/mobile/cart' : '/cart');
-    else navigate(isMobileRoute ? '/mobile/checkout' : '/checkout');
+    if (isInternational) navigate('/cart');
+    else navigate('/checkout');
   };
 
-
-  if (isMobileRoute) {
-    return (
-      <MobileCommerceLayout>
-        <Helmet>
-          <title>{t('cust.tab')}</title>
-          <meta name="description" content={t('cust.meta')} />
-        </Helmet>
-        <main className="mobile-page space-y-4">
-          <section className="mobile-soft-card overflow-hidden">
-            <div className="relative overflow-hidden bg-ng-bone p-4 text-ng-ink">
-              <div className="absolute -right-8 top-0 h-28 w-28 rounded-full border border-ng-bone/10" />
-              <div className="absolute right-6 top-10 h-16 w-16 rounded-full border border-[#d6c68a]/20" />
-              <div className="relative">
-                <div className="inline-flex items-center gap-2 rounded-full bg-transparent px-3 py-1 text-[10px] font-bold uppercase text-[#cbd6c5]">
-                  <ShoppingBag className="h-3.5 w-3.5" />
-                  {t('cust.trackOrders')}
-                </div>
-                <h1 className="mt-3 text-2xl font-bold leading-tight">{t('cust.checkProgress')}</h1>
-                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
-                  {t('cust.oneplace')}
-                </p>
-                {/* Same reason as the desktop hero below, and this is the surface most of them are on:
-                    the English shop has no checkout, so a reader abroad who reaches their account has
-                    nowhere else to arrange an order from. The phone hero does not carry the sentence
-                    that says so, which is exactly why the button had to be put here on purpose. */}
-                {isInternational ? (
-                  <AskAtelierButton
-                    labelKey="intl.noticeCta"
-                    draftKey="intl.noticeMessage"
-                    className="mt-3 w-full"
-                  />
-                ) : null}
-              </div>
-            </div>
-            <form onSubmit={loadPortal} className="grid gap-3 p-4">
-              {/* Logged-in: greet + let orders take focus. Code lookup collapses into a small option. */}
-              {currentUser ? (
-                <div className="flex items-center justify-between gap-2 rounded-none bg-ng-ink px-3 py-2 text-xs font-semibold text-ng-bone">
-                  <span className="min-w-0 truncate">{t('cust.signedInAs', { email: currentUser.email })}</span>
-                  <button type="button" onClick={signOut} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
-                </div>
-              ) : (
-                <Button type="button" variant="outline" className="h-12 rounded-none bg-transparent gap-2 text-sm font-bold" onClick={signInGoogle}>
-                  <UserRound className="h-4 w-4" />
-                  {t('cust.signInMember')}
-                </Button>
-              )}
-
-              {currentUser ? (
-                <button type="button" onClick={() => setCodeSearchOpen((open) => !open)} className="flex items-center justify-between rounded-none border border-[#e5e7eb] bg-transparent px-3 py-2 text-[11px] font-bold uppercase text-ng-dust">
-                  <span className="inline-flex items-center gap-2"><Search className="h-3.5 w-3.5" /> {t('cust.findByCode')}</span>
-                  <span>{codeSearchOpen ? t('cust.close') : t('cust.open')}</span>
-                </button>
-              ) : null}
-
-              {(!currentUser || codeSearchOpen) ? (
-                <>
-                  <label className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.customerCode')}</label>
-                  <div className="grid grid-cols-[1fr_auto] gap-2">
-                    <input
-                      value={customerCode}
-                      onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
-                      aria-label={t('cust.customerCode')}
-                      placeholder="SOLI09232"
-                      className="h-12 rounded-none border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-ng-bone/30"
-                    />
-                    <Button type="submit" className="h-12 rounded-none px-4" disabled={loading} aria-label={t('cust.checkCode')}>
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button type="button" variant="outline" className="h-11 rounded-none bg-transparent gap-2 text-xs font-bold" onClick={pasteCustomerCode}>
-                      <ClipboardPaste className="h-4 w-4" />
-                      {t('cust.pasteCode')}
-                    </Button>
-                    <Button type="button" variant="outline" className="h-11 rounded-none bg-transparent gap-2 text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
-                      <History className="h-4 w-4" />
-                      {t('cust.lastCheck')}
-                    </Button>
-                  </div>
-                  {lastCustomerCode ? (
-                    <button type="button" onClick={checkLastCustomerCode} className="text-left text-[11px] font-bold text-ng-bone underline underline-offset-4">
-                      {t('cust.lastUsed', { code: lastCustomerCode })}
-                    </button>
-                  ) : null}
-                  <p className="text-xs font-semibold leading-relaxed text-ng-dust">
-                    {t('cust.codeGiven')}
-                  </p>
-                </>
-              ) : null}
-            </form>
-          </section>
-
-          {loading ? (
-            <MobileCustomerPortalSkeleton />
-          ) : portal?.requiresSecurity ? (
-            <section className="mobile-card p-4">
-              <div className="flex items-start gap-3">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none bg-ng-ink text-ng-bone">
-                  <KeyRound className="h-5 w-5" />
-                </span>
-                <div>
-                  <div className="text-[10px] font-bold uppercase text-ng-bone">{t('cust.securityCheck')}</div>
-                  <h2 className="mt-1 text-lg font-bold text-ng-bone">{t('cust.protectedDash')}</h2>
-                  <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-dust">{t('cust.answerSecurity')}</p>
-                </div>
-              </div>
-              <form onSubmit={unlockPortal} className="mt-4 grid gap-3">
-                <div className="rounded-none bg-ng-card p-3">
-                  <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.question')}</div>
-                  <div className="mt-1 text-sm font-bold text-ng-bone">{portal.customer.securityQuestion}</div>
-                </div>
-                <input
-                  type="password"
-                  autoComplete="off"
-                  value={securityAnswer}
-                  onChange={(event) => setSecurityAnswer(event.target.value)}
-                  placeholder={t('cust.answer')}
-                  className="h-12 rounded-none border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-ng-bone/30"
-                />
-                <Button type="submit" className="h-12 rounded-none gap-2" disabled={securityLoading}>
-                  {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  {t('cust.open')}
-                </Button>
-              </form>
-            </section>
-          ) : portal ? (
-            <>
-              <section className="mobile-card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-ng-bone">{t('cust.welcomeBack')}</div>
-                    <h2 className="mt-1 truncate text-lg font-bold text-ng-bone">{portal.customer.customerName}</h2>
-                    <p className="mt-1 text-xs font-semibold text-ng-dust">{portal.customer.masked ? t('cust.hiddenForSecurity') : portal.customer.contact}</p>
-                  </div>
-                  <button type="button" onClick={copyCode} className="shrink-0 rounded-none bg-ng-bone px-3 py-2 text-xs font-bold tracking-[0.12em] text-ng-ink">
-                    {portal.customer.customerCode}
-                  </button>
-                </div>
-                {portal.customer.masked ? (
-                  <div className="mt-3 rounded-none border border-ng-ember/40 bg-ng-ember/10 p-3 text-[11px] font-semibold leading-relaxed text-ng-ember">
-                    {t('cust.maskedNoteMobile')} <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">{t('cust.withGoogle')}</button> {t('cust.withGoogleAccount')}
-                  </div>
-                ) : null}
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="rounded-none border border-ng-bone/10 bg-ng-card p-3 text-center">
-                    <div className="text-sm font-bold text-ng-bone">{portal.orders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.orders')}</div>
-                  </div>
-                  <div className="rounded-none border border-ng-bone/10 bg-ng-ink p-3 text-center">
-                    <div className="text-sm font-bold text-ng-bone">{activeOrders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-ng-bone">{t('cust.active')}</div>
-                  </div>
-                  <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-3 text-center">
-                    <div className="truncate text-xs font-bold text-ng-ember">{latestOrder ? labelFrom(orderStatusKeys, statusLabels, latestOrder.status, t) : '-'}</div>
-                    <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.latest')}</div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="mobile-card p-3">
-                <button type="button" onClick={() => setSecurityFormOpen((open) => !open)} className="flex w-full items-center justify-between gap-3 text-left">
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-none bg-ng-ink text-ng-bone">
-                      <ShieldCheck className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold text-ng-bone">{portal.customer.securityEnabledAt ? t('cust.protectedDash') : t('cust.dashProtection')}</span>
-                      <span className="mt-0.5 block truncate text-[11px] font-semibold text-ng-dust">{t('cust.securityOptional')}</span>
-                    </span>
-                  </span>
-                  <span className="shrink-0 rounded-full bg-ng-card px-3 py-1 text-[10px] font-bold uppercase text-ng-bone">
-                    {securityFormOpen ? t('cust.close') : t('cust.open')}
-                  </span>
-                </button>
-                {securityFormOpen ? (
-                  <form onSubmit={saveSecurity} className="mt-3 grid gap-2 border-t border-[#e5e7eb] pt-3">
-                    {portal.customer.securityEnabledAt ? (
-                      <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder={t('cust.currentAnswer')} className="h-11 rounded-none border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-ng-bone/30" />
-                    ) : (
-                      <>
-                        <input value={securityContact} onChange={(event) => setSecurityContact(event.target.value)} placeholder={t('cust.securityContactPlaceholder')} className="h-11 rounded-none border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-ng-bone/30" />
-                        <span className="text-[10px] font-semibold text-ng-dust">{t('cust.securityContactHint')}</span>
-                      </>
-                    )}
-                    <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder={t('cust.securityQuestion')} className="h-11 rounded-none border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-ng-bone/30" />
-                    <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder={t('cust.answer')} className="h-11 rounded-none border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-ng-bone/30" />
-                    <Button type="submit" className="h-11 rounded-none gap-2" disabled={savingSecurity}>
-                      {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                      {t('cust.saveProtection')}
-                    </Button>
-                  </form>
-                ) : null}
-              </section>
-
-              <section className="space-y-3">
-                <h2 className="text-base font-bold text-ng-bone">{t('cust.orderProgress')}</h2>
-                {portal.orders.map((order) => {
-                  const bespoke = isBespokeOrder(order);
-                  const bespokeItem = getBespokeItem(order);
-                  return (
-                    <article key={order.orderNumber} className="mobile-card overflow-hidden p-0">
-                      <div className="border-b border-[#e5e7eb] bg-transparent p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="text-base font-bold text-ng-bone">{order.orderNumber}</h3>
-                            <p className="mt-1 text-xs font-semibold text-ng-dust">{formatDate(order.createdAt, t)}</p>
-                          </div>
-                          <div className="flex shrink-0 flex-col items-end gap-1">
-                            <StatusBadge status={order.status} />
-                            <PaymentBadge status={order.paymentStatus} />
-                            {isManualTransferPayment(order.paymentProvider) ? <PaymentProofBadge status={order.paymentProofStatus || 'missing'} /> : null}
-                            {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="text-[10px] font-bold uppercase text-ng-dust">{bespoke ? t('cust.customPerfume') : t('cust.orderItems')}</div>
-                        <div className="text-sm font-bold text-ng-bone">{formatTotal(order.subtotal)}</div>
-                      </div>
-                      <div className="mt-3">
-                        <OrderItems order={order} compact />
-                      </div>
-                      <BespokeDetailPanel item={bespokeItem} compact />
-                      <BespokeProductionPanel order={order} compact />
-                      <PaymentExperiencePanel order={order} compact />
-                      <PaymentTaskPanel
-                        compact
-                        isMobileRoute={isMobileRoute}
-                        onRenewDokuPayment={renewDokuPayment}
-                        order={order}
-                        renewing={refreshingPaymentOrder === order.orderNumber}
-                      />
-                      <PaymentProofPanel order={order} compact />
-                      <ShipmentPanel order={order} compact />
-                      <div className="mt-3 rounded-none border border-ng-bone/10 bg-ng-card p-3">
-                        <div className="text-[10px] font-bold uppercase text-ng-bone">{t('cust.selfService')}</div>
-                        <SelfServiceActions
-                          compact
-                          isMobileRoute={isMobileRoute}
-                          invoicePath={invoicePath}
-                          onRefreshPayment={refreshPaymentStatus}
-                          onReorder={handleReorder}
-                          order={order}
-                          refreshing={refreshingPaymentOrder === order.orderNumber}
-                        />
-                      </div>
-                      <div className="mt-4">
-                        <OrderTimeline order={order} compact />
-                      </div>
-                      </div>
-                    </article>
-                  );
-                })}
-                {!portal.orders.length ? (
-                  <StateBlock
-                    className="mobile-card"
-                    icon={PackageCheck}
-                    title={t('cust.noOrders')}
-                    description={t('cust.noOrdersBody')}
-                  />
-                ) : null}
-              </section>
-            </>
-          ) : (
-            <section className="mobile-card p-5 text-center">
-              {searched ? <Search className="mx-auto h-8 w-8 text-ng-ember" /> : <ShoppingBag className="mx-auto h-8 w-8 text-ng-ember" />}
-              <h2 className="mt-3 text-lg font-bold text-ng-bone">{searched ? t('cust.codeNotFound') : t('cust.memberWaiting')}</h2>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-dust">
-                {searched ? t('cust.checkSoliCode') : t('cust.memberWaitingBody')}
-              </p>
-            </section>
-          )}
-
-          {renderAccountPanel()}
-        </main>
-      </MobileCommerceLayout>
-    );
-  }
 
   return (
     <>
@@ -1640,6 +1326,23 @@ const CustomerPortalPage = () => {
                   {t('cust.check')}
                 </Button>
               </div>
+              {/* Paste and "last code" came over from the phone portal when it retired (2026-10-31): on a phone
+                  the code is usually sitting in a WhatsApp message, two taps away. */}
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className="h-11 gap-2 rounded-none bg-transparent text-xs font-bold" onClick={pasteCustomerCode}>
+                  <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
+                  {t('cust.pasteCode')}
+                </Button>
+                <Button type="button" variant="outline" className="h-11 gap-2 rounded-none bg-transparent text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
+                  <History className="h-4 w-4" aria-hidden="true" />
+                  {t('cust.lastCheck')}
+                </Button>
+              </div>
+              {lastCustomerCode ? (
+                <button type="button" onClick={checkLastCustomerCode} className="mt-2 min-h-[44px] text-left text-xs font-bold text-ng-bone underline underline-offset-4">
+                  {t('cust.lastUsed', { code: lastCustomerCode })}
+                </button>
+              ) : null}
               <p className="mt-3 text-xs font-semibold leading-relaxed text-ng-dust">
                 {t('cust.codeGivenKeep')}
               </p>
@@ -1814,7 +1517,6 @@ const CustomerPortalPage = () => {
                             <BespokeProductionPanel order={order} />
                             <PaymentExperiencePanel order={order} />
                             <PaymentTaskPanel
-                              isMobileRoute={isMobileRoute}
                               onRenewDokuPayment={renewDokuPayment}
                               order={order}
                               renewing={refreshingPaymentOrder === order.orderNumber}
@@ -1829,7 +1531,6 @@ const CustomerPortalPage = () => {
                                 </div>
                               </div>
                               <SelfServiceActions
-                                isMobileRoute={isMobileRoute}
                                 invoicePath={invoicePath}
                                 onRefreshPayment={refreshPaymentStatus}
                                 onReorder={handleReorder}
@@ -1872,7 +1573,7 @@ const CustomerPortalPage = () => {
                       ['2', 'cust.checkPayProd', 'cust.checkPayProdBody'],
                       ['3', 'cust.reorderFast', 'cust.reorderFastBody'],
                     ].map(([step, titleKey, descriptionKey]) => (
-                      <div key={step} className="flex gap-3 rounded-none bg-transparent p-3 shadow-editorial-charcoal/5">
+                      <div key={step} className="flex gap-3 rounded-none bg-transparent p-3">
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-none bg-ng-bone text-xs font-bold text-ng-ink">{step}</span>
                         <span>
                           <span className="block text-sm font-bold text-ng-bone">{t(titleKey)}</span>

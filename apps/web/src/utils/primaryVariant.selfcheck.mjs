@@ -65,7 +65,8 @@ const variantPickers = walkPages(pagesRoot)
   .filter((file) => file.endsWith('.jsx'))
   .map((file) => [file.slice(pagesRoot.length + 1), strip(readFileSync(file, 'utf8'))])
   .filter(([, source]) => /=== selectedVariantId\)/.test(source));
-assert.ok(variantPickers.length >= 3,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(variantPickers.length >= 2,
   `only ${variantPickers.length} pages resolve a chosen variant — the scan is broken, not the code`);
 
 for (const [name, source] of variantPickers) {

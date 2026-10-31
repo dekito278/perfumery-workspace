@@ -291,27 +291,20 @@ for (const file of [
   ['pages', 'NotFoundPage.jsx'],
   ['pages', 'PublicJournalPage.jsx'],
   ['pages', 'PublicJournalArticlePage.jsx'],
-  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
   ['pages', 'CheckoutPage.jsx'],
-  ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'CartPage.jsx'],
-  ['pages', 'mobile', 'MobileCartPage.jsx'],
   ['components', 'storefront', 'InternationalCheckoutNotice.jsx'],
   ['pages', 'HomePage.jsx'],
-  ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['components', 'storefront', 'PublicHeader.jsx'],
   ['components', 'storefront', 'StorefrontFooter.jsx'],
   ['components', 'storefront', 'StorefrontHeader.jsx'],
   ['components', 'storefront', 'StorefrontLoadingState.jsx'],
   ['components', 'storefront', 'WhyBuyDirect.jsx'],
   ['components', 'storefront', 'RegionSwitch.jsx'],
-  ['layouts', 'MobileCommerceLayout.jsx'],
   ['pages', 'CatalogPage.jsx'],
-  ['pages', 'mobile', 'MobileCatalogPage.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
   ['components', 'storefront', 'StaleCatalogNotice.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'],
-  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   ['components', 'storefront', 'ScentPyramid.jsx'],
   ['components', 'storefront', 'PriceNote.jsx'],
   ['components', 'storefront', 'OverseasInquiryButton.jsx'],
@@ -337,27 +330,24 @@ const PAGES_FULLY_TRANSLATED = [
   ['pages', 'AboutPage.jsx'],
   ['pages', 'PublicJournalPage.jsx'],
   ['pages', 'PublicJournalArticlePage.jsx'],
-  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
-  ['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
-  ['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
+  ['pages', 'CheckoutPage.jsx'],
+  ['pages', 'CartPage.jsx'],
   // The English shop's carts, one address with the domestic ones (ByShop in App.jsx) and a different
   // till: dollars, a destination, WhatsApp.
-  ['pages', 'InternationalCartPage.jsx'], ['pages', 'mobile', 'MobileInternationalCartPage.jsx'],
-  ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
-  ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['pages', 'InternationalCartPage.jsx'],
+  ['pages', 'CatalogPage.jsx'],
+  ['pages', 'PublicProductDetailPage.jsx'],
   // Replaces the product page entirely for a product with a story, so none of the checks aimed at
   // PublicProductDetailPage ever looked at it. It reached the English shop the day Ayang-ayang got an
   // English letter, still saying "Tambah ke Keranjang".
   ['pages', 'ImmersiveProductPage.jsx'],
-  ['pages', 'HomePage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
+  ['pages', 'HomePage.jsx'],
   ['pages', 'WelcomePage.jsx'],
   ['pages', 'BespokePage.jsx'],
-  ['pages', 'mobile', 'MobileBespokePage.jsx'],
   ['pages', 'CustomerPortalPage.jsx'],
   ['pages', 'CustomerInvoicePage.jsx'],
   // No copy of its own — three already-translated tabs in one keep-alive shell. Listed so the App.jsx
   // guard below can see it, and so it stays covered if copy ever lands in it.
-  ['pages', 'mobile', 'MobileCommerceTabsPage.jsx'],
 ];
 
 // A third way to leak, invisible to both checks above: rendering the KEY instead of translating it.
@@ -373,7 +363,6 @@ for (const file of [
   ['components', 'storefront', 'StorefrontFooter.jsx'],
   ['components', 'storefront', 'StorefrontHeader.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
-  ['layouts', 'MobileCommerceLayout.jsx'],
 ]) {
   // React `key=` props legitimately use the message key as an identity — it is never shown — so they are
   // removed before the scan. What is left is text the browser would print.
@@ -454,9 +443,7 @@ for (const file of PAGES_FULLY_TRANSLATED) {
 // are always untranslated text, whatever language they happen to be in.
 for (const file of [
   ['pages', 'CheckoutPage.jsx'],
-  ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'CartPage.jsx'],
-  ['pages', 'mobile', 'MobileCartPage.jsx'],
   ['pages', 'PaymentPage.jsx'],
   ['pages', 'PublicTrackingPage.jsx'],
   ['pages', 'NotFoundPage.jsx'],
@@ -475,13 +462,10 @@ for (const file of [
 // storefront reads `labelKey` and translates.
 for (const file of [
   ['pages', 'HomePage.jsx'],
-  ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['components', 'storefront', 'WhyBuyDirect.jsx'],
   ['components', 'storefront', 'StorefrontFooter.jsx'],
-  ['layouts', 'MobileCommerceLayout.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
   ['pages', 'CatalogPage.jsx'],
-  ['pages', 'mobile', 'MobileCatalogPage.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'],
 ]) {
   const source = read(...file);
@@ -497,9 +481,7 @@ assert.match(read('components', 'product', 'WearPicker.jsx'), /\.label\b(?!Key)/
 // labelKey/descriptionKey; the Indonesian strings stay for everything that is not a buyer's screen.
 for (const file of [
   ['pages', 'CheckoutPage.jsx'],
-  ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'BespokePage.jsx'],
-  ['pages', 'mobile', 'MobileBespokePage.jsx'],
 ]) {
   const source = read(...file);
   const raw = source.match(/\bmethod\.(?:label|description)\b(?!Key)/g) || [];
@@ -543,7 +525,6 @@ for (const file of PAGES_FULLY_TRANSLATED) {
     ['components', 'storefront', 'PublicHeader.jsx'],
     ['components', 'storefront', 'StorefrontFooter.jsx'],
     ['components', 'storefront', 'ScentPyramid.jsx'],
-    ['layouts', 'MobileCommerceLayout.jsx'],
   ];
   for (const file of keyed) {
     const source = read(...file);
@@ -578,7 +559,6 @@ for (const file of PAGES_FULLY_TRANSLATED) {
 for (const file of [
   ['utils', 'stockScarcity.js'],
   ['utils', 'productWear.js'],
-  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
   ['pages', 'PublicTrackingPage.jsx'],
   ['pages', 'PaymentPage.jsx'],
 ]) {
@@ -591,7 +571,7 @@ for (const file of [
 // getFriendlyShippingErrorKey returns a KEY and takes no translator. Adding a `t` parameter in front of
 // its fallback silently shifts every caller's argument by one, so the specific fallback key becomes the
 // translator and the generic default is used instead — a wrong message, in the right language.
-for (const file of [['pages', 'BespokePage.jsx'], ['pages', 'mobile', 'MobileBespokePage.jsx']]) {
+for (const file of [['pages', 'BespokePage.jsx']]) {
   assert.match(read(...file), /const getFriendlyShippingErrorKey = \(error, fallbackKey = 'bsp\.areaSearchFailed'\) =>/,
     `${file.join('/')}: the shipping-error helper returns a key and takes no translator`);
 }
@@ -660,7 +640,8 @@ for (const file of PAGES_FULLY_TRANSLATED) {
   // Indonesian on purpose — no buyer is ever sent to them.
   const STUDIO_AUTH = new Set(['LoginPage', 'MobileLoginPage', 'ResetPasswordPage']);
   // A component that renders nothing but a <Navigate>. It has no copy to translate.
-  const REDIRECT_ONLY = new Set(['RootRedirect']);
+  // RetiredMobileStorefront (2026-10-31): the old phone-shop addresses, each a <Navigate> to its page.
+  const REDIRECT_ONLY = new Set(['RootRedirect', 'RetiredMobileStorefront']);
   // Wrappers that carry no copy of their own and hand through to the page inside them. Looked THROUGH
   // rather than skipped: the page they wrap still has to be fully translated, and reading the wrapper's
   // name instead would quietly exempt four buyer pages from every check in this file.
@@ -1114,7 +1095,6 @@ const walk = (dir, out = []) => {
 // promise buildBespokeEnquiryDraft was written to avoid.
 {
   for (const [name, file] of [
-    ['phone', ['pages', 'mobile', 'MobileBespokePage.jsx']],
     ['desktop', ['pages', 'BespokePage.jsx']],
   ]) {
     const source = read(...file);

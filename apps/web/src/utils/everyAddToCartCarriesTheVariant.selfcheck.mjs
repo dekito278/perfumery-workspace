@@ -40,7 +40,8 @@ const callers = files
   .map((rel) => [rel, readFileSync(join(src, rel), 'utf8')])
   .filter(([, body]) => /\baddItem\(/.test(body));
 
-assert.ok(callers.length >= 4,
+// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
+assert.ok(callers.length >= 3,
   `only ${callers.length} addItem call sites found; the search has stopped matching`);
 
 // Each call must name the variant inside the object it builds. A bare `addItem(product, 1)` is the bug.

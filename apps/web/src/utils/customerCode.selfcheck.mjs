@@ -74,7 +74,7 @@ assert.match(read('hooks', 'useCheckoutFlow.js'), /toast\.error\(publicErrorMess
   'and the checkout must not print one either — this catch also sees errors that never reached the endpoint');
 
 // --- 5. And she is told her code was not used -------------------------------------------------------------
-for (const file of [['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx']]) {
+for (const file of [['pages', 'CheckoutPage.jsx']]) {
   assert.match(read(...file), /!asCustomerCode\(customerCode\)[\s\S]{0,160}t\('checkout\.codeUnknown'\)/,
     `${file.join('/')}: a code that will be dropped must say so before the order is placed, not silently`);
 }

@@ -30,7 +30,7 @@ const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview,
   const formulaId = getProductFormulaId(product);
   const batchDetails = getProductBatchDetails(product);
   const status = getProductPublishStatus(product);
-  const publicPath = getProductStorefrontPath(product, { mobile: true });
+  const publicPath = getProductStorefrontPath(product);
   const canOpenPublic = status.key === 'live' && publicPath;
 
   return (
@@ -116,13 +116,13 @@ const MobileProductListPage = () => {
   const openSourceBatch = (formulaId) => navigate(`/mobile/batches?formulaId=${encodeURIComponent(formulaId)}`);
 
   const copyProductLink = async (product) => {
-    const path = getProductStorefrontPath(product, { mobile: true });
+    const path = getProductStorefrontPath(product);
     const copied = await copyTextToClipboard(`${window.location.origin}${path}`);
     toast[copied ? 'success' : 'error'](copied ? 'Link produk disalin' : 'Link belum bisa disalin');
   };
 
   const previewProduct = (product) => {
-    const path = getProductStorefrontPath(product, { mobile: true });
+    const path = getProductStorefrontPath(product);
     if (!path) {
       toast.error('Slug produk belum tersedia');
       return;

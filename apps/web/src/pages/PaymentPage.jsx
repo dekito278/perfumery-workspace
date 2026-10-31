@@ -1,13 +1,10 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, Clock3, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, MessageCircle, QrCode, RefreshCw, ShieldCheck, Smartphone, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
-import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -170,7 +167,7 @@ const buildDokuSessionFromCheckout = (order, checkout) => ({
   createdAt: order.createdAt || new Date().toISOString(),
 });
 
-const PaymentTotalBreakdown = ({ session, compact = false }) => {
+const PaymentTotalBreakdown = ({ session }) => {
   const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(session);
   const shippingFee = Number(session.shippingFee || 0);
@@ -185,7 +182,7 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
   const displayedSubtotalAfterVoucher = subtotalAfterVoucher || fallbackProductsSubtotal;
 
   return (
-    <div className={`mt-4 rounded-none border border-ng-bone/10 bg-transparent ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-ng-bone`}>
+    <div className={`mt-4 rounded-none border border-ng-bone/10 bg-transparent p-4 text-sm font-bold text-ng-bone`}>
       <div className="flex justify-between gap-3">
         <span>{t("pay.subtotalProducts")}</span>
         <span>{formatTotal(productsSubtotal)}</span>
@@ -227,25 +224,25 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
 // Shared success state. A paid order must never be shown a live payment panel again — the DOKU return
 // URL lands back here with the order already paid, and the iframe invited a second payment for the same
 // invoice (audit round 7).
-const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, method }) => {
+const PaymentSuccessPanel = ({ orderNumber, customerCode, method }) => {
   const { t } = useTranslate();
   return (
-  <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-none border border-ng-bone/15 bg-transparent'}>
+  <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
     <div className="p-6 text-center sm:p-10">
       <span className="mx-auto grid h-14 w-14 place-items-center rounded-none bg-[#14231a] text-[#9fdcb2]">
         <CheckCircle2 className="h-7 w-7" />
       </span>
-      <h1 className={compact ? 'mt-4 font-ng-display text-3xl font-normal text-ng-bone' : 'mt-4 font-ng-display text-4xl font-normal text-ng-bone'}>{t("pay.received")}</h1>
+      <h1 className="mt-4 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.received")}</h1>
       <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
         {t('pay.thanks', { method: method ? ` ${method}` : '', order: orderNumber })}
       </p>
       <div className="mt-5 flex justify-center gap-2">
         {customerCode ? (
-          <Link to={compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`} className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
+          <Link to={`/customer?code=${customerCode}`} className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
             {t('track.title')}
           </Link>
         ) : null}
-        <Link to={compact ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
+        <Link to="/catalog" className="inline-flex h-11 items-center rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
           {t('pay.shopAgain')}
         </Link>
       </div>
@@ -254,7 +251,7 @@ const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, metho
 );
 };
 
-const PaymentFrame = ({ session, compact = false }) => {
+const PaymentFrame = ({ session }) => {
   const { t } = useTranslate();
   const [frameStatus, setFrameStatus] = useState('loading');
 
@@ -275,7 +272,6 @@ const PaymentFrame = ({ session, compact = false }) => {
   if (session.paymentStatus === 'paid') {
     return (
       <PaymentSuccessPanel
-        compact={compact}
         orderNumber={session.orderNumber || session.invoiceNumber}
         customerCode={session.customerCode || ''}
       />
@@ -310,7 +306,7 @@ const PaymentFrame = ({ session, compact = false }) => {
     },
   }[frameStatus];
   const customerCode = session.customerCode || '';
-  const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
+  const orderTrackingPath = `/customer?code=${customerCode}`;
   const currentPaymentTone = paymentStatusTone[session.paymentStatus || 'pending'] || paymentStatusTone.pending;
   // Not session.paymentExpiresAt: manual transfer never has one, and it is the path where somebody is
   // about to move money into a reservation that expires.
@@ -322,12 +318,12 @@ const PaymentFrame = ({ session, compact = false }) => {
   };
 
   return (
-    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-none border border-ng-bone/15 bg-transparent'}>
-      <div className={compact ? 'border-b border-ng-bone/10 bg-ng-ink p-4' : 'border-b border-ng-bone/10 bg-ng-ink p-5'}>
+    <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
+      <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.secureCheckout")}</div>
-            <h1 className={compact ? 'mt-1 font-ng-display text-3xl font-normal text-ng-bone' : 'mt-1 font-ng-display text-4xl font-normal text-ng-bone'}>{t("pay.solivagantPayment")}</h1>
+            <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {t('pay.savedBody')}
             </p>
@@ -336,7 +332,7 @@ const PaymentFrame = ({ session, compact = false }) => {
             <ShieldCheck className="h-5 w-5" />
           </span>
         </div>
-        <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-ng-bone' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-none bg-transparent px-4 py-3">
             <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
             <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
@@ -356,7 +352,7 @@ const PaymentFrame = ({ session, compact = false }) => {
             </div>
           ) : null}
         </div>
-        <PaymentTotalBreakdown session={session} compact={compact} />
+        <PaymentTotalBreakdown session={session} />
         <div className={`mt-4 rounded-none border px-4 py-3 ${currentPaymentTone.className}`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -386,7 +382,7 @@ const PaymentFrame = ({ session, compact = false }) => {
           </div>
         </div>
       </div>
-      <div className={compact ? 'h-[68dvh] bg-transparent' : 'h-[74dvh] bg-transparent'}>
+      <div className="h-[74dvh] bg-transparent">
         <iframe
           src={session.paymentUrl}
           title={t("pay.panel")}
@@ -410,7 +406,7 @@ const PaymentFrame = ({ session, compact = false }) => {
           </Button>
         </div>
       ) : null}
-      <div className={compact ? 'grid gap-2 border-t border-ng-bone/10 bg-ng-deep p-3' : 'flex flex-wrap items-center justify-between gap-3 border-t border-ng-bone/10 bg-ng-deep p-4'}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ng-bone/10 bg-ng-deep p-4">
         <p className="text-xs font-semibold leading-relaxed text-ng-dust">
           {t('pay.fallbackHint')}
         </p>
@@ -434,7 +430,7 @@ const EWALLET_HINTS = ['GoPay', 'OVO', 'DANA', 'ShopeePay', 'LinkAja', 'm-bankin
 
 // Native QRIS — renders the DOKU QR string in our own UI (no DOKU hosted page). Payment is confirmed
 // by the DOKU notification webhook flipping the order to paid; we poll the public order for that.
-const QrisPanel = ({ session, compact = false, onPaid }) => {
+const QrisPanel = ({ session, onPaid }) => {
   const { t } = useTranslate();
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [remainingMs, setRemainingMs] = useState(() => {
@@ -491,16 +487,16 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
   };
 
   if (paid) {
-    return <PaymentSuccessPanel compact={compact} orderNumber={orderNumber} customerCode={customerCode} method="QRIS" />;
+    return <PaymentSuccessPanel orderNumber={orderNumber} customerCode={customerCode} method="QRIS" />;
   }
 
   return (
-    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-none border border-ng-bone/15 bg-transparent'}>
-      <div className={compact ? 'border-b border-ng-bone/10 bg-ng-ink p-4' : 'border-b border-ng-bone/10 bg-ng-ink p-5'}>
+    <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
+      <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.qris")}</div>
-            <h1 className={compact ? 'mt-1 font-ng-display text-3xl font-normal text-ng-bone' : 'mt-1 font-ng-display text-4xl font-normal text-ng-bone'}>{t("pay.solivagantPayment")}</h1>
+            <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {t('pay.qrHint')}
             </p>
@@ -509,7 +505,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
             <QrCode className="h-5 w-5" />
           </span>
         </div>
-        <div className={compact ? 'mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-ng-bone' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-none bg-transparent px-4 py-3">
             <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
             <div className="mt-1 truncate">{orderNumber}</div>
@@ -523,7 +519,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
             <div className="mt-1">{payableAmount(session)}</div>
           </div>
         </div>
-        <PaymentTotalBreakdown session={session} compact={compact} />
+        <PaymentTotalBreakdown session={session} />
       </div>
 
       <div className="grid gap-4 p-4 sm:p-6">
@@ -586,12 +582,12 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
   );
 };
 
-const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => {
+const ManualTransferPanel = ({ session, onProofSubmitted }) => {
   const { t } = useTranslate();
   const [proofFile, setProofFile] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const customerCode = session.customerCode || '';
-  const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
+  const orderTrackingPath = `/customer?code=${customerCode}`;
   const orderNumber = session.orderNumber || session.invoiceNumber;
   // One source for the number, the same one the footer reads. Rendered only when configured.
   const whatsappNumber = getStorefrontWhatsAppNumber();
@@ -685,7 +681,6 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   if (session.paymentStatus === 'paid') {
     return (
       <PaymentSuccessPanel
-        compact={compact}
         orderNumber={orderNumber}
         customerCode={customerCode}
       />
@@ -693,12 +688,12 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   }
 
   return (
-    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-none border border-ng-bone/15 bg-transparent'}>
-      <div className={compact ? 'border-b border-ng-bone/10 bg-ng-ink p-4' : 'border-b border-ng-bone/10 bg-ng-ink p-5'}>
+    <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
+      <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.manualTransfer")}</div>
-            <h1 className={compact ? 'mt-1 font-ng-display text-3xl font-normal text-ng-bone' : 'mt-1 font-ng-display text-4xl font-normal text-ng-bone'}>{t("pay.solivagantPayment")}</h1>
+            <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {/* The lead sentence told a buyer to transfer to the account below. On a cancelled order
                   the account below is gone, so the sentence had to go with it. */}
@@ -709,34 +704,30 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <CreditCard className="h-5 w-5" />
           </span>
         </div>
-        {!compact ? (
-          <>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-none bg-transparent px-4 py-3">
-                <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
-                <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
-              </div>
-              <div className="rounded-none bg-transparent px-4 py-3">
-                <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
-                <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
-              </div>
-              <div className="rounded-none bg-transparent px-4 py-3">
-                <div className="text-[10px] uppercase text-ng-dust">{t("pay.transferTotal")}</div>
-                <div className="mt-1">{payableAmount(session)}</div>
-              </div>
-            </div>
-            <PaymentTotalBreakdown session={session} compact={compact} />
-          </>
-        ) : null}
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
+            <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
+          </div>
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
+            <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
+          </div>
+          <div className="rounded-none bg-transparent px-4 py-3">
+            <div className="text-[10px] uppercase text-ng-dust">{t("pay.transferTotal")}</div>
+            <div className="mt-1">{payableAmount(session)}</div>
+          </div>
+        </div>
+        <PaymentTotalBreakdown session={session} />
       </div>
 
-      <div className={compact ? 'grid gap-3 p-4' : 'grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]'}>
+      <div className="grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]">
         {customerCode ? (
-          <div className={compact ? 'rounded-none border border-ng-bone/15 bg-ng-ink p-4' : 'rounded-none border border-ng-bone/15 bg-ng-ink p-5 lg:col-span-2'}>
+          <div className="rounded-none border border-ng-bone/15 bg-ng-ink p-5 lg:col-span-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.customerCode")}</div>
-                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-ng-bone' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-ng-bone'}>
+                <div className="mt-1 select-text text-3xl font-bold tracking-[0.16em] text-ng-bone">
                   {customerCode}
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
@@ -782,7 +773,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.closedBody')}</p>
             <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.closedTransferred')}</p>
             <AskAtelierButton orderNumber={orderNumber} className="mt-3 w-full border-[#f0a090]/40 bg-transparent text-[#f0a090]" />
-            <Link to={compact ? '/mobile/catalog' : '/catalog'} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-none border border-[#f0a090]/40 bg-transparent px-4 text-sm font-bold text-[#f0a090]">
+            <Link to="/catalog" className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-none border border-[#f0a090]/40 bg-transparent px-4 text-sm font-bold text-[#f0a090]">
               {t('pay.closedShopAgain')}
             </Link>
           </div>
@@ -878,22 +869,6 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </>
         )}
 
-        {compact ? (
-          <div className="rounded-none border border-ng-bone/10 bg-transparent p-4">
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.orderSummary")}</div>
-            <div className="mt-3 grid gap-2 text-xs font-bold text-ng-bone">
-              <div className="rounded-none bg-ng-ink px-4 py-3">
-                <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
-                <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
-              </div>
-              <div className="rounded-none bg-ng-ink px-4 py-3">
-                <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
-                <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
-              </div>
-            </div>
-            <PaymentTotalBreakdown session={session} compact />
-          </div>
-        ) : null}
 
         <div id="mobile-payment-proof-section" className="rounded-none border border-ng-bone/10 bg-transparent p-4">
           <div className="flex items-start gap-3">
@@ -942,7 +917,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 disabled={uploadingProof}
                 required={needsProofUpload}
                 aria-required={needsProofUpload}
-                className="block w-full rounded-none border border-ng-bone/15 bg-ng-deep px-3 py-2 text-sm font-semibold text-ng-bone file:mr-3 file:rounded-none file:border-0 file:bg-editorial-charcoal file:px-3 file:py-2 file:text-xs file:font-bold file:text-ng-bone"
+                className="block w-full rounded-none border border-ng-bone/15 bg-ng-deep px-3 py-2 text-sm font-semibold text-ng-bone file:mr-3 file:rounded-none file:border-0 file:bg-ng-card file:px-3 file:py-2 file:text-xs file:font-bold file:text-ng-bone"
               />
             </label>
             {proofFile ? (
@@ -964,14 +939,14 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   );
 };
 
-const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading = false, onRefresh }) => {
+const EmptyPaymentState = ({ orderNumber, orderFound = null, loading = false, onRefresh }) => {
   const { t } = useTranslate();
   return (
-  <section className={isMobile ? 'mobile-card p-5 text-center' : 'mx-auto max-w-xl rounded-none border border-ng-bone/30 bg-transparent p-8 text-center'}>
+  <section className="mx-auto max-w-xl rounded-none border border-ng-bone/30 bg-transparent p-8 text-center">
     <span className="mx-auto grid h-12 w-12 place-items-center rounded-none bg-ng-ink text-ng-bone">
       {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
     </span>
-    <h1 className={isMobile ? 'mt-4 font-ng-display text-3xl font-normal text-ng-bone' : 'mt-4 font-ng-display text-4xl font-normal text-ng-bone'}>
+    <h1 className="mt-4 font-ng-display text-4xl font-normal text-ng-bone">
       {orderNumber
         ? (orderFound === false ? t("pay.orderNotFound") : t("pay.processing"))
         : t("pay.noSession")}
@@ -984,10 +959,10 @@ const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading =
         : t("pay.noSessionBody")}
     </p>
     <div className="mt-5 flex justify-center gap-2">
-      <Link to={isMobile ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
+      <Link to="/catalog" className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
         {t('mcheckout.openCatalog')}
       </Link>
-      <Link to={isMobile ? '/mobile/customer' : '/customer'} className="inline-flex h-11 items-center rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
+      <Link to="/customer" className="inline-flex h-11 items-center rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
         {t('track.title')}
       </Link>
       {orderNumber && onRefresh ? (
@@ -1001,27 +976,8 @@ const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading =
 );
 };
 
-const MobilePaymentSkeleton = () => (
-  <section className="mobile-card overflow-hidden p-0" aria-busy="true">
-    <div className="border-b border-ng-bone/10 bg-ng-ink p-4">
-      <div className="mobile-catalog-skeleton h-4 w-32 rounded-full" />
-      <div className="mobile-catalog-skeleton mt-3 h-7 w-56 rounded-full" />
-      <div className="mt-4 grid gap-2">
-        <div className="mobile-catalog-skeleton h-14 rounded-none" />
-        <div className="mobile-catalog-skeleton h-14 rounded-none" />
-      </div>
-    </div>
-    <div className="grid gap-3 p-4">
-      <div className="mobile-catalog-skeleton h-28 rounded-none" />
-      <div className="mobile-catalog-skeleton h-40 rounded-none" />
-      <div className="mobile-catalog-skeleton h-12 rounded-none" />
-    </div>
-  </section>
-);
-
-const PaymentPageContent = ({ isMobile }) => {
+const PaymentPageContent = () => {
   const { t } = useTranslate();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [session, setSession] = useState(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
@@ -1067,7 +1023,7 @@ const PaymentPageContent = ({ isMobile }) => {
         customerName: order.customerName,
         contact: order.contact,
         items: order.items || [],
-        callbackPath: isMobile ? '/mobile/payment' : '/payment',
+        callbackPath: '/payment',
       });
       // api/doku/checkout.js already persisted this payment session server-side with the service role;
       // the browser copy was filtered by RLS for every buyer and now throws (audit round 9).
@@ -1078,7 +1034,7 @@ const PaymentPageContent = ({ isMobile }) => {
       console.warn('Failed to recover DOKU payment session:', error.message || error);
       return null;
     }
-  }, [isMobile]);
+  }, []);
 
   const loadPaymentSession = useCallback(async ({ syncStatus = false } = {}) => {
     const storedSession = readPaymentSession();
@@ -1187,52 +1143,6 @@ const PaymentPageContent = ({ isMobile }) => {
     }
   };
 
-  if (isMobile) {
-    return (
-      <MobileCommerceLayout>
-        <Helmet>
-          <title>{t("pay.tab")}</title>
-        </Helmet>
-        <main className="mobile-page mobile-payment-page space-y-4">
-          <MobileTopBar
-            title={t('mcheckout.title')}
-            subtitle={session?.orderNumber || orderNumber || 'SOLIVAGANT'}
-            eyebrow={t('pay.secureEyebrow')}
-            onBack={() => navigate('/mobile/cart')}
-            backLabel={t('a11y.back')}
-            action={<CreditCard className="h-5 w-5 text-ng-ember" />}
-          />
-          {(loadingOrder || refreshingStatus) && !session ? <MobilePaymentSkeleton /> : isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
-            <ManualTransferPanel session={session} compact onProofSubmitted={setSession} />
-          ) : session?.qrContent ? <QrisPanel session={session} compact onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
-          {/* The same rule as the panel above: a paid order is not offered a way to pay. The bar
-              would otherwise sit under the success panel with the total and an Upload button. */}
-          {session && !sessionIsQris && session.paymentStatus !== 'paid' ? (
-            <StickyBottomActionBar
-              fixed
-              reserveSpace
-              aria-label={t("pay.actions")}
-              className="mobile-payment-action-bar"
-              contentClassName="rounded-none border-ng-bone/10 bg-ng-card text-ng-bone"
-            >
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase text-ng-dust">{sessionIsManual ? t("pay.manualTransfer") : t("pay.dokuPayment")}</p>
-                  <p className="truncate text-lg font-bold leading-tight text-ng-bone">{payableAmount(session)}</p>
-                  <p className="truncate text-[10px] font-bold text-ng-ember">{t(paymentStatusKeys[session.paymentStatus || 'pending'] || 'pay.awaiting')}</p>
-                </div>
-                <Button type="button" className="h-12 rounded-none gap-2 px-4" onClick={openPrimaryPaymentAction}>
-                  {sessionIsManual ? <Upload className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />}
-                  {sessionIsManual ? t("pay.uploadShort") : t("pay.payDoku")}
-                </Button>
-              </div>
-            </StickyBottomActionBar>
-          ) : null}
-        </main>
-      </MobileCommerceLayout>
-    );
-  }
-
   return (
     <>
       <Helmet>
@@ -1270,11 +1180,7 @@ const PaymentPageContent = ({ isMobile }) => {
   );
 };
 
-const PaymentPage = () => {
-  const location = useLocation();
-  const isMobile = useMemo(() => location.pathname.startsWith('/mobile'), [location.pathname]);
-
-  return <PaymentPageContent isMobile={isMobile} />;
-};
+// One payment page for every screen since the phone storefront retired (2026-10-31).
+const PaymentPage = () => <PaymentPageContent />;
 
 export default PaymentPage;

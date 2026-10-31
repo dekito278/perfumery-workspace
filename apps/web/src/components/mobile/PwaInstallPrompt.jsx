@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { isMobileBrowser } from '@/utils/deviceRouting.js';
 import { useLocation } from 'react-router-dom';
 import { Download, Share, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
@@ -38,7 +39,9 @@ const PwaInstallPrompt = () => {
     if (isAndroidDevice()) return 'android';
     return 'other';
   }, []);
-  const canSurfacePrompt = location.pathname === '/mobile/dashboard';
+  // The shop's home, on a phone. It was /mobile/dashboard until the phone storefront retired (2026-10-31);
+  // the address changed, the audience did not — a desktop visitor was never asked and still is not.
+  const canSurfacePrompt = (location.pathname === '/' || location.pathname === '/home') && isMobileBrowser();
   const [visits] = useState(() => (
     typeof window === 'undefined' ? 0 : recordVisit(window.localStorage, window.sessionStorage)
   ));

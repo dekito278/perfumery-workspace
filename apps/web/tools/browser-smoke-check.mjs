@@ -29,7 +29,8 @@ const smokeSteps = [
   ...protectedDesktopRoutes.map((step) => ({ ...step, viewport: DESKTOP_VIEWPORT, auth: 'protected' })),
   // The other half of the same move: the storefront journal must stay reachable without logging in.
   { id: 'public-journal', label: 'Public journal', route: '/journal', viewport: DESKTOP_VIEWPORT, auth: 'public', titlePattern: /journal|solivagant/i },
-  { id: 'mobile-dashboard', label: 'Mobile dashboard', route: '/mobile/dashboard', viewport: MOBILE_VIEWPORT, auth: 'public', titlePattern: /katalog|beranda|solivagant/i },
+  // One responsive shop since 2026-10-31: the phone reads /home itself, and /mobile/dashboard only redirects.
+  { id: 'phone-home', label: 'Home on a phone', route: '/home', viewport: MOBILE_VIEWPORT, auth: 'public', titlePattern: /katalog|beranda|solivagant/i },
   { id: 'mobile-journal', label: 'Mobile journal', route: '/mobile/journal', viewport: MOBILE_VIEWPORT, auth: 'protected-mobile', titlePattern: /journal|mobile login|solivagant/i },
 ];
 
@@ -268,9 +269,6 @@ const main = async () => {
   ensureDirectoryExists(outputDir);
 
   const publicArticle = await discoverPublicArticleRoute(env, explicitPublicArticleRoute);
-  const mobilePublicArticleRoute = publicArticle.route.startsWith('/articles/')
-    ? publicArticle.route.replace(/^\/articles\//, '/mobile/articles/')
-    : `/mobile${publicArticle.route}`;
   const steps = [
     ...smokeSteps,
     {
@@ -282,9 +280,9 @@ const main = async () => {
       titlePattern: /journal|article|solivagant/i,
     },
     {
-      id: 'mobile-public-article',
-      label: 'Mobile public article',
-      route: mobilePublicArticleRoute,
+      id: 'phone-public-article',
+      label: 'Public article on a phone',
+      route: publicArticle.route,
       viewport: MOBILE_VIEWPORT,
       auth: 'public',
       titlePattern: /journal|article|solivagant/i,

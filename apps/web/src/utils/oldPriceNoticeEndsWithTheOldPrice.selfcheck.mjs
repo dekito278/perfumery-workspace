@@ -79,7 +79,6 @@ for (const [language, text] of [['id', id], ['en', en]]) {
 // in MobileCommerceLayout. A notice on one of them is a notice half the buyers never see.
 for (const [file, label] of [
   [join(src, 'components', 'storefront', 'PublicHeader.jsx'), 'the desktop header'],
-  [join(src, 'layouts', 'MobileCommerceLayout.jsx'), 'the phone commerce layout'],
 ]) {
   assert.match(readFileSync(file, 'utf8'), /<PriceChangeNotice\b/,
     `${label} must render the notice, or half the shop never sees it`);

@@ -18,6 +18,8 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
+import CardPrice from '@/components/storefront/CardPrice.jsx';
+import { getProductStockTotal, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 /**
  * The English shop's cart: the same basket as the Indonesian one, priced in dollars, with the parcel's
@@ -50,6 +52,12 @@ const InternationalCartPage = () => {
   // Lines the catalogue can no longer fulfil. The domestic cart has said this since audit round 9; this
   // one said nothing, and three bottles are out of stock in the shop as this is written.
   const unfulfillable = lines.filter((line) => line.unavailable || line.outOfStock);
+  // An empty English cart offers four bottles that can be bought, as the phone one did before the phone
+  // storefront retired (2026-10-31) — without it the English shop's empty cart was a dead end. The Studio
+  // catalogue has no publicStatus, so stock is counted.
+  const recommended = !items.length
+    ? catalog.filter((entry) => isProductVisibleInStorefront(entry) && getProductStockTotal(entry.variants || []) > 0).slice(0, 4)
+    : [];
 
   return (
     <>
@@ -153,6 +161,24 @@ const InternationalCartPage = () => {
             </div>
           </div>
         </section>
+
+        {!lines.length && recommended.length ? (
+          <section className="ng-section" aria-labelledby="intl-cart-recommend">
+            <div className="ng-container flex flex-col gap-10">
+              <h2 id="intl-cart-recommend" className="ng-display text-[44px] md:text-[56px]">{t('cart.recommendations')}</h2>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-6">
+                {recommended.map((product) => (
+                  <Link key={product.slug} to={`/catalog/${product.slug}`} className="ng-card">
+                    <ProductVisual product={product} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 320px" />
+                    <span className="font-ng-display text-[26px] leading-none">{splitScriptName(product.name).name}</span>
+                    {/* CardPrice, not a conversion of its own: the export price is keyed by variant. */}
+                    <span className="text-[15px]"><CardPrice product={product} /></span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <StorefrontFooter />
       </main>

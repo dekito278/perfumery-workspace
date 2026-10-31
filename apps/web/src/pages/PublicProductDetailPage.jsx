@@ -146,6 +146,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
     toast.success(t('pdp.addedToast', { name: `${product.name} (${selectedSize})` }), {
       description: t('pdp.cartUpdated'),
       action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
+      // Top, not the default bottom: on a phone the gift prompt this add opens is a bottom sheet, and a
+      // toast at the bottom lands on its buttons. See oneAnnouncement.selfcheck.
+      position: 'top-center',
     });
     window.setTimeout(() => {
       setLastAddedSlug((current) => (current === product.slug ? '' : current));

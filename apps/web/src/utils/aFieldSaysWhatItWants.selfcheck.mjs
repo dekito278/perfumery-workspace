@@ -133,7 +133,8 @@ for (const file of files) {
       + 'one, and that disappears as soon as a code is typed');
   }
 }
-assert.ok(voucherFields >= 6,
+// The phone storefront retired on 2026-10-31: one responsive page per screen now, so the floor halved.
+assert.ok(voucherFields >= 3,
   `only ${voucherFields} voucher fields found — the scan is broken, not the screens`);
 
 console.log(`aFieldSaysWhatItWants selfcheck OK (${codeFields} customer-code fields, the footer's email `

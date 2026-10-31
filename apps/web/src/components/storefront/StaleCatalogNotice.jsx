@@ -22,14 +22,14 @@ const StaleCatalogNotice = ({ stale, className = '' }) => {
   return (
     <div
       role="status"
-      className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-semibold leading-relaxed text-amber-900 ${className}`}
+      className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-none border border-ng-ember/50 bg-ng-ember/10 px-4 py-3 text-xs font-semibold leading-relaxed text-ng-sand ${className}`}
     >
       <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
       <span className="min-w-[12rem] flex-1">{t('stale.body')}</span>
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent('dekito:products-updated'))}
-        className="rounded-xl border border-amber-400 bg-white px-3 py-1.5 font-bold text-amber-900"
+        className="min-h-[44px] rounded-none border border-ng-bone/30 bg-transparent px-4 font-bold text-ng-bone"
       >
         {t('stale.retry')}
       </button>
