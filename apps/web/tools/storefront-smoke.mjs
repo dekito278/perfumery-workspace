@@ -128,6 +128,12 @@ const goto = async (page, path) => {
 };
 const pathOf = (page) => new URL(page.url()).pathname.replace(/\/$/, '') || '/';
 const noSideScroll = (page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth <= 1);
+// Visible shop text drawn in Studio's DM Sans: an element rendered outside the shop's <main> (a fixed bar,
+// a prompt) that never got the shop's font — and the 61 KB font file fetched for it.
+const studioFontText = (page) => page.evaluate(() => [...document.querySelectorAll('body *')]
+  .filter((el) => el.getClientRects().length && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())
+    && /^"?DM Sans/.test(getComputedStyle(el).fontFamily))
+  .map((el) => el.textContent.trim().slice(0, 30)));
 
 // The first product on the catalogue that can be bought right now.
 const openBuyableProduct = async (page, run, prefix, label) => {
@@ -154,6 +160,11 @@ const addToCart = async (page, run, prefix, M) => {
   await page.waitForTimeout(600); // let it finish sliding in before measuring where it sits
   const box = await toast.boundingBox().catch(() => null);
   check(run, 'add to cart is announced, at the top', box && box.y < 200, box ? `toast at y=${Math.round(box.y)}` : 'no toast');
+  // The gift prompt is open now, and scrolling to the end brings the product page's sticky buy bar in.
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(400);
+  const studioFont = await studioFontText(page);
+  check(run, 'product page, buy bar and gift prompt use the shop font', !studioFont.length, studioFont.slice(0, 3).join(' | '));
   const prompt = page.locator('.free-vial-prompt');
   if (await prompt.isVisible({ timeout: 3000 }).catch(() => false)) {
     const sheet = await page.locator('.free-vial-prompt__sheet').boundingBox();
@@ -173,6 +184,12 @@ const runShop = async (browser, run, contextOptions) => {
   const state = { blocked: [], orderBodies: [], order: null };
   const context = await browser.newContext({ ...contextOptions, locale: 'id-ID', timezoneId: 'Asia/Jakarta' });
   await guard(context, state);
+  // Layout shift, summed per page load, so the catalogue can be held to not jumping as its data lands.
+  await context.addInitScript(() => {
+    window.__cls = 0;
+    new PerformanceObserver((list) => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; })
+      .observe({ type: 'layout-shift', buffered: true });
+  });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(String(error.message || error)));
@@ -187,7 +204,16 @@ const runShop = async (browser, run, contextOptions) => {
   await goto(page, '/catalog');
   const filters = page.locator('.ng-filter');
   const filterCount = await filters.count();
+  const cls = await page.evaluate(() => window.__cls);
+  check(run, 'catalogue does not jump as it loads (CLS < 0.1)', cls < 0.1, `CLS ${cls.toFixed(3)}`);
   check(run, 'catalogue offers filters', filterCount >= 2, `${filterCount} filters`);
+  const facet = page.locator('button[aria-expanded]', { hasText: ID['wear.times'] }).first();
+  if (await facet.count()) {
+    await facet.click();
+    const option = page.locator(`[id="${await facet.getAttribute('aria-controls')}"] .ng-filter`).first();
+    check(run, 'a wear facet opens its options', (await facet.getAttribute('aria-expanded')) === 'true' && await option.isVisible());
+    await facet.click();
+  }
   if (filterCount >= 2) {
     const target = filters.nth(1);
     await target.click();

@@ -50,7 +50,9 @@ assert.ok(files.length >= 150, `expected to sweep the screens; found ${files.len
 const LOOKS_SELECTED = /is-active|'active'|\bactive\b\s*\?|isActive|ng-chip/;
 // Either ARIA that carries the state: aria-pressed for a toggle, aria-selected for a real tab (the
 // bespoke option groups are a proper tablist and must not be forced onto aria-pressed).
-const SAYS_SELECTED = /aria-pressed|aria-current|role="tab"|aria-selected/;
+// A disclosure (the catalogue's wear facets, 2026-11-02) says "open" with aria-expanded, and ng-chip draws
+// its open look from that attribute — accepted only with aria-controls naming the panel it opens.
+const SAYS_SELECTED = /aria-pressed|aria-current|role="tab"|aria-selected|aria-expanded[\s\S]*aria-controls|aria-controls[\s\S]*aria-expanded/;
 
 const announced = [];
 const silent = [];

@@ -269,7 +269,8 @@
 }
 
 .ng-chip[aria-pressed="true"],
-.ng-chip[aria-current="page"] {
+.ng-chip[aria-current="page"],
+.ng-chip[aria-expanded="true"] {
   background: var(--ng-bone);
   border-color: var(--ng-bone);
   color: var(--ng-ink);
@@ -1654,4 +1655,11 @@ body:has(.ng-buybar.is-visible) .back-to-top {
   .ng-mood:hover .ng-mood__swatch {
     transform: none;
   }
+}
+
+/* Drawn outside the shop's <main> — the fixed buy bars and the app-wide gift prompt — so they do not inherit
+   its font. Without this they fell back to Studio's DM Sans: the wrong face, and 61 KB fetched for one price. */
+.ng-buybar,
+.free-vial-prompt {
+  font-family: var(--ng-font-body);
 }
