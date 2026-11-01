@@ -188,6 +188,9 @@ const CatalogPage = () => {
                     <span className="ng-chip__count">{pillCounts[category] ?? 0}</span>
                   </button>
                 ))}
+                {/* Until the catalogue arrives the families are unknown; placeholders hold their room so the
+                    search field and the list do not jump when the real chips land. */}
+                {isLoading ? Array.from({ length: 5 }, (_, i) => <span key={i} aria-hidden="true" className="editorial-skel block h-11 w-28" />) : null}
               </div>
               <input
                 type="search"
@@ -198,7 +201,7 @@ const CatalogPage = () => {
                 aria-label={t('catalog.searchLabel')}
               />
             </div>
-            <WearFilter products={products} selection={wearSelection} onChange={setWearSelection} />
+            {isLoading ? <span aria-hidden="true" className="editorial-skel block h-11 w-full max-w-[460px]" /> : <WearFilter products={products} selection={wearSelection} onChange={setWearSelection} />}
           </div>
         </section>
 

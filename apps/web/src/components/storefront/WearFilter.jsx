@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import { WEAR_FACETS, WEAR_KEYS, normalizeWear } from '@/utils/productWear.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
@@ -19,34 +19,55 @@ const WearFilter = ({ products, selection, onChange }) => {
   }, [products]);
 
   const facets = WEAR_KEYS.filter((facet) => available[facet].size > 0);
+  // One facet open at a time, as Dekito's canvas draws it: "Pakai untuk" and three quiet buttons. Laid out
+  // in full, the twelve options took 600px of a phone before the first perfume, and arrived with the data,
+  // pushing the whole list down (CLS 0.17, measured 2026-11-02).
+  const [openFacet, setOpenFacet] = useState('');
+  const panelId = useId();
   if (!facets.length) return null;
+  const open = facets.includes(openFacet) ? openFacet : '';
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="ng-mono m-0 text-ng-dust">{t('catalog.wearHeading')}</p>
-      {facets.map((facet) => (
-        <div key={facet} className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <span className="ng-mono w-20 text-ng-ash">{t(WEAR_FACETS[facet].labelKey)}</span>
-          <div className="flex flex-wrap gap-2" role="list" aria-label={t('catalog.filterBy', { facet: t(WEAR_FACETS[facet].labelKey).toLowerCase() })}>
-            {WEAR_FACETS[facet].options
-              .filter((option) => available[facet].has(option.value))
-              .map((option) => {
-                const active = selection[facet] === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    aria-pressed={active}
-                    className="ng-chip ng-chip--quiet ng-filter"
-                    onClick={() => onChange({ ...selection, [facet]: active ? '' : option.value })}
-                  >
-                    {t(option.labelKey)}
-                  </button>
-                );
-              })}
-          </div>
+      <div className="flex flex-wrap items-center gap-x-[18px] gap-y-2.5">
+        <p className="ng-mono m-0 text-ng-dust">{t('catalog.wearHeading')}</p>
+        {facets.map((facet) => {
+          const chosen = WEAR_FACETS[facet].options.find((option) => option.value === selection[facet]);
+          return (
+            <button
+              key={facet}
+              type="button"
+              aria-expanded={open === facet}
+              aria-controls={panelId}
+              className="ng-chip ng-chip--quiet"
+              onClick={() => setOpenFacet(open === facet ? '' : facet)}
+            >
+              {t(WEAR_FACETS[facet].labelKey)}
+              {chosen ? <span className="ng-chip__count">{t(chosen.labelKey)}</span> : null}
+            </button>
+          );
+        })}
+      </div>
+      {open ? (
+        <div id={panelId} className="flex flex-wrap gap-2" role="list" aria-label={t('catalog.filterBy', { facet: t(WEAR_FACETS[open].labelKey).toLowerCase() })}>
+          {WEAR_FACETS[open].options
+            .filter((option) => available[open].has(option.value))
+            .map((option) => {
+              const active = selection[open] === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={active}
+                  className="ng-chip ng-chip--quiet ng-filter"
+                  onClick={() => onChange({ ...selection, [open]: active ? '' : option.value })}
+                >
+                  {t(option.labelKey)}
+                </button>
+              );
+            })}
         </div>
-      ))}
+      ) : null}
     </div>
   );
 };
