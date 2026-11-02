@@ -197,6 +197,10 @@ const NOT_A_SCREEN = {
     why: 'Studio: picks a related product to attach to an article, sells nothing',
     stillTrue: (source) => !showsAPrice(source),
   },
+  'pages/mobile/MobileJournalEditorPage.jsx': {
+    why: 'Studio on the phone: the same related-product picker as the desktop editor, sells nothing',
+    stillTrue: (source) => !showsAPrice(source),
+  },
   'components/journal/JournalRelatedProduct.jsx': {
     // This one DOES print a price, and its excuse was never about prices: it is a card embedded in an
     // article, with no page of its own to put a banner on. So the condition is the one its reason

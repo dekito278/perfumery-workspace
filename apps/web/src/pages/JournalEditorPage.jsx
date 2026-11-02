@@ -344,7 +344,7 @@ const JournalEditorPage = () => {
                     className="h-11 rounded-2xl bg-white"
                     maxLength={180}
                   />
-                  <p className="text-xs text-muted-foreground">Disiapkan untuk halaman publik nanti. Kosongkan untuk memakai title utama.</p>
+                  <p className="text-xs text-muted-foreground">Judul di tab browser dan hasil pencarian Google. Kosongkan untuk memakai judul utama.</p>
                 </div>
 
                 <div className="space-y-2">

@@ -601,6 +601,13 @@ const toDatabasePayload = (product) => ({
   mood: product.mood,
   wear: normalizeWear(product.wear),
   description: product.description,
+  // The English shop's copy. Read since 2026-09-16 but never written, so it could only be changed in SQL;
+  // the forms edit it since 2026-11-02. Empty stays empty: productCopyFor falls back to the Indonesian.
+  description_en: product.descriptionEn || null,
+  notes_en: product.notesEn || null,
+  top_notes_en: product.topNotesEn,
+  heart_notes_en: product.heartNotesEn,
+  base_notes_en: product.baseNotesEn,
   concentration: product.concentration,
   launch_year: product.launchYear ?? null,
   stock: product.stock,

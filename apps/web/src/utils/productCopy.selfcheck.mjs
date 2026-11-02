@@ -116,6 +116,18 @@ for (const [name, body] of [
       `${name} must carry ${field} — an unnamed field vanishes at that line, however many mappers above it named the field`);
   }
 }
+// And the way back. Until 2026-11-02 the save named none of the five columns, so the English shop's copy
+// was read everywhere and writable only in SQL — Dekito could not correct a word of it from Studio.
+const payload = bodyOf(service, 'const toDatabasePayload = (product) =>', 'productCatalogService.js');
+for (const [column, field] of [['description_en', 'descriptionEn'], ['notes_en', 'notesEn'], ['top_notes_en', 'topNotesEn'],
+  ['heart_notes_en', 'heartNotesEn'], ['base_notes_en', 'baseNotesEn']]) {
+  assert.match(payload, new RegExp(`${column}: product\\.${field}\\b`), `the save does not write ${column}, so an edit to it is lost`);
+  for (const form of [['components', 'product', 'ProductForm.jsx'], ['components', 'product', 'MobileProductForm.jsx']]) {
+    assert.ok(read(...form).includes(`updateField('${field}'`) || read(...form).includes(`['${field}'`),
+      `${form.join('/')} has no input for ${field}`);
+  }
+}
+
 // normalizeProduct must not invent an Indonesian fallback either: '' means "not translated yet", and a
 // fallback here would make the two states indistinguishable before productCopyFor ever runs.
 assert.match(service, /descriptionEn: typeof input\.descriptionEn === 'string' \? input\.descriptionEn : '',/,

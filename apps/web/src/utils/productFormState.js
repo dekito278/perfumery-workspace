@@ -31,6 +31,9 @@ export const toProductFormState = (product) => {
     topNotes: product.topNotes.join(', '),
     heartNotes: product.heartNotes.join(', '),
     baseNotes: product.baseNotes.join(', '),
+    topNotesEn: (product.topNotesEn || []).join(', '),
+    heartNotesEn: (product.heartNotesEn || []).join(', '),
+    baseNotesEn: (product.baseNotesEn || []).join(', '),
     variants: product.variants,
     tags: visibleTags.join(', '),
     // Carry internal tags (batch key, formula id, SKU, stock movement, threshold, correction history)
