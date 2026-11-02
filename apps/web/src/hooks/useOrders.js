@@ -6,9 +6,11 @@ import {
   getOrderSummary,
   getLocalOrders,
   getOrders,
+  ORDERS_STORAGE_KEY,
   updateOrderPaymentStatus,
   updateOrderStatus,
 } from '@/services/orderService.js';
+import { onStorageKeys } from '@/utils/storageEvent.js';
 
 export const useOrders = () => {
   const [orders, setOrders] = useState(getLocalOrders);
@@ -36,13 +38,14 @@ export const useOrders = () => {
       }
     };
 
-    window.addEventListener('storage', syncOrders);
+    const onStorage = onStorageKeys([ORDERS_STORAGE_KEY], syncOrders);
+    window.addEventListener('storage', onStorage);
     window.addEventListener('dekito:orders-updated', syncOrders);
     syncOrders();
 
     return () => {
       isMounted = false;
-      window.removeEventListener('storage', syncOrders);
+      window.removeEventListener('storage', onStorage);
       window.removeEventListener('dekito:orders-updated', syncOrders);
     };
   }, []);

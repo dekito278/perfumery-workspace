@@ -15,7 +15,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * Deliberately not a blocker. The shop stays usable and the buyer gets to decide whether to trust what
  * they are reading, which is the whole point of saying it.
  */
-const StaleCatalogNotice = ({ stale, className = '' }) => {
+const StaleCatalogNotice = ({ stale, body = '', className = '' }) => {
   const { t } = useTranslate();
   if (!stale) return null;
 
@@ -25,7 +25,7 @@ const StaleCatalogNotice = ({ stale, className = '' }) => {
       className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-none border border-ng-ember/50 bg-ng-ember/10 px-4 py-3 text-xs font-semibold leading-relaxed text-ng-sand ${className}`}
     >
       <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <span className="min-w-[12rem] flex-1">{t('stale.body')}</span>
+      <span className="min-w-[12rem] flex-1">{body || t('stale.body')}</span>
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent('dekito:products-updated'))}

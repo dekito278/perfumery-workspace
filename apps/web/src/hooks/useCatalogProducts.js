@@ -4,7 +4,10 @@ import {
   getEditableProducts,
   getLocalCatalogProducts,
   prefetchCatalogProducts,
+  PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY,
+  PRODUCT_CATALOG_STORAGE_KEY,
 } from '@/services/productCatalogService.js';
+import { onStorageKeys } from '@/utils/storageEvent.js';
 
 export const useCatalogProducts = ({ editableOnly = false, active = true } = {}) => {
   const [products, setProducts] = useState(() => (editableOnly ? [] : getLocalCatalogProducts()));
@@ -56,7 +59,8 @@ export const useCatalogProducts = ({ editableOnly = false, active = true } = {})
       });
     };
 
-    window.addEventListener('storage', refreshProducts);
+    const onStorage = onStorageKeys([PRODUCT_CATALOG_STORAGE_KEY, PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY], refreshProducts);
+    window.addEventListener('storage', onStorage);
     window.addEventListener('dekito:products-updated', refreshProducts);
     syncProducts().catch((error) => {
       console.warn('Initial catalog product sync failed:', error.message || error);
@@ -64,7 +68,7 @@ export const useCatalogProducts = ({ editableOnly = false, active = true } = {})
 
     return () => {
       isMounted = false;
-      window.removeEventListener('storage', refreshProducts);
+      window.removeEventListener('storage', onStorage);
       window.removeEventListener('dekito:products-updated', refreshProducts);
     };
   }, [active, editableOnly]);

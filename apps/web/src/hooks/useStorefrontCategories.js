@@ -3,8 +3,11 @@ import {
   buildCategoryFromProductName,
   getLocalStorefrontCategories,
   prefetchStorefrontCategories,
+  STOREFRONT_CATEGORY_LAST_VALID_STORAGE_KEY,
+  STOREFRONT_CATEGORY_STORAGE_KEY,
   STOREFRONT_CATEGORY_UPDATED_EVENT,
 } from '@/services/storefrontCategoryService.js';
+import { onStorageKeys } from '@/utils/storageEvent.js';
 
 const mergeCategories = (managedCategories, products) => {
   const categoryMap = new Map();
@@ -73,7 +76,8 @@ export const useStorefrontCategories = (products = [], { active = true } = {}) =
       });
     };
 
-    window.addEventListener('storage', refreshCategories);
+    const onStorage = onStorageKeys([STOREFRONT_CATEGORY_STORAGE_KEY, STOREFRONT_CATEGORY_LAST_VALID_STORAGE_KEY], refreshCategories);
+    window.addEventListener('storage', onStorage);
     window.addEventListener(STOREFRONT_CATEGORY_UPDATED_EVENT, refreshCategories);
     window.addEventListener('dekito:products-updated', refreshCategories);
     syncCategories().catch((error) => {
@@ -82,7 +86,7 @@ export const useStorefrontCategories = (products = [], { active = true } = {}) =
 
     return () => {
       isMounted = false;
-      window.removeEventListener('storage', refreshCategories);
+      window.removeEventListener('storage', onStorage);
       window.removeEventListener(STOREFRONT_CATEGORY_UPDATED_EVENT, refreshCategories);
       window.removeEventListener('dekito:products-updated', refreshCategories);
     };
