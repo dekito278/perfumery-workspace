@@ -413,7 +413,7 @@ export const MESSAGES = {
     'checkout.subtotal': 'Subtotal',
     'checkout.shipping': 'Ongkir',
     'checkout.total': 'Total',
-    'checkout.backToCart': 'Kembali ke Cart',
+    'checkout.backToCart': 'Kembali ke keranjang',
     'checkout.placeOrder': 'Buat Pesanan',
     'checkout.processing': 'Memproses...',
     'checkout.chosenProducts': 'Produk yang dipilih',

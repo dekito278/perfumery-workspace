@@ -59,13 +59,13 @@ const AboutContent = () => {
       <div className="mt-7 flex flex-wrap gap-3">
         <Link
           to="/catalog"
-          className="inline-flex items-center gap-2 rounded-none bg-ng-bone px-5 py-3 text-sm font-bold text-ng-ink"
+          className="ng-btn"
         >
-          {t('about.seeCollection')}<ArrowRight className="h-4 w-4" />
+          {t('about.seeCollection')}<ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
         <Link
           to="/bespoke"
-          className="inline-flex items-center gap-2 rounded-none border border-ng-bone/20 px-5 py-3 text-sm font-bold text-ng-bone"
+          className="ng-btn ng-btn--ghost"
         >
           {t('about.bespoke')}
         </Link>

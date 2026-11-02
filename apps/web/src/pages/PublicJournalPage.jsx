@@ -194,8 +194,9 @@ const PublicJournalPage = () => {
               <div lang="id" className="flex flex-col gap-16">
                 {/* Featured article — large */}
                 {featured ? (
-                  <Link to={getJournalPublicPath(featured)} className="grid items-center gap-10 text-ng-bone no-underline md:grid-cols-2 md:gap-[72px]" data-reveal>
-                    <JournalCoverFrame post={featured} className="ng-cover border-ng-bone/10" imageClassName="aspect-[5/4]" />
+                  <Link to={getJournalPublicPath(featured)} className={`grid items-center gap-10 text-ng-bone no-underline md:gap-[72px] ${featured.cover_image_url ? 'md:grid-cols-2' : ''}`} data-reveal>
+                    {/* Without a cover the frame was an empty dark box printing the title again beside the title. */}
+                    {featured.cover_image_url ? <JournalCoverFrame post={featured} className="ng-cover border-ng-bone/10" imageClassName="aspect-[5/4]" /> : null}
                     <span className="flex flex-col gap-5">
                       <span className="ng-mono text-ng-ember">{getJournalCategoryLabel(featured.category)} · {formatDate(featured.published_at || featured.updated || featured.created, t('fmt.dateLocale'))}</span>
                       <span className="font-ng-display text-[40px] leading-[1.02] md:text-[60px]">{featured.title}</span>

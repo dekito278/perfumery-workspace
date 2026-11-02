@@ -76,7 +76,7 @@ const InternationalCartPage = () => {
               <p className="ng-lead">{t('cart.intl.lead')}</p>
             </div>
 
-            <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-[72px]">
+            <div className={`grid items-start gap-12 lg:gap-[72px] ${items.length ? 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]' : ''}`}>
               <div className="flex flex-col gap-14">
                 <div className="flex flex-col border-t border-ng-bone/30">
                   {unfulfillable.length ? (
@@ -138,27 +138,31 @@ const InternationalCartPage = () => {
                 <FreeVialPicker items={items} products={catalog} onPick={setGift} />
               </div>
 
-              <aside className="ng-panel ng-sticky flex flex-col gap-6" aria-labelledby="intl-cart-summary">
-                <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
-                <h2 id="intl-cart-summary" className="sr-only">{t('cart.summary')}</h2>
-                {lines.length ? <InternationalShippingQuote quote={quote} /> : null}
-                <p className="m-0 text-sm leading-relaxed text-ng-dust">{t('cart.intl.howItWorks')}</p>
-                {lines.length ? (
-                  <a
-                    href={canOrder ? buildWhatsAppCheckoutUrl(message, phone) : '#'}
-                    onClick={needsDestination ? focusDestinationPicker : undefined}
-                    target={canOrder ? '_blank' : undefined}
-                    rel="noopener noreferrer"
-                    className="ng-btn ng-btn--lg ng-btn--block"
-                    aria-disabled={!canOrder && !needsDestination}
-                  >
-                    <Globe className="h-4 w-4" aria-hidden="true" /> {t(needsDestination ? 'intlQuote.pickFirst' : 'cart.intl.order')}
-                  </a>
-                ) : (
-                  <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
-                )}
-                <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
-              </aside>
+              {/* An empty cart has nothing to sum: the box said Subtotal Rp 0, listed a free vial, and offered the
+                  same two ways out as the empty state beside it (2026-11-02). */}
+              {items.length ? (
+                <aside className="ng-panel ng-sticky flex flex-col gap-6" aria-labelledby="intl-cart-summary">
+                  <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
+                  <h2 id="intl-cart-summary" className="sr-only">{t('cart.summary')}</h2>
+                  {lines.length ? <InternationalShippingQuote quote={quote} /> : null}
+                  <p className="m-0 text-sm leading-relaxed text-ng-dust">{t('cart.intl.howItWorks')}</p>
+                  {lines.length ? (
+                    <a
+                      href={canOrder ? buildWhatsAppCheckoutUrl(message, phone) : '#'}
+                      onClick={needsDestination ? focusDestinationPicker : undefined}
+                      target={canOrder ? '_blank' : undefined}
+                      rel="noopener noreferrer"
+                      className="ng-btn ng-btn--lg ng-btn--block"
+                      aria-disabled={!canOrder && !needsDestination}
+                    >
+                      <Globe className="h-4 w-4" aria-hidden="true" /> {t(needsDestination ? 'intlQuote.pickFirst' : 'cart.intl.order')}
+                    </a>
+                  ) : (
+                    <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
+                  )}
+                  <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
+                </aside>
+              ) : null}
             </div>
           </div>
         </section>

@@ -863,7 +863,7 @@ a.ng-row:hover {
 }
 
 .ng-mood__swatch[data-family="gourmand"] { background: #3a2a1c; }
-.ng-mood__swatch[data-family="woody"] { background: #1c1815; }
+.ng-mood__swatch[data-family="woody"] { background: #2f2820; } /* was #1c1815, which read as an empty box on the ink page */
 .ng-mood__swatch[data-family="floral"] { background: #3b2a33; }
 
 .ng-mood__swatch img {
@@ -1822,4 +1822,35 @@ html:has(.mobile-pwa-install) {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 0.2em;
+}
+
+/* The toaster mounts outside every page, so on a shop page it kept Studio's light variables: "L'iris masuk
+   ke keranjang" arrived as a white card with a black button over the dark shop (2026-11-02). A rule of its
+   own rather than a third selector on the scope above — a browser without :has() would drop that whole list. */
+body:has(.solivagant-editorial-home, .ng-scope) [data-sonner-toaster] {
+  --background: 30 16% 7%;
+  --foreground: 42 39% 88%;
+  --border: 30 14% 22%;
+  --primary: 42 39% 88%;
+  --primary-foreground: 30 17% 5%;
+  --muted: 30 14% 15%;
+  --muted-foreground: 39 15% 67%;
+  --radius: 0px;
+  font-family: var(--ng-font-body);
+}
+
+body:has(.solivagant-editorial-home, .ng-scope) [data-sonner-toast] {
+  border-radius: 0;
+}
+
+/* Sonner styles the description and the action button itself, and its stylesheet lands after ours: the
+   description stayed #3f3f3f (1.6:1 on the dark card) and the button #171717. One step more specific. */
+body:has(.solivagant-editorial-home, .ng-scope) [data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: var(--ng-dust);
+}
+
+body:has(.solivagant-editorial-home, .ng-scope) [data-sonner-toaster] [data-sonner-toast] [data-button] {
+  border-radius: 0;
+  background: var(--ng-bone);
+  color: var(--ng-ink);
 }

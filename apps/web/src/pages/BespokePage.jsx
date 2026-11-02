@@ -711,9 +711,10 @@ const BespokePage = () => {
             <p className="ng-lead">{t('bsp.lead')}</p>
             {/* Same rule as the phone: a floor derived from Studio's own option prices, and never shown
                 to the English shop, whose bespoke path takes no payment and has no international price. */}
-            <p className="m-0 text-[15px] text-ng-dust">
+            {/* The price and its condition, each on its own line: run together they read "Mulai dari Rp 569.000
+                Sebelum ongkir…", one sentence that is not one (2026-11-02). */}
+            <p className="m-0 flex flex-col gap-1 text-[15px] text-ng-dust">
               <strong className="font-medium text-ng-bone">{isInternational ? t('bsp.floor') : t('bsp.floor', { price: formatRupiah(floorPrice) })}</strong>
-              {' '}
               <span>{t('bsp.floorNote')}</span>
             </p>
             <ol className="ng-mono m-0 mt-2 flex list-none flex-wrap gap-x-8 gap-y-3 p-0 text-ng-ash">
@@ -775,7 +776,9 @@ const BespokePage = () => {
             <div className="flex flex-col gap-8 border-t border-ng-bone/15 pt-12" data-reveal>
               <div className="flex flex-col gap-3">
                 <p className="ng-mono m-0 text-ng-ash">{t('bsp.visualEyebrow')}</p>
-                <h3 className="ng-display m-0 text-[36px] md:text-[44px]">{t('bsp.visualBody')}</h3>
+                {/* With one group left (size, since the bottle, cap and label options were switched off on 23 Oct)
+                    "choose a category" offered a single tab: the group names itself instead. */}
+                <h3 className="ng-display m-0 text-[36px] md:text-[44px]">{bespokeChoiceGroups.length > 1 ? t('bsp.visualBody') : activeChoice.title}</h3>
               </div>
               <div className="grid items-start gap-10 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <BespokeBottlePreview
@@ -787,6 +790,7 @@ const BespokePage = () => {
                   size={selectedSize}
                 />
                 <div className="flex flex-col gap-6">
+                  {bespokeChoiceGroups.length > 1 ? (
                   <div className="editorial-bespoke-tabs" role="tablist" aria-label={t('bsp.optionGroups')}>
                     {bespokeChoiceGroups.map((group) => (
                       <button
@@ -801,11 +805,14 @@ const BespokePage = () => {
                       </button>
                     ))}
                   </div>
-                  <div className="flex flex-col gap-5" role="tabpanel" aria-label={activeChoice.title}>
-                    <div className="flex flex-col gap-2">
-                      <p className="ng-mono m-0 text-ng-ember">{activeChoice.eyebrow}</p>
-                      <h3 className="ng-display m-0 text-[30px]">{activeChoice.title}</h3>
-                    </div>
+                  ) : null}
+                  <div className="flex flex-col gap-5" role={bespokeChoiceGroups.length > 1 ? 'tabpanel' : undefined} aria-label={activeChoice.title}>
+                    {bespokeChoiceGroups.length > 1 ? (
+                      <div className="flex flex-col gap-2">
+                        <p className="ng-mono m-0 text-ng-ember">{activeChoice.eyebrow}</p>
+                        <h3 className="ng-display m-0 text-[30px]">{activeChoice.title}</h3>
+                      </div>
+                    ) : null}
                     <div className={`editorial-bespoke-option-grid${activeChoice.key === 'size' ? ' editorial-bespoke-option-grid--compact' : ''}`}>
                       {activeChoice.options.map((option) => (
                         <BespokeOptionCard

@@ -78,7 +78,7 @@ const CartPage = () => {
               <p className="ng-lead">{t('cart.lead')}</p>
             </div>
 
-            <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-[72px]">
+            <div className={`grid items-start gap-12 lg:gap-[72px] ${items.length ? 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]' : ''}`}>
               <div className="flex flex-col gap-14">
                 <div className="flex flex-col border-t border-ng-bone/30">
                   {items.some((item) => item.priceChanged) ? (
@@ -150,86 +150,90 @@ const CartPage = () => {
                 <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />
               </div>
 
-              <aside className="ng-panel ng-sticky flex flex-col gap-6" aria-labelledby="cart-summary-title">
-                <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
-                <h2 id="cart-summary-title" className="sr-only">{t('cart.summary')}</h2>
+              {/* An empty cart has nothing to sum: the box said Subtotal Rp 0, listed a free vial, and offered the
+                  same two ways out as the empty state beside it (2026-11-02). */}
+              {items.length ? (
+                <aside className="ng-panel ng-sticky flex flex-col gap-6" aria-labelledby="cart-summary-title">
+                  <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
+                  <h2 id="cart-summary-title" className="sr-only">{t('cart.summary')}</h2>
 
-                <div className="flex flex-col gap-2.5">
-                  <label className="text-sm text-ng-dust" htmlFor="cart-voucher">
-                    {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('cart.voucherPrompt')}
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      id="cart-voucher"
-                      type="text"
-                      aria-label={t('cart.voucherPlaceholder')}
-                      className="ng-field !min-h-[48px] uppercase placeholder:normal-case"
-                      value={voucher.inputCode}
-                      onChange={(event) => voucher.setInputCode(event.target.value)}
-                      placeholder={t('cart.voucherPlaceholder')}
-                      autoComplete="off"
-                      autoCapitalize="characters"
-                      spellCheck={false}
-                      disabled={!items.length || voucher.loading}
-                    />
-                    <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
-                      <BadgePercent className="h-4 w-4" aria-hidden="true" />
-                      {voucher.loading ? t('cart.voucherChecking') : t('cart.voucherApply')}
-                    </button>
+                  <div className="flex flex-col gap-2.5">
+                    <label className="text-sm text-ng-dust" htmlFor="cart-voucher">
+                      {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('cart.voucherPrompt')}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        id="cart-voucher"
+                        type="text"
+                        aria-label={t('cart.voucherPlaceholder')}
+                        className="ng-field !min-h-[48px] uppercase placeholder:normal-case"
+                        value={voucher.inputCode}
+                        onChange={(event) => voucher.setInputCode(event.target.value)}
+                        placeholder={t('cart.voucherPlaceholder')}
+                        autoComplete="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        disabled={!items.length || voucher.loading}
+                      />
+                      <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
+                        <BadgePercent className="h-4 w-4" aria-hidden="true" />
+                        {voucher.loading ? t('cart.voucherChecking') : t('cart.voucherApply')}
+                      </button>
+                    </div>
+                    {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.appliedVoucher ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
+                    {voucher.appliedVoucher ? (
+                      <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
+                        <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
+                      </button>
+                    ) : null}
                   </div>
-                  {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.appliedVoucher ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
-                  {voucher.appliedVoucher ? (
-                    <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
-                      <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
-                    </button>
+
+                  <dl className="m-0 flex flex-col gap-3 text-[15px]">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ng-dust">{t('cart.subtotal')}</dt>
+                      <dd className="m-0">{formatTotal(subtotal)}</dd>
+                    </div>
+                    {voucher.discountAmount ? (
+                      <>
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-ng-dust">Voucher {voucher.appliedVoucher?.code}</dt>
+                          <dd className="m-0 text-ng-sand">-{formatTotal(voucher.discountAmount)}</dd>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-ng-dust">{t('cart.afterVoucher')}</dt>
+                          <dd className="m-0">{formatTotal(totalAfterVoucher)}</dd>
+                        </div>
+                      </>
+                    ) : null}
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ng-dust">{t('cart.giftTitle')}</dt>
+                      <dd className="m-0 text-ng-sand">{t('cart.giftFree')}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ng-dust">{t('checkout.shipping')}</dt>
+                      <dd className="m-0 text-right text-ng-ash">{t('cart.shippingAtCheckout')}</dd>
+                    </div>
+                  </dl>
+
+                  {/* The saving the buyer is weighing the total against, at the moment they weigh it.
+                      Every other storefront page names the member price — home, catalog, product, the
+                      account page — and the checkout one step later names this exact amount. Built from the
+                      message keys those pages already use, so there is no second wording to keep in step. */}
+                  {offerMemberSignIn ? (
+                    <div className="flex flex-col gap-1.5 border border-ng-bone/20 p-4 text-sm">
+                      <span>{t('price.memberTier')} · {t('price.saveShort', { amount: formatTotal(memberSaving) })}</span>
+                      <Link to="/customer" className="ng-link ng-mono inline-flex min-h-[44px] items-center underline underline-offset-4">{t('why.member.cta')}</Link>
+                    </div>
                   ) : null}
-                </div>
 
-                <dl className="m-0 flex flex-col gap-3 text-[15px]">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-ng-dust">{t('cart.subtotal')}</dt>
-                    <dd className="m-0">{formatTotal(subtotal)}</dd>
-                  </div>
-                  {voucher.discountAmount ? (
-                    <>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-ng-dust">Voucher {voucher.appliedVoucher?.code}</dt>
-                        <dd className="m-0 text-ng-sand">-{formatTotal(voucher.discountAmount)}</dd>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-ng-dust">{t('cart.afterVoucher')}</dt>
-                        <dd className="m-0">{formatTotal(totalAfterVoucher)}</dd>
-                      </div>
-                    </>
-                  ) : null}
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-ng-dust">{t('cart.giftTitle')}</dt>
-                    <dd className="m-0 text-ng-sand">{t('cart.giftFree')}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-ng-dust">{t('checkout.shipping')}</dt>
-                    <dd className="m-0 text-right text-ng-ash">{t('cart.shippingAtCheckout')}</dd>
-                  </div>
-                </dl>
-
-                {/* The saving the buyer is weighing the total against, at the moment they weigh it.
-                    Every other storefront page names the member price — home, catalog, product, the
-                    account page — and the checkout one step later names this exact amount. Built from the
-                    message keys those pages already use, so there is no second wording to keep in step. */}
-                {offerMemberSignIn ? (
-                  <div className="flex flex-col gap-1.5 border border-ng-bone/20 p-4 text-sm">
-                    <span>{t('price.memberTier')} · {t('price.saveShort', { amount: formatTotal(memberSaving) })}</span>
-                    <Link to="/customer" className="ng-link ng-mono inline-flex min-h-[44px] items-center underline underline-offset-4">{t('why.member.cta')}</Link>
-                  </div>
-                ) : null}
-
-                {items.length ? (
-                  <Link to="/checkout" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.toCheckout')}</Link>
-                ) : (
-                  <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
-                )}
-                <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
-              </aside>
+                  {items.length ? (
+                    <Link to="/checkout" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.toCheckout')}</Link>
+                  ) : (
+                    <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
+                  )}
+                  <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
+                </aside>
+              ) : null}
             </div>
           </div>
         </section>

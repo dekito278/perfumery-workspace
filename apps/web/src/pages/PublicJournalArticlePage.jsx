@@ -175,12 +175,12 @@ const PublicJournalArticlePage = () => {
           <article lang="id">
             <header className="ng-section !border-b-0 !pb-14 !pt-20 md:!pt-28">
               <div className="mx-auto flex max-w-[880px] flex-col items-center gap-7 text-center">
-                <p className="ng-mono m-0 flex flex-wrap justify-center gap-x-3.5 gap-y-1 text-ng-ash">
+                <p className="ng-mono m-0 flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1 text-ng-ash">
                   <Link to={`/journal`} className="inline-flex min-h-[44px] items-center text-ng-ember no-underline">{getJournalCategoryLabel(post.category)}</Link>
-                  <span aria-hidden="true">·</span>
-                  <span>{formatDate(post.published_at || post.updated || post.created, t('fmt.dateLocale'))}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{t('journal.minutesRead', { n: readingMinutes })}</span>
+                  {/* Each dot travels with the item after it, so a wrapped line starts with "·" instead of the
+                      line above ending in one (seen on a phone, 2026-11-02). */}
+                  <span><span aria-hidden="true" className="mr-3.5">·</span>{formatDate(post.published_at || post.updated || post.created, t('fmt.dateLocale'))}</span>
+                  <span><span aria-hidden="true" className="mr-3.5">·</span>{t('journal.minutesRead', { n: readingMinutes })}</span>
                 </p>
                 <h1 className="ng-display text-[44px] leading-[1.02] md:text-[80px]">{post.title}</h1>
                 {post.excerpt ? (
@@ -189,9 +189,12 @@ const PublicJournalArticlePage = () => {
               </div>
             </header>
 
-            <div className="px-[var(--ng-gutter)]">
-              <JournalCoverFrame post={post} className="ng-cover mx-auto max-w-[1200px] border-ng-bone/10" imageClassName="aspect-[16/8]" eager />
-            </div>
+            {/* Only a real cover: the placeholder was an empty box repeating the title printed just above it. */}
+            {post.cover_image_url ? (
+              <div className="px-[var(--ng-gutter)]">
+                <JournalCoverFrame post={post} className="ng-cover mx-auto max-w-[1200px] border-ng-bone/10" imageClassName="aspect-[16/8]" eager />
+              </div>
+            ) : null}
 
             <div className="ng-section">
               <div className="mx-auto flex max-w-[680px] flex-col gap-10">
