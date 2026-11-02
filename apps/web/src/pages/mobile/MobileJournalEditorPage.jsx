@@ -15,6 +15,7 @@ import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { confirmAction } from '@/utils/confirmAction.js';
 import {
   JOURNAL_CATEGORIES,
@@ -63,6 +64,7 @@ const MobileJournalEditorPage = () => {
   const isEditMode = Boolean(id);
   const { getJournalPostById, createJournalPost, updateJournalPost } = useJournalPosts();
   const { getFormulas } = useFormulas();
+  const storefrontProducts = useStorefrontProducts();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formulas, setFormulas] = useState([]);
@@ -250,6 +252,25 @@ const MobileJournalEditorPage = () => {
                 </SelectContent>
               </Select>
             </MobileFormField>
+
+            {/* The desktop editor had this and the phone did not: the value survived a save from here,
+                but there was no way to set it, so an article written on the phone could not link to the
+                bottle it is about. */}
+            <MobileFormField id="journal-related-product" label="Produk terkait" helper="Kalau diisi, kartu produknya muncul di bawah artikel dengan tombol ke halaman produk.">
+              <Select value={formState.related_product_slug} onValueChange={(value) => handleChange('related_product_slug', value)}>
+                <SelectTrigger id="journal-related-product" className="h-11 rounded-2xl bg-white">
+                  <SelectValue placeholder="Optional product link" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Tanpa produk terkait</SelectItem>
+                  {storefrontProducts.map((product) => (
+                    <SelectItem key={product.slug} value={product.slug}>
+                      {product.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </MobileFormField>
           </section>
 
           <section className="space-y-4 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
@@ -284,7 +305,7 @@ const MobileJournalEditorPage = () => {
               />
             </MobileFormField>
 
-            <MobileFormField id="journal-seo-title" label="Judul SEO" helper="Opsional untuk halaman publik nanti.">
+            <MobileFormField id="journal-seo-title" label="Judul SEO" helper="Judul di tab browser dan hasil pencarian Google. Kosongkan untuk memakai judul utama.">
               <Input
                 id="journal-seo-title"
                 value={formState.seo_title}

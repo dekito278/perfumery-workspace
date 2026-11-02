@@ -41,6 +41,13 @@ const page = read('pages', 'PublicJournalArticlePage.jsx');
 assert.match(page, /<JournalRelatedProduct post=\{post\} \/>/, 'the article offers the perfume it is about');
 assert.doesNotMatch(page, /<JournalRelatedProduct[^>]*\bmobile\b/, 'with no phone variant left to ask for');
 
+// And both Studio editors can SET it. The phone editor kept the value through a save but had no control
+// for it until 2026-11-02, so an article written on the phone could not name its perfume.
+for (const editor of [['pages', 'JournalEditorPage.jsx'], ['pages', 'mobile', 'MobileJournalEditorPage.jsx']]) {
+  assert.match(read(...editor), /handleChange\('related_product_slug', value\)/,
+    `${editor.join('/')} offers no way to choose the related product`);
+}
+
 // --- 3. A missing or stale link renders NOTHING ------------------------------------------------------
 // A product can be unpublished or re-slugged long after the article was written. A dead link under a
 // story is worse than no link.

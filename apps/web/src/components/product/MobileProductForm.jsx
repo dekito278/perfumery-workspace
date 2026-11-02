@@ -54,6 +54,12 @@ export const emptyProduct = {
   baseNotes: '',
   tags: '',
   description: '',
+  descriptionEn: '',
+  notesEn: '',
+  topNotesEn: '',
+  heartNotesEn: '',
+  baseNotesEn: '',
+  concentration: 'Eau de Parfum',
   imageUrl: '',
   images: [],
   featured: true,
@@ -443,6 +449,12 @@ const MobileProductForm = ({ product = null, onSaved }) => {
           <span className="text-xs text-[#6b7280]">Tampil di halaman produk sebagai "Rilis …". Kosongkan bila belum pasti — tidak ditampilkan.</span>
         </div>
         <div className="grid gap-1.5">
+          <ProductInputLabel>Konsentrasi</ProductInputLabel>
+          <input list="mobile-product-concentrations" value={form.concentration || ''} onChange={(event) => updateField('concentration', event.target.value)} placeholder="Eau de Parfum" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+          <datalist id="mobile-product-concentrations">{['Eau de Parfum', 'Extrait de Parfum', 'Parfum', 'Eau de Toilette'].map((name) => <option key={name} value={name} />)}</datalist>
+          <span className="text-xs text-[#6b7280]">Tampil di daftar keterangan halaman produk.</span>
+        </div>
+        <div className="grid gap-1.5">
           <ProductInputLabel>Ringkasan notes</ProductInputLabel>
           <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Ringkasan singkat katalog" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
         </div>
@@ -532,6 +544,15 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         <input value={form.heartNotes || ''} onChange={(event) => updateField('heartNotes', event.target.value)} placeholder="Heart notes, pisahkan dengan koma" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
         <input value={form.baseNotes || ''} onChange={(event) => updateField('baseNotes', event.target.value)} placeholder="Base notes, pisahkan dengan koma" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
         <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Deskripsi" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+        <div className="grid gap-1.5 border-t border-[#e5e7eb] pt-3">
+          <ProductInputLabel>Teks toko Inggris (/en)</ProductInputLabel>
+          <span className="text-xs text-[#6b7280]">Kolom yang kosong memakai teks Indonesia di atas.</span>
+        </div>
+        <textarea value={form.descriptionEn || ''} onChange={(event) => updateField('descriptionEn', event.target.value)} placeholder="Description (EN)" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+        <input value={form.notesEn || ''} onChange={(event) => updateField('notesEn', event.target.value)} placeholder="Notes summary (EN)" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+        <input value={form.topNotesEn || ''} onChange={(event) => updateField('topNotesEn', event.target.value)} placeholder="Top notes (EN), pisahkan dengan koma" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+        <input value={form.heartNotesEn || ''} onChange={(event) => updateField('heartNotesEn', event.target.value)} placeholder="Heart notes (EN), pisahkan dengan koma" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+        <input value={form.baseNotesEn || ''} onChange={(event) => updateField('baseNotesEn', event.target.value)} placeholder="Base notes (EN), pisahkan dengan koma" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
       </ProductFormSection>
 
       <ProductFormSection

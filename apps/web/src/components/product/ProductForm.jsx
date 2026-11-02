@@ -49,6 +49,12 @@ export const emptyProduct = {
   heartNotes: '',
   baseNotes: '',
   description: '',
+  descriptionEn: '',
+  notesEn: '',
+  topNotesEn: '',
+  heartNotesEn: '',
+  baseNotesEn: '',
+  concentration: 'Eau de Parfum',
   imageUrl: '',
   images: [],
   tags: '',
@@ -344,6 +350,12 @@ const ProductForm = ({ product = null, onSaved }) => {
             <input type="number" inputMode="numeric" min="1900" max="2100" value={form.launchYear ?? ''} onChange={(event) => updateField('launchYear', event.target.value)} placeholder="Contoh: 2025" className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <span className="mt-1 block text-xs text-muted-foreground">Tampil di halaman produk sebagai "Rilis …". Kosongkan bila belum pasti — tidak ditampilkan.</span>
           </label>
+          <label>
+            <span className="text-xs font-bold uppercase text-muted-foreground">Konsentrasi</span>
+            <input list="product-concentrations" value={form.concentration || ''} onChange={(event) => updateField('concentration', event.target.value)} placeholder="Eau de Parfum" className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <datalist id="product-concentrations">{['Eau de Parfum', 'Extrait de Parfum', 'Parfum', 'Eau de Toilette'].map((name) => <option key={name} value={name} />)}</datalist>
+            <span className="mt-1 block text-xs text-muted-foreground">Tampil di daftar keterangan halaman produk.</span>
+          </label>
           <label className="sm:col-span-2">
             <span className="text-xs font-bold uppercase text-muted-foreground">Ringkasan notes</span>
             <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Rose, musk, sandalwood" />
@@ -501,6 +513,28 @@ const ProductForm = ({ product = null, onSaved }) => {
             <span className="text-xs font-bold uppercase text-muted-foreground">Deskripsi</span>
             <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} rows={3} className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Deskripsi produk" />
           </label>
+          <div className="sm:col-span-2 border-t pt-4">
+            <div className="text-xs font-bold uppercase text-muted-foreground">Teks toko Inggris (/en)</div>
+            <p className="mt-1 text-xs text-muted-foreground">Kolom yang kosong memakai teks Indonesia di atas.</p>
+          </div>
+          <label className="sm:col-span-2">
+            <span className="text-xs font-bold uppercase text-muted-foreground">Description (EN)</span>
+            <textarea value={form.descriptionEn || ''} onChange={(event) => updateField('descriptionEn', event.target.value)} rows={3} className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Product description in English" />
+          </label>
+          <label className="sm:col-span-2">
+            <span className="text-xs font-bold uppercase text-muted-foreground">Notes summary (EN)</span>
+            <input value={form.notesEn || ''} onChange={(event) => updateField('notesEn', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Rose, musk, sandalwood" />
+          </label>
+          {[
+            ['topNotesEn', 'Top notes (EN)'],
+            ['heartNotesEn', 'Heart notes (EN)'],
+            ['baseNotesEn', 'Base notes (EN)'],
+          ].map(([key, label]) => (
+            <label key={key}>
+              <span className="text-xs font-bold uppercase text-muted-foreground">{label}</span>
+              <input value={form[key] || ''} onChange={(event) => updateField(key, event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Pisahkan dengan koma" />
+            </label>
+          ))}
           <label className="flex items-center gap-3 rounded-2xl border bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
             <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
             Featured di home
