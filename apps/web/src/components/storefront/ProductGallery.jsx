@@ -189,9 +189,11 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
               <button type="button" onClick={(e) => { e.stopPropagation(); goToImage(1); }} className="absolute right-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center bg-ng-ink/80 text-ng-bone" aria-label={t('a11y.galleryNextImage')}>
                 <ChevronRight className="h-5 w-5" />
               </button>
-              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/30 px-2 py-1 backdrop-blur">
+              {/* Where you are, not a control: the thumbnails below are the 44px way to pick a photo. These were
+                  6px buttons, and the redesign's colour pass left them transparent — invisible (2026-11-02). */}
+              <div aria-hidden="true" className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/30 px-2 py-1 backdrop-blur">
                 {images.map((image, index) => (
-                  <button key={image} type="button" onClick={(e) => { e.stopPropagation(); setActiveIndex(index); }} className={cn('h-1.5 rounded-full transition-all', index === activeIndex ? 'w-5 bg-transparent' : 'w-1.5 bg-transparent')} aria-label={t('a11y.galleryShowImage', { number: index + 1 })} />
+                  <span key={image} className={cn('h-1.5 rounded-full transition-all', index === activeIndex ? 'w-5 bg-ng-bone' : 'w-1.5 bg-ng-bone/40')} />
                 ))}
               </div>
             </>

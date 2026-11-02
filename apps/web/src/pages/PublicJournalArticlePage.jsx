@@ -174,7 +174,7 @@ const PublicJournalArticlePage = () => {
             <header className="ng-section !border-b-0 !pb-14 !pt-20 md:!pt-28">
               <div className="mx-auto flex max-w-[880px] flex-col items-center gap-7 text-center">
                 <p className="ng-mono m-0 flex flex-wrap justify-center gap-x-3.5 gap-y-1 text-ng-ash">
-                  <Link to={`/journal`} className="text-ng-ember no-underline">{getJournalCategoryLabel(post.category)}</Link>
+                  <Link to={`/journal`} className="inline-flex min-h-[44px] items-center text-ng-ember no-underline">{getJournalCategoryLabel(post.category)}</Link>
                   <span aria-hidden="true">·</span>
                   <span>{formatDate(post.published_at || post.updated || post.created, t('fmt.dateLocale'))}</span>
                   <span aria-hidden="true">·</span>

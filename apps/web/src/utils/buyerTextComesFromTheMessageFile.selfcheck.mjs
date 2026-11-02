@@ -214,11 +214,13 @@ for (const value of MUST_BE_SEEN) {
 // A missing key renders the key itself, which is worse than either language.
 // a11y.productAction, a11y.back, a11y.clearSearch and pay.secureEyebrow left with the phone storefront
 // (2026-10-31); storefrontMessages refuses a key nothing reads, so they are gone from the file too.
+// a11y.galleryShowImage followed on 2026-11-02: the gallery's dots stopped being buttons (the thumbnails
+// are the control), so nothing names them any more.
 const PAIRED_KEYS = [
   'a11y.backToTop', 'a11y.galleryPrevImage', 'a11y.galleryNextImage',
   'a11y.galleryCloseZoom', 'a11y.galleryPrev', 'a11y.galleryNext',
   'a11y.breadcrumb', 'bsp.contactPlaceholder',
-  'a11y.galleryShowImage', 'a11y.gallerySelectImage', 'a11y.galleryZoom',
+  'a11y.gallerySelectImage', 'a11y.galleryZoom',
 ];
 for (const key of PAIRED_KEYS) {
   for (const shop of ['id', 'en']) {
