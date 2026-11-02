@@ -389,7 +389,9 @@ const CheckoutPage = () => {
                 {items.some((item) => item.priceChanged) ? (
                   <p className="ng-notice" role="status">{t('checkout.pricesUpdated')}</p>
                 ) : null}
-                {!canSubmitCheckout && items.length ? <p role="status" className="ng-notice ng-notice--error">{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
+                {/* A to-do list until the buyer tries to order, an error after: in red on arrival it read as a failure
+                    before anything had been typed (2026-11-02). */}
+                {!canSubmitCheckout && items.length ? <p role="status" className={`ng-notice${triedSubmit ? ' ng-notice--error' : ''}`}>{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
                 <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={!items.length || saving}>
                   <CreditCard className="h-4 w-4" aria-hidden="true" />
                   {saving ? t('checkout.processing') : t('checkout.placeOrder')}

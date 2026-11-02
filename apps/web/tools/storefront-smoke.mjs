@@ -222,6 +222,15 @@ const addToCart = async (page, run, prefix, M) => {
   await page.waitForTimeout(600); // let it finish sliding in before measuring where it sits
   const box = await toast.boundingBox().catch(() => null);
   check(run, 'add to cart is announced, at the top', box && box.y < 200, box ? `toast at y=${Math.round(box.y)}` : 'no toast');
+  // In the shop's colours: the toaster sits outside every page and arrived as a white card (2026-11-02).
+  const toastLook = await toast.evaluate((el) => {
+    const lum = (c) => (c.match(/[\d.]+/g) || [255, 255, 255]).slice(0, 3).map(Number)
+      .map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+      .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const description = el.querySelector('[data-description]');
+    return { card: lum(getComputedStyle(el).backgroundColor), note: description ? lum(getComputedStyle(description).color) : 1 };
+  }).catch(() => ({ card: 1, note: 0 }));
+  check(run, 'and the toast wears the shop: a dark card with readable words', toastLook.card < 0.05 && toastLook.note > 0.3, JSON.stringify(toastLook));
   // The gift prompt is open now, and scrolling to the end brings the product page's sticky buy bar in.
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.waitForTimeout(400);
@@ -691,6 +700,15 @@ const runMotion = async (browser) => {
     scroll: getComputedStyle(document.documentElement).scrollBehavior,
   }));
   check(run, 'with reduced motion nothing loops and nothing glides', state.running === 0 && state.scroll === 'auto', `${state.running} looping, scroll-behavior ${state.scroll}`);
+  // An empty cart sums nothing: its summary used to read Subtotal Rp 0 with a free vial (2026-11-02).
+  await goto(page, '/cart');
+  check(run, 'an empty cart shows no summary box', !(await page.locator('#cart-summary-title').count()));
+  // No article has a cover yet; the placeholder was an empty box repeating the title beside it.
+  for (const path of ['/journal', '/articles/kisah-jason-vorhees-32209a44']) {
+    await goto(page, path);
+    const empty = await page.evaluate(() => [...document.querySelectorAll('figure.ng-cover')].filter((f) => !f.querySelector('img')).length);
+    check(run, `${path.split('/')[1]}: no empty placeholder cover`, empty === 0, `${empty} empty`);
+  }
   await context.close();
 };
 
