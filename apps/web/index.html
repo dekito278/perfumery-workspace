@@ -241,6 +241,19 @@
 				font-family: "Cormorant Garamond", Georgia, serif;
 				font-weight: 400;
 			}
+			html.boot-shop .app-boot-shop {
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 20px;
+			}
+			html.boot-shop .app-boot-fallback .app-boot-wordmark {
+				margin: 0;
+				color: #ede6d6;
+				font-family: "Cormorant Garamond", Georgia, serif;
+				font-size: 22px;
+				letter-spacing: 0.32em;
+			}
 			html.boot-shop .app-boot-spinner {
 				border-color: rgba(237, 230, 214, 0.18);
 				border-top-color: #ede6d6;
@@ -274,143 +287,27 @@
 		</div>
 		<script>
 			(function () {
-				// A copy of EN_PREFIX in tools/seo-artifacts.mjs — plain script in the shell cannot import it.
+				// Only the recovery screen below has words to choose between the two shops. A copy of EN_PREFIX in
+				// tools/seo-artifacts.mjs: plain script in the shell cannot import it.
 				var EN_PREFIX = '/en';
-
-				var PUBLIC_ROUTE_FALLBACKS = {
-					'/': {
-						eyebrow: 'Artisan Perfumery Atelier',
-						title: 'SOLIVAGANT',
-						headline: 'Fragrance as a memory object.',
-						description: 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.',
-						items: ['Hero', 'Perfumer story', 'Collection preview', 'Bespoke ritual'],
-					},
-					'/home': {
-						eyebrow: 'Artisan Perfumery Atelier',
-						title: 'SOLIVAGANT',
-						headline: 'Fragrance as a memory object.',
-						description: 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.',
-						items: ['Hero', 'Perfumer story', 'Collection preview', 'Bespoke ritual'],
-					},
-					'/catalog': {
-						eyebrow: 'Fragrance Collection',
-						title: 'Fragrance Collection',
-						headline: 'Quiet signatures for skin, atmosphere, and ritual.',
-						description: 'Explore the SOLIVAGANT fragrance collection: limited artisan perfume objects and quiet daily signatures. Each public product preview includes notes, concentration, size variants, and price in Rupiah.',
-						items: ['Limited', 'Woody', 'Floral', 'Aquatic', 'Gourmand'],
-					},
-					'/bespoke': {
-						eyebrow: 'Bespoke Perfume Consultation',
-						title: 'Bespoke Perfume Consultation',
-						headline: 'Request parfum custom. Pre-order 7-14 hari.',
-						description: 'A public consultation flow for custom perfume requests: Aroma, Preferensi, Botol, Ongkir, and Bayar. The internal studio brief, formula, validation, and production details stay private.',
-						items: ['Aroma', 'Preferensi', 'Botol', 'Ongkir', 'Bayar'],
-					},
-					'/about': {
-						eyebrow: 'Artisan Perfume Atelier',
-						title: 'About SOLIVAGANT',
-						headline: 'Made by hand, one bottle at a time.',
-						description: 'SOLIVAGANT is the artisan perfume atelier of Dekito, in Indonesia. Every bottle is blended and packed in the atelier and sold straight to the person who wears it.',
-						items: ['Eau de Parfum', '30 ml', 'Indonesia', 'Bespoke'],
-					},
-					'/journal': {
-						eyebrow: 'Journal',
-						title: 'Journal',
-						headline: 'Field notes from the atelier.',
-						description: 'Editorial notes on scent memory, raw materials, atelier process, product stories, and perfumery culture.',
-						items: ['Scent memory', 'Raw materials', 'Atelier process', 'Product stories'],
-					},
-					'/track-order': {
-						eyebrow: 'Track Your Order',
-						title: 'Track Your Order',
-						headline: 'Customer order status.',
-						description: 'Look up an order by its order number (DKT-...): payment status and shipment timeline.',
-						items: ['Order number', 'Payment', 'Shipment'],
-					},
-					'/cart': {
-						eyebrow: 'Customer Cart',
-						title: 'Cart',
-						headline: 'Selected fragrance objects.',
-						description: 'Cart items, quantity controls, subtotal, and checkout CTA for public customers.',
-						items: ['Cart items', 'Quantity controls', 'Subtotal', 'Checkout'],
-					},
-					'/checkout': {
-						eyebrow: 'Checkout',
-						title: 'Checkout',
-						headline: 'Customer and shipping information.',
-						description: 'Customer information, a live shipping quote, an optional voucher, and payment by manual bank transfer or DOKU.',
-						items: ['Customer information', 'Shipping', 'Payment', 'Order summary'],
-					},
-				};
-
-				function escapeHtml(value) {
-					return String(value || '').replace(/[&<>"']/g, function (character) {
-						return ({
-							'&': '&amp;',
-							'<': '&lt;',
-							'>': '&gt;',
-							'"': '&quot;',
-							"'": '&#39;',
-						})[character];
-					});
-				}
-
-				function normalizePathname(pathname) {
-					var normalized = String(pathname || '/').replace(/\/+$/, '');
-					return normalized || '/';
-				}
-
-				// The English shop is the same app at a second address, and every one of its routes fell through to
-				// the "Page not found" default below — 66 of them are in the live sitemap. A visitor there, on the
-				// slowest connections this shop serves, was told the page does not exist for as long as the bundle
-				// took to arrive, and forever if it never did. The desktop entries above are already written in
-				// English, so the twin only needs its prefix taken off before the lookup. The prefix is kept so the
-				// links out of the boot screen stay inside the shop the visitor is actually in.
-				function splitLocale(pathname) {
-					if (pathname === EN_PREFIX) return { prefix: EN_PREFIX, path: '/' };
-					if (pathname.indexOf(EN_PREFIX + '/') === 0) {
-						return { prefix: EN_PREFIX, path: pathname.slice(EN_PREFIX.length) };
-					}
-					return { prefix: '', path: pathname };
-				}
-
-				function getRouteGroupFallbackContent(pathname) {
-					if (pathname.indexOf('/products/') === 0 || pathname.indexOf('/catalog/') === 0) {
-						return PUBLIC_ROUTE_FALLBACKS['/catalog'];
-					}
-
-					if (pathname.indexOf('/articles/') === 0) {
-						return PUBLIC_ROUTE_FALLBACKS['/journal'];
-					}
-
-					return null;
-				}
-
-				function getFallbackContent() {
-					var route = splitLocale(normalizePathname(window.location.pathname));
-					return PUBLIC_ROUTE_FALLBACKS[route.path] || getRouteGroupFallbackContent(route.path) || {
-						eyebrow: 'SOLIVAGANT',
-						title: 'Page not found.',
-						headline: 'This public atelier page could not be found.',
-						description: 'Return to the homepage or explore the SOLIVAGANT fragrance collection.',
-						items: ['Homepage', 'Collection'],
-					};
-				}
-
-				// One set of links for every screen since the phone storefront retired (2026-10-31).
-				function getBootLinks() {
-					var route = splitLocale(normalizePathname(window.location.pathname));
-					return [
-						{ href: route.prefix + '/catalog', label: 'Explore Collection' },
-						{ href: route.prefix + '/bespoke', label: 'Book Bespoke Consultation' },
-					];
-				}
+				var ENGLISH = window.location.pathname === EN_PREFIX || window.location.pathname.indexOf(EN_PREFIX + '/') === 0;
 
 				function renderPublicBootFallback() {
 					var root = document.getElementById('root');
 					if (!root) return;
 
-					var content = getFallbackContent();
+					// THE SHOP gets its own dark page: the wordmark and a spinner. Until 2026-11-03 it got Studio's
+					// "APP INITIALIZATION / Loading workspace / Menyiapkan halaman, data, dan shell aplikasi." over a
+					// grey sidebar skeleton — Indonesian on the English shop too — for as long as a slow phone took to
+					// fetch the bundle. A per-route table of headlines sat beside it, computed and never shown, still
+					// promising "Pre-order 7-14 hari". No words now: nothing to translate, nothing to go stale.
+					if (document.documentElement.classList.contains('boot-shop')) {
+						root.innerHTML = '<main class="app-boot-fallback app-boot-shop" role="status" aria-live="polite" aria-busy="true" aria-label="SOLIVAGANT">'
+							+ '<span class="app-boot-spinner" aria-hidden="true"></span>'
+							+ '<p class="app-boot-wordmark">SOLIVAGANT</p>'
+							+ '</main>';
+						return;
+					}
 
 					root.innerHTML = [
 						'<main class="app-boot-fallback" aria-label="Solivagant app initialization" role="status" aria-live="polite" aria-busy="true">',
@@ -507,11 +404,12 @@
 						'  <div class="app-boot-shell">',
 						'    <section class="app-boot-status">',
 						'      <div>',
-						'        <p>App recovery</p>',
-						'        <h1>Cache perlu direset</h1>',
-						'        <p class="app-boot-description">Refresh otomatis belum berhasil. Reset cache aplikasi untuk memuat versi terbaru.</p>',
+						'        <h1>' + (ENGLISH ? 'The page did not load' : 'Cache perlu direset') + '</h1>',
+						'        <p class="app-boot-description">' + (ENGLISH
+							? 'Reloading did not help. Reset the cache to load the latest version.'
+							: 'Refresh otomatis belum berhasil. Reset cache aplikasi untuk memuat versi terbaru.') + '</p>',
 						'      </div>',
-						'    <button type="button" data-reset-app-cache style="margin-top:16px;min-height:44px;border:0;border-radius:14px;background:#263d27;color:white;padding:0 18px;font-weight:800;">Reset app cache</button>',
+						'    <button type="button" data-reset-app-cache style="margin-top:16px;min-height:44px;border:0;border-radius:14px;background:#263d27;color:white;padding:0 18px;font-weight:800;">' + (ENGLISH ? 'Reset cache' : 'Reset cache aplikasi') + '</button>',
 						'    </section>',
 						'  </div>',
 						'</div>',

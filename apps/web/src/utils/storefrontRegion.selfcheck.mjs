@@ -176,54 +176,40 @@ assert.match(MESSAGES.en['region.label'], /Wilayah harga/);
 assert.match(read('components', 'storefront', 'PublicHeader.jsx'), /<RegionSwitch /, 'in the desktop header');
 // The phone's own header retired with the phone storefront (2026-10-31): the header above is the phone's too.
 
-// --- The boot screen must know the English shop exists too ---------------------------------------------
-// index.html renders a per-route fallback synchronously, before React mounts — it is what every visitor
-// sees while the bundle arrives, and all they ever see if it never does. It looked routes up by their
-// literal pathname, so every /en address fell through to the "Page not found" default: 66 of them are in
-// the live sitemap, hreflang-twinned and prerendered. The visitors told the shop does not exist were the
-// overseas ones, on the slowest connections it serves.
-//
-// The shell's own resolver is RUN here rather than matched as text, so this fails on the behaviour and
-// not on the spelling.
+// --- The boot screen, before the bundle arrives -----------------------------------------------------------
+// index.html paints #root synchronously, before React mounts: what every visitor sees while a slow phone
+// fetches the bundle, and the recovery screen if it never arrives. Until 2026-11-03 a shop visitor got
+// Studio's "APP INITIALIZATION / Loading workspace / Menyiapkan halaman…" over a sidebar skeleton, in
+// Indonesian on the English shop too, while a per-route table of headlines beside it (guarded here, and
+// never shown) still promised "Pre-order 7-14 hari". The shell's own functions are RUN against a fake page,
+// so this fails on what a visitor sees and not on the spelling.
 const shell = readFileSync(join(root, '..', 'index.html'), 'utf8');
-const resolverSource = shell.match(/var EN_PREFIX[\s\S]*?\n\t*function getBootLinks\(\)[\s\S]*?\n\t\t\t\t\}/);
-assert.ok(resolverSource, 'the boot fallback resolver could not be found in index.html — the derivation broke');
-const resolveBoot = new Function('pathname',
-  `${resolverSource[0]}; window = { location: { pathname: pathname } };`
-  + ' return { content: getFallbackContent(), links: getBootLinks() };');
+const bootSource = shell.match(/var EN_PREFIX[\s\S]*?(?=\n\t*renderPublicBootFallback\(\);)/);
+const recoverySource = shell.match(/function renderManualRecovery\(\) \{[\s\S]*?\n\t\t\t\t\}/);
+assert.ok(bootSource && recoverySource, 'the boot screen could not be found in index.html — the derivation broke');
+const bootAt = (pathname, { shop }) => {
+  const page = { innerHTML: '', querySelector: () => null };
+  const fakeDocument = { getElementById: () => page, documentElement: { classList: { contains: (name) => shop && name === 'boot-shop' } } };
+  const run = new Function('window', 'document', `${bootSource[0]}\n${recoverySource[0]}\n`
+    + 'renderPublicBootFallback(); var boot = arguments[2].innerHTML; renderManualRecovery();'
+    + ' return { boot: boot, recovery: arguments[2].innerHTML };');
+  const html = run({ location: { pathname } }, fakeDocument, page);
+  const text = (markup) => markup.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return { boot: text(html.boot), recovery: text(html.recovery) };
+};
+for (const path of ['/home', '/en/home', '/en/catalog/hug-n-1', '/cart']) {
+  assert.equal(bootAt(path, { shop: true }).boot, 'SOLIVAGANT',
+    `${path} must open on the shop's wordmark alone — no Studio words, nothing in the other shop's language`);
+}
+assert.match(bootAt('/studio', { shop: false }).boot, /Loading workspace/, 'the Studio keeps its own boot screen');
+assert.match(bootAt('/en/catalog', { shop: true }).recovery, /^The page did not load/, 'the English shop recovers in English');
+assert.doesNotMatch(bootAt('/en/catalog', { shop: true }).recovery, /Cache perlu|berhasil/, 'with no Indonesian in it');
+assert.match(bootAt('/catalog', { shop: true }).recovery, /^Cache perlu direset/, 'and the Indonesian shop in Indonesian');
 
 // EN_PREFIX in the shell is a copy — plain script cannot import the module that owns it.
 const ownedPrefix = readFileSync(join(root, '..', 'tools', 'seo-artifacts.mjs'), 'utf8')
   .match(/export const EN_PREFIX = '([^']+)'/)[1];
 assert.match(shell, new RegExp(`var EN_PREFIX = '${ownedPrefix}';`),
   `the shell's copy of EN_PREFIX has drifted from tools/seo-artifacts.mjs ('${ownedPrefix}')`);
-
-// Derived from the routes the shop actually advertises, so a route added later is covered by being added
-// there — the same list build.mjs checks against App.jsx before a deploy can ship a link to a 404.
-const advertised = readFileSync(join(root, '..', 'tools', 'seo-artifacts.mjs'), 'utf8')
-  .match(/STATIC_PUBLIC_ROUTES = \[([^\]]*)\]/)[1]
-  .match(/'([^']+)'/g).map((entry) => entry.replace(/'/g, ''));
-assert.ok(advertised.length >= 4, `only ${advertised.length} advertised routes parsed — the derivation broke`);
-
-const lost = [];
-for (const route of [ownedPrefix, ...advertised.map((r) => `${ownedPrefix}${r}`), `${ownedPrefix}/catalog/hug-n-1`]) {
-  const { content, links } = resolveBoot(route);
-  if (/not found/i.test(content.title)) lost.push(`${route}: "${content.title}"`);
-  // And the way out has to stay inside the shop the visitor is in. Linking an English visitor to
-  // /catalog hands them the Indonesian shop as the fix for a page that was never missing.
-  for (const link of links) {
-    assert.ok(link.href.startsWith(`${ownedPrefix}/`),
-      `the boot screen on ${route} links to ${link.href}, which leaves the English shop`);
-  }
-}
-assert.deepEqual(lost, [],
-  'the boot screen tells these English visitors their page does not exist, while the bundle is still on '
-  + `its way:\n  ${lost.join('\n  ')}`);
-
-// The must-pass half: a genuinely unknown path still says so, and the Indonesian shop still links home.
-const unknown = resolveBoot('/tidak-ada-halaman-ini');
-assert.match(unknown.content.title, /not found/i, 'a real 404 must still read as one');
-assert.equal(resolveBoot('/catalog').links[0].href, '/catalog',
-  'and an Indonesian visitor must not be sent into the English shop');
 
 console.log('storefrontRegion selfcheck OK (the address decides the shop for everyone; the switch moves between addresses and is never a gate)');

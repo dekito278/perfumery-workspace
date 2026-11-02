@@ -10,7 +10,7 @@
 //      the English shop, which reads as a broken shop rather than an untranslated one. The guard fails on
 //      a missing key; at RUNTIME the lookup still falls back to Indonesian, because a blank button is
 //      worse again.
-//   2. Studio and admin screens are not in here. They have one reader, and he speaks Indonesian.
+//   2. Studio and admin screens are not in here. They have one reader, who speaks Indonesian.
 //   3. The English is not a translation where a translation would be a lie. An international buyer pays
 //      the export price and signing in does not lower it — the member discount is an Indonesian-order
 //      thing — so the English welcome page must not offer one. Same page, different true statement.
@@ -1356,7 +1356,7 @@ export const MESSAGES = {
     'nav.accountShort': 'Account',
     'about.eyebrow': 'ARTISAN PERFUME ATELIER',
     'about.title': 'Made by hand, one bottle at a time.',
-    'about.p1': 'SOLIVAGANT is the artisan perfume atelier of Dekito. Every bottle is blended and packed by him — no warehouse, no reseller in between.',
+    'about.p1': 'SOLIVAGANT is the artisan perfume atelier of Dekito. Every bottle is blended and packed by Dekito personally — no warehouse, no reseller in between.',
     'about.p2': 'The work is slow: a scent is built from raw materials, memory and ritual, then tried again and again until it reads true. Only what survives that is released, and some compositions never are.',
     'about.p3': 'Every fragrance is sold straight from the atelier to the person who wears it, in Indonesia and abroad. For a scent that is not in the collection, there is a bespoke service.',
     'about.factsTitle': 'Brand details',
@@ -1406,7 +1406,7 @@ export const MESSAGES = {
     'why.intl.body': 'Every product page shows its international price before you ask. Choose your country and the shipping and total appear with it — nothing waits until the end.',
     'why.intl.cta': 'Browse the collection',
     'why.atelier.title': 'Straight from the perfumer',
-    'why.atelier.body': 'Blended and packed in the atelier by Dekito himself. No warehouse, no reseller in between.',
+    'why.atelier.body': 'Blended and packed in the atelier by Dekito personally. No warehouse, no reseller in between.',
     'why.atelier.cta': 'Bespoke ritual',
     'why.first.title': 'First to know',
     'why.first.body': 'New releases, special sizes, and a handwritten card in every parcel — only for people who order direct.',

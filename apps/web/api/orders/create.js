@@ -15,6 +15,7 @@
 import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '../../src/utils/bespokeOrder.js';
+import { DEFAULT_SITE_FACTS, normalizeSiteFacts } from '../../src/data/siteFacts.js';
 import { validateVoucher } from '../../src/utils/voucherValidation.js';
 import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js';
 import {
@@ -80,6 +81,18 @@ const sbRpc = async (fn, body) => {
 // and storefront_product_prices all exist in production today, so the delay this was written for is over
 // and nothing routine reaches the swallow any more.
 const MISSING_RELATION = /42P01|42703|PGRST20[45]|does not exist|Could not find the (table|column)/i;
+
+// The bespoke lead time the buyer agreed to, as Dekito set it in Studio (Fakta Toko), for the brief's
+// record. A failed read must not stop an order: it falls back to the default, which is also what the
+// page shows when its own read fails.
+const bespokePreorderDays = async () => {
+  try {
+    const rows = await sbSelect('storefront_site_settings?select=facts&id=eq.default');
+    return normalizeSiteFacts(rows?.[0]?.facts).bespokeDays;
+  } catch {
+    return DEFAULT_SITE_FACTS.bespokeDays;
+  }
+};
 
 const sbSelectOptional = async (path) => {
   try {
@@ -541,6 +554,7 @@ export default async function handler(req, res) {
       voucherCode: voucherSnapshot?.code || '',
       voucherDiscount,
       paymentProvider: input.paymentProvider || 'manual',
+      preorderDays: await bespokePreorderDays(),
     } : null;
 
     const productItems = isBespoke ? [buildBespokeItem(briefRequest)] : catalog.resolved;

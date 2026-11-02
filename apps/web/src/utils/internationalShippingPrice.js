@@ -6,7 +6,7 @@
 // buyer pay" for a count of bottles, which is a published rule — see internationalShippingRates.js for
 // the rule and for why it replaced a hand-written card.
 //
-// The limits are answers, not gaps: more than six bottles, and any destination the carrier's zone sheet
+// The limits are answers, not gaps: more bottles than the policy's cap, and any destination the carrier's zone sheet
 // does not name, are quoted on request. Returning a number there would be inventing a price.
 import { EXPORT_PACKAGE_RATES } from '@/data/exportRates.js';
 import { normalizeExportShippingPolicy, supportUsdFor } from '@/utils/exportShippingPolicy.js';

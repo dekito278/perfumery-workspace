@@ -266,4 +266,16 @@ assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mentio
 
 }
 
+// The lead time in the brief is the one the buyer ticked, which Dekito sets in Studio (2026-11-03). The
+// brief used to say "7-14 days" whatever the page had promised; the server reads the setting and passes it.
+const ticked = { preorderAcknowledged: true };
+assert.match(buildBespokeNotes({ ...ticked, preorderDays: '10–21' }), /Pre-order acknowledgement: Accepted, 10–21 days/);
+assert.match(buildBespokeCheckoutDraft({ ...ticked, preorderDays: '10–21' }), /Accepted, 10–21 days/);
+assert.match(buildBespokeNotes(ticked), /Accepted, 7–14 days/, 'the shop default when nothing was passed');
+assert.match(buildBespokeNotes({ preorderAcknowledged: false, preorderDays: '10–21' }), /Pre-order acknowledgement: Not accepted/);
+const server = readFileSync(new URL('../../api/orders/create.js', import.meta.url), 'utf8');
+assert.match(server, /preorderDays: await bespokePreorderDays\(\),\n\s*\} : null;/,
+  'the server sets the lead time AFTER the client\'s fields, so a request cannot write its own');
+assert.match(server, /catch \{\n\s*return DEFAULT_SITE_FACTS\.bespokeDays;/, 'and a failed read never stops an order');
+
 console.log('bespokeOrder self-check OK');

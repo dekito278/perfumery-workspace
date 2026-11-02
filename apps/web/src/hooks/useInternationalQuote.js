@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useShippingDestination } from '@/hooks/useShippingDestination.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useTierPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
 import { countryNameFor, DESTINATION_OTHER, DESTINATION_PICKER_ID } from '@/utils/shippingDestination.js';
 import { quoteInternationalShippingPrice } from '@/utils/internationalShippingPrice.js';
-import { getExportShippingPolicy } from '@/services/exportShippingPolicyService.js';
+import {
+  getExportShippingPolicy, loadExportShippingPolicy, subscribeExportShippingPolicy,
+} from '@/services/exportShippingPolicyService.js';
 import { internationalPriceFor } from '@/utils/shippingRegion.js';
 import { tierPricesForLine } from '@/utils/tierPrice.js';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
@@ -37,6 +39,12 @@ export const bottleMillilitres = (size) => {
 };
 const sizeIsOnTheCard = (size) => bottleMillilitres(size) === SHIPPING_RATE_BOTTLE_SIZE_ML;
 
+/** Dekito's export policy (Studio → ongkir ekspor): the constants until the saved row arrives, then the row. */
+export const useExportShippingPolicy = () => {
+  useEffect(() => { loadExportShippingPolicy(); }, []);
+  return useSyncExternalStore(subscribeExportShippingPolicy, getExportShippingPolicy, getExportShippingPolicy);
+};
+
 /**
  * The arithmetic, with nothing React in it.
  *
@@ -51,13 +59,14 @@ const sizeIsOnTheCard = (size) => bottleMillilitres(size) === SHIPPING_RATE_BOTT
  */
 export const internationalQuoteFor = ({
   country = '', bottles = 1, goodsUsd = null, onTheCard = true, hasOrder = null, t, region = 'en',
+  policy = getExportShippingPolicy(),
 } = {}) => {
   // Nothing picked is its own case and must not be confused with a destination we cannot serve: the
   // first is a question the buyer has not answered, the second is an answer we do not have.
   const quote = country && onTheCard
     // The same two policy numbers the Studio quote reads, out of the one cache, so a figure sent by
     // hand on WhatsApp cannot disagree with the cart.
-    ? quoteInternationalShippingPrice({ countryCode: country, bottles, policy: getExportShippingPolicy() })
+    ? quoteInternationalShippingPrice({ countryCode: country, bottles, policy })
     : null;
   const shippingUsd = quote?.usd ?? null;
   const shippingCostUsd = quote?.costUsd ?? null;
@@ -125,11 +134,12 @@ export const focusDestinationPicker = (event) => {
 export const useInternationalQuote = ({ price, product = null, variant = null } = {}) => {
   const { t, region } = useTranslate();
   const { country, bottles, setCountry, setBottles } = useShippingDestination();
+  const policy = useExportShippingPolicy();
   const bottleSizeLabel = variant?.size || product?.size || '';
   const perBottleUsd = usdPriceFor(price);
   const core = internationalQuoteFor({
     country, bottles, goodsUsd: perBottleUsd ? perBottleUsd * bottles : null,
-    onTheCard: sizeIsOnTheCard(bottleSizeLabel), t, region,
+    onTheCard: sizeIsOnTheCard(bottleSizeLabel), t, region, policy,
   });
   const draft = core.draftVars
     ? { key: core.settled ? 'export.waDraftQuote' : 'export.waDraftDestination', vars: core.draftVars }
@@ -167,6 +177,7 @@ const retailPriceOfLine = (item, product, variant) => Number(
 export const useCartInternationalQuote = (items = []) => {
   const { t, region } = useTranslate();
   const { country, setCountry } = useShippingDestination();
+  const policy = useExportShippingPolicy();
   const { index } = useTierPrices();
   const catalog = useStorefrontProducts();
 
@@ -204,7 +215,7 @@ export const useCartInternationalQuote = (items = []) => {
     : null;
   const core = internationalQuoteFor({
     country, bottles: Math.max(1, bottles), goodsUsd, hasOrder: lines.length > 0,
-    onTheCard: lines.every((line) => line.onTheCard), t, region,
+    onTheCard: lines.every((line) => line.onTheCard), t, region, policy,
   });
   // Every line travels, priced or not: a line the shop cannot price yet is the one Dekito most needs to
   // see, and leaving it out of the message would hand him a basket missing a bottle.

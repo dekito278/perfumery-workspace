@@ -645,7 +645,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           ) : (
             <p className="mt-1 text-sm font-semibold leading-relaxed text-[#6b7280]">
               {priceCard?.onRequest === 'bottles'
-                ? `${priceCard.bottles} botol — di atas 6 botol dikutip manual. Isi ongkirnya di bawah.`
+                ? `${priceCard.bottles} botol — di atas ${shippingPolicy.maxQuotedBottles} botol dikutip manual. Isi ongkirnya di bawah.`
                 : 'Negara ini tidak ada di lembar zona kurir. Kutip manual, lalu isi ongkirnya di bawah.'}
             </p>
           )}

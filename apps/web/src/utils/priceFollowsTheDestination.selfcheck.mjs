@@ -162,9 +162,14 @@ const DESTINATION_OTHER = ${asJs(DESTINATION_OTHER)};
 const SHIPPING_RATE_BOTTLE_SIZE_ML = 30;
 // The cart hook asks the policy service for the two numbers Dekito can edit. The service is a cache
 // and a database read, neither of which belongs in this harness — but what it falls back to is the
-// shipped default, which is what the shop charges until he changes the row. Passing undefined gets
-// the same answer through normalizeExportShippingPolicy, so the harness states nothing of its own.
+// shipped default, which is what the shop charges until Dekito changes the row. Passing undefined gets
+// the same answer through normalizeExportShippingPolicy, so the harness states nothing of its own. The
+// hook that loads the row (useExportShippingPolicy) reads the same function, so it gets the same answer.
 const getExportShippingPolicy = () => undefined;
+const loadExportShippingPolicy = () => {};
+const subscribeExportShippingPolicy = () => () => {};
+const useEffect = () => {};
+const useSyncExternalStore = (subscribe, getSnapshot) => getSnapshot();
 ${withoutImports(readRaw('hooks', 'useInternationalQuote.js'))}
 `);
 const { useInternationalQuote, internationalQuoteFor } = quoteHook;

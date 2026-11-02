@@ -123,9 +123,10 @@ const shell = readFileSync(join(root, '..', 'index.html'), 'utf8');
 const fallbackLists = [...shell.matchAll(/items: \[('Beranda'[^\]]*)\]/g)];
 assert.equal(fallbackLists.length, 0,
   'index.html still lists the retired phone tabs on its boot screen — there is no tab bar for it to match');
-// The doors the boot screen does offer have to be doors the header offers too.
+// The doors the boot screen offers have to be doors the header offers too. Since 2026-11-03 it offers
+// none — the shop's boot screen is the wordmark alone (storefrontRegion.selfcheck runs it); the links
+// this section counted lived in a builder nothing called. A door added back is held to the header.
 const bootDoors = [...shell.matchAll(/href: route\.prefix \+ '(\/[\w-]+)'/g)].map((match) => match[1]);
-assert.ok(bootDoors.length >= 2, `only ${bootDoors.length} boot links parsed — the derivation broke`);
 for (const door of bootDoors) {
   assert.match(mobileNav, new RegExp(`to: '${door}'|to="${door}"`), `the boot screen offers ${door}, which the header does not`);
 }

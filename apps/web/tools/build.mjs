@@ -45,7 +45,9 @@ const staticPublicPages = [
     intro: 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.',
     sections: [
       ['Fragrance Collection', 'A public catalog of perfume objects with notes, concentration, size variants, price, and availability.'],
-      ['Bespoke Consultation', 'Request parfum custom through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari.'],
+      // Was "Request parfum custom through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari."
+      // on the English home: half Indonesian, and a lead time Studio can now change (2026-11-03).
+      ['Bespoke Consultation', 'A perfume composed to order: tell the atelier the direction, choose the size, and send the request.'],
       ['Journal', 'Editorial notes on scent memory, materials, atelier process, product stories, and perfumery culture.'],
     ],
   },
@@ -85,16 +87,12 @@ const staticPublicPages = [
     // by deleting this one line.
     enDescriptionKey: 'bsp.meta',
     title: 'Bespoke Perfume Consultation - SOLIVAGANT',
-    description: 'Request a SOLIVAGANT custom perfume consultation. Public flow: Aroma, Preferensi, Botol, Ongkir, Bayar. Pre-order 7-14 hari.',
+    description: 'Request a SOLIVAGANT bespoke perfume: scent direction, bottle, delivery details, and payment.',
     heading: 'Bespoke Perfume Consultation',
-    intro: 'A customer-facing custom perfume request flow inspired by the studio process while keeping formulas, validation, materials cost, and production details private.',
-    sections: [
-      ['Aroma', 'Choose the desired scent direction, notes, mood, and memory references.'],
-      ['Preferensi', 'Share purpose, skin impression, projection preference, and personal references.'],
-      ['Botol', 'Select 30 ml, 50 ml, or 100 ml and bottle preference.'],
-      ['Ongkir', 'Provide delivery area for shipping estimate.'],
-      ['Bayar', 'Confirm the request and pay by manual bank transfer or DOKU.'],
-    ],
+    // No hand-written sections (removed 2026-11-03). They reached only the English page, under Indonesian
+    // headings — Preferensi, Botol, Ongkir, Bayar — and promised a 100 ml bottle and a bottle choice the
+    // bespoke form no longer offers. Both shops now get the live page's own heading and lead.
+    sections: [],
   },
   {
     route: '/about',
@@ -110,7 +108,6 @@ const staticPublicPages = [
     heading: 'About SOLIVAGANT',
     intro: 'SOLIVAGANT is the artisan perfume atelier of Dekito: scents built from raw materials, memory and ritual, blended and packed by the perfumer and sold straight from the atelier in Indonesia and abroad.',
     sections: [
-      ['The atelier', 'Every bottle is blended and packed by Dekito himself, with no warehouse and no reseller in between.'],
       ['The work', 'A scent is built from raw materials, memory and ritual, then tried again until it reads true.'],
       ['Bespoke', 'For a scent that is not in the collection, the atelier composes one to order.'],
     ],
@@ -377,7 +374,10 @@ const assertEveryPageHasShareImage = (distRoot) => {
 const writeLlmsTxt = (distRoot, siteUrl) => {
   const absolute = (route) => (siteUrl ? `${siteUrl}${route}` : route);
   const body = staticPublicPages
-    .map((page) => `- [${page.title}](${absolute(page.route)}): ${page.description}`)
+    // The English shop's own title and description, the ones its pages carry: page.description for /bespoke
+    // read "Public flow: Aroma, Preferensi, Botol, Ongkir, Bayar. Pre-order 7-14 hari." until 2026-11-03.
+    .map((page) => `- [${MESSAGES.en[page.idTitleKey] || page.title}](${absolute(page.route)}): `
+      + `${MESSAGES.en[page.enDescriptionKey || page.idDescriptionKey] || page.description}`)
     .join('\n');
 
   fs.writeFileSync(

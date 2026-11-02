@@ -2,10 +2,9 @@ import React, { useId } from 'react';
 import { Globe } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
-import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
+import { useExportShippingPolicy, useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import { destinationOptions, DESTINATION_OTHER, DESTINATION_PICKER_ID } from '@/utils/shippingDestination.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML } from '@/data/internationalShippingRates.js';
-import { getExportShippingPolicy } from '@/services/exportShippingPolicyService.js';
 
 /**
  * The complete price an international buyer pays, before they ask instead of after.
@@ -38,8 +37,8 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
   // button, which is what they had before this screen existed.
   const ownPrice = useOverseasPrice(product, variant);
   const own = useInternationalQuote({ price: ownPrice, product, variant });
-  // The same cap the quote applies, out of the same cache (Studio → export shipping policy).
-  const maxBottles = getExportShippingPolicy().maxQuotedBottles;
+  // The same cap the quote applies, from the same loaded policy (Studio → export shipping policy).
+  const maxBottles = useExportShippingPolicy().maxQuotedBottles;
   const fromCart = Boolean(quote);
   const price = fromCart ? quote.goodsUsd : ownPrice;
   const {

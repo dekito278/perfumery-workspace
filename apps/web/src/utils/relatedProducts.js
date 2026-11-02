@@ -7,12 +7,11 @@
  * J'adore la Vanille, was never suggested on it.
  *
  * The desktop page called that list `contextual` while computing `catalog.slice(0, 4)`; the phone did not
- * even try. Explicit picks — `relatedFragrances` — exist only in the static seed file and are not mapped
- * from the database, so for every live product the fallback IS the feature.
+ * even try.
  *
- * So the fallback does the work: same category first, then everything else, self always excluded. A
- * gourmand now leads with the other gourmand. Explicit picks still win when a product has them, because
- * a hand-chosen pairing beats any rule.
+ * Explicit picks — `relatedFragrances`, chosen per perfume in Studio since 2026-11-03 (related_slugs) —
+ * come first, because a hand-chosen pairing beats any rule. The rest is filled by the fallback: same
+ * category first, then everything else, self always excluded. A gourmand leads with the other gourmand.
  */
 export const relatedFor = (product, catalog = [], limit = 4) => {
   if (!product?.slug || !Array.isArray(catalog)) return [];
