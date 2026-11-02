@@ -53,6 +53,13 @@ assert.equal(
 );
 
 const { files } = buyerSurfaces({ src: 'src' });
+
+// The example is shaped like a code and is not one: "SOLI09232" was a valid-looking code printed in every
+// customer-code field, and nothing here can prove no customer holds it (2026-11-02).
+for (const file of files) {
+  assert.doesNotMatch(strip(readFileSync(file, 'utf8')), /placeholder="SOLI\d{5}"/,
+    `${file} shows a real-looking customer code as its example — use SOLI•••••, which no account can have`);
+}
 const NAMED = /aria-label=|aria-labelledby=/;
 
 // 1. Every field that offers the example customer code names itself.
@@ -61,7 +68,7 @@ for (const file of files) {
   const source = strip(readFileSync(file, 'utf8'));
   for (const match of source.matchAll(/<input\b/g)) {
     const tag = openingTag(source, match.index);
-    if (!/placeholder="SOLI09232"/.test(tag)) continue;
+    if (!/placeholder="SOLI[^"]*"/.test(tag)) continue;
     codeFields += 1;
     assert.match(tag, NAMED,
       `${file} asks for a customer code and lets the EXAMPLE stand in for the field's name — a reader is `
