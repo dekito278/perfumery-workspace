@@ -24,6 +24,7 @@ import { DEFAULT_SHARE_IMAGE, buildOrganizationJsonLd, buildWebSiteJsonLd, getSi
 import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 import { articleExcerpt } from '@/utils/articleExcerpt.js';
 import { splitScriptName } from '@/utils/scriptName.js';
+import { productCopyFor } from '@/utils/productCopy.js';
 
 // A phone is ~390 CSS px, so sizes="100vw" on a 3x screen asks for ~1170 and the full list answers 1600.
 // The phone home this page replaced (2026-10-31) capped its hero at 900 and its second full-bleed image
@@ -174,14 +175,16 @@ const HomePage = () => {
                   <h2 id="home-featured-title" className="ng-display text-[56px] font-normal md:text-[84px]">{featuredName.name}</h2>
                   {featuredName.script ? <p className="m-0 mt-2.5 font-ng-java text-[28px] text-ng-ash">{featuredName.script}</p> : null}
                 </div>
-                {firstParagraph(featured.description) ? (
-                  <p className="m-0 max-w-[520px] font-ng-display text-[22px] italic leading-snug text-ng-sand md:text-[26px]">{firstParagraph(featured.description)}</p>
+                {/* The product's words in the shop's language: /en/home read "Dari seri Macapat." over an English
+                    description that said "From the Macapat series." (2026-11-02). */}
+                {firstParagraph(productCopyFor(featured, region).description) ? (
+                  <p className="m-0 max-w-[520px] font-ng-display text-[22px] italic leading-snug text-ng-sand md:text-[26px]">{firstParagraph(productCopyFor(featured, region).description)}</p>
                 ) : null}
                 <dl className="m-0 flex flex-col border-t border-ng-bone/15">
-                  {shortNoteList(featured.notes, HOME_CARD_NOTE_LIMIT) ? (
+                  {shortNoteList(productCopyFor(featured, region).notes, HOME_CARD_NOTE_LIMIT) ? (
                     <div className="flex justify-between gap-6 border-b border-ng-bone/15 py-3.5 text-[15px]">
                       <dt className="ng-mono text-ng-ash">{t('home.ngFeatNotes')}</dt>
-                      <dd className="m-0 text-right text-ng-sand">{shortNoteList(featured.notes, HOME_CARD_NOTE_LIMIT)}</dd>
+                      <dd className="m-0 text-right text-ng-sand">{shortNoteList(productCopyFor(featured, region).notes, HOME_CARD_NOTE_LIMIT)}</dd>
                     </div>
                   ) : null}
                   {featured.size ? (
@@ -238,7 +241,7 @@ const HomePage = () => {
                       </span>
                       {/* What it smells of, on the first list a visitor ever sees — same helper and the
                           same three notes as the catalogue, so the two cannot drift apart. */}
-                      <span className="ng-row__notes text-[15px] leading-normal text-ng-dust">{shortNoteList(product.notes, HOME_CARD_NOTE_LIMIT)}</span>
+                      <span className="ng-row__notes text-[15px] leading-normal text-ng-dust">{shortNoteList(productCopyFor(product, region).notes, HOME_CARD_NOTE_LIMIT)}</span>
                       <span className="ng-row__size ng-mono text-ng-dust">{product.size}</span>
                       <span className="ng-row__price flex flex-col gap-1 text-[15px]">
                         {(product.price || product.priceNumber) ? (
@@ -277,8 +280,8 @@ const HomePage = () => {
                       <span className="text-ng-ember">{t('home.ngSpecLabel', { number: String(index + 1).padStart(2, '0') })}</span>
                       <span>{getJournalCategoryLabel(article.category)}</span>
                     </span>
-                    <span className="font-ng-display text-[32px] leading-[1.05]">{article.title}</span>
-                    <span className="text-[15px] leading-relaxed text-ng-dust">{getArticleExcerpt(article)}</span>
+                    <span lang="id" className="font-ng-display text-[32px] leading-[1.05]">{article.title}</span>
+                    <span lang="id" className="text-[15px] leading-relaxed text-ng-dust">{getArticleExcerpt(article)}</span>
                     <span className="ng-mono mt-auto">{t('home.ngSpecRead')}</span>
                   </Link>
                 ))}

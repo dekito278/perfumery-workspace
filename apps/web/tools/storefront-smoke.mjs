@@ -353,7 +353,10 @@ const runShop = async (browser, run, contextOptions) => {
   await page.getByRole('button', { name: ID['checkout.placeOrder'] }).locator('visible=true').first().click();
   await page.waitForURL(/\/payment\?/, { timeout: 15000 }).catch(() => {});
   await settle(page);
-  check(run, 'placing the order lands on the payment page', pathOf(page) === '/payment', page.url().replace(BASE, ''));
+  // When it does not, say what the checkout itself said: one production run stayed on /checkout with no order
+  // posted and nothing to go on (2026-11-02).
+  const said = pathOf(page) === '/payment' ? '' : await page.locator('[role="alert"], [aria-invalid="true"], .text-ng-ember').allInnerTexts().then((texts) => texts.join(' / ').slice(0, 200)).catch(() => '');
+  check(run, 'placing the order lands on the payment page', pathOf(page) === '/payment', `${page.url().replace(BASE, '')}${said ? ` — ${said}` : ''}`);
   const body = state.orderBodies[0];
   check(run, 'the order carried the bottle, the voucher and the courier',
     body && body.items?.some((item) => item.name === product.name) && body.voucherCode === VOUCHER.code && body.shipping?.courier,
@@ -514,6 +517,22 @@ const runAbroad = async (browser) => {
     check(run, 'no English-shop offer inside the English shop', !(await page.locator('.ng-abroad-hint').count()));
   }
 
+  // No Indonesian on the English shop outside what is marked Indonesian (the journal has no English): /en/home
+  // printed "Dari seri Macapat." over a description that had its English twin all along (2026-11-02).
+  const indonesianOn = (path) => goto(page, path).then(() => page.evaluate(() => {
+    const words = /\b(dan|yang|untuk|dengan|tidak|kamu|kami|belum|sudah|bisa|harga|pesanan|keranjang|lihat|ini|itu|dari|di)\b/i;
+    const out = [];
+    for (const el of document.querySelectorAll('body *')) {
+      if (!el.getClientRects().length || el.closest('[lang]:not(html)')?.lang === 'id') continue;
+      for (const n of el.childNodes) if (n.nodeType === 3 && n.textContent.trim().length > 3 && words.test(n.textContent)) out.push(n.textContent.trim().slice(0, 50));
+    }
+    return out;
+  }));
+  for (const path of ['/en/home', '/en/catalog', `/en${href}`]) {
+    const found = await indonesianOn(path);
+    check(run, `${path.replace(href, '/catalog/<perfume>')} has no Indonesian outside marked parts`, found.length === 0, found.slice(0, 3).join(' | '));
+  }
+
   await goto(page, '/catalog?lang=en');
   await page.waitForURL(/\/en\/catalog/, { timeout: 20000 }).catch(() => {});
   check(run, 'an old ?lang=en link lands on the /en address', pathOf(page) === '/en/catalog', pathOf(page));
@@ -642,6 +661,21 @@ const runSeo = async (browser) => {
   check(run, 'the English home declares English and no dead search box', site?.inLanguage === 'en' && !site?.potentialAction, JSON.stringify(site?.inLanguage));
 };
 
+// Asked for less motion: nothing keeps animating, and the page jumps instead of gliding.
+const runMotion = async (browser) => {
+  const run = 'motion';
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'id-ID', timezoneId: 'Asia/Jakarta', reducedMotion: 'reduce' });
+  await guard(context, { blocked: [], orderBodies: [], order: null });
+  const page = await context.newPage();
+  await goto(page, '/home');
+  const state = await page.evaluate(() => ({
+    running: document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getTiming?.().iterations === Infinity).length,
+    scroll: getComputedStyle(document.documentElement).scrollBehavior,
+  }));
+  check(run, 'with reduced motion nothing loops and nothing glides', state.running === 0 && state.scroll === 'auto', `${state.running} looping, scroll-behavior ${state.scroll}`);
+  await context.close();
+};
+
 const browser = await chromium.launch();
 try {
   await runShop(browser, 'desktop', { viewport: { width: 1440, height: 900 } });
@@ -650,6 +684,7 @@ try {
   await runAbroad(browser);
   await runOutage(browser);
   await runSeo(browser);
+  await runMotion(browser);
 } finally {
   await browser.close();
 }

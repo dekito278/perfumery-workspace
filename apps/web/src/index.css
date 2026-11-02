@@ -161,8 +161,11 @@
     line-height: var(--line-height-relaxed);
   }
   
-  html {
-    scroll-behavior: smooth;
+  /* Smooth only for those who have not asked the system for less motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 }
 

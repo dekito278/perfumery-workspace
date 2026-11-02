@@ -25,6 +25,7 @@ import { buildBreadcrumbJsonLd, getSiteOrigin, shopCanonicalUrl } from '@/utils/
 import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
 import { splitScriptName } from '@/utils/scriptName.js';
+import { productCopyFor } from '@/utils/productCopy.js';
 
 // Three notes is what fits on a card at phone width without wrapping to a third line.
 const CARD_NOTE_LIMIT = 3;
@@ -106,6 +107,8 @@ const CatalogPage = () => {
       product.name, product.subtitle, product.description,
       product.notes, product.mood, product.category,
       ...(product.topNotes || []), ...(product.heartNotes || []), ...(product.baseNotes || []),
+      // And the English words, so "vanilla" finds what "vanila" names.
+      product.descriptionEn, product.notesEn, ...(product.topNotesEn || []), ...(product.heartNotesEn || []), ...(product.baseNotesEn || []),
     ].join(' ').toLowerCase();
     return searchable.includes(query);
   }, [searchTerm, wearSelection]);
@@ -258,7 +261,7 @@ const CatalogPage = () => {
                           2026-10-07 — far too long for a row — so this reuses the clamp the cart lines
                           already use rather than inventing a second idea of how much is too much. */}
                       <span className="ng-cat-row__notes text-[15px] leading-normal text-ng-dust">
-                        {shortNoteList(product.notes, CARD_NOTE_LIMIT)}
+                        {shortNoteList(productCopyFor(product, region).notes, CARD_NOTE_LIMIT)}
                       </span>
                       <span className="ng-cat-row__price flex flex-col gap-1 text-base">
                         <CardPrice product={product} memberClassName="ng-mono text-ng-dust" />
