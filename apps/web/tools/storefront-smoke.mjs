@@ -395,15 +395,21 @@ const runTabs = async (browser) => {
 };
 
 // What a page tells a crawler, read after React has run: one of each head tag, and the page's own address.
-const headOf = (page) => page.evaluate(() => ({
-  lang: document.documentElement.lang,
-  canonicals: [...document.querySelectorAll('link[rel="canonical"]')].map((l) => new URL(l.href).pathname),
-  descriptions: document.querySelectorAll('meta[name="description"]').length,
-  products: [...document.querySelectorAll('script[type="application/ld+json"]')]
-    .map((s) => { try { return JSON.parse(s.textContent); } catch { return {}; } })
-    .filter((j) => j['@type'] === 'Product')
-    .map((j) => [].concat(j.offers || [])[0]?.priceCurrency || 'none'),
-}));
+// Waits for react-helmet's own canonical first — read before it lands, the prerendered tags alone pass every
+// check here without the handover having happened at all (a production run did exactly that, 2026-11-02).
+const headOf = async (page) => {
+  await page.waitForSelector('link[rel="canonical"][data-react-helmet]', { state: 'attached', timeout: 20000 }).catch(() => {});
+  await page.waitForSelector('script[type="application/ld+json"][data-react-helmet]', { state: 'attached', timeout: 20000 }).catch(() => {});
+  return page.evaluate(() => ({
+    lang: document.documentElement.lang,
+    canonicals: [...document.querySelectorAll('link[rel="canonical"]')].map((l) => new URL(l.href).pathname),
+    descriptions: document.querySelectorAll('meta[name="description"]').length,
+    products: [...document.querySelectorAll('script[type="application/ld+json"]')]
+      .map((s) => { try { return JSON.parse(s.textContent); } catch { return {}; } })
+      .filter((j) => j['@type'] === 'Product')
+      .map((j) => [].concat(j.offers || [])[0]?.priceCurrency || 'none'),
+  }));
+};
 
 // A US-English browser — the one Google crawls with — on the Indonesian shop. Until 2026-11-02 the guess
 // turned /catalog/l-iris English at US$95 for it, with two canonicals and two prices; the address decides now.
@@ -437,12 +443,12 @@ const runAbroad = async (browser) => {
     head = await headOf(page);
     check(run, 'which is the same perfume at its /en address', pathOf(page) === `/en${href}` && head.lang === 'en', pathOf(page));
     check(run, 'with one canonical there too', head.canonicals.length === 1 && head.canonicals[0] === `/en${href}`, head.canonicals.join(', '));
-    check(run, 'and one Product block, not the Rp one beside a US$ one', head.products.length === 1 && head.products[0] !== 'IDR', head.products.join('/'));
+    check(run, 'and one Product block, priced in US$ — not the Rp one beside it', head.products.join() === 'USD', head.products.join('/'));
     check(run, 'no English-shop offer inside the English shop', !(await page.locator('.ng-abroad-hint').count()));
   }
 
   await goto(page, '/catalog?lang=en');
-  await page.waitForURL(/\/en\/catalog/, { timeout: 10000 }).catch(() => {});
+  await page.waitForURL(/\/en\/catalog/, { timeout: 20000 }).catch(() => {});
   check(run, 'an old ?lang=en link lands on the /en address', pathOf(page) === '/en/catalog', pathOf(page));
 
   check(run, 'no write left the browser', state.blocked.length === 0, state.blocked.join(', '));
@@ -501,6 +507,7 @@ const runSeo = async (browser) => {
   const decode = (text) => String(text || '').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
   const drift = [];
   const long = [];
+  const bodies = [];
   for (const path of paths) {
     const raw = await fetch(`${BASE}${path}`).then((r) => r.text());
     const rawTitle = decode((raw.match(/<title[^>]*>([^<]*)<\/title>/) || [])[1]);
@@ -510,7 +517,17 @@ const runSeo = async (browser) => {
     await guard(context, state);
     const page = await context.newPage();
     await goto(page, path);
-    const live = await page.evaluate(() => ({ title: document.title, description: document.querySelector('meta[name="description"]')?.content || '' }));
+    const live = await page.evaluate(() => ({
+      title: document.title,
+      description: document.querySelector('meta[name="description"]')?.content || '',
+      h1: (document.querySelector('h1')?.innerText || '').replace(/\s+/g, ' ').trim(),
+    }));
+    // Without JavaScript: one h1, the page's own, and no price (Dekito, 2026-10-21: one file answers every
+    // country). Product and article files used to carry only "JavaScript diperlukan".
+    const body = raw.slice(raw.indexOf('<body')).replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, '');
+    const rawH1 = [...body.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)].map((m) => decode(m[1].replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim());
+    if (rawH1.length !== 1 || rawH1[0] !== live.h1) bodies.push(`${path} ${JSON.stringify(rawH1)} vs "${live.h1}"`);
+    if (/Rp\s?\d/.test(body.replace(/<[^>]+>/g, ' '))) bodies.push(`${path} prints a rupiah price`);
     await context.close();
     if (live.title !== rawTitle) drift.push(`${path} title "${rawTitle}" → "${live.title}"`);
     if (live.description !== rawDescription) drift.push(`${path} description`);
@@ -520,6 +537,7 @@ const runSeo = async (browser) => {
   }
   check(run, `before and after JavaScript, ${paths.length} pages say the same title and description`, drift.length === 0, drift.join('; '));
   check(run, 'titles fit 60 characters, descriptions 70–160', long.length === 0, long.join('; '));
+  check(run, 'without JavaScript each page has one h1, the one it shows, and no price', bodies.length === 0, bodies.join('; '));
 };
 
 const browser = await chromium.launch();

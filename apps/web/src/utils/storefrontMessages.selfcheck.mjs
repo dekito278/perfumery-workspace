@@ -1135,10 +1135,14 @@ const DYNAMIC_KEY_FAMILIES = [
 ];
 // Every source file under src, not a list of directories: naming them missed data/, where the bespoke
 // occasions and the why-direct reasons keep their keys, and reported twenty live keys as dead.
-const appSource = walk([])
-  .filter((file) => join(...file) !== join('i18n', 'messages.js'))
-  .map((file) => read(...file))
-  .join('\n');
+// Plus the two build scripts: they write the words a crawler and a link preview read into the prerendered
+// HTML, so a key only they print is as alive as one a screen prints (boot.needsJs, 2026-11-02).
+const appSource = [
+  ...walk([])
+    .filter((file) => join(...file) !== join('i18n', 'messages.js'))
+    .map((file) => read(...file)),
+  ...['build.mjs', 'seo-artifacts.mjs'].map((file) => stripComments(readFileSync(join(root, '..', 'tools', file), 'utf8'))),
+].join('\n');
 const referencedKeys = new Set();
 for (const match of appSource.matchAll(/['"`]([a-zA-Z][\w]*\.[\w.]+)['"`]/g)) referencedKeys.add(match[1]);
 for (const [prefix, file, template] of DYNAMIC_KEY_FAMILIES) {

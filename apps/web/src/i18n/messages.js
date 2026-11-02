@@ -53,6 +53,7 @@ export const MESSAGES = {
     'welcome.voucherBody': 'Kode di kartu itu baru aktif setelah kamu masuk ke akun, dan berlaku sekali untuk satu akun. Masukkan di keranjang — potongannya kelihatan sebelum kamu bayar.',
 
     'pdp.loading': 'Memuat produk…',
+    'boot.needsJs': 'Toko ini butuh JavaScript untuk menelusuri parfum, keranjang, checkout, dan lacak pesanan.',
     'pdp.loadFailed': 'Koneksi ke server gagal, jadi parfum ini belum bisa dimuat.',
     'pdp.loadFailedTitle': 'Parfum ini belum bisa dimuat',
     'pdp.backToCollection': 'Kembali ke koleksi',
@@ -1175,6 +1176,7 @@ export const MESSAGES = {
     'welcome.voucherBody': 'The code on the card belongs to orders placed inside Indonesia. From anywhere else we arrange the order with you on WhatsApp, and the price you are quoted already has the shipping in it.',
 
     'pdp.loading': 'Loading product…',
+    'boot.needsJs': 'The shop needs JavaScript for browsing perfumes, the cart, checkout and order tracking.',
     'pdp.loadFailed': 'We could not reach the server, so this perfume could not be loaded.',
     'pdp.loadFailedTitle': 'This perfume could not be loaded',
     'pdp.backToCollection': 'Back to the collection',

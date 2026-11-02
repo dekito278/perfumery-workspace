@@ -34,22 +34,25 @@ const BRAND_SUMMARY = 'An artisan perfume atelier by Dekito, crafting quiet olfa
 const staticPublicPages = [
   {
     route: '/home',
+    // The body a reader without JavaScript gets: the live page's own h1 and lead, in each shop's language.
+    headingKey: 'home.ngTitle',
+    leadKey: 'home.ngLead',
     idDescriptionKey: 'home.meta',
     title: 'SOLIVAGANT - Artisan Perfumery Atelier by Dekito',
     description: 'SOLIVAGANT is an artisan perfumery atelier by Dekito, crafting quiet fragrance objects from raw materials, memory, and personal ritual.',
-    eyebrow: 'Artisan Perfumery Atelier',
     heading: 'SOLIVAGANT',
-    headline: 'Fragrance as a memory object.',
     intro: 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.',
     sections: [
       ['Fragrance Collection', 'A public catalog of perfume objects with notes, concentration, size variants, price, and availability.'],
       ['Bespoke Consultation', 'Request parfum custom through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari.'],
       ['Journal', 'Editorial notes on scent memory, materials, atelier process, product stories, and perfumery culture.'],
     ],
-    items: ['Hero', 'Perfumer story', 'Collection preview', 'Bespoke ritual'],
   },
   {
     route: '/catalog',
+    // The body a reader without JavaScript gets: the live page's own h1 and lead, in each shop's language.
+    headingKey: 'catalog.title',
+    leadKey: 'catalog.ngLead',
     idTitleKey: 'catalog.tab',
     idDescriptionKey: 'catalog.meta',
     title: 'Fragrance Collection - SOLIVAGANT',
@@ -58,9 +61,7 @@ const staticPublicPages = [
     // routes now redirect to this page. Search results were advertising perfumes that cannot be bought.
     // A description that describes the collection instead of enumerating it cannot go stale.
     description: 'Explore the SOLIVAGANT fragrance collection: limited artisan perfume objects and quiet daily signatures, each with its notes, concentration, sizes, and price.',
-    eyebrow: 'Fragrance Collection',
     heading: 'Fragrance Collection',
-    headline: 'Quiet signatures for skin, atmosphere, and ritual.',
     intro: 'Browse SOLIVAGANT public fragrance previews with product stories, notes pyramid, concentration, size variants, Rupiah price, and customer-facing availability.',
     // Replaced at build time by the live catalogue. This stays only for a build that cannot reach
     // Supabase, so it names no products — the previous list outlived four of the five it advertised.
@@ -69,10 +70,12 @@ const staticPublicPages = [
       ['Signature harian', 'Quiet daily wear built for skin and atmosphere.'],
     ],
 
-    items: ['Semua', 'Gourmand', 'Aquatic', 'Woody', 'Floral'],
   },
   {
     route: '/bespoke',
+    // The body a reader without JavaScript gets: the live page's own h1 and lead, in each shop's language.
+    headingKey: 'bsp.title',
+    leadKey: 'bsp.lead',
     idTitleKey: 'bsp.tab',
     idDescriptionKey: 'bsp.meta',
     // The English description below is half Indonesian — "Public flow: Aroma, Preferensi, Botol,
@@ -82,9 +85,7 @@ const staticPublicPages = [
     enDescriptionKey: 'bsp.meta',
     title: 'Bespoke Perfume Consultation - SOLIVAGANT',
     description: 'Request a SOLIVAGANT custom perfume consultation. Public flow: Aroma, Preferensi, Botol, Ongkir, Bayar. Pre-order 7-14 hari.',
-    eyebrow: 'Bespoke Perfume Consultation',
     heading: 'Bespoke Perfume Consultation',
-    headline: 'Request parfum custom. Pre-order 7-14 hari.',
     intro: 'A customer-facing custom perfume request flow inspired by the studio process while keeping formulas, validation, materials cost, and production details private.',
     sections: [
       ['Aroma', 'Choose the desired scent direction, notes, mood, and memory references.'],
@@ -93,36 +94,36 @@ const staticPublicPages = [
       ['Ongkir', 'Provide delivery area for shipping estimate.'],
       ['Bayar', 'Confirm the request and pay by manual bank transfer or DOKU.'],
     ],
-    items: ['Aroma', 'Preferensi', 'Botol', 'Ongkir', 'Bayar'],
   },
   {
     route: '/about',
+    // The body a reader without JavaScript gets: the live page's own h1 and lead, in each shop's language.
+    headingKey: 'about.title',
+    leadKey: 'about.p1',
     idTitleKey: 'about.tab',
     idDescriptionKey: 'about.meta',
     title: 'About SOLIVAGANT - Artisan Perfume Atelier',
     // The page a fragrance database editor reads before entering the house, so the prerendered copy
     // carries the same facts the live page does and states no founding year, because nobody has.
     description: 'SOLIVAGANT is the artisan perfume atelier of Dekito, in Indonesia. Every bottle is blended and packed in the atelier and sold straight to the person who wears it.',
-    eyebrow: 'Artisan Perfume Atelier',
     heading: 'About SOLIVAGANT',
-    headline: 'Made by hand, one bottle at a time.',
     intro: 'SOLIVAGANT is the artisan perfume atelier of Dekito: scents built from raw materials, memory and ritual, blended and packed by the perfumer and sold straight from the atelier in Indonesia and abroad.',
     sections: [
       ['The atelier', 'Every bottle is blended and packed by Dekito himself, with no warehouse and no reseller in between.'],
       ['The work', 'A scent is built from raw materials, memory and ritual, then tried again until it reads true.'],
       ['Bespoke', 'For a scent that is not in the collection, the atelier composes one to order.'],
     ],
-    items: ['Eau de Parfum', '30 ml', 'Indonesia', 'Bespoke'],
   },
   {
     route: '/journal',
+    // The body a reader without JavaScript gets: the live page's own h1 and lead, in each shop's language.
+    headingKey: 'journal.title',
+    leadKey: 'journal.lead',
     idTitleKey: 'journal.tab',
     idDescriptionKey: 'journal.meta',
     title: 'Journal - SOLIVAGANT',
     description: 'SOLIVAGANT public editorial journal about scent memory, raw materials, atelier process, product stories, and perfumery culture.',
-    eyebrow: 'Journal',
     heading: 'Journal',
-    headline: 'Field notes from the atelier.',
     intro: 'Editorial notes from SOLIVAGANT on scent memory, raw materials, atelier process, product stories, and the culture of wearing fragrance.',
     // Replaced at build time by the live journal, for the same reason the catalogue above stopped
     // enumerating: these four titles were written once and the journal has moved on — measured
@@ -132,7 +133,6 @@ const staticPublicPages = [
       ['Scent memory', 'How a place, a gesture, or a remembered person becomes the structure of a brief.'],
       ['Atelier process', 'Notes on materials, weighing, resting, and finishing a small perfume batch.'],
     ],
-    items: ['Scent memory', 'Raw materials', 'Atelier process', 'Product stories'],
   },
 ];
 
@@ -163,29 +163,33 @@ const upsertCanonical = (html, href) => {
   return html.replace('</head>', `\t\t${tag}\n\t</head>`);
 };
 
-const renderStaticFallback = (page) => {
-  const sections = page.sections.map(([title, text]) => `
+// The <noscript> body of a prerendered page. It was one English block on both addresses — "Fragrance
+// Collection … Quiet signatures for skin, atmosphere, and ritual" under lang="id" (measured 2026-11-02) —
+// so the Indonesian page read English to every crawler that does not run scripts. Each language now gets
+// the live page's own heading and lead out of the message file; the hand-written English sections go only
+// to the English page, and the stock (catalogue, journal) to both, because it is product data.
+const renderStaticFallback = (page, lang) => {
+  const M = MESSAGES[lang];
+  const english = lang === 'en';
+  const prefix = english ? EN_PREFIX : '';
+  const sections = (english ? (page.sectionsEn || page.sections) : page.liveSections ? page.sections : []).map(([title, text]) => `
 \t\t\t\t\t\t\t<article>
 \t\t\t\t\t\t\t\t<h3>${escapeHtml(title)}</h3>
 \t\t\t\t\t\t\t\t<p>${escapeHtml(text)}</p>
 \t\t\t\t\t\t\t</article>`).join('');
-  const items = page.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+  const links = [['/home', 'nav.home'], ['/catalog', 'nav.catalog'], ['/bespoke', 'nav.bespokeShort'], ['/journal', 'nav.journal']]
+    .map(([route, key]) => `<a href="${route === '/journal' ? route : `${prefix}${route}`}">${escapeHtml(M[key])}</a>`).join('\n\t\t\t\t\t\t\t');
 
   return `<noscript>
-\t\t\t\t<main class="app-boot-fallback" aria-label="SOLIVAGANT public storefront">
+\t\t\t\t<main class="app-boot-fallback" aria-label="SOLIVAGANT">
 \t\t\t\t\t<div>
-\t\t\t\t\t\t<p>${escapeHtml(page.eyebrow)}</p>
-\t\t\t\t\t\t<h1>${escapeHtml(page.heading)}</h1>
-\t\t\t\t\t\t<h2>${escapeHtml(page.headline)}</h2>
-\t\t\t\t\t\t<p class="app-boot-description">${escapeHtml(page.intro)} The interactive storefront requires JavaScript for product browsing, cart, checkout, and order tracking.</p>
-\t\t\t\t\t\t<section class="app-boot-sections" aria-label="Public storefront previews">${sections}
-\t\t\t\t\t\t</section>
-\t\t\t\t\t\t<ul class="app-boot-structure" aria-label="Public storefront sections">${items}</ul>
+\t\t\t\t\t\t<h1>${escapeHtml(M[page.headingKey] || page.heading)}</h1>
+\t\t\t\t\t\t<p class="app-boot-description">${escapeHtml(M[page.leadKey] || page.intro)}</p>
+\t\t\t\t\t\t<p class="app-boot-description">${escapeHtml(M['boot.needsJs'])}</p>${sections ? `
+\t\t\t\t\t\t<section class="app-boot-sections">${sections}
+\t\t\t\t\t\t</section>` : ''}
 \t\t\t\t\t\t<div class="app-boot-links">
-\t\t\t\t\t\t\t<a href="/">Homepage</a>
-\t\t\t\t\t\t\t<a href="/catalog">Collection</a>
-\t\t\t\t\t\t\t<a href="/bespoke">Bespoke</a>
-\t\t\t\t\t\t\t<a href="/journal">Journal</a>
+\t\t\t\t\t\t\t${links}
 \t\t\t\t\t\t</div>
 \t\t\t\t\t</div>
 \t\t\t\t</main>
@@ -218,6 +222,9 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
   const catalogSections = products
     .slice(0, 12)
     .map((product) => [product.name, [product.description, product.concentration].filter(Boolean).join('. ')]);
+  const catalogSectionsEn = products
+    .slice(0, 12)
+    .map((product) => [product.name, [product.descriptionEn || product.description, product.concentration].filter(Boolean).join('. ')]);
 
   const journalSections = journal
     .slice(0, 12)
@@ -229,7 +236,9 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
 
   staticPublicPages.forEach((rawPage) => {
     const live = liveSections[rawPage.route];
-    const page = live && live.length ? { ...rawPage, sections: live } : rawPage;
+    const page = live && live.length
+      ? { ...rawPage, sections: live, sectionsEn: rawPage.route === '/catalog' ? catalogSectionsEn : live, liveSections: true }
+      : rawPage;
     const routeName = page.route.replace(/^\/+/, '');
     const routeDir = path.join(distRoot, routeName);
     const routePath = path.join(routeDir, 'index.html');
@@ -248,7 +257,7 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
 
     let html = baseHtml
       .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(idTitle)}</title>`)
-      .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page));
+      .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page, 'id'));
     html = replaceMetaContent(html, 'name="description"', idDescription);
     html = replaceMetaContent(html, 'property="og:type"', 'website');
     html = replaceMetaContent(html, 'property="og:site_name"', 'SOLIVAGANT');
@@ -289,7 +298,8 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
       const enTitle = MESSAGES.en[page.idTitleKey] || page.title;
       const enDescription = MESSAGES.en[page.enDescriptionKey || page.idDescriptionKey] || page.description;
       let enHtml = setDocumentLanguage(html, 'en')
-        .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(enTitle)}</title>`);
+        .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(enTitle)}</title>`)
+        .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page, 'en'));
       enHtml = replaceMetaContent(enHtml, 'name="description"', enDescription);
       enHtml = replaceMetaContent(enHtml, 'property="og:title"', enTitle);
       enHtml = replaceMetaContent(enHtml, 'property="og:description"', enDescription);
