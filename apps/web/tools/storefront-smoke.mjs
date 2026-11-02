@@ -167,6 +167,36 @@ const a11yFaults = (page) => page.evaluate(() => {
   return [...new Set(faults)];
 });
 
+// Tab through a page: every stop shows a focus mark, and none is left under a fixed bar once the page has
+// finished scrolling to it (the buy bar hid the product FAQ on a desktop, 2026-11-02).
+const focusFaults = async (page, stops = 30) => {
+  const faults = [];
+  for (let i = 0; i < stops; i += 1) {
+    await page.keyboard.press('Tab');
+    // The shop scrolls smoothly, so a long jump back up is still travelling after half a second: wait until
+    // the page has stopped moving, then look.
+    await page.evaluate(() => new Promise((done) => {
+      let last = -1; let still = 0; const started = performance.now();
+      const tick = () => { const y = scrollY; still = y === last ? still + 1 : 0; last = y;
+        if (still >= 6 || performance.now() - started > 3000) done(); else requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    }));
+    await page.waitForTimeout(150);
+    const fault = await page.evaluate(() => {
+      const el = document.activeElement; if (!el || el === document.body) return null;
+      const name = (el.getAttribute('aria-label') || el.textContent || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 24);
+      const cs = getComputedStyle(el);
+      if (!((cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || (cs.boxShadow && cs.boxShadow !== 'none'))) return `no focus mark on "${name}"`;
+      const r = el.getBoundingClientRect(); if (!r.width) return null;
+      const top = document.elementFromPoint(Math.min(innerWidth - 1, r.left + r.width / 2), Math.min(innerHeight - 1, Math.max(0, r.top + r.height / 2)));
+      if (top && !el.contains(top) && !top.contains(el)) { const bar = top.closest('[class]'); return `"${name}" under ${bar ? bar.className.split(' ')[0] : top.tagName}`; }
+      return null;
+    });
+    if (fault) faults.push(fault);
+  }
+  return [...new Set(faults)];
+};
+
 // The first product on the catalogue that can be bought right now.
 const openBuyableProduct = async (page, run, prefix, label) => {
   await goto(page, `${prefix}/catalog`);
@@ -267,6 +297,8 @@ const runShop = async (browser, run, contextOptions) => {
   if (!product) return { state, errors };
   check(run, 'product page has no horizontal scroll', await noSideScroll(page));
   { const faults = await a11yFaults(page); check(run, 'product page: 44px targets and 4.5:1 text', faults.length === 0, faults.slice(0, 6).join('; ')); }
+  await goto(page, product.href);
+  { const faults = await focusFaults(page); check(run, 'product page: every Tab stop is marked and in view', faults.length === 0, faults.slice(0, 4).join('; ')); }
 
   await goto(page, '/cart');
   const increase = page.getByRole('button', { name: fill(ID['cart.increaseOf'], { name: product.name }) }).first();
