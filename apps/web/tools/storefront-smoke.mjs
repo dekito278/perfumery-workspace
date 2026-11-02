@@ -340,10 +340,64 @@ const runShop = async (browser, run, contextOptions) => {
   return { state, errors };
 };
 
+// A buyer who opens several perfumes from the catalogue in new tabs, and one whose catalogue answer is slow.
+// Every tab hears every other tab's localStorage writes; a catalogue hook that refetched on any of them sent
+// 5 of 6 such tabs to "page not found" on the live shop (2026-11-02), and a request past the 4,2 s timeout did
+// the same on its own.
+const runTabs = async (browser) => {
+  const run = 'tabs';
+  const state = { blocked: [], orderBodies: [], order: null };
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'id-ID', timezoneId: 'Asia/Jakarta' });
+  await guard(context, state);
+  let slowCatalogue = false;
+  await context.route('**/rest/v1/storefront_products_public*', async (route) => {
+    if (slowCatalogue) await new Promise((done) => setTimeout(done, 6000));
+    return route.fallback();
+  });
+  const errors = [];
+  context.on('weberror', (error) => errors.push(String(error.error().message || error.error())));
+
+  const first = await context.newPage();
+  await goto(first, '/catalog');
+  const hrefs = (await first.$$eval('a[href^="/catalog/"]', (links) => [...new Set(links.map((a) => a.getAttribute('href')))])).slice(0, 6);
+  await first.close();
+
+  let downloads = 0;
+  const count = (request) => { if (request.url().includes('storefront_products_public')) downloads += 1; };
+  context.on('request', count);
+  const tabs = await Promise.all(hrefs.map(() => context.newPage()));
+  await Promise.all(tabs.map((tab, i) => tab.goto(`${BASE}${hrefs[i]}`, { waitUntil: 'domcontentloaded' })));
+  await Promise.all(tabs.map(settle));
+  context.off('request', count);
+  const lost = tabs.map((tab, i) => [hrefs[i], pathOf(tab)]).filter(([href, at]) => at !== href);
+  check(run, 'perfumes opened in new tabs together all stay on their page', hrefs.length >= 2 && !lost.length,
+    lost.map(([href, at]) => `${href} → ${at}`).join(', ') || `${hrefs.length} tabs`);
+  check(run, 'and download the catalogue about once each', downloads <= hrefs.length * 2, `${downloads} downloads for ${hrefs.length} tabs`);
+  await Promise.all(tabs.map((tab) => tab.close()));
+
+  slowCatalogue = true;
+  const page = await context.newPage();
+  await page.goto(`${BASE}${hrefs[0]}`, { waitUntil: 'domcontentloaded' });
+  const retry = page.getByRole('button', { name: ID['stale.retry'], exact: true });
+  await retry.waitFor({ timeout: 9000 }).catch(() => {});
+  check(run, 'a catalogue that times out says so, not "page not found"', pathOf(page) === hrefs[0] && await page.getByText(ID['pdp.loadFailed']).isVisible().catch(() => false), pathOf(page));
+  slowCatalogue = false;
+  if (await retry.isVisible().catch(() => false)) {
+    await retry.click();
+    await settle(page);
+    check(run, 'and "try again" brings the perfume back', pathOf(page) === hrefs[0] && await page.getByRole('button', { name: new RegExp(`^${ID['pdp.addToCart']}`) }).first().isVisible().catch(() => false));
+  }
+
+  check(run, 'no write left the browser', state.blocked.length === 0, state.blocked.join(', '));
+  check(run, 'no uncaught page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await context.close();
+};
+
 const browser = await chromium.launch();
 try {
   await runShop(browser, 'desktop', { viewport: { width: 1440, height: 900 } });
   await runShop(browser, 'phone', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } });
+  await runTabs(browser);
 } finally {
   await browser.close();
 }

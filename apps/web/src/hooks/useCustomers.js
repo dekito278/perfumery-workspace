@@ -33,13 +33,11 @@ export const useCustomers = () => {
 
     customerTierSchemaReady().then((ready) => { if (mounted) setTierSchemaReady(ready); });
 
-    window.addEventListener('storage', syncCustomers);
     window.addEventListener('dekito:customers-updated', syncCustomers);
     syncCustomers();
 
     return () => {
       mounted = false;
-      window.removeEventListener('storage', syncCustomers);
       window.removeEventListener('dekito:customers-updated', syncCustomers);
     };
   }, []);

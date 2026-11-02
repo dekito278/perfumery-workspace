@@ -114,6 +114,20 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         </>
       );
     }
+    // A failed fetch is not a missing perfume. The public catalogue is never cached on a buyer's device, so
+    // a timed-out request falls back to an EMPTY list — and this used to answer it with "page not found",
+    // noindex included, for a perfume that is on sale.
+    if (studioProducts.stale) {
+      return (
+        <div className="solivagant-editorial-home">
+          <PublicHeader />
+          <main className="grid min-h-[60vh] place-items-center px-6 py-12">
+            <StaleCatalogNotice stale body={t('pdp.loadFailed')} className="w-[min(560px,92vw)]" />
+          </main>
+          <StorefrontFooter />
+        </div>
+      );
+    }
     return <Navigate to="/not-found" replace />;
   }
 

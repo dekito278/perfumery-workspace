@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getBespokeSettings, getBespokeSettingsAsync, translateBespokeSettings } from '@/services/bespokeSettingsService.js';
+import { BESPOKE_SETTINGS_STORAGE_KEY, getBespokeSettings, getBespokeSettingsAsync, translateBespokeSettings } from '@/services/bespokeSettingsService.js';
+import { onStorageKeys } from '@/utils/storageEvent.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 
 /**
@@ -23,13 +24,14 @@ export const useBespokeSettings = ({ forShop = false } = {}) => {
       }
     };
 
-    window.addEventListener('storage', syncSettings);
+    const onStorage = onStorageKeys([BESPOKE_SETTINGS_STORAGE_KEY], syncSettings);
+    window.addEventListener('storage', onStorage);
     window.addEventListener('dekito:bespoke-settings-updated', syncSettings);
     syncSettings();
 
     return () => {
       isMounted = false;
-      window.removeEventListener('storage', syncSettings);
+      window.removeEventListener('storage', onStorage);
       window.removeEventListener('dekito:bespoke-settings-updated', syncSettings);
     };
   }, []);
