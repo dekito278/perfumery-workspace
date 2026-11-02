@@ -546,6 +546,31 @@ select.ng-field option {
   text-transform: uppercase;
 }
 
+/* SwitchToEnglishHint: one quiet line above the header, for a foreign-looking browser on an Indonesian address. */
+.ng-abroad-hint {
+  margin: 0;
+  padding: 0 var(--ng-gutter);
+  background: var(--ng-card);
+  border-bottom: 1px solid var(--ng-line);
+  color: var(--ng-sand);
+  font-family: var(--ng-font-body);
+  font-size: 13px;
+  text-align: center;
+}
+
+.ng-abroad-hint button {
+  min-height: 44px;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  color: var(--ng-bone);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .solivagant-editorial-home .back-to-top,
 .ng-header-wrap .back-to-top {
   border-radius: 0;

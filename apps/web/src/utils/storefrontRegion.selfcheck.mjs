@@ -5,8 +5,10 @@
 // not see his own international shop from Indonesia, a VPN does not change it (a VPN moves the IP, not
 // the clock or the language), and a visitor read wrong had no way to say so.
 //
-// Now the visitor can choose, and the choice wins. This is the rule that decides between the two, and
-// the wiring that keeps every part of the page agreeing on the answer.
+// Then the visitor could choose, and the choice won. Since 2026-11-02 the ADDRESS decides — /en/... is the
+// English shop, every other address the Indonesian one — because a stored choice and the guess could turn
+// /catalog/l-iris English for a US browser, the one Google crawls with: English words and US$95 on an
+// address declared hreflang="id", with two canonicals and two prices. Dekito chose "alamat = bahasa".
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
@@ -17,7 +19,6 @@ import { MESSAGES } from '../i18n/messages.js';
 import {
   REGION_EN,
   REGION_ID,
-  REGION_STORAGE_KEY,
   isValidRegion,
   resolveRegion,
   readRegionFromUrl,
@@ -31,70 +32,40 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf8'));
 
-// --- 1. A stored choice always wins ---------------------------------------------------------------------
-// Including a choice of Indonesia by someone the detection thinks is abroad. That is exactly the person
-// the switch exists for; second-guessing them makes it a suggestion rather than a control.
-assert.equal(resolveRegion(REGION_ID, true), REGION_ID, 'choosing Indonesia beats a detection that says otherwise');
-assert.equal(resolveRegion(REGION_EN, false), REGION_EN, 'and choosing international beats one that says Indonesia');
-
-// --- 2. With no choice, the guess decides — and Indonesia is the default -----------------------------------
-assert.equal(resolveRegion(null, true), REGION_EN, 'a browser that looks foreign starts on the international shop');
-assert.equal(resolveRegion(null, false), REGION_ID);
-for (const nothing of [undefined, '', 'xx', 'ID', 'EN', 0, {}, []]) {
-  assert.equal(resolveRegion(nothing, false), REGION_ID,
-    `${JSON.stringify(nothing)} is not a stored choice, so the guess decides`);
+// --- 1. The address decides, for everyone -------------------------------------------------------------------
+assert.equal(resolveRegion('/en/catalog/l-iris'), REGION_EN, 'the English address is the English shop');
+assert.equal(resolveRegion('/en'), REGION_EN);
+for (const indonesian of ['/catalog/l-iris', '/', '/home', '/english', '/catalog/english-oak', '']) {
+  assert.equal(resolveRegion(indonesian), REGION_ID, `${JSON.stringify(indonesian)} is the Indonesian shop, whatever the browser`);
 }
-assert.equal(isValidRegion('ID'), false, 'the stored value is lowercase; a stray case is not a choice');
-assert.equal(REGION_STORAGE_KEY, 'solivagant.storefront.region.v1');
+assert.equal(resolveRegion.length, 1, 'one input — the address. A second one is how the guess got its say back');
+assert.equal(isValidRegion('ID'), false, 'regions are lowercase; a stray case is not a region');
 
-// --- 3. Blocked storage must not break the switch ----------------------------------------------------------
-// Private windows throw on both read and write. The choice still has to apply to this page view.
+// --- 2. Nothing but the address reaches the answer -----------------------------------------------------------
 const util = read('utils', 'storefrontRegion.js');
-assert.match(util, /export const readStoredRegion[\s\S]{0,400}?\} catch \{[\s\S]{0,200}?return null;/,
-  'a read that throws means "no choice yet", not a crash');
-assert.match(util, /export const writeStoredRegion[\s\S]{0,400}?\} catch \{[\s\S]{0,260}?return false;/,
-  'a write that throws is reported, not thrown');
+const hook = read('hooks', 'useStorefrontRegion.js');
+assert.doesNotMatch(`${util}\n${hook}`, /localStorage|detectOverseasVisitor|navigator\./,
+  'no stored choice and no guess — either one turns an Indonesian address English for somebody, Googlebot included');
 
-// --- 4. One shared answer, not one per component ------------------------------------------------------------
+// --- 3. One shared answer, not one per component ------------------------------------------------------------
 // Each component resolving its own would let the header say Indonesia while the price panel says
 // international, and the two would disagree for a whole page view.
-const hook = read('hooks', 'useStorefrontRegion.js');
 assert.match(hook, /const listeners = new Set\(\);/, 'one value, published to every subscriber');
-// Held as the invariant rather than as one call's shape — pinning the exact expression made adding
-// ?lang to the resolution look like a regression when the rule was never broken.
 {
   const effectAt = hook.indexOf('useEffect(() => {');
   assert.notEqual(effectAt, -1, 'the region is still resolved in an effect');
   const effectBody = hook.slice(effectAt, hook.indexOf('}, []);', effectAt));
-  assert.match(effectBody, /publish\(\s*(resolveRegion\(|next)/,
-    'resolved in an effect, never during render — the product pages are prerendered');
-  assert.match(effectBody, /resolveRegion\(/, 'and by resolveRegion, which owns the precedence');
-  // Both halves of "what the address says" reach it. Dropping either one silently demotes a shared link
-  // back below whatever this browser happened to choose months ago.
-  assert.match(effectBody, /readRegionFromPath\(\)/, 'the path is read — /en/catalog IS the English shop');
-  assert.match(effectBody, /readRegionFromUrl\(\)/, 'and ?lang still is too, for the links already sent');
+  assert.match(effectBody, /const here = resolveRegion\(\);[\s\S]*?publish\(here\)/, 'the address is read and published');
+  // ?lang links were sent abroad for weeks. They move to the address that IS that shop; they no longer
+  // turn the address they arrived on into the other language.
+  assert.match(effectBody, /asked && asked !== here \? regionHref\(asked\) : null;[\s\S]{0,80}?window\.location\.replace\(href\)/,
+    'an old ?lang=en link lands on the /en address');
 }
 assert.match(hook, /let current = REGION_ID;/,
-  'and until that effect runs the answer is Indonesia, which is what the prerendered HTML already says');
-assert.match(hook, /writeStoredRegion\(next\);[\s\S]{0,200}?publish\(next\);/,
-  'a choice is stored and published — blocked storage still changes this page view');
-
-// --- 4b. ?lang makes the shop shareable -------------------------------------------------------------------
-// Without it the English shop had no address of its own: a link sent to an overseas buyer opened in
-// Indonesian and left them to find the switch. The precedence is the part that matters — a browser that
-// once chose Indonesian must not quietly override the link it was just sent.
-assert.match(util, /export const resolveRegion = \(stored, detectedOverseas, fromUrl\) => \{\s*if \(isValidRegion\(fromUrl\)\) return fromUrl;/,
-  '?lang wins over a stored choice, or a shared link does nothing for anyone who has used the site before');
-assert.equal(resolveRegion('id', false, 'en'), 'en', 'a link to the English shop opens the English shop');
-assert.equal(resolveRegion('en', true, 'id'), 'id', 'and a link to the Indonesian shop opens that one');
-assert.equal(resolveRegion('id', true, 'xx'), 'id', 'an unknown ?lang is ignored, not obeyed');
-assert.equal(resolveRegion('id', true, null), 'id', 'and with no ?lang the stored choice still wins the guess');
+  'until that effect runs the answer is Indonesia, which is what the prerendered HTML already says');
 assert.equal(readRegionFromUrl('?lang=en'), 'en', 'the parameter is read');
 assert.equal(readRegionFromUrl('?lang=zz'), null, 'a value we do not have is no answer at all');
 assert.equal(readRegionFromUrl('?utm_source=ig'), null, 'and an address without it is no answer either');
-// Arriving by link stores the choice, or the first click off that address drops back to the old shop.
-assert.match(hook, /if \(fromUrl\) writeStoredRegion\(fromUrl\);/,
-  'a link is a choice: stored, so it survives the first navigation away from the address that carried it');
 
 // --- 4c. The English shop has its OWN ADDRESS, not just its own parameter ---------------------------------
 // ?lang=en made the shop shareable. It could not make it *previewable*: one prerendered HTML file carries
@@ -176,7 +147,7 @@ assert.equal(barePathname('/catalog/english-oak'), '/catalog/english-oak', 'and 
   }
 }
 
-// --- 5. The price panel follows the CHOICE, not the raw guess --------------------------------------------------
+// --- 5. The price panel follows the REGION, not the raw guess ---------------------------------------------------
 const priceHook = read('hooks', 'useOverseasPrice.js');
 assert.match(priceHook, /const \{ isInternational: overseasVisitor \} = useStorefrontRegion\(\);/,
   'the export price panel reads the chosen region');
@@ -253,4 +224,4 @@ assert.match(unknown.content.title, /not found/i, 'a real 404 must still read as
 assert.equal(resolveBoot('/catalog').links[0].href, '/catalog',
   'and an Indonesian visitor must not be sent into the English shop');
 
-console.log('storefrontRegion selfcheck OK (the visitor chooses and the choice wins; the guess is only the default, and it is a switch rather than a gate)');
+console.log('storefrontRegion selfcheck OK (the address decides the shop for everyone; the switch moves between addresses and is never a gate)');

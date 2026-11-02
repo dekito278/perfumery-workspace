@@ -8,9 +8,8 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  *
  * Deliberately NOT a question on entry. A gate before the shop costs visitors who would otherwise have
  * looked, and an Indonesian who taps "international" by mistake is shown prices 3,5x higher and leaves.
- * The guess still decides the default, so the German customer it was built for chooses nothing at all —
- * this is here for the visitor it reads wrong, and for Dekito, who could not otherwise see his own
- * international shop from Indonesia.
+ * Since 2026-11-02 the address decides which shop is shown, so this is simply how anyone crosses to the
+ * other address; a foreign-looking browser on an Indonesian one is also offered SwitchToEnglishHint.
  *
  * Two labels rather than a flag: a flag claims to know a country, and this only knows which price list
  * the visitor wants.

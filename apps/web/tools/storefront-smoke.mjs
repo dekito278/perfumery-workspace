@@ -199,6 +199,7 @@ const runShop = async (browser, run, contextOptions) => {
   check(run, 'home renders its headline', await page.locator('h1').first().isVisible());
   check(run, 'home has no horizontal scroll', await noSideScroll(page));
   check(run, 'home stays on /home (no phone redirect)', pathOf(page) === '/home', pathOf(page));
+  check(run, 'an Indonesian browser is not offered the English shop', !(await page.locator('.ng-abroad-hint').count()));
 
   // --- Catalogue filter ---
   await goto(page, '/catalog');
@@ -393,11 +394,68 @@ const runTabs = async (browser) => {
   await context.close();
 };
 
+// What a page tells a crawler, read after React has run: one of each head tag, and the page's own address.
+const headOf = (page) => page.evaluate(() => ({
+  lang: document.documentElement.lang,
+  canonicals: [...document.querySelectorAll('link[rel="canonical"]')].map((l) => new URL(l.href).pathname),
+  descriptions: document.querySelectorAll('meta[name="description"]').length,
+  products: [...document.querySelectorAll('script[type="application/ld+json"]')]
+    .map((s) => { try { return JSON.parse(s.textContent); } catch { return {}; } })
+    .filter((j) => j['@type'] === 'Product')
+    .map((j) => [].concat(j.offers || [])[0]?.priceCurrency || 'none'),
+}));
+
+// A US-English browser — the one Google crawls with — on the Indonesian shop. Until 2026-11-02 the guess
+// turned /catalog/l-iris English at US$95 for it, with two canonicals and two prices; the address decides now.
+const runAbroad = async (browser) => {
+  const run = 'abroad';
+  const state = { blocked: [], orderBodies: [], order: null };
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-US', timezoneId: 'America/Los_Angeles' });
+  await guard(context, state);
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(String(error.message || error)));
+
+  await goto(page, '/catalog');
+  const href = await page.$eval('a[href^="/catalog/"]', (a) => a.getAttribute('href')).catch(() => '');
+  await goto(page, href);
+  let head = await headOf(page);
+  const price = await page.locator('main').innerText();
+  // Not "no US$ anywhere": the Indonesian shop prints its own export line ("Harga untuk pengiriman ke luar negeri").
+  const buyIndonesian = await page.getByRole('button', { name: new RegExp(`^${ID['pdp.addToCart']}`) }).first().isVisible().catch(() => false);
+  check(run, 'an Indonesian address stays Indonesian (lang, Rp, Indonesian buy button)', head.lang === 'id' && /Rp\s?\d/.test(price) && buyIndonesian, `lang=${head.lang}`);
+  check(run, 'with one canonical, its own address', head.canonicals.length === 1 && head.canonicals[0] === href, head.canonicals.join(', '));
+  check(run, 'one description and one Product, priced in IDR', head.descriptions === 1 && head.products.join() === 'IDR', `${head.descriptions} descriptions, Product ${head.products.join('/')}`);
+
+  const offer = page.getByRole('button', { name: EN['intl.switchToEn'], exact: true });
+  check(run, 'the browser is offered the English shop, in English', await offer.isVisible().catch(() => false)
+    && await page.getByText(EN['intl.fromAbroad']).isVisible().catch(() => false));
+  if (await offer.isVisible().catch(() => false)) {
+    await offer.click();
+    await page.waitForURL(/\/en\/catalog\//, { timeout: 10000 }).catch(() => {});
+    await settle(page);
+    head = await headOf(page);
+    check(run, 'which is the same perfume at its /en address', pathOf(page) === `/en${href}` && head.lang === 'en', pathOf(page));
+    check(run, 'with one canonical there too', head.canonicals.length === 1 && head.canonicals[0] === `/en${href}`, head.canonicals.join(', '));
+    check(run, 'and one Product block, not the Rp one beside a US$ one', head.products.length === 1 && head.products[0] !== 'IDR', head.products.join('/'));
+    check(run, 'no English-shop offer inside the English shop', !(await page.locator('.ng-abroad-hint').count()));
+  }
+
+  await goto(page, '/catalog?lang=en');
+  await page.waitForURL(/\/en\/catalog/, { timeout: 10000 }).catch(() => {});
+  check(run, 'an old ?lang=en link lands on the /en address', pathOf(page) === '/en/catalog', pathOf(page));
+
+  check(run, 'no write left the browser', state.blocked.length === 0, state.blocked.join(', '));
+  check(run, 'no uncaught page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await context.close();
+};
+
 const browser = await chromium.launch();
 try {
   await runShop(browser, 'desktop', { viewport: { width: 1440, height: 900 } });
   await runShop(browser, 'phone', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } });
   await runTabs(browser);
+  await runAbroad(browser);
 } finally {
   await browser.close();
 }
