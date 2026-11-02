@@ -7,7 +7,8 @@ import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useCart } from '@/hooks/useCart.js';
-import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, productMetaDescription, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
+import { productCopyFor } from '@/utils/productCopy.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
@@ -139,7 +140,8 @@ const ImmersiveProductPage = ({ product, story, stale = false }) => {
   const siteOrigin = getSiteOrigin();
   const canonicalUrl = shopCanonicalUrl(`/catalog/${product.slug}`, region, siteOrigin);
   const shareImage = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, siteOrigin);
-  const metaDescription = String(hero.subtitle || product.subtitle || product.story || '').trim().slice(0, 155);
+  // The product's own description, as the prerendered page has it; the story's subtitle is the page's hero line.
+  const metaDescription = productMetaDescription(product.name, productCopyFor(product, region).description || hero.subtitle || product.subtitle || product.story);
   // The price the reader is shown, in its own currency: the English shop said IDR here beside a US$ page.
   const priceMeta = exportPrice ? { amount: usdPriceFor(exportPrice), currency: 'USD' }
     : product.priceNumber > 0 ? { amount: product.priceNumber, currency: 'IDR' } : null;

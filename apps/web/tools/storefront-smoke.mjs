@@ -489,6 +489,39 @@ const runOutage = async (browser) => {
   await context.close();
 };
 
+// What a crawler without JavaScript reads must be what the page says once it runs: the two used to be
+// built separately and drifted on every product and article (2026-11-02). Plus Google's display limits.
+const runSeo = async (browser) => {
+  const run = 'seo';
+  const sitemap = await fetch(`${BASE}/sitemap.xml`).then((r) => r.text()).catch(() => '');
+  const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+  const pick = (re) => locs.find((path) => re.test(path));
+  const paths = ['/home', '/catalog', '/bespoke', '/about', '/journal', '/en/home', '/en/catalog', '/en/bespoke', '/en/about',
+    pick(/^\/catalog\/./), pick(/^\/en\/catalog\/./), pick(/^\/articles\//)].filter(Boolean);
+  const decode = (text) => String(text || '').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  const drift = [];
+  const long = [];
+  for (const path of paths) {
+    const raw = await fetch(`${BASE}${path}`).then((r) => r.text());
+    const rawTitle = decode((raw.match(/<title[^>]*>([^<]*)<\/title>/) || [])[1]);
+    const rawDescription = decode((raw.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"/) || [])[1]);
+    const context = await browser.newContext({ locale: 'en-US', timezoneId: 'America/Los_Angeles' });
+    const state = { blocked: [], orderBodies: [], order: null };
+    await guard(context, state);
+    const page = await context.newPage();
+    await goto(page, path);
+    const live = await page.evaluate(() => ({ title: document.title, description: document.querySelector('meta[name="description"]')?.content || '' }));
+    await context.close();
+    if (live.title !== rawTitle) drift.push(`${path} title "${rawTitle}" → "${live.title}"`);
+    if (live.description !== rawDescription) drift.push(`${path} description`);
+    if (live.title.length > 60) long.push(`${path} title ${live.title.length}`);
+    // An article's description is its excerpt, written by Dekito; only the shop's own pages are held to a range.
+    if (!path.includes('/articles/') && (live.description.length < 70 || live.description.length > 160)) long.push(`${path} description ${live.description.length}`);
+  }
+  check(run, `before and after JavaScript, ${paths.length} pages say the same title and description`, drift.length === 0, drift.join('; '));
+  check(run, 'titles fit 60 characters, descriptions 70–160', long.length === 0, long.join('; '));
+};
+
 const browser = await chromium.launch();
 try {
   await runShop(browser, 'desktop', { viewport: { width: 1440, height: 900 } });
@@ -496,6 +529,7 @@ try {
   await runTabs(browser);
   await runAbroad(browser);
   await runOutage(browser);
+  await runSeo(browser);
 } finally {
   await browser.close();
 }

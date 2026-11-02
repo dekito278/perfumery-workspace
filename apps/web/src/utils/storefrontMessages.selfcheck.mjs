@@ -72,8 +72,8 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'checkout.tab', 'checkout.eyebrow', 'checkout.title', 'checkout.whatsapp',
   'checkout.subtotal', 'checkout.total', 'mcheckout.auto', 'mcheckout.stepArea',
   'pay.tab', // the payment tab title is already English on the Indonesian site
-  // The journal is titled in English on the Indonesian site already — it is the section's name.
-  'journal.tab', 'journal.meta', 'journal.eyebrow',
+  // (journal.tab / .meta / .eyebrow left this list on 2026-11-02: since the redesign the Indonesian journal
+  // is headed "Catatan Atelier", so an English tab and an English search snippet were no longer its name.)
   'pay.refresh', // the same word in both
   'pay.status',  // Status is Status
   // Payment providers are named, not translated: DOKU is DOKU and QRIS is QRIS on both sides.

@@ -18,7 +18,7 @@ import { formatDate } from '@/utils/formatting.js';
 // The shared helpers fall back to the production site URL; this page had its own copies that fell back to
 // window.location.origin, so an article viewed on a Vercel preview or a bare domain published a canonical,
 // og:url and JSON-LD @id pointing at that host (audit round 8).
-import { DEFAULT_SHARE_IMAGE, getSiteOrigin, stripTrailingBrand, toAbsoluteUrl } from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, brandedTitle, getSiteOrigin, metaSnippet, stripTrailingBrand, toAbsoluteUrl } from '@/utils/seo.js';
 import { stripMarkdown } from '@/utils/articleExcerpt.js';
 
 const getReadingMinutes = (content) => {
@@ -32,14 +32,6 @@ const DEFAULT_DESCRIPTION = 'Read a Solivagant perfumery journal article.';
 
 
 
-const truncateMeta = (value, maxLength = 155) => {
-  const normalized = stripMarkdown(value);
-  if (normalized.length <= maxLength) {
-    return normalized;
-  }
-
-  return `${normalized.slice(0, maxLength - 1).trim()}...`;
-};
 
 
 /* ─── Mobile article view (unchanged Tailwind-based layout) ─── */
@@ -82,7 +74,8 @@ const PublicJournalArticlePage = () => {
   const tags = Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [];
   const readingMinutes = useMemo(() => getReadingMinutes(post?.content), [post?.content]);
   const title = stripTrailingBrand(post?.seo_title || post?.title || 'Journal Article');
-  const description = truncateMeta(post?.excerpt || post?.content || DEFAULT_DESCRIPTION);
+  // excerpt, else the title — exactly what the prerendered page says (tools/seo-artifacts.mjs).
+  const description = post ? metaSnippet(stripMarkdown(post.excerpt || post.title || '')) : DEFAULT_DESCRIPTION;
   const canonicalPath = post?.slug ? `/articles/${post.slug}` : `/articles/${slug || ''}`;
   const siteOrigin = getSiteOrigin();
   const canonicalUrl = toAbsoluteUrl(canonicalPath, siteOrigin);
@@ -121,7 +114,7 @@ const PublicJournalArticlePage = () => {
   return (
     <>
       <Helmet>
-        <title>{post ? `${title} - Solivagant Journal` : 'Journal Article - Solivagant'}</title>
+        <title>{post ? brandedTitle(title) : t('journal.tab')}</title>
         <meta name="description" content={description} />
         {/* Canonical only for an article that was found; noindex only for one that does not exist. An outage is
             neither, so it claims nothing either way. */}

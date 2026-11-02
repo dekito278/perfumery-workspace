@@ -3,6 +3,29 @@ import { schemaAvailability } from './schemaAvailability.js';
 
 export const SITE_NAME = 'SOLIVAGANT';
 
+// The prerendered head (tools/seo-artifacts.mjs) and the live one (react-helmet) used to build titles and
+// snippets separately, and drifted: every product's description was cut two different ways, and articles
+// were titled "- SOLIVAGANT" in one and "- Solivagant Journal" in the other (measured 2026-11-02). These
+// three are the one way both sides say it.
+
+/** Cut near the ~155 characters a result shows, at a word, and say it was cut. */
+export const metaSnippet = (value, limit = 155) => {
+  const flat = String(value || '').replace(/\s+/g, ' ').trim();
+  if (flat.length <= limit) return flat;
+  const cut = flat.slice(0, limit - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:—-]+$/, '')}…`;
+};
+
+/** "<title> - SOLIVAGANT" while it fits the ~60 characters a result shows; the title alone when it would not. */
+export const brandedTitle = (title, brand = SITE_NAME) => {
+  const full = `${title} - ${brand}`;
+  return full.length <= 60 ? full : String(title);
+};
+
+/** A product's snippet: its name, then its own description. */
+export const productMetaDescription = (name, description) => metaSnippet(`${name} — ${description || ''}`);
+
 /**
  * A title with the brand said ONCE.
  *
