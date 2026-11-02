@@ -508,6 +508,7 @@ const runSeo = async (browser) => {
   const drift = [];
   const long = [];
   const bodies = [];
+  const previews = [];
   for (const path of paths) {
     const raw = await fetch(`${BASE}${path}`).then((r) => r.text());
     const rawTitle = decode((raw.match(/<title[^>]*>([^<]*)<\/title>/) || [])[1]);
@@ -528,6 +529,10 @@ const runSeo = async (browser) => {
     const rawH1 = [...body.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)].map((m) => decode(m[1].replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim());
     if (rawH1.length !== 1 || rawH1[0] !== live.h1) bodies.push(`${path} ${JSON.stringify(rawH1)} vs "${live.h1}"`);
     if (/Rp\s?\d/.test(body.replace(/<[^>]+>/g, ' '))) bodies.push(`${path} prints a rupiah price`);
+    // What WhatsApp and Instagram read: an image, a large card, and the shop's own locale.
+    const og = (name) => (raw.match(new RegExp(`<meta[^>]*(?:property|name)="${name}"[^>]*content="([^"]*)"`)) || [])[1] || '';
+    const locale = path.startsWith('/en') ? 'en_US' : 'id_ID';
+    if (!og('og:image') || og('twitter:card') !== 'summary_large_image' || og('og:locale') !== locale) previews.push(`${path} image=${Boolean(og('og:image'))} card=${og('twitter:card')} locale=${og('og:locale') || '-'}`);
     await context.close();
     if (live.title !== rawTitle) drift.push(`${path} title "${rawTitle}" → "${live.title}"`);
     if (live.description !== rawDescription) drift.push(`${path} description`);
@@ -538,6 +543,7 @@ const runSeo = async (browser) => {
   check(run, `before and after JavaScript, ${paths.length} pages say the same title and description`, drift.length === 0, drift.join('; '));
   check(run, 'titles fit 60 characters, descriptions 70–160', long.length === 0, long.join('; '));
   check(run, 'without JavaScript each page has one h1, the one it shows, and no price', bodies.length === 0, bodies.join('; '));
+  check(run, 'link previews carry an image, a large card and the shop\'s locale', previews.length === 0, previews.join('; '));
 
   // Structured data, read after React (helmet's blocks). The prerendered price is the one a crawler that runs
   // no script reads: it must be the live price, or the 12 Nov 2026 schedule leaves the old one behind.
