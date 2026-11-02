@@ -135,6 +135,38 @@ const studioFontText = (page) => page.evaluate(() => [...document.querySelectorA
     && /^"?DM Sans/.test(getComputedStyle(el).fontFamily))
   .map((el) => el.textContent.trim().slice(0, 30)));
 
+// Every visible control at least 44px both ways (Dekito's rule), and every visible text at 4.5:1 (3:1 when
+// large). A link inside running text is exempt from the size, as WCAG has it; a closed <details> and an
+// off-screen skip link are not on screen. Footer links, the header nav and the gallery dots failed the
+// first, the price notice and the account page's notes the second (2026-11-02).
+const a11yFaults = (page) => page.evaluate(() => {
+  const shown = (el) => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < document.documentElement.scrollHeight && cs.visibility !== 'hidden'
+      && Number(cs.opacity) > 0.05 && !el.closest('[aria-hidden="true"],[inert],details:not([open]) > :not(summary),.sr-only'); };
+  const rgb = (c) => (c.match(/[\d.]+/g) || [0, 0, 0, 0]).map(Number);
+  const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+    .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const backdrop = (el) => { for (let n = el; n; n = n.parentElement) { const cs = getComputedStyle(n);
+    if (cs.backgroundImage !== 'none') return null; const c = rgb(cs.backgroundColor); if ((c[3] ?? 1) > 0.9) return c; } return null; };
+  const faults = [];
+  for (const el of document.querySelectorAll('a[href],button,select,input:not([type=hidden]),textarea,summary')) {
+    if (!shown(el) || el.getBoundingClientRect().top < -100) continue;
+    const r = el.getBoundingClientRect();
+    const inText = el.matches('a') && el.parentElement && [...el.parentElement.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+    if (!inText && (r.width < 44 || r.height < 44)) faults.push(`${Math.round(r.width)}x${Math.round(r.height)} "${(el.getAttribute('aria-label') || el.textContent).trim().slice(0, 24)}"`);
+  }
+  for (const el of document.querySelectorAll('body *')) {
+    if (!shown(el) || ![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+    const bg = backdrop(el); if (!bg) continue;
+    const cs = getComputedStyle(el); const fg = rgb(cs.color); const a = fg[3] ?? 1;
+    const mixed = fg.slice(0, 3).map((v, i) => v * a + bg[i] * (1 - a));
+    const [hi, lo] = [lum(mixed), lum(bg)].sort((x, y) => y - x); const ratio = (hi + 0.05) / (lo + 0.05);
+    const size = parseFloat(cs.fontSize); const need = size >= 24 || (size >= 18.66 && Number(cs.fontWeight) >= 700) ? 3 : 4.5;
+    if (ratio < need && !el.closest('[disabled],[aria-disabled="true"]')) faults.push(`contrast ${ratio.toFixed(2)} "${el.textContent.trim().slice(0, 24)}"`);
+  }
+  return [...new Set(faults)];
+});
+
 // The first product on the catalogue that can be bought right now.
 const openBuyableProduct = async (page, run, prefix, label) => {
   await goto(page, `${prefix}/catalog`);
@@ -199,6 +231,7 @@ const runShop = async (browser, run, contextOptions) => {
   check(run, 'home renders its headline', await page.locator('h1').first().isVisible());
   check(run, 'home has no horizontal scroll', await noSideScroll(page));
   check(run, 'home stays on /home (no phone redirect)', pathOf(page) === '/home', pathOf(page));
+  { const faults = await a11yFaults(page); check(run, 'home: 44px targets and 4.5:1 text', faults.length === 0, faults.slice(0, 6).join('; ')); }
   check(run, 'an Indonesian browser is not offered the English shop', !(await page.locator('.ng-abroad-hint').count()));
 
   // --- Catalogue filter ---
@@ -227,11 +260,13 @@ const runShop = async (browser, run, contextOptions) => {
     check(run, 'a chosen filter announces itself (aria-pressed)', (await target.getAttribute('aria-pressed')) === 'true');
   }
   check(run, 'catalogue has no horizontal scroll', await noSideScroll(page));
+  { const faults = await a11yFaults(page); check(run, 'catalogue: 44px targets and 4.5:1 text', faults.length === 0, faults.slice(0, 6).join('; ')); }
 
   // --- Product → cart ---
   const product = await addToCart(page, run, '', ID);
   if (!product) return { state, errors };
   check(run, 'product page has no horizontal scroll', await noSideScroll(page));
+  { const faults = await a11yFaults(page); check(run, 'product page: 44px targets and 4.5:1 text', faults.length === 0, faults.slice(0, 6).join('; ')); }
 
   await goto(page, '/cart');
   const increase = page.getByRole('button', { name: fill(ID['cart.increaseOf'], { name: product.name }) }).first();

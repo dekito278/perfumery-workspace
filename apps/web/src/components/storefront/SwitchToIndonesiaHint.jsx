@@ -27,7 +27,7 @@ const SwitchToIndonesiaHint = ({ className = '' }) => {
       <button
         type="button"
         onClick={() => setRegion(REGION_ID)}
-        className="font-bold text-ng-bone underline underline-offset-2"
+        className="inline-flex min-h-[44px] items-center font-bold text-ng-bone underline underline-offset-2"
       >
         {t('intl.switchToId')}
       </button>

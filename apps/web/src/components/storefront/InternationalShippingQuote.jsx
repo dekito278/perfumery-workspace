@@ -69,7 +69,7 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
             id={countryId}
             value={country}
             onChange={(event) => setCountry(event.target.value)}
-            className="w-full rounded-none border border-ng-bone/20 bg-transparent px-3 py-2 text-sm font-semibold text-ng-bone"
+            className="min-h-[44px] w-full rounded-none border border-ng-bone/20 bg-transparent px-3 py-2 text-sm font-semibold text-ng-bone"
           >
             <option value="">{t('intlQuote.selectCountry')}</option>
             {groups.map((group) => (
@@ -91,7 +91,7 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
             id={bottlesId}
             value={bottles}
             onChange={(event) => setBottles(event.target.value)}
-            className="w-full rounded-none border border-ng-bone/20 bg-transparent px-3 py-2 text-sm font-semibold text-ng-bone"
+            className="min-h-[44px] w-full rounded-none border border-ng-bone/20 bg-transparent px-3 py-2 text-sm font-semibold text-ng-bone"
           >
             {/* Past the card's last tier there is one more option, and choosing it says so rather than
                 quoting the 5–6 price for eight bottles. */}

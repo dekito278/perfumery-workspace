@@ -223,7 +223,12 @@
   color: var(--ng-bone);
 }
 
+/* 44px tall: the footer's links and the product breadcrumb were 20px targets, and every other use of this
+   class already had to add the same three utilities by hand (measured 2026-11-02). */
 .ng-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--ng-bone);
   opacity: 0.78;
   text-decoration: none;
@@ -380,6 +385,9 @@ select.ng-field option {
 
 .ng-header__wordmark {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--ng-bone);
   font-family: var(--ng-font-display);
   font-size: 22px;
@@ -396,12 +404,15 @@ select.ng-field option {
   gap: 36px;
 }
 
+/* 44px tall, so the current page is marked by an underline under the WORD rather than a border at the
+   bottom of the taller box. */
 .ng-header__nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--ng-bone);
   opacity: 0.78;
   text-decoration: none;
-  padding-bottom: 4px;
-  border-bottom: 1px solid transparent;
 }
 
 .ng-header__nav a:hover {
@@ -410,7 +421,10 @@ select.ng-field option {
 
 .ng-header__nav a[aria-current="page"] {
   opacity: 1;
-  border-bottom-color: var(--ng-ember);
+  text-decoration: underline;
+  text-decoration-color: var(--ng-ember);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 8px;
 }
 
 .ng-header > .ng-header__actions {
@@ -537,7 +551,8 @@ select.ng-field option {
 .price-change-notice {
   margin: 0;
   padding: 10px var(--ng-gutter);
-  background: var(--ng-ember);
+  /* Ember darkened 20%: white 11px type on the ember itself measured 4.0:1; this is 5.8:1. */
+  background: #aa462e;
   color: #fff;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 11px;
@@ -622,6 +637,9 @@ select.ng-field option {
 }
 
 .ng-footer__wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--ng-bone);
   font-family: var(--ng-font-display);
   font-size: 22px;
@@ -641,7 +659,7 @@ select.ng-field option {
 .ng-footer__column {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
   font-size: 14px;
 }
 
@@ -650,10 +668,11 @@ select.ng-field option {
   color: var(--ng-ash);
 }
 
+/* 44px with no gap: the same 40-odd px rhythm the column had at 36 + 4, at a size a thumb can hit. */
 .ng-footer__column a {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 44px;
 }
 
 .ng-footer__form {

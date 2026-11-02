@@ -59,7 +59,7 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
         <button
           type="button"
           onClick={() => loginWithGoogle(window.location.href).catch(() => {})}
-          className="font-bold normal-case tracking-normal underline underline-offset-2"
+          className="inline-flex min-h-[44px] items-center font-bold normal-case tracking-normal underline underline-offset-2"
         >
           {t('price.signInGoogle')}
         </button>

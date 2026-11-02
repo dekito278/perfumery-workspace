@@ -1573,7 +1573,7 @@ const CustomerPortalPage = () => {
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-none bg-ng-bone text-xs font-bold text-ng-ink">{step}</span>
                         <span>
                           <span className="block text-sm font-bold text-ng-bone">{t(titleKey)}</span>
-                          <span className="mt-1 block text-xs font-semibold leading-relaxed text-[#667264]">{t(descriptionKey)}</span>
+                          <span className="mt-1 block text-xs font-semibold leading-relaxed text-ng-dust">{t(descriptionKey)}</span>
                         </span>
                       </div>
                     ))}
