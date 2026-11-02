@@ -7,6 +7,8 @@ import { isFreeVialProduct } from '../src/utils/freeVial.js';
 import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, brandedTitle, metaSnippet as snippet, productMetaDescription, stripTrailingBrand } from '../src/utils/seo.js';
 import { schemaAvailability } from '../src/utils/schemaAvailability.js';
+import { stripMarkdown } from '../src/utils/articleExcerpt.js';
+import { MESSAGES } from '../src/i18n/messages.js';
 import path from 'node:path';
 
 // The public routes the sitemap, the prerendered pages and llms.txt all advertise. build.mjs checks
@@ -160,7 +162,7 @@ export const fetchPublicProducts = async (env) => {
 export const fetchPublishedJournal = async (env) => {
   const rows = await restGet(
     env,
-    'journal_posts?select=slug,title,seo_title,excerpt,cover_image_url,category,published_at,updated_at&status=eq.published&order=published_at.desc',
+    'journal_posts?select=slug,title,seo_title,excerpt,content,cover_image_url,category,published_at,updated_at&status=eq.published&order=published_at.desc',
   );
   if (!Array.isArray(rows)) return [];
   return rows
@@ -170,12 +172,33 @@ export const fetchPublishedJournal = async (env) => {
       title: String(row.title || ''),
       seoTitle: String(row.seo_title || ''),
       excerpt: String(row.excerpt || ''),
+      content: String(row.content || ''),
       image: String(row.cover_image_url || ''),
       category: String(row.category || ''),
       publishedAt: row.published_at || '',
       updatedAt: row.updated_at || row.published_at || '',
     }));
 };
+
+// --- body for a reader without JavaScript ------------------------------
+//
+// The product and article files carried the shell's one line, "JavaScript diperlukan", as their whole body:
+// 132 characters, no name, no description (measured 2026-11-02). Crawlers that do not run scripts — most
+// AI and SEO bots — read that. This is the page's own words in the <noscript> slot, the same shape the
+// static pages already use (build.mjs renderStaticFallback). No price: Dekito's decision of 2026-10-21 —
+// one file answers every country, and the domestic prices are scheduled.
+const noscriptBody = ({ eyebrow, heading, paragraphs, link }) => `<noscript>
+				<main class="app-boot-fallback" aria-label="${escapeHtml(heading)}">
+					<div>
+						${eyebrow ? `<p>${escapeHtml(eyebrow)}</p>` : ''}
+						<h1>${escapeHtml(heading)}</h1>
+${paragraphs.filter(Boolean).map((text) => `						<p class="app-boot-description">${escapeHtml(text)}</p>`).join('\n')}
+						<div class="app-boot-links"><a href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a></div>
+					</div>
+				</main>
+			</noscript>`;
+
+const withNoscriptBody = (html, body) => html.replace(/<noscript>[\s\S]*?<\/noscript>/, body);
 
 // --- head-tag upsert ---------------------------------------------------
 
@@ -333,6 +356,16 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
           ], siteUrl),
       ]);
 
+      html = withNoscriptBody(html, noscriptBody({
+        eyebrow: [product.category, product.concentration].filter(Boolean).join(' · '),
+        heading: product.name,
+        paragraphs: [
+          english ? (product.descriptionEn || product.description) : product.description,
+          [...product.topNotes, ...product.heartNotes, ...product.baseNotes].join(' · '),
+        ],
+        link: { href: `${english ? EN_PREFIX : ''}/catalog`, label: MESSAGES[lang]['pdp.collection'] },
+      }));
+
       const dir = path.join(distRoot, ...(english ? [EN_PREFIX.slice(1)] : []), 'catalog', product.slug);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.join(dir, 'index.html'), html);
@@ -396,6 +429,15 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
         { name: post.title, path: `/articles/${post.slug}` },
       ], siteUrl),
     ]);
+
+    // The whole article, one paragraph per block of the markdown: an article is its text, and a crawler
+    // without JavaScript was given none of it.
+    html = withNoscriptBody(html, noscriptBody({
+      eyebrow: post.category,
+      heading: stripTrailingBrand(post.title, BRAND),
+      paragraphs: [post.excerpt, ...String(post.content || '').split(/\n\s*\n/).map(stripMarkdown)],
+      link: { href: '/journal', label: MESSAGES.id['nav.journal'] },
+    }));
 
     const dir = path.join(distRoot, 'articles', post.slug);
     fs.mkdirSync(dir, { recursive: true });
