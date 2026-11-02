@@ -8,6 +8,8 @@ import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, brandedTitle, metaSnippet as snippet, productMetaDescription, stripTrailingBrand } from '../src/utils/seo.js';
 import { schemaAvailability } from '../src/utils/schemaAvailability.js';
 import { stripMarkdown } from '../src/utils/articleExcerpt.js';
+import { indexTierPrices } from '../src/utils/tierPrice.js';
+import { applyTierPrices } from '../src/utils/tierPricedCatalog.js';
 import { MESSAGES } from '../src/i18n/messages.js';
 import path from 'node:path';
 
@@ -94,6 +96,26 @@ const restGet = async (env, pathAndQuery) => {
   return res.json();
 };
 
+// The retail prices in force right now, exactly as the live page gets them: the same RPC, then the same
+// indexTierPrices + applyTierPrices. price_number alone is the UNSCHEDULED price — from 12 Nov 2026 the
+// schedule moves retail, and a build reading only the column would have baked the old figure into every
+// Product block and product:price tag until Dekito's clean-up migration ran (found 2026-11-02). Any
+// failure answers "no override", which is what the column already says.
+const priceAsLive = async (env, products) => {
+  if (!env.supabaseUrl || !env.supabaseKey || !products.length) return products;
+  try {
+    const res = await fetch(`${env.supabaseUrl}/rest/v1/rpc/storefront_prices_for_me`, {
+      method: 'POST',
+      headers: { apikey: env.supabaseKey, Authorization: `Bearer ${env.supabaseKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_slugs: null }),
+    });
+    if (!res.ok) return products;
+    return applyTierPrices(products, 'retail', indexTierPrices(await res.json()));
+  } catch {
+    return products;
+  }
+};
+
 const toList = (value) => {
   if (Array.isArray(value)) return value.filter(Boolean).map((v) => String(v).trim());
   if (typeof value === 'string') {
@@ -124,7 +146,7 @@ export const fetchPublicProducts = async (env) => {
     'storefront_products_public?select=slug,name,category,price_number,stock,variants,notes,description,notes_en,description_en,top_notes,heart_notes,base_notes,image_url,image_urls,tags,concentration,updated_at&order=created_at.desc',
   );
   if (!Array.isArray(rows)) return [];
-  return rows
+  const products = rows
     .filter((row) => row && row.slug && row.name)
     .filter((row) => !toList(row.tags).some((tag) => tag.toLowerCase() === DRAFT_TAG))
     // The vial rows are gift stock, readable by an anonymous browser so the cart can offer them — which
@@ -157,6 +179,7 @@ export const fetchPublicProducts = async (env) => {
       concentration: row.concentration || 'Eau de Parfum',
       updatedAt: row.updated_at || '',
     }));
+  return priceAsLive(env, products);
 };
 
 export const fetchPublishedJournal = async (env) => {
@@ -425,7 +448,7 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
       articleJsonLd(post, siteUrl, canonical),
       breadcrumbJsonLd([
         { name: 'Beranda', path: '/home' },
-        { name: 'Journal', path: '/journal' },
+        { name: MESSAGES.id['nav.journal'], path: '/journal' },
         { name: post.title, path: `/articles/${post.slug}` },
       ], siteUrl),
     ]);

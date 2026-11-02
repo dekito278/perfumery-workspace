@@ -20,6 +20,7 @@ import SkipToResults from '@/components/storefront/SkipToResults.jsx';
 import { catalogPillCounts, pillIsOffered } from '@/utils/catalogFacets.js';
 import { shortNoteList } from '@/utils/shortNoteList.js';
 import { getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import { buildBreadcrumbJsonLd, getSiteOrigin, shopCanonicalUrl } from '@/utils/seo.js';
 import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
@@ -138,7 +139,7 @@ const CatalogPage = () => {
   const catalogBreadcrumb = buildBreadcrumbJsonLd([
     { name: t('pdp.home'), path: '/home' },
     { name: t('pdp.collection'), path: '/catalog' },
-  ], siteOrigin);
+  ], siteOrigin, shopPrefixForRegion(region));
 
   return (
     <>

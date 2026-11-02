@@ -7,6 +7,7 @@ import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useCart } from '@/hooks/useCart.js';
+import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, productMetaDescription, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
@@ -152,12 +153,13 @@ const ImmersiveProductPage = ({ product, story, stale = false }) => {
     // usdPriceFor is the shop's own rounding, so the structured data carries the same US$ figure the
     // buyer is reading — not the Rp this used to emit to every visitor on earth.
     offer: exportPrice ? { currency: 'USD', price: usdPriceFor(exportPrice) } : null,
+    description: productCopyFor(product, region).description,
   });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: t('nav.home'), path: '/home' },
     { name: t('pdp.collection'), path: '/catalog' },
     { name: product.name, path: `/catalog/${product.slug}` },
-  ], siteOrigin);
+  ], siteOrigin, shopPrefixForRegion(region));
 
   return (
     <>

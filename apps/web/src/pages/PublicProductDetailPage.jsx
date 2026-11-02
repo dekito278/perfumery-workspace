@@ -37,6 +37,7 @@ import ProductTestimonials from '@/components/storefront/ProductTestimonials.jsx
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, productMetaDescription, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
@@ -220,12 +221,13 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
     // usdPriceFor is the shop's own rounding, so the structured data carries the same US$ figure the
     // buyer is reading — not the Rp this used to emit to every visitor on earth.
     offer: exportPrice ? { currency: 'USD', price: usdPriceFor(exportPrice) } : null,
+    description: copy.description,
   });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: t('pdp.home'), path: '/home' },
     { name: t('pdp.collection'), path: '/catalog' },
     { name: product.name, path: `/catalog/${product.slug}` },
-  ], siteOrigin);
+  ], siteOrigin, shopPrefixForRegion(region));
 
   return (
     <>

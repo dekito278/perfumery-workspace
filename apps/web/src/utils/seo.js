@@ -128,27 +128,25 @@ export const buildOrganizationJsonLd = (origin = getSiteOrigin()) => ({
   },
 });
 
-export const buildWebSiteJsonLd = (origin = getSiteOrigin()) => ({
+// No SearchAction: it advertised /catalog?q=…, which the catalogue never read, and Google retired the
+// sitelinks search box it fed in November 2024 (removed 2026-11-02). The language follows the shop.
+export const buildWebSiteJsonLd = (origin = getSiteOrigin(), region = 'id') => ({
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: SITE_NAME,
   url: origin || undefined,
-  inLanguage: 'id-ID',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: `${origin}/catalog?q={search_term_string}`,
-    'query-input': 'required name=search_term_string',
-  },
+  inLanguage: region === 'en' ? 'en' : 'id-ID',
 });
 
-export const buildBreadcrumbJsonLd = (crumbs = [], origin = getSiteOrigin()) => ({
+// `prefix` is the shop's ('/en' or ''): the English product page's trail pointed at the Indonesian pages.
+export const buildBreadcrumbJsonLd = (crumbs = [], origin = getSiteOrigin(), prefix = '') => ({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: crumbs.map((crumb, index) => ({
     '@type': 'ListItem',
     position: index + 1,
     name: crumb.name,
-    item: crumb.path ? toAbsoluteUrl(crumb.path, origin) : undefined,
+    item: crumb.path ? toAbsoluteUrl(`${prefix}${crumb.path}`, origin) : undefined,
   })),
 });
 
@@ -159,7 +157,8 @@ export const buildBreadcrumbJsonLd = (crumbs = [], origin = getSiteOrigin()) => 
  *   front of the buyer said US$80. Google runs the JavaScript, so the rich result is built from this.
  *   Same leak as the rupiah in the crawler snapshot, one layer in.
  */
-export const buildProductJsonLd = (product, { origin = getSiteOrigin(), canonicalUrl, offer = null } = {}) => {
+// `description`: the page's own, in its language — the English page used to state the Indonesian one.
+export const buildProductJsonLd = (product, { origin = getSiteOrigin(), canonicalUrl, offer = null, description = '' } = {}) => {
   if (!product) return null;
   const image = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, origin);
   const url = canonicalUrl || toAbsoluteUrl(`/catalog/${product.slug}`, origin);
@@ -169,7 +168,7 @@ export const buildProductJsonLd = (product, { origin = getSiteOrigin(), canonica
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    description: product.description || product.story || product.subtitle,
+    description: description || product.description || product.story || product.subtitle,
     image: image ? [image] : undefined,
     category: product.category || product.publicCategory || undefined,
     brand: { '@type': 'Brand', name: SITE_NAME },
