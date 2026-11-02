@@ -10,7 +10,10 @@ import {
 // One value shared by every component, with listeners — the same shape useTierPrices uses. Each component
 // resolving its own would let the header say Indonesia while the price panel says international, and the
 // two would disagree for a whole page view.
-let current = REGION_ID;
+// The address is known before the first render, so the first render is already in the right shop. It used
+// to start Indonesian and switch in the effect: /en pages flashed Indonesian words and the domestic price
+// notice, then the header jumped 38 px when the notice went (CLS 0.05, measured 2026-11-02).
+let current = typeof window === 'undefined' ? REGION_ID : resolveRegion();
 let resolved = false;
 const listeners = new Set();
 

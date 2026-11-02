@@ -189,7 +189,7 @@ const CheckoutPage = () => {
                   <label className="ng-label">
                     <span className="ng-mono text-ng-dust">{t('checkout.customerCode')}</span>
                     <div className="flex gap-2">
-                      <input type="text" className="ng-field uppercase placeholder:normal-case" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('checkout.customerCodePlaceholder')} aria-label={t('checkout.customerCode')} autoComplete="off" />
+                      <input type="text" className="ng-field uppercase placeholder:normal-case" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('checkout.customerCodePlaceholder')} aria-label={t('checkout.customerCode')} autoComplete="off" autoCapitalize="characters" spellCheck={false} />
                       <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
                         {lookupLoading ? t('checkout.checking') : t('checkout.load')}
                       </button>
@@ -339,6 +339,8 @@ const CheckoutPage = () => {
                         onChange={(event) => voucher.setInputCode(event.target.value)}
                         placeholder={t('checkout.voucherPlaceholder')} aria-label={t('checkout.voucherPlaceholder')}
                         autoComplete="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
                         disabled={!items.length || voucher.loading}
                       />
                       <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>

@@ -193,9 +193,12 @@ assert.doesNotMatch(hook, /detectOverseasVisitor/,
   assert.match(hint, /setRegion\(REGION_EN\)/, 'and what it does is go to the English address');
   assert.doesNotMatch(hint, /addItem|usdPriceFor|exportPrice|publish\(/, 'it never prices and never sets the region');
 }
-// Starts on the Indonesian shop, so the first render — the one matching the prerendered HTML — quotes nobody.
-assert.match(hook, /let current = REGION_ID;/,
-  'nothing is quoted internationally until the effect has run');
+// The first render takes the ADDRESS, never the guess: an Indonesian address quotes nobody internationally
+// from its very first paint, and /en quotes dollars because that address is the international shop.
+assert.match(hook, /let current = typeof window === 'undefined' \? REGION_ID : resolveRegion\(\);/,
+  'the first render is decided by the address');
+assert.doesNotMatch(hook.slice(0, hook.indexOf('export const useStorefrontRegion')), /detectOverseasVisitor/,
+  'and nothing before the hook guesses');
 
 // --- 8. One detection, shared ------------------------------------------------------------------------------
 // Two components each detecting for themselves is this repo's commonest defect, and here the two would
