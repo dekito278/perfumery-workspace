@@ -66,7 +66,7 @@ const CartPage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
-        <StaleCatalogNotice stale={catalogProducts.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
+        <StaleCatalogNotice stale={catalogProducts.stale} empty={!catalogProducts.length} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
 

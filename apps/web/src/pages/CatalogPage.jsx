@@ -156,7 +156,7 @@ const CatalogPage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
-        <StaleCatalogNotice stale={fetchedProducts.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
+        <StaleCatalogNotice stale={fetchedProducts.stale && products.length > 0} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
 
@@ -165,7 +165,7 @@ const CatalogPage = () => {
         <header className="ng-section !pb-8 !pt-8 md:!pb-14 md:!pt-24">
           <div className="ng-container flex flex-wrap items-end justify-between gap-4 md:gap-8">
             <div className="flex flex-col gap-5">
-              <p className="ng-eyebrow ng-mono m-0">{t('catalog.ngEyebrow', { count: products.length })}</p>
+              <p className="ng-eyebrow ng-mono m-0">{products.length ? t('catalog.ngEyebrow', { count: products.length }) : t('catalog.ngEyebrowBare')}</p>
               <h1 className="ng-display ng-h1">{t('catalog.title')}</h1>
             </div>
             <p className="ng-lead max-w-[440px] !text-base">{t('catalog.ngLead')}</p>
@@ -188,7 +188,7 @@ const CatalogPage = () => {
                     onClick={() => setActiveCategory(category)}
                   >
                     {category === 'All' ? t('catalog.all') : category}
-                    <span className="ng-chip__count">{pillCounts[category] ?? 0}</span>
+                    {products.length ? <span className="ng-chip__count">{pillCounts[category] ?? 0}</span> : null}
                   </button>
                 ))}
                 {/* Until the catalogue arrives the families are unknown; placeholders hold their room so the

@@ -151,7 +151,7 @@ const PublicJournalPage = () => {
                   className="ng-chip ng-filter"
                 >
                   {cat === JOURNAL_ALL_TAB ? t("journal.all") : cat}
-                  <span className="ng-chip__count">{tabCounts[cat] ?? 0}</span>
+                  {error ? null : <span className="ng-chip__count">{tabCounts[cat] ?? 0}</span>}
                 </Link>
               ))}
             </nav>
@@ -179,6 +179,9 @@ const PublicJournalPage = () => {
               <div className="flex flex-col gap-4 py-14">
                 <p className="ng-mono m-0 text-ng-ash">{t('journal.failedEyebrow')}</p>
                 <h2 className="ng-display text-[36px] font-normal">{error}</h2>
+                <button type="button" className="ng-btn self-start" onClick={() => window.dispatchEvent(new CustomEvent(JOURNAL_POSTS_CHANGED_EVENT))}>
+                  {t('stale.retry')}
+                </button>
               </div>
             ) : !filtered.length ? (
               <div className="flex flex-col gap-4 py-14">

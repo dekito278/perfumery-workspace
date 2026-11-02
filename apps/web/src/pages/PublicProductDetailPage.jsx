@@ -122,7 +122,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         <div className="solivagant-editorial-home">
           <PublicHeader />
           <main className="grid min-h-[60vh] place-items-center px-6 py-12">
-            <StaleCatalogNotice stale body={t('pdp.loadFailed')} className="w-[min(560px,92vw)]" />
+            <div className="flex w-[min(560px,92vw)] flex-col gap-6">
+              <h1 className="ng-display text-[36px] md:text-[44px]">{t('pdp.loadFailedTitle')}</h1>
+              <StaleCatalogNotice stale body={t('pdp.loadFailed')} />
+            </div>
           </main>
           <StorefrontFooter />
         </div>

@@ -109,7 +109,7 @@ const HomePage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
-        <StaleCatalogNotice stale={fetchedProducts.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
+        <StaleCatalogNotice stale={fetchedProducts.stale} empty={!fetchedProducts.length} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
 
@@ -210,7 +210,7 @@ const HomePage = () => {
           <div className="ng-container flex flex-col gap-12">
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div className="flex flex-col gap-3.5">
-                <p className="ng-mono m-0 text-ng-ash">{t('home.ngTableEyebrow', { count: collectionProducts.length })}</p>
+                <p className="ng-mono m-0 text-ng-ash">{collectionProducts.length ? t('home.ngTableEyebrow', { count: collectionProducts.length }) : t('home.ngTableEyebrowBare')}</p>
                 <h2 id="home-table-title" className="ng-display ng-h2">{t('home.ngTableTitle')} <em>{t('home.ngTableTitleEm')}</em></h2>
               </div>
               <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-3">
@@ -250,8 +250,11 @@ const HomePage = () => {
                   );
                 })}
               </div>
+            ) : fetchedProducts.loading ? (
+              <span aria-hidden="true" className="editorial-skel block h-40 w-full" />
             ) : (
-              <p className="m-0 text-ng-dust">{t('home.emptyCollection')}</p>
+              // "A new collection is being prepared" is a promise; after a failed fetch it was a false one.
+              <p className="m-0 text-ng-dust">{t(fetchedProducts.stale ? 'catalog.notLoaded' : 'home.emptyCollection')}</p>
             )}
           </div>
         </section>

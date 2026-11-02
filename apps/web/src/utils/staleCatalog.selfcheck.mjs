@@ -92,6 +92,14 @@ assert.match(notice, /t\('stale\.body'\)/, 'and plain about what happened when i
 assert.match(MESSAGES.id['stale.body'], /Koneksi ke server gagal/);
 assert.match(MESSAGES.id['stale.body'], /bisa sudah tidak berlaku/, 'naming the consequence, not just the cause');
 assert.match(MESSAGES.en['stale.body'], /out of date/i, 'and the English names it too');
+// An EMPTY stale catalogue came out of nowhere, so "shown from your device" would be false: with the
+// server down, home, catalogue and cart all said it over an empty page (measured 2026-11-02).
+assert.match(notice, /empty \? t\('stale\.emptyBody'\) : t\('stale\.body'\)/, 'an empty one says it did not load');
+assert.doesNotMatch(MESSAGES.id['stale.emptyBody'], /perangkat|simpanan/, 'without claiming the device had a copy');
+assert.doesNotMatch(MESSAGES.en['stale.emptyBody'], /device/, 'in either language');
+for (const page of ['HomePage.jsx', 'CartPage.jsx', 'InternationalCartPage.jsx']) {
+  assert.match(read('pages', page), /<StaleCatalogNotice stale=\{(\w+)\.stale\} empty=\{!\1\.length\}/, `${page} tells the notice when it is empty`);
+}
 assert.ok(MESSAGES.en['stale.retry'], 'with a way to retry in both languages');
 assert.match(notice, /role="status"/, 'announced to a screen reader too');
 assert.doesNotMatch(notice, /disabled|return null;\s*\}\s*$/m, 'it informs, it does not block the shop');
@@ -101,7 +109,9 @@ for (const [page, variable] of [
   [['pages', 'PublicProductDetailPage.jsx'], 'studioProducts'],
 ]) {
   const source = read(...page);
-  assert.match(source, new RegExp(`<StaleCatalogNotice stale=\\{${variable}\\.stale\\}`),
+  // The catalogue alone may add "&& products.length > 0": with nothing loaded, its own empty block already
+  // says the collection did not load, and two messages saying it twice is noise (2026-11-02).
+  assert.match(source, new RegExp(`<StaleCatalogNotice stale=\\{${variable}\\.stale( && products\\.length > 0)?\\}`),
     `${page.join('/')} shows the notice, reading the flag off its own catalogue`);
 }
 
