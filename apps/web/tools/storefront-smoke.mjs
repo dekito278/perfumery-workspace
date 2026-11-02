@@ -206,6 +206,11 @@ const runShop = async (browser, run, contextOptions) => {
   const filterCount = await filters.count();
   const cls = await page.evaluate(() => window.__cls);
   check(run, 'catalogue does not jump as it loads (CLS < 0.1)', cls < 0.1, `CLS ${cls.toFixed(3)}`);
+  if (run === 'phone') {
+    // Title, filters and the list share one phone screen; the first perfume has to be whole on it.
+    const firstRowEnd = await page.evaluate(() => document.querySelector('.ng-cat-row:not(.ng-cat-row--head)')?.getBoundingClientRect().bottom ?? Infinity);
+    check(run, 'the first perfume is on the first screen', firstRowEnd <= page.viewportSize().height, `ends at y=${Math.round(firstRowEnd)}`);
+  }
   check(run, 'catalogue offers filters', filterCount >= 2, `${filterCount} filters`);
   const facet = page.locator('button[aria-expanded]', { hasText: ID['wear.times'] }).first();
   if (await facet.count()) {
