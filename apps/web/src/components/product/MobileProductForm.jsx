@@ -47,6 +47,7 @@ export const emptyProduct = {
   notes: '',
   mood: '',
   intensity: 'Medium',
+  launchYear: '',
   wear: {},
   topNotes: '',
   heartNotes: '',
@@ -435,6 +436,11 @@ const MobileProductForm = ({ product = null, onSaved }) => {
           <select value={form.intensity || 'Medium'} onChange={(event) => updateField('intensity', event.target.value)} className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300">
             {['Light', 'Medium', 'Medium strong', 'Strong'].map((level) => <option key={level} value={level}>{level}</option>)}
           </select>
+        </div>
+        <div className="grid gap-1.5">
+          <ProductInputLabel>Tahun rilis</ProductInputLabel>
+          <input type="number" inputMode="numeric" min="1900" max="2100" value={form.launchYear ?? ''} onChange={(event) => updateField('launchYear', event.target.value)} placeholder="Contoh: 2025" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+          <span className="text-xs text-[#6b7280]">Tampil di halaman produk sebagai "Rilis …". Kosongkan bila belum pasti — tidak ditampilkan.</span>
         </div>
         <div className="grid gap-1.5">
           <ProductInputLabel>Ringkasan notes</ProductInputLabel>

@@ -185,7 +185,7 @@ if (!existsSync(submissionPath)) {
 const CHAIN = [
   ['services/productCatalogService.js', /launchYear: row\.launch_year/,
     'fromDatabaseRow does not read the column'],
-  ['services/productCatalogService.js', /launchYear: input\.launchYear/,
+  ['services/productCatalogService.js', /launchYear: (?:toLaunchYear\()?input\.launchYear/,
     'normalizeProduct rebuilds the product from a named list and drops the year one hop after it is read'],
   ['services/productCatalogService.js', /launch_year: product\.launchYear/,
     'a year typed in the studio would be dropped on save — read and never written back'],

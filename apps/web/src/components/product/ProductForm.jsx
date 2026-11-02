@@ -54,6 +54,7 @@ export const emptyProduct = {
   tags: '',
   mood: '',
   intensity: 'Medium',
+  launchYear: '',
   wear: {},
   featured: true,
   limited: false,
@@ -337,6 +338,11 @@ const ProductForm = ({ product = null, onSaved }) => {
             <select value={form.intensity || 'Medium'} onChange={(event) => updateField('intensity', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300">
               {['Light', 'Medium', 'Medium strong', 'Strong'].map((level) => <option key={level} value={level}>{level}</option>)}
             </select>
+          </label>
+          <label>
+            <span className="text-xs font-bold uppercase text-muted-foreground">Tahun rilis</span>
+            <input type="number" inputMode="numeric" min="1900" max="2100" value={form.launchYear ?? ''} onChange={(event) => updateField('launchYear', event.target.value)} placeholder="Contoh: 2025" className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <span className="mt-1 block text-xs text-muted-foreground">Tampil di halaman produk sebagai "Rilis …". Kosongkan bila belum pasti — tidak ditampilkan.</span>
           </label>
           <label className="sm:col-span-2">
             <span className="text-xs font-bold uppercase text-muted-foreground">Ringkasan notes</span>
