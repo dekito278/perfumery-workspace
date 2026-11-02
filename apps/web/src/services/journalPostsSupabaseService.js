@@ -1,13 +1,13 @@
 import supabase from '@/lib/supabaseClient.js';
 import { getCurrentUserId, toAppRecord } from '@/services/supabaseDataHelpers.js';
+import { journalCategoryLabelIn } from '@/data/siteFacts.js';
+import { getSiteFacts, subscribeSiteFacts } from '@/services/siteSettingsService.js';
 
-export const JOURNAL_CATEGORIES = [
-  { value: 'formula_accord', label: 'Formula Accord' },
-  { value: 'experience', label: 'Experience' },
-  { value: 'material_note', label: 'Material Note' },
-  { value: 'process', label: 'Process' },
-  { value: 'product_idea', label: 'Product Idea' },
-];
+// The categories are Dekito's since 2026-11-03 (Studio → Fakta toko), not a list in this file. A live
+// binding, so every importer reads the saved list the moment it arrives; the five that used to be here
+// are its defaults (src/data/siteFacts.js).
+export let JOURNAL_CATEGORIES = getSiteFacts().journalCategories;
+subscribeSiteFacts(() => { JOURNAL_CATEGORIES = getSiteFacts().journalCategories; });
 
 export const JOURNAL_STATUSES = [
   { value: 'draft', label: 'Draft' },
@@ -37,9 +37,8 @@ export const JOURNAL_CATEGORY_COVER_CLASS_NAMES = {
   product_idea: 'from-rose-100 via-white to-amber-50 text-rose-900',
 };
 
-export const getJournalCategoryLabel = (value) => (
-  JOURNAL_CATEGORIES.find((category) => category.value === value)?.label || 'Experience'
-);
+// An unknown key used to read as "Experience" — a wrong answer; now it reads as itself.
+export const getJournalCategoryLabel = (value) => journalCategoryLabelIn(JOURNAL_CATEGORIES, value);
 
 export const getJournalCategoryBadgeClassName = (value) => (
   JOURNAL_CATEGORY_BADGE_CLASS_NAMES[value] || JOURNAL_CATEGORY_BADGE_CLASS_NAMES.experience
@@ -143,7 +142,13 @@ const normalizeJournalPostPayload = (postData) => ({
   excerpt: postData.excerpt ? String(postData.excerpt).trim() : null,
   content: postData.content ? String(postData.content).trim() : null,
   seo_title: postData.seo_title ? String(postData.seo_title).trim() : null,
+  // The snippet under the title in search results; empty falls back to the excerpt (2026-11-03).
+  seo_description: postData.seo_description ? String(postData.seo_description).trim() : null,
   cover_image_url: postData.cover_image_url ? String(postData.cover_image_url).trim() : null,
+  cover_alt: postData.cover_alt ? String(postData.cover_alt).trim() : null,
+  // Editable since 2026-11-03. Sent as it was loaded, so a save does not move it; null on a published
+  // article lets the database stamp it, and a draft must have none (journal_posts_published_at_matches_status).
+  published_at: postData.status === 'published' ? (postData.published_at || null) : null,
   tags: normalizeTags(postData.tags),
 });
 

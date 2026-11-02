@@ -17,6 +17,7 @@ import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { confirmAction } from '@/utils/confirmAction.js';
+import { fromDateInputValue, toDateInputValue } from '@/utils/publishedDate.js';
 import {
   JOURNAL_CATEGORIES,
   JOURNAL_STATUSES,
@@ -37,7 +38,10 @@ const createEmptyPost = (formulaId = 'none', formulaName = '') => {
     excerpt: '',
     content: '',
     seo_title: '',
+    seo_description: '',
     cover_image_url: '',
+    cover_alt: '',
+    published_at: null,
     tags: '',
   };
 };
@@ -51,7 +55,10 @@ const toEditorState = (post) => ({
   excerpt: post.excerpt || '',
   content: post.content || '',
   seo_title: post.seo_title || '',
+  seo_description: post.seo_description || '',
   cover_image_url: post.cover_image_url || '',
+  cover_alt: post.cover_alt || '',
+  published_at: post.published_at || null,
   tags: Array.isArray(post.tags) ? post.tags.join(', ') : '',
 });
 
@@ -316,6 +323,17 @@ const MobileJournalEditorPage = () => {
               />
             </MobileFormField>
 
+            <MobileFormField id="journal-seo-description" label="Deskripsi SEO" helper={`${formState.seo_description.length}/155 karakter terbaca utuh di Google. Kosongkan untuk memakai ringkasan.`}>
+              <Textarea
+                id="journal-seo-description"
+                value={formState.seo_description}
+                onChange={(event) => handleChange('seo_description', event.target.value)}
+                placeholder="Kalimat di bawah judul pada hasil Google"
+                className="min-h-[88px] rounded-2xl bg-white"
+                maxLength={300}
+              />
+            </MobileFormField>
+
             <MobileFormField id="journal-cover-image" label="URL cover image" helper="Opsional untuk rasa blog sungguhan.">
               <Input
                 id="journal-cover-image"
@@ -325,6 +343,29 @@ const MobileJournalEditorPage = () => {
                 className="h-11 rounded-2xl bg-white"
               />
             </MobileFormField>
+
+            <MobileFormField id="journal-cover-alt" label="Teks alt sampul" helper="Menjelaskan gambar sampul untuk pembaca layar dan Google Gambar.">
+              <Input
+                id="journal-cover-alt"
+                value={formState.cover_alt}
+                onChange={(event) => handleChange('cover_alt', event.target.value)}
+                placeholder="Contoh: Botol Ayang-ayang di atas kain batik"
+                className="h-11 rounded-2xl bg-white"
+                maxLength={200}
+              />
+            </MobileFormField>
+
+            {formState.status === 'published' ? (
+              <MobileFormField id="journal-published-at" label="Tanggal terbit" helper="Terisi otomatis saat pertama terbit. Ubah bila tanggalnya perlu dikoreksi.">
+                <Input
+                  id="journal-published-at"
+                  type="date"
+                  value={toDateInputValue(formState.published_at)}
+                  onChange={(event) => handleChange('published_at', fromDateInputValue(event.target.value, formState.published_at))}
+                  className="h-11 rounded-2xl bg-white"
+                />
+              </MobileFormField>
+            ) : null}
           </section>
 
           <StickyBottomActionBar fixed reserveSpace aria-label="Journal editor actions">

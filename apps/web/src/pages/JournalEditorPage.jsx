@@ -12,6 +12,7 @@ import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { confirmAction } from '@/utils/confirmAction.js';
+import { fromDateInputValue, toDateInputValue } from '@/utils/publishedDate.js';
 import {
   JOURNAL_CATEGORIES,
   JOURNAL_STATUSES,
@@ -29,7 +30,10 @@ const createEmptyPost = (formulaId = 'none', formulaName = '') => {
     excerpt: '',
     content: '',
     seo_title: '',
+    seo_description: '',
     cover_image_url: '',
+    cover_alt: '',
+    published_at: null,
     tags: '',
   };
 };
@@ -43,7 +47,10 @@ const toEditorState = (post) => ({
   excerpt: post.excerpt || '',
   content: post.content || '',
   seo_title: post.seo_title || '',
+  seo_description: post.seo_description || '',
   cover_image_url: post.cover_image_url || '',
+  cover_alt: post.cover_alt || '',
+  published_at: post.published_at || null,
   tags: Array.isArray(post.tags) ? post.tags.join(', ') : '',
 });
 
@@ -348,6 +355,18 @@ const JournalEditorPage = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <div className="text-sm font-medium">Deskripsi SEO</div>
+                  <Textarea
+                    value={formState.seo_description}
+                    onChange={(event) => handleChange('seo_description', event.target.value)}
+                    placeholder="Kalimat di bawah judul pada hasil Google"
+                    className="min-h-[88px] rounded-2xl bg-white"
+                    maxLength={300}
+                  />
+                  <p className="text-xs text-muted-foreground">{formState.seo_description.length}/155 karakter terbaca utuh di Google. Kosongkan untuk memakai ringkasan.</p>
+                </div>
+
+                <div className="space-y-2">
                   <div className="text-sm font-medium">Cover Image URL</div>
                   <Input
                     value={formState.cover_image_url}
@@ -357,6 +376,31 @@ const JournalEditorPage = () => {
                   />
                   <p className="text-xs text-muted-foreground">Opsional untuk tampilan blog ketika artikel dipublikasi.</p>
                 </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Teks alt sampul</div>
+                  <Input
+                    value={formState.cover_alt}
+                    onChange={(event) => handleChange('cover_alt', event.target.value)}
+                    placeholder="Contoh: Botol Ayang-ayang di atas kain batik"
+                    className="h-11 rounded-2xl bg-white"
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-muted-foreground">Menjelaskan gambar sampul untuk pembaca layar dan Google Gambar.</p>
+                </div>
+
+                {formState.status === 'published' ? (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Tanggal terbit</div>
+                    <Input
+                      type="date"
+                      value={toDateInputValue(formState.published_at)}
+                      onChange={(event) => handleChange('published_at', fromDateInputValue(event.target.value, formState.published_at))}
+                      className="h-11 rounded-2xl bg-white"
+                    />
+                    <p className="text-xs text-muted-foreground">Terisi otomatis saat pertama terbit. Ubah bila tanggalnya perlu dikoreksi.</p>
+                  </div>
+                ) : null}
 
                 <Button type="submit" disabled={saving} className="h-11 w-full gap-2 rounded-2xl">
                   <Save className="h-4 w-4" />

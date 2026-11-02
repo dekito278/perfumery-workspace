@@ -26,6 +26,7 @@ import {
   Globe2,
   Truck,
   UsersRound,
+  ListChecks,
 } from 'lucide-react';
 import AdminSessionNotice from '@/components/AdminSessionNotice.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -94,6 +95,7 @@ const AppShell = ({ children }) => {
         { path: '/studio/customers', label: 'Customer', icon: UsersRound },
         { path: '/studio/shipments', label: 'Pengiriman', icon: Truck },
         { path: '/studio/site-images', label: 'Gambar Situs', icon: ImagePlus },
+        { path: '/studio/site-facts', label: 'Fakta Toko', icon: ListChecks },
         { path: '/studio/stories', label: 'Editor Cerita', icon: Sparkles },
         { path: '/home', label: 'Toko', icon: ShoppingBag, aliases: ['/catalog', '/products', '/cart', '/payment', '/customer'] },
       ],

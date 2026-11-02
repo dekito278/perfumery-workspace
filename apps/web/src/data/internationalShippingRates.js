@@ -83,16 +83,19 @@ export const exportParcelKg = (bottles) => {
  * Studio screen beside it added up 250 g a bottle and quoted a 2 kg parcel where the card charged for
  * 3 kg. One rule, one spelling.
  */
+/** The bracket `bottles` ship in: whole boxes. Any count — the quote's cap is policy, not this table. */
+export const parcelTierFor = (bottles) => {
+  const maxBottles = Math.ceil(Math.max(1, Math.round(Number(bottles) || 0)) / EXPORT_BOX.bottles) * EXPORT_BOX.bottles;
+  return {
+    maxBottles,
+    kg: exportParcelKg(maxBottles),
+    label: `${maxBottles - EXPORT_BOX.bottles + 1}–${maxBottles} bottles`,
+  };
+};
+
 export const SHIPPING_RATE_TIERS = Array.from(
   { length: Math.ceil(SHIPPING_RATE_MAX_BOTTLES / EXPORT_BOX.bottles) },
-  (_, index) => {
-    const maxBottles = (index + 1) * EXPORT_BOX.bottles;
-    return {
-      maxBottles,
-      kg: exportParcelKg(maxBottles),
-      label: `${maxBottles - EXPORT_BOX.bottles + 1}–${maxBottles} bottles`,
-    };
-  },
+  (_, index) => parcelTierFor((index + 1) * EXPORT_BOX.bottles),
 );
 
 /**

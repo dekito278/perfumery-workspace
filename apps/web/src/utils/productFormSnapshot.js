@@ -32,6 +32,7 @@ export const snapshotProductForm = (product = {}) => JSON.stringify({
   heartNotesEn: product.heartNotesEn || '',
   baseNotesEn: product.baseNotesEn || '',
   concentration: product.concentration || '',
+  relatedFragrances: product.relatedFragrances || [],
   imageUrl: product.imageUrl || '',
   images: product.images || [],
   tags: product.tags || '',

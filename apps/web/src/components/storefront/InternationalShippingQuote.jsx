@@ -4,7 +4,8 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import { destinationOptions, DESTINATION_OTHER, DESTINATION_PICKER_ID } from '@/utils/shippingDestination.js';
-import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATE_MAX_BOTTLES } from '@/data/internationalShippingRates.js';
+import { SHIPPING_RATE_BOTTLE_SIZE_ML } from '@/data/internationalShippingRates.js';
+import { getExportShippingPolicy } from '@/services/exportShippingPolicyService.js';
 
 /**
  * The complete price an international buyer pays, before they ask instead of after.
@@ -37,6 +38,8 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
   // button, which is what they had before this screen existed.
   const ownPrice = useOverseasPrice(product, variant);
   const own = useInternationalQuote({ price: ownPrice, product, variant });
+  // The same cap the quote applies, out of the same cache (Studio → export shipping policy).
+  const maxBottles = getExportShippingPolicy().maxQuotedBottles;
   const fromCart = Boolean(quote);
   const price = fromCart ? quote.goodsUsd : ownPrice;
   const {
@@ -95,12 +98,12 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
           >
             {/* Past the card's last tier there is one more option, and choosing it says so rather than
                 quoting the 5–6 price for eight bottles. */}
-            {Array.from({ length: SHIPPING_RATE_MAX_BOTTLES }, (_, index) => index + 1).map((count) => (
+            {Array.from({ length: maxBottles }, (_, index) => index + 1).map((count) => (
               <option key={count} value={count}>
                 {count === 1 ? t('intlQuote.bottleOne') : t('intlQuote.bottleMany', { count })}
               </option>
             ))}
-            <option value={SHIPPING_RATE_MAX_BOTTLES + 1}>{t('intlQuote.bottleMore')}</option>
+            <option value={maxBottles + 1}>{t('intlQuote.bottleMore', { count: maxBottles + 1 })}</option>
           </select>
         </div>
         ) : null}
@@ -118,7 +121,7 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
           <dd className="font-semibold text-ng-bone">
             {/* Three different "no number" cases, each saying WHICH one it is. "Quote on request" with no
                 reason reads as a refusal; with a reason it reads as a next step. */}
-            {shippingUsd ? `US$${shippingUsd}` : t(`intlQuote.onRequest.${onRequest || 'country'}`)}
+            {shippingUsd ? `US$${shippingUsd}` : t(`intlQuote.onRequest.${onRequest || 'country'}`, { count: maxBottles + 1 })}
           </dd>
         </div>
       </dl>

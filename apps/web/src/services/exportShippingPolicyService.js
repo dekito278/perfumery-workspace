@@ -64,6 +64,7 @@ export const saveExportShippingPolicy = async (policy) => {
       support_single_usd: next.supportSingleUsd,
       support_multiple_usd: next.supportMultipleUsd,
       cost_rate_idr: next.costRateIdr,
+      max_quoted_bottles: next.maxQuotedBottles,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' })
     .select('id')

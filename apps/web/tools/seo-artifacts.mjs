@@ -2,6 +2,7 @@
 // no-JS crawlers/social scrapers) and sitemap.xml. Runs after `vite build` from
 // tools/build.mjs. Never throws in a way that fails the build — SEO is best-effort.
 
+import { normalizeSiteFacts } from '../src/data/siteFacts.js';
 import fs from 'node:fs';
 import { isFreeVialProduct } from '../src/utils/freeVial.js';
 import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
@@ -182,10 +183,21 @@ export const fetchPublicProducts = async (env) => {
   return priceAsLive(env, products);
 };
 
+// The shop facts set in Studio (src/data/siteFacts.js), for the sentences the build prints. Never
+// throws: on any failure the defaults are the answer, which is what the page said before they existed.
+export const fetchSiteFacts = async (env) => {
+  try {
+    const rows = await restGet(env, 'storefront_site_settings?select=facts&id=eq.default');
+    return normalizeSiteFacts(Array.isArray(rows) ? rows[0]?.facts : {});
+  } catch {
+    return normalizeSiteFacts({});
+  }
+};
+
 export const fetchPublishedJournal = async (env) => {
   const rows = await restGet(
     env,
-    'journal_posts?select=slug,title,seo_title,excerpt,content,cover_image_url,category,published_at,updated_at&status=eq.published&order=published_at.desc',
+    'journal_posts?select=slug,title,seo_title,seo_description,excerpt,content,cover_image_url,cover_alt,category,published_at,updated_at&status=eq.published&order=published_at.desc',
   );
   if (!Array.isArray(rows)) return [];
   return rows
@@ -194,6 +206,8 @@ export const fetchPublishedJournal = async (env) => {
       slug: String(row.slug),
       title: String(row.title || ''),
       seoTitle: String(row.seo_title || ''),
+      seoDescription: String(row.seo_description || ''),
+      imageAlt: String(row.cover_alt || ''),
       excerpt: String(row.excerpt || ''),
       content: String(row.content || ''),
       image: String(row.cover_image_url || ''),
@@ -402,7 +416,7 @@ const articleJsonLd = (post, siteUrl, canonical) => ({
   '@context': 'https://schema.org',
   '@type': 'Article',
   headline: post.title,
-  ...(post.excerpt ? { description: post.excerpt } : {}),
+  ...((post.seoDescription || post.excerpt) ? { description: post.seoDescription || post.excerpt } : {}),
   ...(post.image ? { image: [abs(siteUrl, post.image)] } : {}),
   ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
   ...(post.updatedAt ? { dateModified: post.updatedAt } : {}),
@@ -421,7 +435,7 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
     const canonical = abs(siteUrl, `/articles/${post.slug}`);
     // Said once: the SEO Title field invites a brand signature and this line adds one of its own.
     const title = brandedTitle(stripTrailingBrand(post.seoTitle || post.title, BRAND), BRAND);
-    const description = snippet(post.excerpt || post.title);
+    const description = snippet(post.seoDescription || post.excerpt || post.title);
     // An article with no cover used to ship no og:image at all, so sharing it previewed as bare text.
     const image = getOptimizedStorageImageUrl(abs(siteUrl, post.image || SHARE_IMAGE_PATH), 1200);
 
@@ -440,6 +454,8 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
     }
     if (image) {
       html = upsertMeta(html, 'property', 'og:image', image);
+      // Same words the live page writes (PublicJournalArticlePage), so the two heads cannot disagree.
+      html = upsertMeta(html, 'property', 'og:image:alt', post.image ? (post.imageAlt || post.title) : 'Solivagant perfumery journal');
       html = upsertMeta(html, 'name', 'twitter:image', image);
     }
     // Only claim a large image card when there is actually an image to show.

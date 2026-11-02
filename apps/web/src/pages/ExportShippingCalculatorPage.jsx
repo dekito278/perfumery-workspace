@@ -573,11 +573,12 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
             Yang Solivagant tanggung, dan kurs untuk mengubah biaya kurir jadi dolar. Keranjang toko
             memakai angka yang sama.
           </p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ['supportSingleUsd', 'Ditanggung · 1 botol (US$)'],
               ['supportMultipleUsd', 'Ditanggung · 2+ botol (US$)'],
               ['costRateIdr', 'Kurs biaya kurir (Rp/US$)'],
+              ['maxQuotedBottles', 'Maks. botol dihitung otomatis (1–24)'],
             ].map(([field, label]) => (
               <label key={field} className="grid gap-1 text-xs font-semibold text-[#6b7280]">
                 {label}

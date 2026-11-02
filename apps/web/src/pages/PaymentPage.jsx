@@ -1,3 +1,4 @@
+import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -584,6 +585,7 @@ const QrisPanel = ({ session, onPaid }) => {
 
 const ManualTransferPanel = ({ session, onProofSubmitted }) => {
   const { t } = useTranslate();
+  const siteFacts = useSiteFacts();
   const [proofFile, setProofFile] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const customerCode = session.customerCode || '';
@@ -745,7 +747,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
         {awaitingShippingQuote ? (
           <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-4 text-ng-ember">
             <div className="text-xs font-bold uppercase">{t('pay.quoteTitle')}</div>
-            <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.quoteBody')}</p>
+            <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.quoteBody', { hours: siteFacts.quoteHours })}</p>
             <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.quoteNoTransfer')}</p>
             {/* Dekito's request: the buyer confirms on WhatsApp so he learns the order exists at all.
                 The automatic alert in orderNotifier only fires when ORDER_ALERT_WEBHOOK_URL is set, and

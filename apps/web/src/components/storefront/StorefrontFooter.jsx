@@ -1,3 +1,4 @@
+import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
@@ -37,6 +38,7 @@ const footerColumns = [
 
 const StorefrontFooter = () => {
   const { t } = useTranslate();
+  const siteFacts = useSiteFacts();
   // One source for the number. Rendered only when configured — a wa.me link with no recipient is a dead end.
   const whatsapp = getStorefrontWhatsAppNumber();
   const [email, setEmail] = useState('');
@@ -111,7 +113,7 @@ const StorefrontFooter = () => {
         </div>
 
         <div className="ng-footer__bottom ng-mono">
-          <small>&copy; {new Date().getFullYear()} SOLIVAGANT by Dekito</small>
+          <small>&copy; {new Date().getFullYear()} {siteFacts.footerOwner}</small>
           <span>{t('nav.footerPlace')}</span>
         </div>
       </div>

@@ -18,6 +18,7 @@ import {
   UsersRound,
   ImagePlus,
   WandSparkles,
+  ListChecks,
 } from 'lucide-react';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import { cn } from '@/lib/utils.js';
@@ -47,7 +48,7 @@ const navGroups = [
     label: 'Studio',
     icon: Beaker,
     description: 'Formula, material, dan workspace validasi.',
-    paths: ['/mobile/studio', '/mobile/journal', '/mobile/formulas', '/mobile/batches', '/mobile/raw-materials', '/mobile/validation', '/mobile/studio/site-images'],
+    paths: ['/mobile/studio', '/mobile/journal', '/mobile/formulas', '/mobile/batches', '/mobile/raw-materials', '/mobile/validation', '/mobile/studio/site-images', '/mobile/studio/site-facts'],
     items: [
       { path: '/mobile/studio', label: 'Dasbor', helper: 'Ringkasan Studio', icon: LayoutDashboard },
       { path: '/mobile/journal', label: 'Journal', helper: 'Artikel, accord, ide', icon: BookOpenText },
@@ -56,6 +57,7 @@ const navGroups = [
       { path: '/mobile/raw-materials', label: 'Material', helper: 'Library raw material', icon: LibraryBig },
       { path: '/mobile/validation', label: 'Validation', helper: 'Log testing dan feedback', icon: ClipboardCheck },
       { path: '/mobile/studio/site-images', label: 'Site Images', helper: 'Hero, mood, dan banner', icon: ImagePlus },
+      { path: '/mobile/studio/site-facts', label: 'Fakta Toko', helper: 'Bespoke, kota, footer, kategori', icon: ListChecks },
     ],
   },
 ];
