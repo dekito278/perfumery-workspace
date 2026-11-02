@@ -1808,3 +1808,18 @@ html:has(.solivagant-editorial-home, .ng-scope) {
 html:has(.mobile-pwa-install) {
   scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 320px);
 }
+
+/* The catalogue's skip link, in the shop's own hand: it surfaced as storefront.css's ivory pill, 31 px tall. */
+.solivagant-editorial-home .skip-to-results {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--ng-bone);
+  border-radius: 0;
+  background: var(--ng-bone);
+  color: var(--ng-ink);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+}

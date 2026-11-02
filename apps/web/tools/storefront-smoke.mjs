@@ -275,6 +275,16 @@ const runShop = async (browser, run, contextOptions) => {
     const firstRowEnd = await page.evaluate(() => document.querySelector('.ng-cat-row:not(.ng-cat-row--head)')?.getBoundingClientRect().bottom ?? Infinity);
     check(run, 'the first perfume is on the first screen', firstRowEnd <= page.viewportSize().height, `ends at y=${Math.round(firstRowEnd)}`);
   }
+  // The first Tab on the catalogue is the way past the filters, and it is a 44px target when it shows.
+  await goto(page, '/catalog');
+  await page.keyboard.press('Tab');
+  await page.waitForTimeout(400); // it slides in from above the viewport
+  const skip = await page.evaluate(() => { const el = document.activeElement; const r = el.getBoundingClientRect();
+    return { skip: el.classList.contains('skip-to-results'), shown: r.top >= 0 && r.bottom <= innerHeight, h: Math.round(r.height) }; });
+  check(run, 'the first Tab on the catalogue is the skip link, shown and 44px', skip.skip && skip.shown && skip.h >= 44, JSON.stringify(skip));
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(400);
+  check(run, 'and it moves focus to the results', await page.evaluate(() => document.activeElement?.id === 'catalog-results'));
   check(run, 'catalogue offers filters', filterCount >= 2, `${filterCount} filters`);
   const facet = page.locator('button[aria-expanded]', { hasText: ID['wear.times'] }).first();
   if (await facet.count()) {
