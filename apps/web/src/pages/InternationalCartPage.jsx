@@ -63,7 +63,7 @@ const InternationalCartPage = () => {
     <>
       <Helmet><title>{t('cart.tab')}</title></Helmet>
       <main className="solivagant-editorial-home">
-        <StaleCatalogNotice stale={catalog.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
+        <StaleCatalogNotice stale={catalog.stale} empty={!catalog.length} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
 

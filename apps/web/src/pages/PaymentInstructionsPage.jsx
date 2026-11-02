@@ -55,14 +55,20 @@ const PaymentInstructionsPage = () => {
         <title>{orderNumber ? t('pay.link.tab', { order: orderNumber }) : t('pay.link.eyebrowTab')}</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
-      <main className="solivagant-editorial-home">
+      <div className="solivagant-editorial-home">
         <PublicHeader />
+        <main>
         <section className="ng-section">
           <div className="ng-container pay-link flex max-w-[760px] flex-col gap-6">
           <p className="ng-eyebrow ng-mono m-0">{t('pay.link.eyebrow')}</p>
 
-          {!loaded || !order ? (
-            <p className="pay-link__note">{loaded ? t('pay.link.notFound') : ''}</p>
+          {!loaded ? (
+            <p className="pay-link__note" role="status">{t('pay.link.loading')}</p>
+          ) : !order ? (
+            <>
+              <h1 className="ng-display text-[36px] md:text-[44px]">{t('pay.link.invalidTitle')}</h1>
+              <p className="pay-link__note">{t('pay.link.notFound')}</p>
+            </>
           ) : (
             <>
               <h1 className="ng-display text-[44px] md:text-[64px]">{t('pay.link.title', { order: orderNumber })}</h1>
@@ -120,8 +126,9 @@ const PaymentInstructionsPage = () => {
           )}
           </div>
         </section>
-      </main>
-      <StorefrontFooter />
+        </main>
+        <StorefrontFooter />
+      </div>
     </>
   );
 };

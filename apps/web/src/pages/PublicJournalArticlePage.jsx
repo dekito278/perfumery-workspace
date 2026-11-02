@@ -50,7 +50,11 @@ const PublicJournalArticlePage = () => {
   const revealRef = useScrollReveal();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
+  // 'missing' (no such published article) or 'error' (the server could not be reached). Only the first is
+  // a page that does not exist; answering an outage with "belum dipublish" + noindex told readers and Google
+  // that a live article was gone (measured with Supabase down, 2026-11-02).
+  const [failed, setFailed] = useState('');
+  const [attempt, setAttempt] = useState(0);
   const [copyState, setCopyState] = useState('idle');
 
   useEffect(() => {
@@ -58,14 +62,14 @@ const PublicJournalArticlePage = () => {
 
     const loadPost = async () => {
       setLoading(true);
-      setFailed(false);
+      setFailed('');
       try {
         const publishedPost = await getPublishedJournalPostBySlug(slug);
         if (!active) return;
         setPost(publishedPost);
-        setFailed(!publishedPost);
+        setFailed(publishedPost ? '' : 'missing');
       } catch (error) {
-        if (active) setFailed(true);
+        if (active) setFailed('error');
       } finally {
         if (active) setLoading(false);
       }
@@ -73,7 +77,7 @@ const PublicJournalArticlePage = () => {
 
     loadPost();
     return () => { active = false; };
-  }, [slug]);
+  }, [slug, attempt]);
 
   const tags = Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [];
   const readingMinutes = useMemo(() => getReadingMinutes(post?.content), [post?.content]);
@@ -119,7 +123,10 @@ const PublicJournalArticlePage = () => {
       <Helmet>
         <title>{post ? `${title} - Solivagant Journal` : 'Journal Article - Solivagant'}</title>
         <meta name="description" content={description} />
-        {failed ? <meta name="robots" content="noindex,follow" /> : <link rel="canonical" href={canonicalUrl} />}
+        {/* Canonical only for an article that was found; noindex only for one that does not exist. An outage is
+            neither, so it claims nothing either way. */}
+        {post ? <link rel="canonical" href={canonicalUrl} /> : null}
+        {failed === 'missing' ? <meta name="robots" content="noindex,follow" /> : null}
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content="Solivagant" />
         <meta property="og:url" content={canonicalUrl} />
@@ -147,6 +154,15 @@ const PublicJournalArticlePage = () => {
             <div className="flex flex-col items-center gap-4 text-center">
               <p className="ng-mono m-0 text-ng-ash">{t('journal.loadingEyebrow')}</p>
               <h1 className="ng-display text-[40px]">{t("journal.loading")}</h1>
+            </div>
+          </section>
+        ) : failed === 'error' ? (
+          <section className="ng-section">
+            <div className="ng-container flex flex-col items-start gap-6" role="status">
+              <p className="ng-mono m-0 text-ng-ash">{t('journal.eyebrowWord')}</p>
+              <h1 className="ng-display ng-h2">{t('journal.loadErrorTitle')}</h1>
+              <p className="ng-lead">{t('journal.loadErrorBody')}</p>
+              <button type="button" className="ng-btn" onClick={() => setAttempt((n) => n + 1)}>{t('stale.retry')}</button>
             </div>
           </section>
         ) : failed ? (

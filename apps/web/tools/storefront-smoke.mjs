@@ -23,7 +23,7 @@ const VOUCHER = { code: 'SMOKE10', discount_type: 'percent', discount_value: 10,
 
 // RPCs that only read. Everything else under /rest/v1/rpc/ is mocked or refused.
 const READ_RPC = new Set(['storefront_member_prices', 'storefront_prices_for_me', 'storefront_my_price_tier', 'is_admin',
-  'storefront_public_tracking_lookup']);
+  'storefront_public_tracking_lookup', 'storefront_payment_link']);
 
 const makeOrder = (body) => {
   const items = Array.isArray(body.items) ? body.items : [];
@@ -450,12 +450,52 @@ const runAbroad = async (browser) => {
   await context.close();
 };
 
+// The server unreachable. Every page must say the connection failed — not that a perfume or an article does
+// not exist, not that "a new collection is being prepared" (all three were on the live shop, 2026-11-02).
+const runOutage = async (browser) => {
+  const run = 'outage';
+  const sitemap = await fetch(`${BASE}/sitemap.xml`).then((r) => r.text()).catch(() => '');
+  const article = (sitemap.match(/<loc>[^<]*?(\/articles\/[^<]+)<\/loc>/) || [])[1];
+  const product = (sitemap.match(/<loc>[^<]*?(\/catalog\/[^<]+)<\/loc>/) || [])[1] || '/catalog/l-iris';
+  const state = { blocked: [], orderBodies: [], order: null };
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'id-ID', timezoneId: 'Asia/Jakarta' });
+  await guard(context, state);
+  await context.route(/supabase\.co\/(rest|storage)\//, (route) => route.abort('connectionrefused'));
+  const page = await context.newPage();
+  const h1 = () => page.locator('h1').first().innerText().catch(() => '');
+  // supabase-js retries a failed read before giving up, so a page reaches its failure state seconds later.
+  const shows = (text) => page.getByText(text, { exact: false }).first().waitFor({ timeout: 20000 }).then(() => true, () => false);
+  const robots = () => page.locator('meta[name="robots"]').getAttribute('content').catch(() => null);
+
+  await goto(page, '/home');
+  const saidSo = await shows(ID['stale.emptyBody']);
+  check(run, 'home says the catalogue did not load, and promises no new collection', saidSo && !(await page.getByText(ID['home.emptyCollection']).count()));
+  await goto(page, product);
+  await shows(ID['pdp.loadFailedTitle']);
+  check(run, 'a product says it could not load, at its own address', pathOf(page) === product && (await h1()) === ID['pdp.loadFailedTitle'], `${pathOf(page)} "${await h1()}"`);
+  if (article) {
+    await goto(page, article);
+    await shows(ID['journal.loadErrorTitle']);
+    check(run, 'an article says it could not load, not that it is unpublished', (await h1()) === ID['journal.loadErrorTitle'], await h1());
+    check(run, 'and does not tell Google to drop it', !/noindex/.test((await robots()) || ''), String(await robots()));
+  }
+  await goto(page, '/journal');
+  await shows(ID['journal.loadFailed']);
+  check(run, 'the journal offers to try again', await page.getByRole('button', { name: ID['stale.retry'], exact: true }).isVisible().catch(() => false));
+  await context.unroute(/supabase\.co\/(rest|storage)\//);
+  await goto(page, '/pay/00000000000000000000000000000000');
+  check(run, 'a dead payment link has a heading that says so', (await h1()) === ID['pay.link.invalidTitle'], await h1());
+  check(run, 'no write left the browser', state.blocked.length === 0, state.blocked.join(', '));
+  await context.close();
+};
+
 const browser = await chromium.launch();
 try {
   await runShop(browser, 'desktop', { viewport: { width: 1440, height: 900 } });
   await runShop(browser, 'phone', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } });
   await runTabs(browser);
   await runAbroad(browser);
+  await runOutage(browser);
 } finally {
   await browser.close();
 }

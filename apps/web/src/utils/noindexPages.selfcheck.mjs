@@ -122,13 +122,14 @@ for (const route of ['/articles/:slug', '/track/:code', '*']) {
     'every head CustomerInvoicePage renders must refuse indexing — an invoice is a private document');
 }
 
-// A canonical URL is a claim that the page is real. The ghost-article branch must not make it.
+// A canonical URL is a claim that the page is real. The ghost-article branch must not make it — and since
+// 2026-11-02 neither must the outage branch, so the claim is gated on the article itself.
 const article = read('src/pages/PublicJournalArticlePage.jsx');
 for (const line of article.split('\n')) {
   if (!line.includes('rel="canonical"')) continue;
   assert.match(
     line,
-    /failed \?/,
+    /\{post \? <link rel="canonical"/,
     'PublicJournalArticlePage may only claim a canonical URL when the article was actually found:\n'
     + `  ${line.trim()}`,
   );
