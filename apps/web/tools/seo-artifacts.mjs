@@ -429,6 +429,8 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
     html = upsertMeta(html, 'name', 'description', description);
     html = upsertCanonical(html, canonical);
     html = upsertMeta(html, 'property', 'og:type', 'article');
+    // The article files said no locale while every other page said id_ID / en_US (2026-11-02).
+    html = upsertMeta(html, 'property', 'og:locale', 'id_ID');
     html = upsertMeta(html, 'property', 'og:site_name', BRAND);
     html = upsertMeta(html, 'property', 'og:url', canonical);
     html = upsertMeta(html, 'property', 'og:title', title);
