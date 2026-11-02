@@ -355,7 +355,7 @@ const runShop = async (browser, run, contextOptions) => {
   await settle(page);
   // When it does not, say what the checkout itself said: one production run stayed on /checkout with no order
   // posted and nothing to go on (2026-11-02).
-  const said = pathOf(page) === '/payment' ? '' : await page.locator('[role="alert"], [aria-invalid="true"], .text-ng-ember').allInnerTexts().then((texts) => texts.join(' / ').slice(0, 200)).catch(() => '');
+  const said = pathOf(page) === '/payment' ? '' : await page.locator('[data-sonner-toast], [role="alert"], [aria-invalid="true"]').allInnerTexts().then((texts) => texts.join(' / ').slice(0, 200)).catch(() => '');
   check(run, 'placing the order lands on the payment page', pathOf(page) === '/payment', `${page.url().replace(BASE, '')}${said ? ` — ${said}` : ''}`);
   const body = state.orderBodies[0];
   check(run, 'the order carried the bottle, the voucher and the courier',
@@ -377,6 +377,11 @@ const runShop = async (browser, run, contextOptions) => {
     await article.click();
     await settle(page);
     check(run, 'an article opens', pathOf(page).startsWith('/articles/') && await page.locator('h1').first().isVisible());
+    // Loaded on its own: the loading block was half a screen, so the footer showed and was then shoved down
+    // by the article — CLS 0.28 on a phone (2026-11-02).
+    await goto(page, pathOf(page));
+    const articleCls = await page.evaluate(() => window.__cls);
+    check(run, 'an article does not jump as it loads (CLS < 0.1)', articleCls < 0.1, `CLS ${articleCls.toFixed(3)}`);
   }
   await goto(page, '/bespoke');
   check(run, 'bespoke page renders its form', await page.locator('form, fieldset').first().isVisible().catch(() => false));
@@ -387,6 +392,9 @@ const runShop = async (browser, run, contextOptions) => {
   // --- English shop ---
   await goto(page, '/en/home');
   check(run, 'English home renders', await page.locator('h1').first().isVisible());
+  // Rendered English from the first frame: it used to start Indonesian, show the domestic price notice, then
+  // drop it and lift the header 38 px (2026-11-02).
+  { const cls = await page.evaluate(() => window.__cls); check(run, 'English home does not shift as it loads (CLS < 0.02)', cls < 0.02, `CLS ${cls.toFixed(3)}`); }
   const enProduct = await addToCart(page, `${run}/en`, '/en', EN);
   if (enProduct) {
     await goto(page, '/en/cart');
@@ -676,15 +684,18 @@ const runMotion = async (browser) => {
   await context.close();
 };
 
+// SMOKE_ONLY=phone,seo runs just those, for chasing one failure without the other six minutes.
+const ONLY = (process.env.SMOKE_ONLY || '').split(',').filter(Boolean);
+const wanted = (name) => !ONLY.length || ONLY.includes(name);
 const browser = await chromium.launch();
 try {
-  await runShop(browser, 'desktop', { viewport: { width: 1440, height: 900 } });
-  await runShop(browser, 'phone', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } });
-  await runTabs(browser);
-  await runAbroad(browser);
-  await runOutage(browser);
-  await runSeo(browser);
-  await runMotion(browser);
+  if (wanted('desktop')) await runShop(browser, 'desktop', { viewport: { width: 1440, height: 900 } });
+  if (wanted('phone')) await runShop(browser, 'phone', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } });
+  if (wanted('tabs')) await runTabs(browser);
+  if (wanted('abroad')) await runAbroad(browser);
+  if (wanted('outage')) await runOutage(browser);
+  if (wanted('seo')) await runSeo(browser);
+  if (wanted('motion')) await runMotion(browser);
 } finally {
   await browser.close();
 }

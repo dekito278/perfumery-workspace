@@ -1044,7 +1044,7 @@ const CustomerPortalPage = () => {
 
         <form onSubmit={submitClaim} className="mt-4 grid gap-2 border-t border-[#e5e7eb] pt-3">
           <div className="text-[11px] font-bold uppercase text-ng-dust">{t('cust.haveOldCode')}</div>
-          <input value={claimCodeValue} onChange={(e) => setClaimCodeValue(e.target.value.toUpperCase())} aria-label={t('cust.customerCode')} placeholder="SOLI•••••" className={`${inputClass} uppercase tracking-[0.08em]`} />
+          <input value={claimCodeValue} onChange={(e) => setClaimCodeValue(e.target.value.toUpperCase())} aria-label={t('cust.customerCode')} placeholder="SOLI•••••" autoCapitalize="characters" spellCheck={false} className={`${inputClass} uppercase tracking-[0.08em]`} />
           <input value={claimAnswer} onChange={(e) => setClaimAnswer(e.target.value)} placeholder={t('cust.answerIfAny')} className={inputClass} />
           <Button type="submit" variant="outline" disabled={claimLoading} className="h-11 rounded-none gap-2 bg-transparent">
             {claimLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
@@ -1314,7 +1314,7 @@ const CustomerPortalPage = () => {
                   value={customerCode}
                   onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
                   aria-label={t('cust.customerCode')}
-                  placeholder="SOLI•••••"
+                  placeholder="SOLI•••••" autoCapitalize="characters" spellCheck={false}
                   className="h-12 rounded-none border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-ng-bone/30"
                 />
                 <Button type="submit" className="h-12 rounded-none gap-2" disabled={loading}>

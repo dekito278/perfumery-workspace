@@ -735,7 +735,7 @@ const BespokePage = () => {
               <div className="grid gap-10 lg:grid-cols-3 lg:gap-8">
                 <label className="ng-label">
                   <span className="ng-mono text-ng-dust">{t('bsp.perfumeName')}</span>
-                  <input type="text" className="ng-field !font-ng-display !text-[26px]" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} aria-label={t('bsp.perfumeName')} />
+                  <input type="text" className="ng-field !font-ng-display !text-[26px]" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} aria-label={t('bsp.perfumeName')} autoComplete="off" />
                   <small className="text-[13px] text-ng-ash">{t('bsp.perfumeNameHint')}</small>
                 </label>
                 <label className="ng-label">

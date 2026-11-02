@@ -162,6 +162,9 @@ const PublicTrackingPage = () => {
               onChange={(event) => setLookup(event.target.value)}
               placeholder={t("track.placeholderLong")}
               aria-label={t("track.placeholderShort")}
+              autoCapitalize="characters"
+              spellCheck={false}
+              autoComplete="off"
             />
             <button type="submit" disabled={loading || !lookup.trim()}>
               <Search className="h-4 w-4" />

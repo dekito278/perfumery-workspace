@@ -167,6 +167,9 @@ const CartPage = () => {
                       value={voucher.inputCode}
                       onChange={(event) => voucher.setInputCode(event.target.value)}
                       placeholder={t('cart.voucherPlaceholder')}
+                      autoComplete="off"
+                      autoCapitalize="characters"
+                      spellCheck={false}
                       disabled={!items.length || voucher.loading}
                     />
                     <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>

@@ -143,7 +143,9 @@ const PublicJournalArticlePage = () => {
         <PublicHeader />
 
         {loading ? (
-          <section className="ng-section grid min-h-[50vh] place-items-center">
+          // A full screen while it loads: at half a screen the footer showed beneath it and was then shoved out
+          // of view by the article, a 0.28 layout shift on a phone (measured 2026-11-02).
+          <section className="ng-section grid min-h-[100svh] place-items-center">
             <div className="flex flex-col items-center gap-4 text-center">
               <p className="ng-mono m-0 text-ng-ash">{t('journal.loadingEyebrow')}</p>
               <h1 className="ng-display text-[40px]">{t("journal.loading")}</h1>

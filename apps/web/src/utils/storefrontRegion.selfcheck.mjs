@@ -61,8 +61,10 @@ assert.match(hook, /const listeners = new Set\(\);/, 'one value, published to ev
   assert.match(effectBody, /asked && asked !== here \? regionHref\(asked\) : null;[\s\S]{0,80}?window\.location\.replace\(href\)/,
     'an old ?lang=en link lands on the /en address');
 }
-assert.match(hook, /let current = REGION_ID;/,
-  'until that effect runs the answer is Indonesia, which is what the prerendered HTML already says');
+// The first render is in the address's shop, because each address's prerendered HTML already is: starting
+// Indonesian on /en flashed Indonesian and the domestic price notice, then shifted the header (2026-11-02).
+assert.match(hook, /let current = typeof window === 'undefined' \? REGION_ID : resolveRegion\(\);/,
+  'the first render reads the address — Indonesia only where there is no window to read');
 assert.equal(readRegionFromUrl('?lang=en'), 'en', 'the parameter is read');
 assert.equal(readRegionFromUrl('?lang=zz'), null, 'a value we do not have is no answer at all');
 assert.equal(readRegionFromUrl('?utm_source=ig'), null, 'and an address without it is no answer either');
