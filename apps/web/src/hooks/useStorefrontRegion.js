@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react';
-import { detectOverseasVisitor } from '@/utils/overseasVisitor.js';
 import {
   REGION_EN,
   REGION_ID,
-  readRegionFromPath,
   readRegionFromUrl,
-  readStoredRegion,
   regionHref,
   resolveRegion,
-  writeStoredRegion,
 } from '@/utils/storefrontRegion.js';
 
 // One value shared by every component, with listeners — the same shape useTierPrices uses. Each component
@@ -53,15 +49,13 @@ export const useStorefrontRegion = () => {
     listeners.add(setRegion);
     if (!resolved) {
       resolved = true;
-      // The path first, then ?lang: /en/catalog IS the English shop, and an address cannot be half in
-      // one shop and half in the other. Both are "what the address says", which is the one thing that
-      // outranks a stored choice.
-      const fromUrl = readRegionFromPath() || readRegionFromUrl();
-      const next = resolveRegion(readStoredRegion(), detectOverseasVisitor(), fromUrl);
-      // A shared link is a choice, made by whoever sent it. Storing it means the rest of the visit stays
-      // in that shop after the first click carries them off the address that had ?lang on it.
-      if (fromUrl) writeStoredRegion(fromUrl);
-      publish(next);
+      // The address decides (resolveRegion). A ?lang link already sent abroad still works: it moves to
+      // the address that IS that shop, instead of turning this one into the other language.
+      const here = resolveRegion();
+      const asked = readRegionFromUrl();
+      const href = asked && asked !== here ? regionHref(asked) : null;
+      if (href) window.location.replace(href);
+      else publish(here);
     } else {
       setRegion(current);
     }
@@ -73,19 +67,11 @@ export const useStorefrontRegion = () => {
     isInternational: region === REGION_EN,
     setRegion: (next) => {
       if (next !== REGION_ID && next !== REGION_EN) return;
-      // Written first, then published: a choice that does not survive a reload is still a choice for
-      // this page view, and writeStoredRegion refuses silently rather than throwing when storage is
-      // blocked.
-      writeStoredRegion(next);
       // The two shops are two addresses, so switching is a navigation, not a re-render. That costs one
       // page load on a click nobody makes twice, and buys an address that is worth copying: /en/catalog
       // previews in English when it is pasted into WhatsApp, where /catalog?lang=en could not.
       const href = regionHref(next);
-      if (href && typeof window !== 'undefined') {
-        window.location.assign(href);
-        return;
-      }
-      publish(next);
+      if (href && typeof window !== 'undefined') window.location.assign(href);
     },
   };
 };

@@ -10,6 +10,7 @@ import '@/styles/naskah.css';
 import '@/styles/print.css';
 import { applyStandaloneClass, installConnectivityEvents, installStaleShellRecovery, registerServiceWorker } from '@/utils/pwa.js';
 import { installRevealSafetyNet } from '@/utils/revealSafetyNet.js';
+import { installPrerenderedHeadHandover } from '@/utils/prerenderedHead.js';
 import { recordMobileRuntimeError } from '@/utils/mobileDiagnostics.js';
 
 const RESIZE_OBSERVER_MESSAGES = [
@@ -37,6 +38,7 @@ const isExtensionNoise = ({ message, filename, reason }) => {
 };
 
 installStaleShellRecovery();
+installPrerenderedHeadHandover();
 installConnectivityEvents();
 installRevealSafetyNet();
 

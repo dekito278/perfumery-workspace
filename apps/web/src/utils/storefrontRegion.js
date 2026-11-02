@@ -5,14 +5,13 @@
 // with. Dekito could not see his own international shop from Indonesia, a VPN does not change it (a VPN
 // moves the IP, not the clock or the language), and a visitor the guess reads wrong has no way to say so.
 //
-// So the visitor can now choose, and the choice wins. The guess stays as the DEFAULT, which is what keeps
-// the German customer from having to choose anything at all.
+// So the visitor could choose, and the choice won; the guess was the default. Since 2026-11-02 neither
+// decides any more: THE ADDRESS DOES (see resolveRegion). The guess only offers the way to the other shop.
 //
 // Import-free so the guard runs the rules.
 
 export const REGION_ID = 'id';
 export const REGION_EN = 'en';
-export const REGION_STORAGE_KEY = 'solivagant.storefront.region.v1';
 export const REGION_QUERY_KEY = 'lang';
 
 const VALID = [REGION_ID, REGION_EN];
@@ -28,27 +27,16 @@ export const EN_PATH_PREFIX = '/en';
 export const isValidRegion = (value) => VALID.includes(value);
 
 /**
- * @param stored           what this browser chose last time, if anything
- * @param detectedOverseas what isLikelyOverseas() makes of the browser
- * @param fromUrl          ?lang= on the address that was opened, if anything
+ * The address decides: /en/... is the English shop and every other address is the Indonesian one — for
+ * every visitor and every crawler.
  *
- * Three sources, and the order is the point.
- *
- * ?lang wins over everything, INCLUDING a stored choice. That is the whole reason it exists: the link
- * is how Dekito hands an overseas buyer the English shop, and a browser that had once chosen Indonesian
- * would otherwise quietly override the link it was just sent.
- *
- * A stored choice wins over the guess, including a choice of Indonesia made by someone the detection
- * thinks is abroad — that is precisely the person the switch exists for, and second-guessing them would
- * make the switch a suggestion rather than a control.
- *
- * The guess is only the default, which is what keeps the German customer from having to choose at all.
+ * A stored choice and a guess at the browser used to be able to turn an Indonesian address English. Google
+ * crawls from the US without an Indonesian browser, so /catalog/l-iris could reach it in English at US$95,
+ * carrying two canonicals (/catalog/l-iris and /en/catalog/l-iris) and two prices (Rp 429.000 and US$95) —
+ * measured 2026-11-02. Google's own advice is one address per language, and Dekito chose it: "alamat =
+ * bahasa". The guess survives only as SwitchToEnglishHint, an offer to go to the other address.
  */
-export const resolveRegion = (stored, detectedOverseas, fromUrl) => {
-  if (isValidRegion(fromUrl)) return fromUrl;
-  if (isValidRegion(stored)) return stored;
-  return detectedOverseas ? REGION_EN : REGION_ID;
-};
+export const resolveRegion = (pathname) => readRegionFromPath(pathname) || REGION_ID;
 
 /** ?lang=en on the address the visitor opened. Null when absent, unreadable, or not a region we have. */
 export const readRegionFromUrl = (search) => {
@@ -96,7 +84,7 @@ export const routerBasename = (pathname) => (readRegionFromPath(pathname) ? EN_P
  * The shop prefix for a region — for a link handed to a buyer who is BEING SHOWN that region.
  *
  * routerBasename above answers from the PATH, which is right for the router: the address decides which
- * routes are mounted. But the LANGUAGE does not come from the path. resolveRegion reads ?lang, then the
+ * routes are mounted. Until 2026-11-02 the LANGUAGE did not come from the path: resolveRegion read ?lang, then the
  * stored choice, then the guess — so /catalog renders in English for anyone who has chosen the English
  * shop, and routerBasename() answers '' on that very page.
  *
@@ -134,27 +122,4 @@ export const regionHref = (region, location) => {
   }
   const next = `${path}${search}${from.hash || ''}`;
   return next === `${from.pathname}${from.search || ''}${from.hash || ''}` ? null : next;
-};
-
-export const readStoredRegion = () => {
-  try {
-    const value = window.localStorage.getItem(REGION_STORAGE_KEY);
-    return isValidRegion(value) ? value : null;
-  } catch {
-    // Private windows and blocked storage throw on read. No stored choice, so the guess decides — the
-    // same place a first-time visitor starts.
-    return null;
-  }
-};
-
-export const writeStoredRegion = (region) => {
-  if (!isValidRegion(region)) return false;
-  try {
-    window.localStorage.setItem(REGION_STORAGE_KEY, region);
-    return true;
-  } catch {
-    // Blocked storage must not break the switch: the choice still applies to this page view, it just
-    // will not survive a reload. Returning false rather than throwing keeps that honest for the caller.
-    return false;
-  }
 };

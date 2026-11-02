@@ -159,9 +159,12 @@ const catalog = read('utils', 'tierPricedCatalog.js');
 assert.match(catalog, /overseas: false/,
   'the catalog must still refuse to price overseas — a destination is not a visitor tier');
 
-// --- 7. Detection runs after mount, never during render -------------------------------------------------
-// 18 product pages are prerendered at build time. Detecting during render bakes an English export panel
-// into the HTML Google indexes, and flashes it at every Indonesian visitor on hydration.
+// --- 7. The guess decides nothing but an offer --------------------------------------------------------------
+// Until 2026-11-02 the guess decided the region, so it had to run in an effect, or one visitor's answer would
+// reach the prerendered page. Then it was found turning Indonesian addresses English for a US browser — the
+// browser Google crawls with — at US$ prices, with two canonicals. Since then the ADDRESS decides
+// (resolveRegion) and the guess only offers the other address. So the region hook must not detect at all, and
+// the one caller left is the hint, which links and never prices.
 const hook = read('hooks', 'useStorefrontRegion.js');
 // Two hooks, deliberately. The price exists for everyone; being QUOTED in it is a guess. Collapsing them
 // would either hide the price from an Indonesian visitor with a reason to see it — Dekito checking his
@@ -170,21 +173,25 @@ const exportHook = read('hooks', 'useOverseasPrice.js');
 assert.match(exportHook, /export const useExportPrice = \(product, variant = null\) =>/, 'the price, for anyone');
 assert.match(exportHook, /export const useOverseasPrice = \(product, variant = null\) => \{[\s\S]{0,240}?return overseasVisitor \? price : null;/,
   'and the price only for a visitor looking at the international shop');
-// Detection now reaches the page through the region hook, which resolves it in an effect. Asserted here
-// too, not only in storefrontRegion.selfcheck: this is the file that explains WHY it must never run
-// during render, and a rule whose reason lives somewhere else is one the next reader deletes.
-// Held as the INVARIANT, not as one call's shape: the previous version pinned the exact expression
-// `publish(resolveRegion(readStoredRegion(), detectOverseasVisitor()))`, so adding a third source to the
-// resolution broke the guard without breaking the rule. What must stay true is that the only place
-// detection runs is inside the effect.
+assert.doesNotMatch(hook, /detectOverseasVisitor/,
+  'the region comes from the address — a guess deciding it is how Google was handed an English Indonesian page');
 {
-  const effectAt = hook.indexOf('useEffect(() => {');
-  assert.notEqual(effectAt, -1, 'the region hook still resolves in an effect');
-  const effectBody = hook.slice(effectAt, hook.indexOf('}, []);', effectAt));
-  assert.match(effectBody, /detectOverseasVisitor\(\)/, 'detection belongs in an effect');
-  const outsideEffect = hook.slice(0, effectAt) + hook.slice(hook.indexOf('}, []);', effectAt));
-  assert.doesNotMatch(outsideEffect, /detectOverseasVisitor\(\)/,
-    'and nowhere else — detection during render bakes one visitor\'s answer into the prerendered HTML');
+  const callers = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+      const rel = join(dir, entry.name);
+      if (entry.isDirectory()) walk(rel);
+      else if (/\.(jsx?|mjs)$/.test(entry.name) && !entry.name.includes('selfcheck') && rel !== join('utils', 'overseasVisitor.js')
+        && /detectOverseasVisitor\(/.test(read(rel))) callers.push(rel);
+    }
+  };
+  walk('.');
+  assert.deepEqual(callers, [join('components', 'storefront', 'SwitchToEnglishHint.jsx')],
+    'the guess reaches the page only as the hint to the English shop');
+  const hint = read('components', 'storefront', 'SwitchToEnglishHint.jsx');
+  assert.match(hint, /!readRegionFromPath\(\) && detectOverseasVisitor\(\)/, 'shown only on an Indonesian address');
+  assert.match(hint, /setRegion\(REGION_EN\)/, 'and what it does is go to the English address');
+  assert.doesNotMatch(hint, /addItem|usdPriceFor|exportPrice|publish\(/, 'it never prices and never sets the region');
 }
 // Starts on the Indonesian shop, so the first render — the one matching the prerendered HTML — quotes nobody.
 assert.match(hook, /let current = REGION_ID;/,

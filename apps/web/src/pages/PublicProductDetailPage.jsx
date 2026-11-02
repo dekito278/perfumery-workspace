@@ -204,7 +204,12 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const siteOrigin = getSiteOrigin();
   const canonicalUrl = shopCanonicalUrl(`/catalog/${product.slug}`, region, siteOrigin);
   const shareImage = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, siteOrigin);
-  const metaDescription = `${product.name} — ${product.subtitle || product.story || ''}`.trim().slice(0, 155);
+  // The product's own description, as the prerendered page has it — this tag replaces that one
+  // (prerenderedHead.js), and the notes list it used to carry made a poorer search snippet.
+  const metaDescription = `${product.name} — ${copy.description || product.subtitle || product.story || ''}`.trim().slice(0, 155);
+  // The price the reader is shown, in its own currency: the English shop said IDR here beside a US$ page.
+  const priceMeta = exportPrice ? { amount: usdPriceFor(exportPrice), currency: 'USD' }
+    : product.priceNumber > 0 ? { amount: product.priceNumber, currency: 'IDR' } : null;
   const productJsonLd = buildProductJsonLd(product, {
     origin: siteOrigin,
     canonicalUrl,
@@ -236,8 +241,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         <meta name="twitter:title" content={`${product.name} - SOLIVAGANT`} />
         <meta name="twitter:description" content={metaDescription} />
         {shareImage ? <meta name="twitter:image" content={shareImage} /> : null}
-        {product.priceNumber > 0 ? <meta property="product:price:amount" content={String(product.priceNumber)} /> : null}
-        {product.priceNumber > 0 ? <meta property="product:price:currency" content="IDR" /> : null}
+        {priceMeta ? <meta property="product:price:amount" content={String(priceMeta.amount)} /> : null}
+        {priceMeta ? <meta property="product:price:currency" content={priceMeta.currency} /> : null}
         {productJsonLd ? <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script> : null}
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
       </Helmet>

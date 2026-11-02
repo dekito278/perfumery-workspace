@@ -7,6 +7,7 @@ import { useCart } from '@/hooks/useCart.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { storefrontCategories } from '@/data/storefront.js';
 import PriceChangeNotice from '@/components/storefront/PriceChangeNotice.jsx';
+import SwitchToEnglishHint from '@/components/storefront/SwitchToEnglishHint.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { isMobileBrowser } from '@/utils/deviceRouting.js';
 
@@ -116,6 +117,7 @@ const PublicHeader = () => {
   return (
     <div ref={menuRef} className={`ng-header-wrap${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`}>
       <PriceChangeNotice />
+      <SwitchToEnglishHint />
       <header className="ng-header">
         <Link to="/home" className="ng-header__wordmark" aria-label={t('nav.wordmarkAria')} onClick={openOwnerAccess}>
           SOLIVAGANT
