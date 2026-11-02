@@ -116,6 +116,8 @@ const staticPublicPages = [
   },
   {
     route: '/journal',
+    idTitleKey: 'journal.tab',
+    idDescriptionKey: 'journal.meta',
     title: 'Journal - SOLIVAGANT',
     description: 'SOLIVAGANT public editorial journal about scent memory, raw materials, atelier process, product stories, and perfumery culture.',
     eyebrow: 'Journal',
@@ -281,15 +283,17 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
     // a second address for the same Indonesian articles. robots.txt keeps crawlers off it.
     if (canonical && page.route !== '/journal') {
       const enCanonical = `${siteUrl}${EN_PREFIX}${page.route}`;
-      // The twin carries the English copy the page objects above hold — unchanged, byte for byte, from
-      // what this build shipped before the Indonesian page stopped borrowing it.
+      // The twin says what the live English page says, out of the same message file: the literals above
+      // had drifted from it ("Fragrance Collection" here, "Collection" live), so a crawler saw one title and
+      // a reader another (2026-11-02). The literals stay only as the fallback for a key that does not exist.
+      const enTitle = MESSAGES.en[page.idTitleKey] || page.title;
+      const enDescription = MESSAGES.en[page.enDescriptionKey || page.idDescriptionKey] || page.description;
       let enHtml = setDocumentLanguage(html, 'en')
-        .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(page.title)}</title>`);
-      const enDescription = MESSAGES.en[page.enDescriptionKey] || page.description;
+        .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(enTitle)}</title>`);
       enHtml = replaceMetaContent(enHtml, 'name="description"', enDescription);
-      enHtml = replaceMetaContent(enHtml, 'property="og:title"', page.title);
+      enHtml = replaceMetaContent(enHtml, 'property="og:title"', enTitle);
       enHtml = replaceMetaContent(enHtml, 'property="og:description"', enDescription);
-      enHtml = replaceMetaContent(enHtml, 'name="twitter:title"', page.title);
+      enHtml = replaceMetaContent(enHtml, 'name="twitter:title"', enTitle);
       enHtml = replaceMetaContent(enHtml, 'name="twitter:description"', enDescription);
       enHtml = replaceMetaContent(enHtml, 'property="og:url"', enCanonical);
       enHtml = replaceMetaContent(enHtml, 'property="og:locale"', 'en_US');

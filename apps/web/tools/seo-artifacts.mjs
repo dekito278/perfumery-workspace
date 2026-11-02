@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import { isFreeVialProduct } from '../src/utils/freeVial.js';
 import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
-import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, stripTrailingBrand } from '../src/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, brandedTitle, metaSnippet as snippet, productMetaDescription, stripTrailingBrand } from '../src/utils/seo.js';
 import { schemaAvailability } from '../src/utils/schemaAvailability.js';
 import path from 'node:path';
 
@@ -30,14 +30,6 @@ const DEFAULT_SITE_URL = 'https://www.solivagantscent.com';
 
 // 155 characters is what a search result shows. Cut at a word, not mid-word, and never leave the reader
 // staring at half of one.
-const snippet = (value, limit = 155) => {
-  const flat = String(value || '').replace(/\s+/g, ' ').trim();
-  if (flat.length <= limit) return flat;
-  const cut = flat.slice(0, limit - 1);
-  const lastSpace = cut.lastIndexOf(' ');
-  return `${(lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:—-]+$/, '')}…`;
-};
-
 const escapeHtml = (value = '') =>
   String(value)
     .replace(/&/g, '&amp;')
@@ -296,7 +288,8 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
       const english = lang === 'en';
       const canonical = abs(siteUrl, english ? `${EN_PREFIX}${route}` : route);
       const title = `${product.name} - ${BRAND}`;
-      const description = snippet(`${product.name} — ${english ? product.descriptionEn : product.description}`);
+      // The live page falls back to the Indonesian description where there is no English one; so does this.
+      const description = productMetaDescription(product.name, english ? (product.descriptionEn || product.description) : product.description);
 
       let html = setDocumentLanguage(baseHtml, lang);
       html = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
@@ -371,8 +364,8 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
     if (!post.title) continue;
     const canonical = abs(siteUrl, `/articles/${post.slug}`);
     // Said once: the SEO Title field invites a brand signature and this line adds one of its own.
-    const title = `${stripTrailingBrand(post.seoTitle || post.title, BRAND)} - ${BRAND}`;
-    const description = (post.excerpt || post.title).slice(0, 155);
+    const title = brandedTitle(stripTrailingBrand(post.seoTitle || post.title, BRAND), BRAND);
+    const description = snippet(post.excerpt || post.title);
     // An article with no cover used to ship no og:image at all, so sharing it previewed as bare text.
     const image = getOptimizedStorageImageUrl(abs(siteUrl, post.image || SHARE_IMAGE_PATH), 1200);
 

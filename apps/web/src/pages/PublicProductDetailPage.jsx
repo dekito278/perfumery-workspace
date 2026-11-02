@@ -37,7 +37,7 @@ import ProductTestimonials from '@/components/storefront/ProductTestimonials.jsx
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, productMetaDescription, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import { usdPriceFor } from '@/utils/usdPrice.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
 import { isPlaceholderMood } from '@/utils/productMood.js';
@@ -209,7 +209,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const shareImage = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, siteOrigin);
   // The product's own description, as the prerendered page has it — this tag replaces that one
   // (prerenderedHead.js), and the notes list it used to carry made a poorer search snippet.
-  const metaDescription = `${product.name} — ${copy.description || product.subtitle || product.story || ''}`.trim().slice(0, 155);
+  const metaDescription = productMetaDescription(product.name, copy.description || product.subtitle || product.story);
   // The price the reader is shown, in its own currency: the English shop said IDR here beside a US$ page.
   const priceMeta = exportPrice ? { amount: usdPriceFor(exportPrice), currency: 'USD' }
     : product.priceNumber > 0 ? { amount: product.priceNumber, currency: 'IDR' } : null;
