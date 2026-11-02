@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { isMobileBrowser } from '@/utils/deviceRouting.js';
 import { useLocation } from 'react-router-dom';
 import { Download, Share, X } from 'lucide-react';
-import { Button } from '@/components/ui/button.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { isAndroidDevice, isIosDevice, isStandaloneDisplayMode } from '@/utils/pwa.js';
 import { INSTALL_PROMPT_SCROLL_PX, recordVisit, shouldSurfaceInstallPrompt } from '@/utils/mobileFirstScreen.js';
@@ -118,6 +117,14 @@ const PwaInstallPrompt = () => {
     setVisible(false);
   };
 
+  // Esc puts it away, as it does every other card on the shop.
+  useEffect(() => {
+    if (!visible) return undefined;
+    const onKey = (event) => { if (event.key === 'Escape') dismiss(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   const install = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
@@ -139,27 +146,25 @@ const PwaInstallPrompt = () => {
       </button>
       <div className="mobile-pwa-install-mark">S</div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-bold text-[#1f2937]">
-          {t(ios ? 'pwa.installTitleIos' : 'pwa.installTitle')}
-        </div>
-        <p className="mt-1 text-xs font-medium leading-snug text-[#6b7280]">
-          {t(ios ? 'pwa.installBodyIos' : 'pwa.installBody')}
-        </p>
-        <div className="mt-3 flex gap-2">
+        {/* Shown only on the shop's home, so it wears the shop (naskah.css): it was a white card in Studio's
+            DM Sans, a 61 KB font fetched for one prompt, with 32 and 36 px buttons (2026-11-02). */}
+        <p className="mobile-pwa-install-title">{t(ios ? 'pwa.installTitleIos' : 'pwa.installTitle')}</p>
+        <p className="mobile-pwa-install-body">{t(ios ? 'pwa.installBodyIos' : 'pwa.installBody')}</p>
+        <div className="mobile-pwa-install-actions">
           {ios ? (
-            <div className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
-              <Share className="h-4 w-4" />
+            <p className="mobile-pwa-install-hint">
+              <Share className="h-4 w-4" aria-hidden="true" />
               {t('pwa.iosShare')}
-            </div>
+            </p>
           ) : (
-            <Button type="button" onClick={install} className="h-9 rounded-xl px-3 text-xs" disabled={!deferredPrompt}>
-              <Download className="mr-1 h-4 w-4" />
+            <button type="button" onClick={install} className="ng-btn" disabled={!deferredPrompt}>
+              <Download className="h-4 w-4" aria-hidden="true" />
               {t('pwa.install')}
-            </Button>
+            </button>
           )}
-          <Button type="button" variant="outline" onClick={dismiss} className="h-9 rounded-xl bg-white px-3 text-xs">
+          <button type="button" onClick={dismiss} className="ng-btn ng-btn--ghost">
             {t('pwa.later')}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

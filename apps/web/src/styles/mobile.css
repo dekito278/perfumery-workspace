@@ -1050,11 +1050,11 @@ body:has([contenteditable="true"]:focus) .mobile-fixed-action {
 
 .mobile-pwa-install-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 2px;
+  right: 2px;
   display: inline-flex;
-  min-height: 32px;
-  width: 32px;
+  min-height: 44px;
+  width: 44px;
   align-items: center;
   justify-content: center;
   border: 0;

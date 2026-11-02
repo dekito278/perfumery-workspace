@@ -1707,3 +1707,104 @@ body:has(.ng-buybar.is-visible) .back-to-top {
 .free-vial-prompt {
   font-family: var(--ng-font-body);
 }
+
+/* The phone's install card. It is only ever shown on the shop's home (PwaInstallPrompt), so it wears the
+   shop outright: it was a white card in Studio's DM Sans, with an amber pill and 32/36 px buttons, sliding
+   up over the dark page (measured 2026-11-02). */
+.mobile-pwa-install {
+  border: 1px solid var(--ng-line-strong);
+  border-radius: 0;
+  background: var(--ng-card);
+  box-shadow: 0 24px 54px -28px rgba(0, 0, 0, 0.8);
+  color: var(--ng-bone);
+  font-family: var(--ng-font-body);
+}
+
+.mobile-pwa-install-mark {
+  border-radius: 0;
+  background: var(--ng-bone);
+  color: var(--ng-ink);
+  font-family: var(--ng-font-display);
+  font-size: 18px;
+}
+
+.mobile-pwa-install-close {
+  top: 2px;
+  right: 2px;
+  width: 44px;
+  min-height: 44px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ng-dust);
+}
+
+.mobile-pwa-install-title {
+  margin: 0;
+  padding-right: 36px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mobile-pwa-install-body {
+  margin: 4px 0 0;
+  color: var(--ng-dust);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mobile-pwa-install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mobile-pwa-install-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  color: var(--ng-sand);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* The offline banner and the owner's update card mount outside every page, so in the shop they wear it only
+   while a shop page is on screen; Studio keeps its own light versions. */
+body:has(.solivagant-editorial-home, .ng-scope) .mobile-pwa-offline,
+body:has(.solivagant-editorial-home, .ng-scope) .mobile-pwa-update {
+  border-color: var(--ng-line-strong);
+  border-radius: 0;
+  background: var(--ng-card);
+  box-shadow: 0 24px 54px -28px rgba(0, 0, 0, 0.8);
+  color: var(--ng-bone);
+  font-family: var(--ng-font-body);
+}
+
+body:has(.solivagant-editorial-home, .ng-scope) .mobile-pwa-update .text-\[\#1f2937\] {
+  color: var(--ng-bone);
+}
+
+body:has(.solivagant-editorial-home, .ng-scope) .mobile-pwa-update .text-\[\#6b7280\] {
+  color: var(--ng-dust);
+}
+
+body:has(.solivagant-editorial-home, .ng-scope) .mobile-pwa-update-mark {
+  border-radius: 0;
+  background: var(--ng-bone);
+  color: var(--ng-ink);
+}
+
+/* A focused control is never left under the shop's fixed bars: the 111 px sticky header above, the buy bar
+   (73 px) below, and the install card while it is up. On a desktop the product page's FAQ was tabbed to
+   behind the buy bar (WCAG 2.4.11, measured 2026-11-02). */
+html:has(.solivagant-editorial-home, .ng-scope) {
+  scroll-padding-top: 120px;
+  scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+}
+
+html:has(.mobile-pwa-install) {
+  scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 320px);
+}
