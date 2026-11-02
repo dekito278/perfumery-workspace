@@ -20,6 +20,7 @@ import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import { getProductStockTotal, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { productCopyFor } from '@/utils/productCopy.js';
 
 /**
  * The English shop's cart: the same basket as the Indonesian one, priced in dollars, with the parcel's
@@ -105,7 +106,7 @@ const InternationalCartPage = () => {
                         </Link>
                         <div className="flex min-w-0 flex-col gap-2">
                           <Link to={`/catalog/${line.productSlug}`} className="font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(line.name).name}</Link>
-                          <span className="ng-mono text-ng-ash">{[shortNoteList(line.notes), line.size].filter(Boolean).join(' · ')}</span>
+                          <span className="ng-mono text-ng-ash">{[shortNoteList(productCopyFor(catalog.find((entry) => entry.slug === line.productSlug), 'en').notes || line.notes), line.size].filter(Boolean).join(' · ')}</span>
                           <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeItem(line.slug)} aria-label={t('cart.removeOf', { name: line.name })}>
                             {t('cart.removeItem')}
                           </button>

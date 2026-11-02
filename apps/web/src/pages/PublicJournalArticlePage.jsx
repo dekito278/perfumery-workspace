@@ -170,7 +170,7 @@ const PublicJournalArticlePage = () => {
             </div>
           </section>
         ) : (
-          <article>
+          <article lang="id">
             <header className="ng-section !border-b-0 !pb-14 !pt-20 md:!pt-28">
               <div className="mx-auto flex max-w-[880px] flex-col items-center gap-7 text-center">
                 <p className="ng-mono m-0 flex flex-wrap justify-center gap-x-3.5 gap-y-1 text-ng-ash">

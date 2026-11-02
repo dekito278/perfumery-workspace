@@ -189,7 +189,9 @@ const PublicJournalPage = () => {
                 <h2 className="ng-display text-[36px] font-normal">{effectiveCategory !== 'All' ? t('journal.emptyCategory', { category: effectiveCategory }) : t('journal.emptyAll')}</h2>
               </div>
             ) : (
-              <div className="flex flex-col gap-16">
+              // The articles are Indonesian in both shops (journal_posts has no English columns), so on /en the
+              // list says which language a screen reader should speak it in.
+              <div lang="id" className="flex flex-col gap-16">
                 {/* Featured article — large */}
                 {featured ? (
                   <Link to={getJournalPublicPath(featured)} className="grid items-center gap-10 text-ng-bone no-underline md:grid-cols-2 md:gap-[72px]" data-reveal>

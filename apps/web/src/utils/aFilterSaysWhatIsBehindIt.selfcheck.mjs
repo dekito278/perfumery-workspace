@@ -94,7 +94,8 @@ for (const [name, page] of [
 for (const [name, page] of [
   ['CatalogPage.jsx', read('pages', 'CatalogPage.jsx')],
 ]) {
-  assert.match(page, /shortNoteList\(product\.notes, CARD_NOTE_LIMIT\)/,
+  // The notes in the shop's language since 2026-11-02 (productCopyFor), still through the one clamp.
+  assert.match(page, /shortNoteList\((product\.notes|productCopyFor\(product, region\)\.notes), CARD_NOTE_LIMIT\)/,
     `${name} must show the notes through the shared clamp, not its own slice`);
   assert.match(page, /const CARD_NOTE_LIMIT = 3;/, `${name} must name the limit rather than inline a 3`);
 }

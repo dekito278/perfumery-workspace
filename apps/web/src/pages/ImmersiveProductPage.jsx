@@ -300,15 +300,15 @@ const ImmersiveProductPage = ({ product, story, stale = false }) => {
           <div className="imm-product__notes">
             <div className="imm-product__note-row">
               <span className="imm-product__note-label">Top</span>
-              <span className="imm-product__note-values">{(product.topNotes || []).join(', ')}</span>
+              <span className="imm-product__note-values">{productCopyFor(product, region).topNotes.join(', ')}</span>
             </div>
             <div className="imm-product__note-row">
               <span className="imm-product__note-label">Heart</span>
-              <span className="imm-product__note-values">{(product.heartNotes || []).join(', ')}</span>
+              <span className="imm-product__note-values">{productCopyFor(product, region).heartNotes.join(', ')}</span>
             </div>
             <div className="imm-product__note-row">
               <span className="imm-product__note-label">Base</span>
-              <span className="imm-product__note-values">{(product.baseNotes || []).join(', ')}</span>
+              <span className="imm-product__note-values">{productCopyFor(product, region).baseNotes.join(', ')}</span>
             </div>
           </div>
 
