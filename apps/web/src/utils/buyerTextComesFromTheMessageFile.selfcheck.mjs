@@ -62,7 +62,7 @@ const ALLOWED = new Map([
   // first and last sat in the retired phone storefront's layout, the second on the old desktop logo. None
   // is written into a spoken prop any more, and an exemption nothing uses is a hole kept open for later.
   ['081234567890', 'an Indonesian phone-number example on a checkout that is domestic-only; not prose'],
-  ['SOLI09232', 'an order-code example — a code format, the same characters in either language'],
+  ['SOLI•••••', 'a customer-code example — the format, in either language, and no account\'s code (was SOLI09232 until 2026-11-02)'],
   ['123456', 'a six-digit code example'],
 ]);
 
@@ -202,7 +202,7 @@ assert.deepEqual(defaultLeaks, [],
 // proof runs THROUGH the same regex: the strings the allowlist exempts are real literals in these files,
 // so the scan must have seen them. Checking the raw file text instead proves nothing about the regex —
 // which is exactly how a sabotaged pattern walked past the first version of this file.
-const MUST_BE_SEEN = ['081234567890', 'SOLI09232'];
+const MUST_BE_SEEN = ['081234567890', 'SOLI•••••'];
 for (const value of MUST_BE_SEEN) {
   assert.ok(ALLOWED.has(value), `${value} must stay on the allowlist with its reason`);
   assert.ok(seen.has(value),
