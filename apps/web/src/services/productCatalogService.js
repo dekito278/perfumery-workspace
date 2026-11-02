@@ -10,6 +10,7 @@ import { planAutoTierPrices } from '@/utils/autoTierPrices.js';
 import { isFreeVialProduct } from '@/utils/freeVial.js';
 import { withoutNotesHeading } from '@/utils/shortNoteList.js';
 import { deleteProductImages } from '@/services/productImageStorageService.js';
+import { toLaunchYear } from '@/utils/launchYear.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
@@ -559,7 +560,7 @@ export const normalizeProduct = (input, existingProducts = []) => {
     // which is how the launch year reached the database, the buyer's view, fromDatabaseRow AND
     // getPublicFragranceCatalog and still never appeared on a page: four explicit allowlists between
     // the row and the screen, and the field has to be written into every one of them.
-    launchYear: input.launchYear ?? null,
+    launchYear: toLaunchYear(input.launchYear),
     stock,
     variants,
     tags: [

@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
+import { toLaunchYear } from './launchYear.js';
 
 const src = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...parts) => readFileSync(join(src, ...parts), 'utf8');
@@ -87,6 +88,18 @@ for (const file of [['components', 'product', 'ProductForm.jsx'], ['components',
   // A new variant must copy the representative bottle, not the field that is no longer editable.
   assert.match(source, /priceNumber: Number\(getPrimaryVariant\(current\.variants \|\| \[\]\)\?\.priceNumber/,
     `${file.join('/')} must seed a new variant from the representative variant`);
+}
+
+// The release year, typed in Studio since 2026-11-02. An emptied box is '' and must save as null — the
+// column is an integer, and Postgres refuses '' — and nothing that is not a year may become one.
+assert.equal(toLaunchYear('2025'), 2025);
+assert.equal(toLaunchYear(2026), 2026);
+assert.equal(toLaunchYear(' 2024 '), 2024);
+for (const notAYear of ['', null, undefined, 'abc', '0', '25', '99999']) {
+  assert.equal(toLaunchYear(notAYear), null, `${JSON.stringify(notAYear)} is not a release year`);
+}
+for (const file of [['components', 'product', 'ProductForm.jsx'], ['components', 'product', 'MobileProductForm.jsx']]) {
+  assert.match(read(...file), /updateField\('launchYear', event\.target\.value\)/, `${file.join('/')} lets Dekito set the release year`);
 }
 
 console.log(`deadProductInputs selfcheck OK (${fields.length} form fields, ${Object.keys(STUDIO_ONLY).length} reasoned exceptions)`);

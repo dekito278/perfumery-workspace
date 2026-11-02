@@ -9,6 +9,7 @@
 // deriving the field list from the inputs themselves.
 import { normalizeTestimonials } from '@/utils/productTestimonials.js';
 import { moodForEditing } from '@/utils/productMood.js';
+import { toLaunchYear } from '@/utils/launchYear.js';
 
 export const snapshotProductForm = (product = {}) => JSON.stringify({
   id: product.id || '',
@@ -33,6 +34,8 @@ export const snapshotProductForm = (product = {}) => JSON.stringify({
   mood: moodForEditing(product.mood),
   wear: product.wear || {},
   intensity: product.intensity || 'Medium',
+  // Parsed, not raw: the stored year is 2025 and the box holds '2025', the same answer in two types.
+  launchYear: toLaunchYear(product.launchYear),
   // Buyer quotes are a repeater, so an edit here is several keystrokes of someone else's words. Leaving
   // them out meant typing one and walking away threw it out with no warning at all.
   testimonials: normalizeTestimonials(product.testimonials),
