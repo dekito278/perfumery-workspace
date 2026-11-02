@@ -160,6 +160,9 @@ const CatalogPage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        {/* First, before the header: the redesign had put it after the header's links, so a keyboard reached
+            it only after the stops it exists to skip (2026-11-02). */}
+        <SkipToResults />
         <StaleCatalogNotice stale={fetchedProducts.stale && products.length > 0} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
@@ -178,7 +181,6 @@ const CatalogPage = () => {
 
         <section className="ng-section ng-section--deep !py-5 md:!py-8" aria-label={t('catalog.ngFilters')}>
           <div className="ng-container flex flex-col gap-4 md:gap-6">
-            <SkipToResults />
             <div className="flex flex-wrap items-center justify-between gap-4">
               {/* One row that scrolls sideways on a phone, edge to edge, instead of three stacked rows. */}
               <div className="-mx-[var(--ng-gutter)] flex w-[calc(100%+2*var(--ng-gutter))] shrink-0 gap-2.5 overflow-x-auto [&>*]:shrink-0 [&>*]:whitespace-nowrap px-[var(--ng-gutter)] md:mx-0 md:w-auto md:shrink md:flex-wrap md:overflow-visible md:px-0" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
