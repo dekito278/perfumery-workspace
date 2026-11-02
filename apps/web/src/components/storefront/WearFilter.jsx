@@ -30,7 +30,7 @@ const WearFilter = ({ products, selection, onChange }) => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-x-[18px] gap-y-2.5">
-        <p className="ng-mono m-0 text-ng-dust">{t('catalog.wearHeading')}</p>
+        <p className="ng-mono m-0 w-full text-ng-dust sm:w-auto">{t('catalog.wearHeading')}</p>
         {facets.map((facet) => {
           const chosen = WEAR_FACETS[facet].options.find((option) => option.value === selection[facet]);
           return (

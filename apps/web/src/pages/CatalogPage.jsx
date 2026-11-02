@@ -160,8 +160,10 @@ const CatalogPage = () => {
         <ScrollProgress />
         <PublicHeader />
 
-        <header className="ng-section !pb-14 !pt-16 md:!pt-24">
-          <div className="ng-container flex flex-wrap items-end justify-between gap-8">
+        {/* On a phone the title, the filters and the list share one screen: tighter here so the first perfume
+            is on it (it sat at y=880 of 844). Desktop keeps the canvas spacing. */}
+        <header className="ng-section !pb-8 !pt-8 md:!pb-14 md:!pt-24">
+          <div className="ng-container flex flex-wrap items-end justify-between gap-4 md:gap-8">
             <div className="flex flex-col gap-5">
               <p className="ng-eyebrow ng-mono m-0">{t('catalog.ngEyebrow', { count: products.length })}</p>
               <h1 className="ng-display ng-h1">{t('catalog.title')}</h1>
@@ -170,11 +172,12 @@ const CatalogPage = () => {
           </div>
         </header>
 
-        <section className="ng-section ng-section--deep !py-8" aria-label={t('catalog.ngFilters')}>
-          <div className="ng-container flex flex-col gap-6">
+        <section className="ng-section ng-section--deep !py-5 md:!py-8" aria-label={t('catalog.ngFilters')}>
+          <div className="ng-container flex flex-col gap-4 md:gap-6">
             <SkipToResults />
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex flex-wrap gap-2.5" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
+              {/* One row that scrolls sideways on a phone, edge to edge, instead of three stacked rows. */}
+              <div className="-mx-[var(--ng-gutter)] flex w-[calc(100%+2*var(--ng-gutter))] shrink-0 gap-2.5 overflow-x-auto [&>*]:shrink-0 [&>*]:whitespace-nowrap px-[var(--ng-gutter)] md:mx-0 md:w-auto md:shrink md:flex-wrap md:overflow-visible md:px-0" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
                 {catalogCategories.map((category) => (
                   <button
                     key={category}
@@ -205,7 +208,7 @@ const CatalogPage = () => {
           </div>
         </section>
 
-        <section className="ng-section !pt-12" aria-label={t('catalog.ngResults')}>
+        <section className="ng-section !pt-6 md:!pt-12" aria-label={t('catalog.ngResults')}>
           <div className="ng-container">
             {isLoading ? (
               <div className="flex flex-col" aria-hidden="true">
