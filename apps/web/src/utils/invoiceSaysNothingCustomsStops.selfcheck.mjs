@@ -23,6 +23,7 @@ import {
   BOTTLE_CUSTOMS_DESCRIPTION, FORBIDDEN_CUSTOMS_WORDS, namesAForbiddenIngredient, vialCustomsDescription,
 } from './invoiceCustomsText.js';
 import { BRAND_PROFILE } from '../data/brandProfile.js';
+import { DEFAULT_SITE_FACTS } from '../data/siteFacts.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const shimPath = join(here, `.invoicePdf.selfcheck.${process.pid}.mjs`);
@@ -33,6 +34,8 @@ writeFileSync(shimPath, `${readFileSync(join(here, 'invoicePdf.js'), 'utf8')
   .replace(/^import .*?;$/gm, '')
   .replace(/^export /gm, '')}\nexport { buildInvoicePdf };\n`);
 globalThis.BRAND_PROFILE = BRAND_PROFILE;
+// The city comes from the Studio facts since 2026-11-03; their defaults are what an unset shop prints.
+globalThis.getSiteFacts = () => DEFAULT_SITE_FACTS;
 globalThis.GIFT_VIAL_SIZE_ML = GIFT_VIAL_SIZE_ML;
 globalThis.giftVialsFor = giftVialsFor;
 globalThis.BOTTLE_CUSTOMS_DESCRIPTION = BOTTLE_CUSTOMS_DESCRIPTION;

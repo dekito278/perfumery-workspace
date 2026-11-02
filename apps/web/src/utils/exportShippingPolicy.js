@@ -15,7 +15,13 @@ export const DEFAULT_EXPORT_SHIPPING_POLICY = {
   supportSingleUsd: 30,
   supportMultipleUsd: 50,
   costRateIdr: 18000,
+  // How many bottles the English shop prices before it asks. Six until 2026-11-03, when it moved here
+  // from SHIPPING_RATE_MAX_BOTTLES so Dekito can change it; the default is that constant's value.
+  maxQuotedBottles: 6,
 };
+
+/** The cap's range: the migration's check (1–24), and 24 bottles is 12 kg, well inside the DHL sheet. */
+export const MAX_QUOTED_BOTTLES_LIMIT = 24;
 
 const number = (value, fallback) => {
   if (value === null || value === undefined || String(value).trim() === '') return fallback;
@@ -35,11 +41,13 @@ export const normalizeExportShippingPolicy = (input = {}) => {
   const single = Math.max(0, number(input.supportSingleUsd ?? input.support_single_usd, DEFAULT_EXPORT_SHIPPING_POLICY.supportSingleUsd));
   const multiple = Math.max(0, number(input.supportMultipleUsd ?? input.support_multiple_usd, DEFAULT_EXPORT_SHIPPING_POLICY.supportMultipleUsd));
   const rate = number(input.costRateIdr ?? input.cost_rate_idr, DEFAULT_EXPORT_SHIPPING_POLICY.costRateIdr);
+  const cap = Math.round(number(input.maxQuotedBottles ?? input.max_quoted_bottles, DEFAULT_EXPORT_SHIPPING_POLICY.maxQuotedBottles));
   return {
     supportSingleUsd: Math.round(single),
     supportMultipleUsd: Math.round(multiple),
     // A rate of zero or less is not a cheaper shop, it is a division by nothing.
     costRateIdr: rate > 0 ? Math.round(rate) : DEFAULT_EXPORT_SHIPPING_POLICY.costRateIdr,
+    maxQuotedBottles: Math.min(MAX_QUOTED_BOTTLES_LIMIT, Math.max(1, cap)),
   };
 };
 

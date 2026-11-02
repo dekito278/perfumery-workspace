@@ -38,10 +38,10 @@ const chain = [
 ].map((file) => readFileSync(file, 'utf8')
   .replace(/^import [\s\S]*?from '[^']+';$/gm, '')
   .replace(/^export /gm, '')).join('\n');
-writeFileSync(shimPath, `${chain}\nexport { quoteInternationalShippingPrice, SHIPPING_COST_RATE, SHIPPING_SUPPORT_USD };\n`);
+writeFileSync(shimPath, `${chain}\nexport { quoteInternationalShippingPrice, SHIPPING_COST_RATE, SHIPPING_SUPPORT_USD, SHIPPING_RATE_MAX_BOTTLES };\n`);
 
 try {
-  const { quoteInternationalShippingPrice, SHIPPING_COST_RATE, SHIPPING_SUPPORT_USD } = await import(`file://${shimPath}`);
+  const { quoteInternationalShippingPrice, SHIPPING_COST_RATE, SHIPPING_SUPPORT_USD, SHIPPING_RATE_MAX_BOTTLES } = await import(`file://${shimPath}`);
   const at = (policy, bottles = 1, countryCode = 'US') => (
     quoteInternationalShippingPrice({ countryCode, bottles, policy })?.usd
   );
@@ -49,7 +49,24 @@ try {
   // --- 1. The defaults are today's prices -------------------------------------------------------------
   // Dekito's own brief quotes both of these as what the site charges now, so the migration seeding these
   // numbers must leave every price exactly where it is.
-  assert.deepEqual(DEFAULT_EXPORT_SHIPPING_POLICY, { supportSingleUsd: 30, supportMultipleUsd: 50, costRateIdr: 18000 });
+  assert.deepEqual(DEFAULT_EXPORT_SHIPPING_POLICY, { supportSingleUsd: 30, supportMultipleUsd: 50, costRateIdr: 18000, maxQuotedBottles: 6 });
+  assert.equal(DEFAULT_EXPORT_SHIPPING_POLICY.maxQuotedBottles, SHIPPING_RATE_MAX_BOTTLES,
+    'the policy default and the rate sheet must name the same bottle cap');
+
+  // --- 1b. The bottle cap is Dekito's since 2026-11-03 ------------------------------------------------
+  // Six by default, exactly as before: the seventh bottle is asked about, not priced.
+  const quote = (policy, bottles) => quoteInternationalShippingPrice({ countryCode: 'US', bottles, policy });
+  assert.equal(quote(null, 6).onRequest, undefined, 'six bottles still price on the defaults');
+  assert.equal(quote(null, 7).onRequest, 'bottles', 'and the seventh is still quoted by hand');
+  // Raised, the next bottles price from the same box rule: seven and eight are four boxes, 4 kg.
+  const raised = { maxQuotedBottles: 8 };
+  assert.ok(quote(raised, 7).usd > quote(raised, 6).usd, 'a raised cap prices bottle seven, heavier than six');
+  assert.equal(quote(raised, 7).usd, quote(raised, 8).usd, 'seven and eight ride in the same four boxes');
+  assert.equal(quote(raised, 9).onRequest, 'bottles', 'and past the new cap it asks again');
+  // A typo cannot open the gate wide or shut it: clamped to the migration's 1–24.
+  assert.equal(normalizeExportShippingPolicy({ maxQuotedBottles: 500 }).maxQuotedBottles, 24);
+  assert.equal(normalizeExportShippingPolicy({ max_quoted_bottles: 0 }).maxQuotedBottles, 1);
+  assert.equal(normalizeExportShippingPolicy({ maxQuotedBottles: '' }).maxQuotedBottles, 6);
   // TWO CONSTANTS FOR ONE NUMBER IS A DRIFT WAITING TO HAPPEN. exportShippingPolicy.js is import-free on
   // purpose — the guards run its arithmetic rather than reading it — so it cannot import the rate sheet's
   // own figures. This asserts they are the same instead, which is the cheaper half of the same promise.

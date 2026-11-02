@@ -1,3 +1,4 @@
+import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -167,6 +168,7 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
 
 const BespokePage = () => {
   const { t, isInternational } = useTranslate();
+  const siteFacts = useSiteFacts();
   const revealRef = useScrollReveal();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -708,7 +710,7 @@ const BespokePage = () => {
           <div className="ng-container relative flex flex-col gap-7">
             <p className="ng-eyebrow ng-mono m-0">{t('bsp.eyebrow')}</p>
             <h1 className="ng-display ng-h1 max-w-[980px]">{t('bsp.title')}</h1>
-            <p className="ng-lead">{t('bsp.lead')}</p>
+            <p className="ng-lead">{t('bsp.lead', { days: siteFacts.bespokeDays })}</p>
             {/* Same rule as the phone: a floor derived from Studio's own option prices, and never shown
                 to the English shop, whose bespoke path takes no payment and has no international price. */}
             {/* The price and its condition, each on its own line: run together they read "Mulai dari Rp 569.000
@@ -1017,7 +1019,7 @@ const BespokePage = () => {
                 <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.payment')}</span><select className="ng-field" value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
                 <label className="flex items-start gap-3 text-[15px] leading-relaxed text-ng-sand">
                   <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#d4573a]" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
-                  {t('bsp.preorderConfirm')}
+                  {t('bsp.preorderConfirm', { days: siteFacts.bespokeDays })}
                 </label>
                 <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={saving}>
                   {saving ? t('bsp.saving') : (isManualPayment ? t('bsp.orderUpload') : t('bsp.orderPay'))}

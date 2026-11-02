@@ -1,3 +1,4 @@
+import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -15,7 +16,6 @@ import {
   getJournalCategoryLabel,
   getJournalPublicPath,
   getPublishedJournalPosts,
-  JOURNAL_CATEGORIES,
   JOURNAL_POSTS_CHANGED_EVENT,
 } from '@/services/journalPostsSupabaseService.js';
 import { getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
@@ -27,7 +27,6 @@ import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const getExcerpt = (article) => articleExcerpt(article, 180);
 
-const ALL_TABS = [JOURNAL_ALL_TAB, ...JOURNAL_CATEGORIES.map((category) => category.label)];
 
 // Which tab a reader is on lives in the URL, as ?category=<the category's stored value>.
 //
@@ -93,13 +92,19 @@ const PublicJournalPage = () => {
     };
   }, [t]);
 
+  // The tabs follow the categories set in Studio, so they are worked out here and not once at import.
+  const { journalCategories } = useSiteFacts();
+  const allTabs = useMemo(
+    () => [JOURNAL_ALL_TAB, ...journalCategories.map((category) => category.label)],
+    [journalCategories],
+  );
   const tabCounts = useMemo(
-    () => catalogPillCounts(articles, ALL_TABS, matchesJournalCategory),
-    [articles],
+    () => catalogPillCounts(articles, allTabs, matchesJournalCategory),
+    [articles, allTabs],
   );
   const categories = useMemo(
-    () => ALL_TABS.filter((category) => pillIsOffered(category, tabCounts[category])),
-    [tabCounts],
+    () => allTabs.filter((category) => pillIsOffered(category, tabCounts[category])),
+    [allTabs, tabCounts],
   );
   // A tab can vanish under the reader — an article unpublished while the page is open empties the
   // category they are standing in. Falling back to All beats showing an empty grid under a tab that is

@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { BRAND_PROFILE } from '@/data/brandProfile.js';
+import { getSiteFacts } from '@/services/siteSettingsService.js';
 import { GIFT_VIAL_SIZE_ML, giftVialsFor } from '@/utils/internationalGiftVials.js';
 import { BOTTLE_CUSTOMS_DESCRIPTION, vialCustomsDescription } from '@/utils/invoiceCustomsText.js';
 
@@ -86,7 +87,7 @@ export const buildInvoicePdf = ({ order = {}, lines = [], shipping = null, whats
   y += 5;
   for (const row of [
     `${BRAND_PROFILE.perfumer} / ${BRAND_PROFILE.name}`,
-    `${BRAND_PROFILE.city}, ${BRAND_PROFILE.country}`,
+    `${getSiteFacts().brandCity}, ${BRAND_PROFILE.country}`,
     whatsapp ? `WhatsApp +${whatsapp}` : '',
     BRAND_PROFILE.website.replace(/^https?:\/\//, ''),
   ].filter(Boolean)) {

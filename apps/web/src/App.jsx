@@ -1,4 +1,5 @@
 
+import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from 'react';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
 import { routerBasename } from '@/utils/storefrontRegion.js';
@@ -123,6 +124,7 @@ const BatchProductionPage = lazyRoute(() => import('@/pages/BatchProductionPage.
 const ProductionCostPage = lazyRoute(() => import('@/pages/ProductionCostPage.jsx'));
 const ValidationLogPage = lazyRoute(() => import('@/pages/ValidationLogPage.jsx'));
 const SiteImageManagerPage = lazyRoute(() => import('@/pages/SiteImageManagerPage.jsx'));
+const SiteFactsPage = lazyRoute(() => import('@/pages/SiteFactsPage.jsx'));
 const ExportShippingCalculatorPage = lazyRoute(() => import('@/pages/ExportShippingCalculatorPage.jsx'));
 const StoryEditorPage = lazyRoute(() => import('@/pages/StoryEditorPage.jsx'));
 const MobileLoginPage = lazyRoute(() => import('@/pages/mobile/MobileLoginPage.jsx'));
@@ -152,6 +154,7 @@ const MobileRawMaterialDetailPage = lazyRoute(() => import('@/pages/mobile/Mobil
 const MobileRawMaterialAuditPage = lazyRoute(() => import('@/pages/mobile/MobileRawMaterialAuditPage.jsx'));
 const MobileCategoriesPage = lazyRoute(() => import('@/pages/mobile/MobileCategoriesPage.jsx'));
 const MobileSiteImagesPage = lazyRoute(() => import('@/pages/mobile/MobileSiteImagesPage.jsx'));
+const MobileSiteFactsPage = lazyRoute(() => import('@/pages/mobile/MobileSiteFactsPage.jsx'));
 const MobileFormulasPage = lazyRoute(() => import('@/pages/mobile/MobileFormulasPage.jsx'));
 const MobileCreateFormulaPage = lazyRoute(() => import('@/pages/mobile/MobileCreateFormulaPage.jsx'));
 const MobileEditFormulaPage = lazyRoute(() => import('@/pages/mobile/MobileEditFormulaPage.jsx'));
@@ -470,6 +473,8 @@ const ByShop = ({ domestic, international }) => {
 };
 
 function AppRoutes() {
+  // The shop facts set in Studio (Fakta toko): loaded once here, and the tree re-renders when they land.
+  useSiteFacts();
   return (
     <Router basename={ROUTER_BASENAME}>
       <ScrollToTop />
@@ -758,6 +763,11 @@ function AppRoutes() {
             <MobileSiteImagesPage />
           </ProtectedRoute>
         } />
+        <Route path="/mobile/studio/site-facts" element={
+          <ProtectedRoute>
+            <MobileSiteFactsPage />
+          </ProtectedRoute>
+        } />
 
         <Route path="/mobile/studio/export-shipping" element={
           <ProtectedRoute>
@@ -857,6 +867,11 @@ function AppRoutes() {
         <Route path="/studio/site-images" element={
           <ProtectedRoute>
             <SiteImageManagerPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/studio/site-facts" element={
+          <ProtectedRoute>
+            <SiteFactsPage />
           </ProtectedRoute>
         } />
 

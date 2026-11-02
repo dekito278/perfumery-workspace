@@ -1,3 +1,4 @@
+import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { brandFacts } from '@/data/brandProfile.js';
@@ -26,7 +27,8 @@ const AboutContent = () => {
     () => catalog.filter(isProductVisibleInStorefront).length,
     [catalog],
   );
-  const facts = brandFacts({ fragranceCount });
+  const siteFacts = useSiteFacts();
+  const facts = brandFacts({ fragranceCount, city: siteFacts.brandCity, foundedYear: siteFacts.brandFoundedYear });
 
   return (
     <>

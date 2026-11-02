@@ -29,6 +29,7 @@ import { deleteProductImages, uploadProductImage } from '@/services/productImage
 import { formatQuantity } from '@/utils/formatting.js';
 import { toProductFormState } from '@/utils/productFormState.js';
 import WearPicker from '@/components/product/WearPicker.jsx';
+import RelatedFragrancePicker from '@/components/product/RelatedFragrancePicker.jsx';
 import TierPriceEditor from '@/components/product/TierPriceEditor.jsx';
 import { confirmAction } from '@/utils/confirmAction.js';
 import { snapshotProductForm } from '@/utils/productFormSnapshot.js';
@@ -60,6 +61,7 @@ export const emptyProduct = {
   heartNotesEn: '',
   baseNotesEn: '',
   concentration: 'Eau de Parfum',
+  relatedFragrances: [],
   imageUrl: '',
   images: [],
   featured: true,
@@ -553,6 +555,14 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         <input value={form.topNotesEn || ''} onChange={(event) => updateField('topNotesEn', event.target.value)} placeholder="Top notes (EN), pisahkan dengan koma" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
         <input value={form.heartNotesEn || ''} onChange={(event) => updateField('heartNotesEn', event.target.value)} placeholder="Heart notes (EN), pisahkan dengan koma" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
         <input value={form.baseNotesEn || ''} onChange={(event) => updateField('baseNotesEn', event.target.value)} placeholder="Base notes (EN), pisahkan dengan koma" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+      </ProductFormSection>
+
+      <ProductFormSection
+        eyebrow="Pairing"
+        title="Kamu mungkin suka"
+        description="Parfum yang ditawarkan di bawah halaman produk ini."
+      >
+        <RelatedFragrancePicker value={form.relatedFragrances} onChange={(next) => updateField('relatedFragrances', next)} products={products} productId={form.id} productSlug={form.slug} />
       </ProductFormSection>
 
       <ProductFormSection

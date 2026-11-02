@@ -75,7 +75,7 @@ const PublicJournalArticlePage = () => {
   const readingMinutes = useMemo(() => getReadingMinutes(post?.content), [post?.content]);
   const title = stripTrailingBrand(post?.seo_title || post?.title || 'Journal Article');
   // excerpt, else the title — exactly what the prerendered page says (tools/seo-artifacts.mjs).
-  const description = post ? metaSnippet(stripMarkdown(post.excerpt || post.title || '')) : DEFAULT_DESCRIPTION;
+  const description = post ? metaSnippet(stripMarkdown(post.seo_description || post.excerpt || post.title || '')) : DEFAULT_DESCRIPTION;
   const canonicalPath = post?.slug ? `/articles/${post.slug}` : `/articles/${slug || ''}`;
   const siteOrigin = getSiteOrigin();
   const canonicalUrl = toAbsoluteUrl(canonicalPath, siteOrigin);
@@ -126,7 +126,7 @@ const PublicJournalArticlePage = () => {
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:image" content={shareImageUrl} />
-        <meta property="og:image:alt" content={post?.cover_image_url ? post.title : 'Solivagant perfumery journal'} />
+        <meta property="og:image:alt" content={post?.cover_image_url ? (post.cover_alt || post.title) : 'Solivagant perfumery journal'} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />

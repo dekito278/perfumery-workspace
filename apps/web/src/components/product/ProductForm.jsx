@@ -25,6 +25,7 @@ import {
 } from '@/services/productCatalogService.js';
 import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
 import WearPicker from '@/components/product/WearPicker.jsx';
+import RelatedFragrancePicker from '@/components/product/RelatedFragrancePicker.jsx';
 import TierPriceEditor from '@/components/product/TierPriceEditor.jsx';
 import { confirmAction } from '@/utils/confirmAction.js';
 import { snapshotProductForm } from '@/utils/productFormSnapshot.js';
@@ -55,6 +56,7 @@ export const emptyProduct = {
   heartNotesEn: '',
   baseNotesEn: '',
   concentration: 'Eau de Parfum',
+  relatedFragrances: [],
   imageUrl: '',
   images: [],
   tags: '',
@@ -535,6 +537,10 @@ const ProductForm = ({ product = null, onSaved }) => {
               <input value={form[key] || ''} onChange={(event) => updateField(key, event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Pisahkan dengan koma" />
             </label>
           ))}
+          <div className="sm:col-span-2 grid gap-2 border-t pt-4">
+            <div className="text-xs font-bold uppercase text-muted-foreground">Kamu mungkin suka</div>
+            <RelatedFragrancePicker value={form.relatedFragrances} onChange={(next) => updateField('relatedFragrances', next)} products={products} productId={form.id} productSlug={form.slug} />
+          </div>
           <label className="flex items-center gap-3 rounded-2xl border bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
             <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
             Featured di home

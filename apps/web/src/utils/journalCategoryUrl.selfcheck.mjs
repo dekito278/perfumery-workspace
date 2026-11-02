@@ -20,11 +20,13 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const read = (rel) => fs.readFileSync(path.resolve(HERE, rel), 'utf8');
 
 // --- 1. Lift the real category list -------------------------------------------------------------------
+// The list is Dekito's since 2026-11-03 (Studio → Fakta toko). The service holds whatever was saved, with
+// these as its defaults — so the defaults are tested, and so is a category added in Studio, below.
 const service = read('../services/journalPostsSupabaseService.js');
-const listed = service.match(/export const JOURNAL_CATEGORIES = \[([\s\S]*?)\];/);
-assert.ok(listed, 'could not lift JOURNAL_CATEGORIES out of the service — fix this guard, not the app');
-const CATEGORIES = [...listed[1].matchAll(/\{\s*value:\s*'([^']+)',\s*label:\s*'([^']+)'\s*\}/g)]
-  .map(([, value, label]) => ({ value, label }));
+assert.match(service, /export let JOURNAL_CATEGORIES = getSiteFacts\(\)\.journalCategories;/,
+  'the service no longer reads the categories from the Studio facts — fix this guard, not the app');
+const { DEFAULT_JOURNAL_CATEGORIES } = await import('../data/siteFacts.js');
+const CATEGORIES = [...DEFAULT_JOURNAL_CATEGORIES, { value: 'catatan_bahan', label: 'Catatan Bahan' }];
 assert.ok(CATEGORIES.length >= 5,
   `only ${CATEGORIES.length} journal categories lifted — the parse lost them, fix this guard`);
 

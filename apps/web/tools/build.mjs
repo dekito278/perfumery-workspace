@@ -3,7 +3,8 @@
 import { undefinedExportsIn } from '../src/utils/chunkExportsAreDefined.js';
 import { spawnSync } from 'node:child_process';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH } from '../src/utils/seo.js';
-import { MESSAGES } from '../src/i18n/messages.js';
+import { MESSAGES, translate } from '../src/i18n/messages.js';
+import { DEFAULT_SITE_FACTS } from '../src/data/siteFacts.js';
 import { EN_PREFIX, alternateLinks, setDocumentLanguage, upsertAlternates } from './seo-artifacts.mjs';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -168,7 +169,7 @@ const upsertCanonical = (html, href) => {
 // so the Indonesian page read English to every crawler that does not run scripts. Each language now gets
 // the live page's own heading and lead out of the message file; the hand-written English sections go only
 // to the English page, and the stock (catalogue, journal) to both, because it is product data.
-const renderStaticFallback = (page, lang) => {
+const renderStaticFallback = (page, lang, facts = DEFAULT_SITE_FACTS) => {
   const M = MESSAGES[lang];
   const english = lang === 'en';
   const prefix = english ? EN_PREFIX : '';
@@ -184,7 +185,7 @@ const renderStaticFallback = (page, lang) => {
 \t\t\t\t<main class="app-boot-fallback" aria-label="SOLIVAGANT">
 \t\t\t\t\t<div>
 \t\t\t\t\t\t<h1>${escapeHtml(M[page.headingKey] || page.heading)}</h1>
-\t\t\t\t\t\t<p class="app-boot-description">${escapeHtml(M[page.leadKey] || page.intro)}</p>
+\t\t\t\t\t\t<p class="app-boot-description">${escapeHtml(page.leadKey ? translate(lang, page.leadKey, { days: facts.bespokeDays }) : page.intro)}</p>
 \t\t\t\t\t\t<p class="app-boot-description">${escapeHtml(M['boot.needsJs'])}</p>${sections ? `
 \t\t\t\t\t\t<section class="app-boot-sections">${sections}
 \t\t\t\t\t\t</section>` : ''}
@@ -199,7 +200,7 @@ const renderStaticFallback = (page, lang) => {
 // `products` are the live rows the sitemap is built from. The catalogue snapshot lists them instead of a
 // hand-written array: that array had gone stale and was advertising four discontinued perfumes with
 // prices to every crawler and every visitor without JavaScript.
-const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
+const writeStaticPublicPages = (siteUrl, products = [], journal = [], facts = DEFAULT_SITE_FACTS) => {
   const distRoot = path.join(webRoot, 'dist');
   const indexPath = path.join(distRoot, 'index.html');
   if (!fs.existsSync(indexPath)) return;
@@ -257,7 +258,7 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
 
     let html = baseHtml
       .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(idTitle)}</title>`)
-      .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page, 'id'));
+      .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page, 'id', facts));
     html = replaceMetaContent(html, 'name="description"', idDescription);
     html = replaceMetaContent(html, 'property="og:type"', 'website');
     html = replaceMetaContent(html, 'property="og:site_name"', 'SOLIVAGANT');
@@ -299,7 +300,7 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = []) => {
       const enDescription = MESSAGES.en[page.enDescriptionKey || page.idDescriptionKey] || page.description;
       let enHtml = setDocumentLanguage(html, 'en')
         .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(enTitle)}</title>`)
-        .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page, 'en'));
+        .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page, 'en', facts));
       enHtml = replaceMetaContent(enHtml, 'name="description"', enDescription);
       enHtml = replaceMetaContent(enHtml, 'property="og:title"', enTitle);
       enHtml = replaceMetaContent(enHtml, 'property="og:description"', enDescription);
@@ -391,7 +392,7 @@ const generateSeoArtifacts = async () => {
   if (!fs.existsSync(indexPath)) return;
 
   const {
-    STATIC_PUBLIC_ROUTES, resolveEnv, fetchPublicProducts, fetchPublishedJournal,
+    STATIC_PUBLIC_ROUTES, resolveEnv, fetchPublicProducts, fetchPublishedJournal, fetchSiteFacts,
     writeProductPages, writeJournalPages, writeSitemap, finalizeRobots,
   } = await import('./seo-artifacts.mjs');
 
@@ -406,6 +407,15 @@ const generateSeoArtifacts = async () => {
   try {
     [products, journal] = await Promise.all([fetchPublicProducts(env), fetchPublishedJournal(env)]);
   } catch (error) {
+    // A 4xx is not an outage: Supabase answered and refused the query, which means the code asks for a
+    // column the database does not have yet. Measured 2026-11-03 — code for a pending migration built
+    // GREEN with every product page gone and the sitemap down from 53 URLs to 9. Fail instead, so the live
+    // deployment stays as it was until the migration has run. An outage (5xx, network) still only warns.
+    if (/Supabase 4\d\d /.test(String(error.message || '')) && !process.env.SEO_ALLOW_EMPTY_CATALOG) {
+      console.error(`[seo] ${error.message} — the database refused the build's own query. Run the pending `
+        + 'migration first (supabase/migrations), or set SEO_ALLOW_EMPTY_CATALOG=1 to build without the pages.');
+      process.exit(1);
+    }
     console.warn('[seo] Supabase fetch failed, skipping product prerender/sitemap products:', error.message || error);
   }
 
@@ -423,7 +433,10 @@ const generateSeoArtifacts = async () => {
     process.exit(1);
   }
 
-  writeStaticPublicPages(env.siteUrl, products, journal);
+  // Apart from the Promise.all above on purpose: the facts are optional (their defaults are the shop's
+  // last words), so a missing row must never cost the build its products.
+  const facts = await fetchSiteFacts(env);
+  writeStaticPublicPages(env.siteUrl, products, journal, facts);
   writeLlmsTxt(distRoot, env.siteUrl);
 
   if (env.siteUrl && (products.length || journal.length)) {

@@ -25,7 +25,12 @@ const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replac
 const build = stripComments(readFileSync(join(webRoot, 'tools', 'build.mjs'), 'utf8'));
 
 // --- 1. Every fetched collection feeds its own landing page -------------------------------------------
-const fetched = [...build.matchAll(/fetch([A-Za-z]+)\(env\)/g)].map((match) => match[1]);
+// SiteFacts is fetched too, but it is not a collection of things a landing page lists: it is the shop's
+// own settings (bespoke lead time and the like), put into sentences. Named here rather than matched by a
+// looser pattern, so a real third collection still fails below.
+const NOT_A_COLLECTION = new Set(['SiteFacts']);
+const fetched = [...build.matchAll(/fetch([A-Za-z]+)\(env\)/g)].map((match) => match[1])
+  .filter((name) => !NOT_A_COLLECTION.has(name));
 assert.ok(fetched.length >= 2, `only ${fetched.length} Supabase fetches found in build.mjs — the derivation broke`);
 
 const liveBlock = build.match(/const liveSections = \{([^}]*)\}/);
@@ -43,7 +48,7 @@ for (const route of ['/catalog', '/journal']) {
 }
 
 // --- 2. And each of them is actually handed the data ---------------------------------------------------
-assert.match(build, /writeStaticPublicPages\(env\.siteUrl, products, journal\)/,
+assert.match(build, /writeStaticPublicPages\(env\.siteUrl, products, journal(, facts)?\)/,
   'the generator must receive both collections — passing only products is how the journal was missed');
 
 // --- 3. The offline fallback must describe, never enumerate --------------------------------------------

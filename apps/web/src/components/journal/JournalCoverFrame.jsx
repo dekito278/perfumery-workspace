@@ -21,7 +21,7 @@ const JournalCoverFrame = ({
       <figure className={`overflow-hidden border bg-muted ${className}`}>
         <img
           src={post.cover_image_url}
-          alt=""
+          alt={post.cover_alt || ''}
           className={`${imageClassName} w-full object-cover`}
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"

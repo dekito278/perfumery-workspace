@@ -561,6 +561,9 @@ export const normalizeProduct = (input, existingProducts = []) => {
     // getPublicFragranceCatalog and still never appeared on a page: four explicit allowlists between
     // the row and the screen, and the field has to be written into every one of them.
     launchYear: toLaunchYear(input.launchYear),
+    // "Kamu mungkin suka", picked in Studio (related_slugs). Was only ever set in the static seed file,
+    // so for every live product the same-family rule was the whole feature.
+    relatedFragrances: splitList(input.relatedFragrances),
     stock,
     variants,
     tags: [
@@ -610,6 +613,7 @@ const toDatabasePayload = (product) => ({
   base_notes_en: product.baseNotesEn,
   concentration: product.concentration,
   launch_year: product.launchYear ?? null,
+  related_slugs: product.relatedFragrances || [],
   stock: product.stock,
   variants: product.variants,
   tags: product.tags,
@@ -647,6 +651,7 @@ const fromDatabaseRow = (row) => normalizeProduct({
   topNotesEn: row.top_notes_en || [],
   heartNotesEn: row.heart_notes_en || [],
   baseNotesEn: row.base_notes_en || [],
+  relatedFragrances: Array.isArray(row.related_slugs) ? row.related_slugs : [],
   concentration: row.concentration,
   // Null until the atelier states it. Never derived from created_at, which is when this row was made
   // in this app and not when the perfume was released — the two are years apart on the older ones.

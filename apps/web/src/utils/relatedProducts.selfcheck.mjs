@@ -9,7 +9,7 @@
 // The desktop page named that list `contextual` while computing catalog.slice(0, 4); the phone did not
 // even try. Tested as behaviour, because the bug was never in the WORDS — it was in what came back.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { relatedFor } from './relatedProducts.js';
@@ -77,5 +77,29 @@ for (const [name, file] of [
   assert.doesNotMatch(source, /catalog\s*\n?\s*\.filter\([^)]*\)\s*\n?\s*\.slice\(0, 4\)/,
     `${name} still builds its own "first four in the catalogue" list`);
 }
+
+// --- The picks come from Studio now ------------------------------------------------------------------
+// Until 2026-11-03 relatedFragrances existed only in the static seed, so no live product ever had one.
+// It is stored in related_slugs and must survive every hand-written list between the form and the page —
+// a field not named in one of them stops existing at that line.
+const service = readFileSync(join(here, '..', 'services', 'productCatalogService.js'), 'utf8');
+for (const [pattern, why] of [
+  [/relatedFragrances: Array\.isArray\(row\.related_slugs\)/, 'fromDatabaseRow does not read related_slugs'],
+  [/relatedFragrances: splitList\(input\.relatedFragrances\)/, 'normalizeProduct drops the picks one hop after they are read'],
+  [/related_slugs: product\.relatedFragrances/, 'the save does not write related_slugs, so a pick is lost'],
+]) assert.match(service, pattern, why);
+assert.match(readFileSync(join(here, '..', 'data', 'publicStorefront.js'), 'utf8'), /relatedFragrances: product\.relatedFragrances/,
+  'the public mapper does not carry the picks to the page');
+for (const form of ['ProductForm.jsx', 'MobileProductForm.jsx']) {
+  assert.match(readFileSync(join(here, '..', 'components', 'product', form), 'utf8'),
+    /<RelatedFragrancePicker value=\{form\.relatedFragrances\} onChange=\{\(next\) => updateField\('relatedFragrances', next\)\}/,
+    `${form} cannot pick the pairings`);
+}
+// The column must reach the buyer's view, which freezes its column list when it is created.
+const migrations = join(here, '..', '..', '..', '..', 'supabase', 'migrations');
+const adder = readdirSync(migrations).filter((name) => /add column if not exists related_slugs/.test(readFileSync(join(migrations, name), 'utf8')));
+assert.equal(adder.length, 1, `exactly one migration adds related_slugs, found ${adder.join(', ') || 'none'}`);
+assert.match(readFileSync(join(migrations, adder[0]), 'utf8'), /create or replace view public\.storefront_products_public/,
+  `${adder[0]} adds related_slugs and never recreates the buyer's view, so no buyer would see a pick`);
 
 console.log('relatedProducts selfcheck OK (a gourmand leads with the other gourmand, both pages ask the same rule)');

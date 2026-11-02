@@ -11,8 +11,8 @@
 import { EXPORT_PACKAGE_RATES } from '@/data/exportRates.js';
 import { normalizeExportShippingPolicy, supportUsdFor } from '@/utils/exportShippingPolicy.js';
 import {
-  SHIPPING_RATE_MAX_BOTTLES,
   SHIPPING_RATE_TIERS,
+  parcelTierFor,
   SHIPPING_TRANSIT_DAYS,
   shippingRateRegionFor,
   shippingZoneFor,
@@ -61,16 +61,17 @@ export const quoteInternationalShippingPrice = ({ countryCode, bottles, policy =
     return { region: null, regionLabel: '', zone: null, bottles: count, usd: null, onRequest: 'destination' };
   }
 
-  const tier = shippingTierFor(count);
-  if (!tier || count > SHIPPING_RATE_MAX_BOTTLES) {
+  // The POLICY numbers — what the shop carries, the rate it converts the carrier's rupiah at, and how
+  // many bottles it prices before asking — come from the caller when Dekito has set them, and from the
+  // constants otherwise. The carrier's own sheet is not policy and is never overridden.
+  const settings = normalizeExportShippingPolicy(policy || {});
+  const tier = count <= settings.maxQuotedBottles ? parcelTierFor(count) : null;
+  // A weight the sheet has no row for prices at Rp 0, which would print as free shipping. Asked instead.
+  const costIdr = tier ? shippingCostIdr(zone, tier.kg) : 0;
+  if (!tier || !costIdr) {
     return { region: region.key, regionLabel: region.label, zone, bottles: count, usd: null, onRequest: 'bottles' };
   }
 
-  // The two POLICY numbers — what the shop carries and the rate it converts the carrier's rupiah at —
-  // come from the caller when Dekito has set them, and from the constants otherwise. The carrier's own
-  // sheet is not policy and is never overridden.
-  const settings = normalizeExportShippingPolicy(policy || {});
-  const costIdr = shippingCostIdr(zone, tier.kg);
   const costUsd = up5(costIdr / settings.costRateIdr);
   const supportUsd = supportUsdFor(count, settings);
   // FLOORED AT ZERO. Until the subsidy was editable it could not exceed the freight — zone 1 at one kilo
