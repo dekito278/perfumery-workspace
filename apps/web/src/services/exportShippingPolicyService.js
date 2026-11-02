@@ -54,6 +54,21 @@ export const refreshExportShippingPolicy = async () => {
   }
 };
 
+// The shop's read. Until 2026-11-03 nothing outside Studio ever called refresh, so a buyer's browser
+// priced every parcel from the constants: whatever Dekito saved reached only the device it was saved on.
+// Once per page load, shared by every quote on the page.
+let loading = null;
+export const loadExportShippingPolicy = () => {
+  loading ||= refreshExportShippingPolicy();
+  return loading;
+};
+
+export const subscribeExportShippingPolicy = (listener) => {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener(EXPORT_SHIPPING_POLICY_UPDATED_EVENT, listener);
+  return () => window.removeEventListener(EXPORT_SHIPPING_POLICY_UPDATED_EVENT, listener);
+};
+
 /** Admin only, enforced by the row policy rather than by this function. */
 export const saveExportShippingPolicy = async (policy) => {
   const next = normalizeExportShippingPolicy(policy);

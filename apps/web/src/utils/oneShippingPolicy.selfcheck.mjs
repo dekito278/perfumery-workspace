@@ -11,9 +11,9 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import {
   DEFAULT_EXPORT_SHIPPING_POLICY, normalizeExportShippingPolicy, supportUsdFor,
 } from './exportShippingPolicy.js';
@@ -108,8 +108,27 @@ try {
   // --- 5. One policy, read by both callers ------------------------------------------------------------
   const cart = readFileSync(join(here, '..', 'hooks', 'useInternationalQuote.js'), 'utf8');
   const studio = readFileSync(join(here, '..', 'pages', 'ExportShippingCalculatorPage.jsx'), 'utf8');
-  assert.match(cart, /policy: getExportShippingPolicy\(\)/,
-    'the storefront cart reads the policy, or it would price a parcel from the constants while Studio used the row');
+  // The SHOP has to LOAD the row, not merely read the cache. Until 2026-11-03 only the Studio screen ever
+  // refreshed it, so a buyer's browser priced every parcel from the constants whatever Dekito saved.
+  const service = readFileSync(join(here, '..', 'services', 'exportShippingPolicyService.js'), 'utf8');
+  assert.match(service, /loading \|\|= refreshExportShippingPolicy\(\)/, 'the shop\'s load is the database read, once per page');
+  assert.match(cart, /useEffect\(\(\) => \{ loadExportShippingPolicy\(\); \}, \[\]\)/, 'the shop loads the saved policy');
+  assert.match(cart, /useSyncExternalStore\(subscribeExportShippingPolicy,/, 'and draws again when it arrives');
+  assert.equal((cart.match(/const policy = useExportShippingPolicy\(\);/g) || []).length, 2,
+    'both quotes — the product page and the English cart — use the loaded policy');
+  assert.equal((cart.match(/t, region, policy,\n/g) || []).length, 2, 'and hand it to the arithmetic');
+  // Any other reader of the bare cache would bypass the load.
+  const readers = [];
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
+    const file = join(dir, entry.name);
+    if (entry.isDirectory()) return walk(file);
+    if (!/\.(jsx?|mjs)$/.test(entry.name) || entry.name.includes('.selfcheck.')) return;
+    if (readFileSync(file, 'utf8').includes('getExportShippingPolicy(')) readers.push(relative(join(here, '..'), file));
+  });
+  walk(join(here, '..'));
+  assert.deepEqual(readers.sort(), ['hooks/useInternationalQuote.js', 'services/exportShippingPolicyService.js'],
+    'only the loading hook and the service call the cache (the Studio screen seeds its state from it, then refreshes)');
+  assert.doesNotMatch(studio, /di atas 6 botol/, 'the Studio quote names the cap Dekito set, not the old constant');
   assert.match(studio, /policy: shippingPolicy/, 'and the Studio quote reads the same one');
   assert.match(studio, /refreshExportShippingPolicy\(\)/, 'loaded from the database on open');
   assert.match(studio, /saveExportShippingPolicy\(shippingPolicy\)/, 'and editable there');

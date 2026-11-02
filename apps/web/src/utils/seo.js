@@ -1,4 +1,5 @@
 import { schemaAvailability } from './schemaAvailability.js';
+import { normalizeWhatsAppPhoneNumber } from './phoneNumber.js';
 // Shared SEO helpers: canonical URLs + JSON-LD structured data builders.
 
 export const SITE_NAME = 'SOLIVAGANT';
@@ -112,21 +113,26 @@ const availabilityUrl = (product) => schemaAvailability({
   variants: product?.variants,
 });
 
-export const buildOrganizationJsonLd = (origin = getSiteOrigin()) => ({
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: SITE_NAME,
-  description: SITE_TAGLINE,
-  url: origin || undefined,
-  logo: toAbsoluteUrl(BRAND_LOGO_PATH, origin),
-  founder: { '@type': 'Person', name: 'Dekito' },
-  contactPoint: {
-    '@type': 'ContactPoint',
-    contactType: 'customer service',
-    telephone: '+6287774026625',
-    availableLanguage: ['id', 'en'],
-  },
-});
+// The number every WhatsApp button on the shop uses (VITE_STOREFRONT_WHATSAPP_NUMBER). It was typed in
+// here, so a number changed in Vercel would have stayed old in search results (2026-11-03).
+export const buildOrganizationJsonLd = (origin = getSiteOrigin(), whatsapp = import.meta.env?.VITE_STOREFRONT_WHATSAPP_NUMBER) => {
+  const phone = normalizeWhatsAppPhoneNumber(whatsapp || '');
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE_NAME,
+    description: SITE_TAGLINE,
+    url: origin || undefined,
+    logo: toAbsoluteUrl(BRAND_LOGO_PATH, origin),
+    founder: { '@type': 'Person', name: 'Dekito' },
+    contactPoint: phone ? {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      telephone: `+${phone}`,
+      availableLanguage: ['id', 'en'],
+    } : undefined,
+  };
+};
 
 // No SearchAction: it advertised /catalog?q=…, which the catalogue never read, and Google retired the
 // sitelinks search box it fed in November 2024 (removed 2026-11-02). The language follows the shop.

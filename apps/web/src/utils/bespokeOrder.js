@@ -1,8 +1,16 @@
-// Pure, import-free builders for a bespoke order's item + notes + checkout draft.
+// Pure builders for a bespoke order's item + notes + checkout draft.
 // Shared by the browser (services/orderService.js) and the authoritative server endpoint
-// (api/orders/create.js) so both shape the brief identically. No browser/supabase imports — keep it that way.
+// (api/orders/create.js) so both shape the brief identically. No browser/supabase imports — keep it that way;
+// the one import is plain data, relative so the server can load it.
+import { DEFAULT_SITE_FACTS } from '../data/siteFacts.js';
 
 export const BESPOKE_SOURCE = 'bespoke_request';
+
+// The lead time the buyer ticked on the bespoke page. Dekito sets it in Studio (Fakta Toko) since
+// 2026-11-03; the brief used to record a fixed one whatever the page had said.
+const preorderLine = (request) => (request.preorderAcknowledged
+  ? `Accepted, ${request.preorderDays || DEFAULT_SITE_FACTS.bespokeDays} days after brief confirmation`
+  : 'Not accepted');
 
 const rupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
@@ -74,7 +82,7 @@ export const buildBespokeCheckoutDraft = (request = {}) => [
   request.voucherCode ? formatLine('Voucher', request.voucherCode) : '',
   request.voucherDiscount ? formatLine('Voucher discount', rupiah(request.voucherDiscount)) : '',
   request.totalPrice ? formatLine('Estimated total', rupiah(request.totalPrice)) : '',
-  formatLine('Pre-order acknowledgement', request.preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
+  formatLine('Pre-order acknowledgement', preorderLine(request)),
   formatLine('Payment rail', request.paymentProvider || 'manual'),
 ].filter((line) => line !== '').join('\n');
 
@@ -104,7 +112,7 @@ export const buildBespokeNotes = (request = {}) => {
     ['Voucher', request.voucherCode],
     ['Voucher discount', request.voucherDiscount ? rupiah(request.voucherDiscount) : ''],
     ['Estimated total', request.totalPrice ? rupiah(request.totalPrice) : ''],
-    ['Pre-order acknowledgement', request.preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'],
+    ['Pre-order acknowledgement', preorderLine(request)],
     ['Reference scent', request.referenceProductName],
   ];
 
