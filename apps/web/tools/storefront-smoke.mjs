@@ -538,6 +538,35 @@ const runSeo = async (browser) => {
   check(run, `before and after JavaScript, ${paths.length} pages say the same title and description`, drift.length === 0, drift.join('; '));
   check(run, 'titles fit 60 characters, descriptions 70–160', long.length === 0, long.join('; '));
   check(run, 'without JavaScript each page has one h1, the one it shows, and no price', bodies.length === 0, bodies.join('; '));
+
+  // Structured data, read after React (helmet's blocks). The prerendered price is the one a crawler that runs
+  // no script reads: it must be the live price, or the 12 Nov 2026 schedule leaves the old one behind.
+  const ldOf = async (path) => {
+    const context = await browser.newContext({ locale: 'en-US', timezoneId: 'America/Los_Angeles' });
+    await guard(context, { blocked: [], orderBodies: [], order: null });
+    const page = await context.newPage();
+    await goto(page, path);
+    await page.waitForSelector('script[type="application/ld+json"][data-react-helmet]', { state: 'attached', timeout: 20000 }).catch(() => {});
+    const blocks = await page.evaluate(() => [...document.querySelectorAll('script[type="application/ld+json"]')].map((el) => JSON.parse(el.textContent)));
+    await context.close();
+    return blocks;
+  };
+  const rawLd = (html) => [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+  const idProduct = pick(/^\/catalog\/./);
+  if (idProduct) {
+    const live = (await ldOf(idProduct)).find((j) => j['@type'] === 'Product');
+    const baked = rawLd(await fetch(`${BASE}${idProduct}`).then((r) => r.text())).find((j) => j['@type'] === 'Product');
+    check(run, 'the prerendered product price is the live one', baked?.offers?.price === live?.offers?.price && live?.offers?.price > 0,
+      `prerendered ${baked?.offers?.price} vs live ${live?.offers?.price}`);
+    const en = await ldOf(`/en${idProduct}`);
+    const enProduct = en.find((j) => j['@type'] === 'Product');
+    const trail = (en.find((j) => j['@type'] === 'BreadcrumbList')?.itemListElement || []).map((item) => new URL(item.item).pathname);
+    check(run, 'the English product states its own description and an /en trail',
+      enProduct?.description && enProduct.description !== live?.description && trail.length && trail.every((path) => path.startsWith('/en')),
+      trail.join(' > '));
+  }
+  const site = (await ldOf('/en/home')).find((j) => j['@type'] === 'WebSite');
+  check(run, 'the English home declares English and no dead search box', site?.inLanguage === 'en' && !site?.potentialAction, JSON.stringify(site?.inLanguage));
 };
 
 const browser = await chromium.launch();

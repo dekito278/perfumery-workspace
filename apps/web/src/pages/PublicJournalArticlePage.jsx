@@ -18,7 +18,7 @@ import { formatDate } from '@/utils/formatting.js';
 // The shared helpers fall back to the production site URL; this page had its own copies that fell back to
 // window.location.origin, so an article viewed on a Vercel preview or a bare domain published a canonical,
 // og:url and JSON-LD @id pointing at that host (audit round 8).
-import { DEFAULT_SHARE_IMAGE, brandedTitle, getSiteOrigin, metaSnippet, stripTrailingBrand, toAbsoluteUrl } from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, SITE_NAME, brandedTitle, getSiteOrigin, metaSnippet, stripTrailingBrand, toAbsoluteUrl } from '@/utils/seo.js';
 import { stripMarkdown } from '@/utils/articleExcerpt.js';
 
 const getReadingMinutes = (content) => {
@@ -90,10 +90,10 @@ const PublicJournalArticlePage = () => {
     image: [shareImageUrl],
     datePublished: publishedDate,
     dateModified: modifiedDate,
-    author: { '@type': 'Organization', name: 'Solivagant' },
+    author: { '@type': 'Organization', name: SITE_NAME },
     publisher: {
       '@type': 'Organization',
-      name: 'Solivagant',
+      name: SITE_NAME,
       logo: { '@type': 'ImageObject', url: toAbsoluteUrl('/brand/solivagant-logo.png', siteOrigin) },
     },
     mainEntityOfPage: canonicalUrl,
@@ -121,7 +121,7 @@ const PublicJournalArticlePage = () => {
         {post ? <link rel="canonical" href={canonicalUrl} /> : null}
         {failed === 'missing' ? <meta name="robots" content="noindex,follow" /> : null}
         <meta property="og:type" content="article" />
-        <meta property="og:site_name" content="Solivagant" />
+        <meta property="og:site_name" content={SITE_NAME} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />

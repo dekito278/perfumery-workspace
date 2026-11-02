@@ -105,7 +105,7 @@ const HomePage = () => {
         <meta name="twitter:description" content={t('home.meta')} />
         <meta name="twitter:image" content={homeShareImage} />
         <script type="application/ld+json">{JSON.stringify(buildOrganizationJsonLd(siteOrigin))}</script>
-        <script type="application/ld+json">{JSON.stringify(buildWebSiteJsonLd(siteOrigin))}</script>
+        <script type="application/ld+json">{JSON.stringify(buildWebSiteJsonLd(siteOrigin, region))}</script>
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
