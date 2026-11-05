@@ -1,7 +1,7 @@
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { Spinner } from '@/components/ui/spinner.jsx';
-import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
+import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import { cn } from '@/lib/utils.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
@@ -27,13 +27,15 @@ const StorefrontLoadingState = ({
       aria-live="polite"
       aria-busy="true"
     >
-      <StorefrontHeader />
+      {/* The header the page is about to render. The older one shown here had no price notice, no nav and
+          a cart without its count, so the header changed under the reader the moment the page came in. */}
+      <PublicHeader />
 
       <section className="mx-auto grid max-w-[1344px] gap-10 px-5 py-14 sm:px-8 lg:grid-cols-2 lg:items-start lg:px-12">
         <div>
           <p className="inline-flex items-center gap-3 font-ng-mono text-[11px] uppercase tracking-[0.2em] text-ng-ash">
             <Spinner className="h-4 w-4" aria-hidden="true" />
-            {t('pdp.loading')}
+            {t(mode === 'product' ? 'pdp.loading' : 'loading.eyebrow')}
           </p>
           <h1 className="mt-6 font-ng-display text-5xl font-light leading-none sm:text-6xl">{heading}</h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-ng-dust">{body}</p>

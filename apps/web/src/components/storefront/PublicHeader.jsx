@@ -1,7 +1,7 @@
 import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import React, {useEffect, useState, useRef, useCallback} from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { X, Menu } from 'lucide-react';
+import { X, Menu, ShoppingBag } from 'lucide-react';
 import BackToTop from '@/components/storefront/BackToTop.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -119,9 +119,12 @@ const PublicHeader = () => {
       <PriceChangeNotice />
       <SwitchToEnglishHint />
       <header className="ng-header">
-        <Link to="/home" className="ng-header__wordmark" aria-label={t('nav.wordmarkAria')} onClick={openOwnerAccess}>
-          SOLIVAGANT
-        </Link>
+        {/* A box of its own so it can take half the slack the nav leaves without the link growing into it. */}
+        <div className="ng-header__brand">
+          <Link to="/home" className="ng-header__wordmark" aria-label={t('nav.wordmarkAria')} onClick={openOwnerAccess}>
+            SOLIVAGANT
+          </Link>
+        </div>
 
         <nav className="ng-header__nav ng-mono" aria-label={t('nav.storefrontAria')}>
           {navLinks.map((link) => (
@@ -150,7 +153,10 @@ const PublicHeader = () => {
               cart — dollars, a destination, the shipping — and hands the order to WhatsApp; the icon
               was hidden there from 18 Sep to 6 Oct, when the English shop sold only by enquiry. */}
           <Link to="/cart" className="ng-header__cart" aria-label={t('nav.cartAria', { count: summary.boughtQuantity })}>
-            {t('nav.cartLabel', { count: summary.boughtQuantity })}
+            {/* Below 480px the bag and the count stand in for the label, which does not fit there. */}
+            <ShoppingBag className="ng-header__cart-icon h-4 w-4" aria-hidden="true" />
+            <span className="ng-header__cart-label">{t('nav.cartLabel', { count: summary.boughtQuantity })}</span>
+            <span className="ng-header__cart-count">{summary.boughtQuantity}</span>
           </Link>
           <button
             type="button"
@@ -179,6 +185,7 @@ const PublicHeader = () => {
               </div>
             ))}
             <div className="ng-menu__column ng-mono">
+              <span className="ng-menu__heading">{t('region.label')}</span>
               <RegionSwitch />
             </div>
           </div>
