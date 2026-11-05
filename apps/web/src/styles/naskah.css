@@ -24,6 +24,11 @@
   --ng-line-strong: rgba(237, 230, 214, 0.3);
   --ng-gutter: clamp(20px, 4vw, 48px);
   --ng-max: 1344px;
+  /* The content edge: the gutter, or more once the page is wider than --ng-max, where every .ng-container
+     centres. The header and the hero stand on it too. On the gutter alone they began 48px from the
+     side while the catalogue and the footer began 96px in at 1536px and 288px in at 1920px.
+     The 100% is the box that uses it, so a padding or a `right` reads the page width. */
+  --ng-edge: max(var(--ng-gutter), calc((100% - var(--ng-max)) / 2));
   --ng-font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --ng-font-body: Inter, system-ui, sans-serif;
 }
@@ -375,12 +380,25 @@ select.ng-field option {
   flex-wrap: nowrap;
   align-items: center;
   gap: 28px;
-  padding: 22px var(--ng-gutter);
+  padding: 22px var(--ng-edge);
   border-bottom: 1px solid rgba(237, 230, 214, 0.12);
   background: rgba(14, 12, 10, 0.94);
   backdrop-filter: blur(14px);
   color: var(--ng-bone);
   font-family: var(--ng-font-body);
+}
+
+/* The wordmark's box and the actions take equal shares of what the nav leaves, so the nav stands on the
+   page's centre line, under the centred price notice. When it was the nav that took the slack, it sat
+   in the middle of the gap between them instead: 56px left of centre at 1280px. Where the actions need
+   more than half (900–1000px wide) they keep what they need and the nav gives way to the left. */
+.ng-header__brand,
+.ng-header > .ng-header__actions {
+  flex: 1 1 0;
+}
+
+.ng-header__brand {
+  display: flex;
 }
 
 .ng-header__wordmark {
@@ -397,7 +415,7 @@ select.ng-field option {
 }
 
 .ng-header > .ng-header__nav {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   display: flex;
   justify-content: center;
@@ -428,9 +446,9 @@ select.ng-field option {
 }
 
 .ng-header > .ng-header__actions {
-  flex: 0 0 auto;
   margin-left: auto;
   display: flex;
+  justify-content: flex-end;
   align-items: center;
   gap: 18px;
 }
@@ -451,6 +469,7 @@ select.ng-field option {
 .ng-header__cart {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   min-height: 44px;
   padding: 0 14px;
   background: var(--ng-bone);
@@ -462,6 +481,11 @@ select.ng-field option {
 .ng-header__cart:hover {
   background: #fff;
   color: var(--ng-ink);
+}
+
+.ng-header__cart-icon,
+.ng-header__cart-count {
+  display: none;
 }
 
 .ng-header__menu-button {
@@ -548,6 +572,12 @@ select.ng-field option {
   color: #fff;
 }
 
+/* The menu's links start at the column's edge; the two 44px buttons centred their letters 14px in. */
+.ng-menu .ng-region button {
+  padding: 0;
+  text-align: left;
+}
+
 .price-change-notice {
   margin: 0;
   padding: 10px var(--ng-gutter);
@@ -621,6 +651,29 @@ select.ng-field option {
   }
 }
 
+/* "KERANJANG · 0" is 142px. With the wordmark and the menu button the Indonesian header needed 408px,
+   so on a 360px phone the menu button stood half off the screen, and on 320px all of it — the shop
+   clips sideways overflow, so nothing scrolled and no check saw it. Below 480px the cart is a bag and
+   its count; the link's aria-label still says the word. */
+@media (max-width: 479px) {
+  .ng-header > .ng-header__actions {
+    gap: 8px;
+  }
+
+  .ng-header__cart {
+    padding: 0 12px;
+  }
+
+  .ng-header__cart-label {
+    display: none;
+  }
+
+  .ng-header__cart-icon,
+  .ng-header__cart-count {
+    display: inline;
+  }
+}
+
 /* --- Footer ---------------------------------------------------------------------------------------- */
 
 .ng-footer {
@@ -630,16 +683,46 @@ select.ng-field option {
   font-family: var(--ng-font-body);
 }
 
+/* Four blocks laid out per width, not auto-fit: auto-fit set five blocks in rows of 3 + 2 and 4 + 1,
+   and left one stranded on a row of its own. Brand and sign-up take a full row where the links pair. */
 .ng-footer__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
-  gap: 40px 32px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px 24px;
+}
+
+.ng-footer__brand,
+.ng-footer__signup {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .ng-footer__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+
+  .ng-footer__signup {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ng-footer__grid {
+    grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)) minmax(0, 1.4fr);
+  }
+
+  .ng-footer__brand {
+    grid-column: auto;
+  }
 }
 
 .ng-footer__wordmark {
   display: inline-flex;
-  align-items: center;
+  /* Letters at the top of the box, level with the column headings beside it; centred, they sat 10px low. */
+  align-items: flex-start;
   min-height: 44px;
+  line-height: 1;
   color: var(--ng-bone);
   font-family: var(--ng-font-display);
   font-size: 22px;
@@ -651,6 +734,8 @@ select.ng-field option {
 .ng-footer__tagline {
   margin: 16px 0 0;
   max-width: 260px;
+  /* Two lines of a length, which here breaks between the two sentences rather than inside the second. */
+  text-wrap: balance;
   color: var(--ng-ash);
   font-size: 14px;
   line-height: 1.6;
@@ -677,7 +762,6 @@ select.ng-field option {
 
 .ng-footer__form {
   display: flex;
-  margin-top: 4px;
 }
 
 .ng-footer__form .ng-field {
@@ -697,12 +781,30 @@ select.ng-field option {
 .ng-footer__bottom {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-top: 64px;
   padding-top: 24px;
   border-top: 1px solid rgba(237, 230, 214, 0.12);
   color: var(--ng-ash);
+}
+
+/* <small> drew the copyright line a size below the line it shares a row with. */
+.ng-footer__bottom small {
+  font-size: inherit;
+}
+
+.ng-footer__place {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The last letter ends on the content edge, as the line above it does. */
+.ng-footer__place .ng-region button:last-child {
+  padding-right: 0;
+  text-align: right;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -719,7 +821,7 @@ select.ng-field option {
   align-items: flex-end;
   min-height: 760px;
   overflow: hidden;
-  padding: 160px var(--ng-gutter) 120px;
+  padding: 160px var(--ng-edge) 120px;
   border-bottom: 1px solid var(--ng-line);
 }
 
@@ -743,7 +845,7 @@ select.ng-field option {
 
 .ng-hero__scroll {
   position: absolute;
-  right: var(--ng-gutter);
+  right: var(--ng-edge);
   bottom: 40px;
   display: flex;
   flex-direction: column;
@@ -776,7 +878,8 @@ select.ng-field option {
 .ng-ring {
   position: absolute;
   top: 120px;
-  right: clamp(20px, 8vw, 140px);
+  /* Never past the content edge the header's cart ends on (on a 1920px screen it stood 128px beyond it). */
+  right: max(clamp(20px, 8vw, 140px), var(--ng-edge));
   width: 320px;
   height: 320px;
 }

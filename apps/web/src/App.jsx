@@ -15,7 +15,7 @@ import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 import StorefrontLoadingState from '@/components/storefront/StorefrontLoadingState.jsx';
-import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
+import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import HomePage from '@/pages/HomePage.jsx';
 import CatalogPage from '@/pages/CatalogPage.jsx';
@@ -222,14 +222,14 @@ const isStorefrontRoute = (pathname) => (
 // The hero the real page is about to render, in the language it is about to render it in. It used to
 // hold its own English copy -- a third wording of the eyebrow, the headline and the brand sentence --
 // so an Indonesian visitor opening the home page read English for as long as the chunk took, and then
-// watched it change. The keys are the hero's own, and the header's default action list is already
-// translated, so there is nothing to pass it.
+// watched it change. The keys are the hero's own, and the header is the one the page renders, so
+// there is nothing to pass it.
 const HomeRouteFallback = () => {
   const { t } = useTranslate();
 
   return (
     <main className="min-h-screen bg-ng-ink font-ng-body text-ng-bone">
-      <StorefrontHeader />
+      <PublicHeader />
       <section className="mx-auto grid min-h-[68vh] max-w-[1344px] content-center px-5 py-16 sm:px-8 lg:px-12">
         <p className="font-ng-mono text-[11px] uppercase tracking-[0.22em] text-ng-ash">{t('home.eyebrow')}</p>
         <h1 className="mt-6 max-w-4xl font-ng-display text-6xl font-light leading-[0.95] sm:text-8xl">

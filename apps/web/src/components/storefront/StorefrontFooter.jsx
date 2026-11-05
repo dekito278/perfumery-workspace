@@ -1,3 +1,4 @@
+import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -21,17 +22,12 @@ const footerColumns = [
   {
     key: 'info',
     titleKey: 'nav.info',
+    // The journal had a column of its own with one link in it, "Terbaru".
     links: [
       { labelKey: 'nav.about', to: '/about' },
+      { labelKey: 'nav.journal', to: '/journal' },
       { labelKey: 'nav.account', to: '/customer' },
       { labelKey: 'nav.trackOrder', to: '/track-order' },
-    ],
-  },
-  {
-    key: 'journal',
-    titleKey: 'nav.journal',
-    links: [
-      { labelKey: 'nav.latest', to: '/journal' },
     ],
   },
 ];
@@ -68,7 +64,7 @@ const StorefrontFooter = () => {
     <footer className="ng-footer">
       <div className="ng-container">
         <div className="ng-footer__grid">
-          <div>
+          <div className="ng-footer__brand">
             <Link to="/home" className="ng-footer__wordmark">SOLIVAGANT</Link>
             <p className="ng-footer__tagline">{t('nav.footerTagline')}</p>
           </div>
@@ -85,7 +81,7 @@ const StorefrontFooter = () => {
             </div>
           ))}
 
-          <div className="ng-footer__column">
+          <div className="ng-footer__column ng-footer__signup">
             <span className="ng-footer__heading ng-mono">{t('nav.stayInTouch')}</span>
             {subscribed ? (
               <p className="m-0 text-sm text-ng-sand">{t('nav.subscribeThanks')}</p>
@@ -114,7 +110,8 @@ const StorefrontFooter = () => {
 
         <div className="ng-footer__bottom ng-mono">
           <small>&copy; {new Date().getFullYear()} {siteFacts.footerOwner}</small>
-          <span>{t('nav.footerPlace')}</span>
+          {/* It read "· ID / EN" — letters that looked like the switch and did nothing when tapped. */}
+          <span className="ng-footer__place">{t('nav.footerPlace')}<RegionSwitch /></span>
         </div>
       </div>
     </footer>

@@ -712,6 +712,55 @@ const runMotion = async (browser) => {
   await context.close();
 };
 
+// The header and the footer, measured. The shop's root clips sideways overflow, so `noSideScroll` passed
+// while the menu button stood half off a 360px phone and wholly off a 320px one (2026-11-06).
+const runChrome = async (browser) => {
+  const run = 'chrome';
+  const found = { clipped: [], ragged: [], offCentre: [], edges: [] };
+  for (const width of [320, 360, 390, 768, 1024, 1280, 1536, 1920]) {
+    const context = await browser.newContext({ viewport: { width, height: 900 }, locale: 'id-ID', timezoneId: 'Asia/Jakarta' });
+    await guard(context, { blocked: [], orderBodies: [], order: null });
+    const page = await context.newPage();
+    for (const path of ['/home', '/en/home', '/catalog']) {
+      await goto(page, path);
+      const m = await page.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        const box = (el) => el?.getBoundingClientRect();
+        const name = (el) => (el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 20);
+        const controls = [...document.querySelectorAll('.ng-header a, .ng-header button, .ng-footer a, .ng-footer button, .ng-footer input')]
+          .filter((el) => el.getClientRects().length);
+        const clipped = controls.filter((el) => box(el).left < -0.5 || box(el).right > vw + 0.5).map(name);
+        // A row of the footer grid is filled when its blocks run from the grid's left edge to its right.
+        const grid = document.querySelector('.ng-footer__grid');
+        const rows = new Map();
+        for (const block of grid?.children || []) {
+          const b = box(block);
+          rows.set(Math.round(b.top), [...(rows.get(Math.round(b.top)) || []), b]);
+        }
+        const g = box(grid);
+        const ragged = [...rows.values()].filter((row) => Math.abs(Math.min(...row.map((b) => b.left)) - g.left) > 1
+          || Math.abs(Math.max(...row.map((b) => b.right)) - g.right) > 1).length;
+        const links = [...document.querySelectorAll('.ng-header__nav a')].filter((el) => el.getClientRects().length);
+        const navCentre = links.length ? (box(links[0]).left + box(links.at(-1)).right) / 2 : null;
+        const lefts = ['.ng-header__wordmark', 'main .ng-container', '.ng-hero__body', '.ng-footer__wordmark']
+          .map((selector) => box(document.querySelector(selector))?.left).filter((left) => left !== undefined).map(Math.round);
+        return { vw, clipped, ragged, navCentre, lefts };
+      });
+      const at = `${path}@${width}`;
+      if (m.clipped.length) found.clipped.push(`${at}: ${m.clipped.join(', ')}`);
+      if (m.ragged) found.ragged.push(`${at}: ${m.ragged} row(s)`);
+      // From 1100px the actions fit in half the slack; below it they need more and the nav gives way.
+      if (width >= 1100 && m.navCentre !== null && Math.abs(m.navCentre - m.vw / 2) > 2) found.offCentre.push(`${at}: ${Math.round(m.navCentre)} vs ${m.vw / 2}`);
+      if (Math.max(...m.lefts) - Math.min(...m.lefts) > 1) found.edges.push(`${at}: ${m.lefts.join('/')}`);
+    }
+    await context.close();
+  }
+  check(run, 'every header and footer control is on screen, 320–1920px', !found.clipped.length, found.clipped.slice(0, 3).join('; '));
+  check(run, 'every footer row runs edge to edge — no block left on a row alone', !found.ragged.length, found.ragged.slice(0, 3).join('; '));
+  check(run, 'the header nav stands on the page centre line', !found.offCentre.length, found.offCentre.slice(0, 3).join('; '));
+  check(run, 'header, page and footer start at one left edge', !found.edges.length, found.edges.slice(0, 3).join('; '));
+};
+
 // SMOKE_ONLY=phone,seo runs just those, for chasing one failure without the other six minutes.
 const ONLY = (process.env.SMOKE_ONLY || '').split(',').filter(Boolean);
 const wanted = (name) => !ONLY.length || ONLY.includes(name);
@@ -724,6 +773,7 @@ try {
   if (wanted('outage')) await runOutage(browser);
   if (wanted('seo')) await runSeo(browser);
   if (wanted('motion')) await runMotion(browser);
+  if (wanted('chrome')) await runChrome(browser);
 } finally {
   await browser.close();
 }

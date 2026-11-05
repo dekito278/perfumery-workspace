@@ -82,6 +82,9 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // Bespoke: perfumery and commerce terms that are the same word on an Indonesian bottle.
   'bsp.contact', 'bsp.label', 'bsp.material', 'bsp.addonMaterial', 'bsp.optionGroups', 'bsp.cap',
   'bsp.preorder', 'bsp.studioOrder', 'bsp.materialLabel', 'bsp.budgetLabel', 'bsp.preorderLabel',
+  // The service's name in the menu and the footer, the same two words in both shops. The Indonesian
+  // side read "Bespoke Ritual" until 2026-11-06, a capital none of the links beside it has.
+  'nav.bespoke',
   // The member account page: commerce and perfumery words an Indonesian receipt already prints in
   // English, plus the three bespoke production stages named the same way on both sides of the shop.
   'cust.voucherCode', 'cust.bp.formula', 'cust.bp.sample', 'cust.bp.approval', 'cust.cap',
