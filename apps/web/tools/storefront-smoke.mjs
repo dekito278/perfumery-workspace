@@ -68,8 +68,13 @@ const guard = async (context, state) => {
         if (name === 'storefront_voucher_redeemed_by_me') return json(route, 0);
         if (name === 'storefront_payment_session_lookup') return json(route, state.order || null);
         if (name === 'storefront_customer_portal') {
-          return json(route, [{ customer: { customer_code: CUSTOMER_CODE, customer_name: 'Smoke Buyer', contact: '6281200000000',
-            delivery_address: 'Jalan Smoke 1', delivery_area: 'Jakarta Selatan', requires_security: false },
+          // As the server answers since 20261107100000: a code alone opens nothing; the checkout number does.
+          const typed = String(JSON.parse(request.postData() || '{}').p_contact || '').replace(/\D/g, '').replace(/^0/, '62');
+          if (typed !== '6281200000000') {
+            return json(route, [{ customer: { customer_code: CUSTOMER_CODE, requires_security: false, requires_identity: true }, orders: [] }]);
+          }
+          return json(route, [{ customer: { customer_code: CUSTOMER_CODE, customer_name: 'S**** B****', order_count: 1,
+            requires_security: false, masked: true },
           orders: state.order ? [state.order] : [] }]);
         }
         if (name === 'storefront_customer_checkout_lookup' || name === 'storefront_lookup_customer') return json(route, []);
@@ -386,6 +391,13 @@ const runShop = async (browser, run, contextOptions) => {
 
   // --- Account portal, tracking, journal, bespoke ---
   await goto(page, `/customer?code=${CUSTOMER_CODE}`);
+  // The code alone must not show the order; the number typed at checkout must (2026-11-07).
+  const numberBox = page.getByRole('textbox', { name: ID['cust.identityLabel'] });
+  check(run, 'the account asks for the checkout number before showing any order',
+    await numberBox.isVisible({ timeout: 8000 }).catch(() => false) && !(await page.getByText(state.order?.order_number || 'none').count()));
+  await numberBox.fill('0812-0000-0000').catch(() => {});
+  await page.getByRole('button', { name: ID['cust.openDashboard'], exact: true }).click().catch(() => {});
+  await settle(page);
   check(run, 'the account shows the order', state.order && await page.getByText(state.order.order_number).first().isVisible({ timeout: 8000 }).catch(() => false));
   await goto(page, '/track');
   check(run, 'tracking page renders', await page.locator('h1').first().isVisible());

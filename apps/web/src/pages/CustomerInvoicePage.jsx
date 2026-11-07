@@ -308,6 +308,8 @@ const CustomerInvoicePage = () => {
   const [searched, setSearched] = useState(false);
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [securityLoading, setSecurityLoading] = useState(false);
+  // The number the buyer checked out with: a code alone opens no invoice since 2026-11-07.
+  const [identityContact, setIdentityContact] = useState('');
   // One invoice address since the phone storefront retired (2026-10-31); /mobile/... redirects here.
   const isMobileRoute = false;
 
@@ -363,6 +365,34 @@ const CustomerInvoicePage = () => {
   const submitLookup = (event) => {
     event.preventDefault();
     loadInvoice(customerCode);
+  };
+
+  const confirmIdentity = async (event) => {
+    event.preventDefault();
+    if (!identityContact.trim()) {
+      toast.error(t('cust.contactRequired'));
+      return;
+    }
+
+    setSecurityLoading(true);
+    let result;
+    try {
+      result = await getCustomerPortalByCode(portal.customer.customerCode, identityContact);
+    } catch {
+      toast.error(t('inv.codeLookupFailed'));
+      return;
+    } finally {
+      setSecurityLoading(false);
+    }
+
+    if (!result || result.requiresIdentity) {
+      toast.error(t('cust.contactMismatch'));
+      return;
+    }
+
+    setPortal(result);
+    setIdentityContact('');
+    toast.success(t('inv.opened'));
   };
 
   const unlockInvoice = async (event) => {
@@ -429,6 +459,35 @@ const CustomerInvoicePage = () => {
             </Button>
           </form>
           {searched && !loading ? <p className="mt-3 text-xs font-semibold text-[#6b7280]">{t('inv.notFoundForData')}</p> : null}
+        </section>
+      ) : portal.requiresIdentity ? (
+        <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+            <div>
+              <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('inv.securityCheck')}</div>
+              <h1 className="mt-1 text-xl font-bold text-editorial-charcoal">{t('inv.openInvoice')}</h1>
+              <p className="mt-2 text-sm font-semibold text-[#6b7280]">{t('cust.identityBody')}</p>
+            </div>
+          </div>
+          <form onSubmit={confirmIdentity} className="mt-5 grid gap-3">
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={identityContact}
+              onChange={(event) => setIdentityContact(event.target.value)}
+              aria-label={t('cust.identityLabel')}
+              placeholder={t('cust.identityPlaceholder')}
+              className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+            />
+            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
+              {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+              {t('inv.open')}
+            </Button>
+          </form>
         </section>
       ) : portal.requiresSecurity ? (
         <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
