@@ -54,7 +54,7 @@ assert.equal(
   'the count is capped too',
 );
 
-// Order is the order he pasted them in. A shuffle would make the page different on every render.
+// Order is the order Dekito pasted them in. A shuffle would make the page different on every render.
 assert.deepEqual(
   normalizeTestimonials([{ quote: 'satu' }, { quote: 'dua' }, { quote: 'tiga' }]).map((row) => row.quote),
   ['satu', 'dua', 'tiga'],

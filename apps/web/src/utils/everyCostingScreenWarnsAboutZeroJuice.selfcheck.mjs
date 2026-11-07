@@ -8,7 +8,7 @@
 //
 // The desktop page warns. The phone page read the SAME hook and never rendered it — so on the phone a
 // failed load produced a COGS and a per-ml figure quietly missing the most expensive input, on the
-// screen Dekito actually uses when he is away from the laptop, and those are the numbers a price gets
+// screen Dekito actually uses when away from the laptop, and those are the numbers a price gets
 // set from. Found 2026-10-25 auditing files no chain had ever named.
 //
 // The subject is COUNTED, not listed: every file that calls the hook has to render the flag. A third

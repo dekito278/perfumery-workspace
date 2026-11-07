@@ -5,7 +5,7 @@
 // delete that skips them does not fail, it just leaves paid-for litter nobody can ever find again.
 //
 // ProductListPage cleaned up. MobileProductListPage, same button on the same catalogue, did not: it
-// called deleteCustomProduct and stopped. Every product Dekito deleted from his phone left all of its
+// called deleteCustomProduct and stopped. Every product Dekito deleted from the phone left all of its
 // images behind.
 //
 // The fix was not to copy the cleanup to the phone — that is the same bug with a second home, and this

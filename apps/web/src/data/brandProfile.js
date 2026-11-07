@@ -7,9 +7,9 @@
 // app, not when a perfume was released; the two are years apart and only one of them is true.
 //
 // STATED, not inferred. `foundedYear` and `city` were blank until 9 Oct 2026, when Dekito answered the
-// question this file was written to ask: "Rilis dari 2023, kota bogor." They are his words and nothing
+// question this file was written to ask: "Rilis dari 2023, kota bogor." They are Dekito's words and nothing
 // here derives them from anything — a founding year is quoted back forever once a public database has
-// it, which is why it waited for him rather than being read off `created_at`.
+// it, which is why it waited for Dekito rather than being read off `created_at`.
 // Since 2026-11-03 Dekito can change the city and the founding year in Studio (Fakta toko); the values
 // Dekito stated are the defaults there, read from one place so the two files cannot disagree.
 import { DEFAULT_SITE_FACTS } from './siteFacts.js';

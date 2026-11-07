@@ -194,7 +194,7 @@ assert.match(read('pages', 'PublicProductDetailPage.jsx'), /<ScentPyramid produc
   // and "kamu" not once: the writer is inside the feeling, describing what happens to US. The first
   // English draft rendered every one of those as "you", which reads as a diagnosis of the person holding
   // the bottle. Held as the rule — first person present, second person absent — because a later rewrite
-  // reaching for "you were never going to reach him" breaks nothing a structural check can see.
+  // reaching for "you were never going to reach them" breaks nothing a structural check can see.
   const idWords = JSON.stringify([idStory.hero, idStory.sections]);
   assert.ok(/\bkita\b/.test(idWords) && !/\b(kamu|Anda|kau)\b/.test(idWords),
     'the Indonesian letter stopped speaking as "kita", so the English rule below no longer follows from it');

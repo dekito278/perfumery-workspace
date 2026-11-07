@@ -2,7 +2,7 @@
 //
 // Until now this was decided entirely by guessing at the browser's timezone and language. The guess is a
 // good one — a German customer has a German browser — but it is still a guess, and it cannot be argued
-// with. Dekito could not see his own international shop from Indonesia, a VPN does not change it (a VPN
+// with. Dekito could not see the international shop from Indonesia, a VPN does not change it (a VPN
 // moves the IP, not the clock or the language), and a visitor the guess reads wrong has no way to say so.
 //
 // So the visitor could choose, and the choice won; the guess was the default. Since 2026-11-02 neither

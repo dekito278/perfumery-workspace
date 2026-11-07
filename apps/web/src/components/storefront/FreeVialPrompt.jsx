@@ -23,7 +23,7 @@ import { isFreeVialProduct, shouldOfferFreeVial, splitFreeVialLines } from '@/ut
  * It opened only in the Indonesian shop until 2026-10-06, because the English shop had no cart to put a
  * gift into. Dekito opened both that day. The gift is weightless against the carrier's bracket — a 2 ml
  * vial is 10 g against a one-kilo minimum — so it changes neither the shipping nor the total; what it
- * must do is reach the WhatsApp order, or he packs a parcel without knowing a vial was chosen.
+ * must do is reach the WhatsApp order, or Dekito packs a parcel without knowing a vial was chosen.
  *
  * Mounted ONCE for the whole app. The alternative was a copy on each of the four screens that add to the
  * cart, which is four places to forget — the shape of defect this repository keeps paying for. It

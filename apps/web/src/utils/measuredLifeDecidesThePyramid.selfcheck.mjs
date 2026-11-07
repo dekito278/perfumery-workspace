@@ -18,10 +18,10 @@
 //     base    n=111  120 – 2000 h
 //
 // Disjoint. So `top if <= 11, base if >= 120, otherwise middle` reproduces 549 of 549 — 100%, verified
-// by query against his own answers. The hours are not a proxy for his rule; they ARE his rule.
+// by query against Dekito's own answers. The hours are not a proxy for that rule; they ARE the rule.
 //
-// What changed to get there: the ceiling was 10, which put his eleven-hour materials on the wrong side
-// of his own line, and a known in-band life fell through to the ABC-class weighing instead of simply
+// What changed to get there: the ceiling was 10, which put the eleven-hour materials on the wrong side
+// of Dekito's own line, and a known in-band life fell through to the ABC-class weighing instead of simply
 // answering "middle". The class weighing remains for materials whose life nobody has measured, which is
 // the only case it was ever for.
 import assert from 'node:assert/strict';
@@ -91,8 +91,8 @@ assert.equal(derive(null, []), 'middle', 'and with no evidence of any kind it mu
 // --- 5. Zero hours is left exactly as it was ----------------------------------------------------------
 // 0 reads as "instantly volatile" where it may only mean "nobody wrote it down" — the empty-column trap.
 // But the live data will not carry that argument: exactly FOUR materials hold 0 hours, and the single
-// one Dekito has placed, he placed as a MIDDLE. One label cannot move a branch resting on 139 materials
-// with 1 wrong. Four rows are a cleanup for his own hands. This pins the behaviour as unchanged so that
+// one Dekito has placed sits as a MIDDLE. One label cannot move a branch resting on 139 materials
+// with 1 wrong. Four rows are a cleanup for Dekito's own hands. This pins the behaviour as unchanged so that
 // the decision stays deliberate rather than drifting later.
 assert.equal(derive(0, woody(100)), 'top',
   'zero hours was NOT changed by the 2026-10-24 work — see the comment above before touching it');

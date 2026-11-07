@@ -21,7 +21,7 @@ const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
 }));
 
 // Top / middle / base, Dekito's own answer. The workbook's resolver prefers this over its own inference
-// from class distribution and life hours, and that inference disagrees with his stated answers on 256 of
+// from class distribution and life hours, and that inference disagrees with the stated answers on 256 of
 // the 551 materials that have one -- 46%. Before this select existed the column could not be set from
 // anywhere in the app, so the remaining 223 materials had no way to stop being guessed (#445).
 const pyramidPlacementOptions = [

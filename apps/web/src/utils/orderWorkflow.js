@@ -35,7 +35,7 @@ export const isShippedOrder = (order = {}) => (
  *
  * Both dashboards used to count this themselves — paid, not shipped, not finished — and sent Dekito to
  * the fulfillment screen, which counts it differently: it also holds back a bespoke order whose
- * production is not Ready, and it treats status 'shipped' as gone. Measured on his own Studio, same
+ * production is not Ready, and it treats status 'shipped' as gone. Measured on Dekito's own Studio, same
  * moment: the card said "3 order siap packing" and the screen it opened said 1.
  *
  * A number that promises what another screen will show has to be the same number.
@@ -58,7 +58,7 @@ export const isReadyToPack = (order) => {
  * The fulfillment screen asked a different question: "is this row not ready to pack?" — and answered
  * every such row with a bespoke production stage, defaulting to "Review brief". So its Dikirim queue
  * showed ten shipped orders all labelled "Review brief", and a plain storefront order that was merely
- * unpaid claimed to be a bespoke brief under review. Read on his own Studio, 2026-09-24.
+ * unpaid claimed to be a bespoke brief under review. Read on Dekito's own Studio, 2026-09-24.
  *
  * Shipped and archived are excluded: once the parcel is gone, the production stage is history, and the
  * row should say where the parcel is.

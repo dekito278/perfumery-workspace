@@ -9,7 +9,7 @@
 export const DEFAULT_MEMBER_DISCOUNT_PERCENT = 10;
 
 // Dekito's decision, 2026-09-15: a flat 3,5x retail for every product, replacing the single 2,55x price
-// he had set by hand on Maskumambang.
+// set earlier by hand on Maskumambang.
 export const DEFAULT_OVERSEAS_MULTIPLIER = 3.5;
 
 // Prices here are five and six figures, and 296.100 is not a price anyone writes on a shelf. Rounding is

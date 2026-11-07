@@ -208,7 +208,7 @@ assert.doesNotMatch(hook, /detectOverseasVisitor|navigator\.language|Intl\./,
   'and never detect for themselves — one paragraph English and the button under it Indonesian is the failure');
 
 // --- 7. Studio stays out of it -------------------------------------------------------------------------------------
-// Translating admin screens is work with one reader, and he speaks Indonesian. Worse, a Studio screen
+// Translating admin screens is work with one reader, who speaks Indonesian. Worse, a Studio screen
 // pulled into the storefront's message file starts flipping language with the buyer's switch.
 const studioPages = readdirSync(join(root, 'pages'))
   .filter((name) => /^(Studio|Product(List|Create|Edit)|CatalogCuration|Batch|Order|Formula|RawMaterial)/.test(name) && name.endsWith('.jsx'));
@@ -992,8 +992,8 @@ const walk = (dir, out = []) => {
   // --- And no sentence may promise a waybill that is never coming ----------------------------------
   //
   // Dekito's decision, 2026-10-10: this shop does not record waybills. Not one of the 35 orders on
-  // production has a tracking_number, 13 of them shipped and 8 completed, and he confirmed that is how
-  // he works — the parcel goes out and the buyer is answered on WhatsApp.
+  // production has a tracking_number, 13 of them shipped and 8 completed, and Dekito confirmed that is how
+  // the shop works — the parcel goes out and the buyer is answered on WhatsApp.
   //
   // So the earlier honest-but-hopeful wording is now the wrong sentence in the other direction: "resi
   // belum masuk ke sistem" and "Resi akan muncul setelah dikirim" say LATER about something that never

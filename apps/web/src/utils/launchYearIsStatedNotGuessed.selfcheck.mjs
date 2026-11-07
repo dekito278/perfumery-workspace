@@ -70,7 +70,7 @@ assert.deepEqual(derived, [],
 // --- 2b. A brand's founding year is not a perfume's launch year ----------------------------------------
 //
 // I got this wrong and shipped it. Asked on 9 Oct 2026 what year to use, Dekito said "Rilis dari 2023";
-// I read that as a blanket answer about all nineteen releases and wrote 2023 to every row. He corrected
+// I read that as a blanket answer about all nineteen releases and wrote 2023 to every row. Dekito corrected
 // it on 11 Oct: "kok rilis parfum saya 2023 semua. Gak gitu loh maksud saya brand yg berdiri sejak 2023.
 // Kalo variannya mah beda2." The house started in 2023; the bottles came out in different years.
 //

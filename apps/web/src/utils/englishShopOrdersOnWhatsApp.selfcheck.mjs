@@ -81,7 +81,7 @@ for (const page of ['pages/InternationalCartPage.jsx']) {
   const source = readCode(page);
   // FreeVialPicker is NOT on this list since 2026-10-06: Dekito opened the gift to both shops, and every
   // word the picker shows comes from the message file, so it reads in English. What it must do here is
-  // reach the ORDER — asserted below — because the gift is the one line he cannot infer from the total.
+  // reach the ORDER — asserted below — because the gift is the one line Dekito cannot infer from the total.
   for (const forbidden of [/formatRupiah/, /\bRp\b/, /useAppliedVoucher|cart-voucher|voucherCode/, /\/checkout/, /checkoutPaymentMethods|createDokuCheckout|isManualTransferPayment/, /memberSavingForCart/]) {
     assert.doesNotMatch(source, forbidden, `${page} reaches something domestic: ${forbidden} — the English cart must not`);
   }
@@ -91,7 +91,7 @@ for (const page of ['pages/InternationalCartPage.jsx']) {
   assert.match(source, /canOrder \? buildWhatsAppCheckoutUrl\(message, phone\) : '#'/, `${page} must open WhatsApp only with a complete message`);
   assert.match(source, /US\$\$\{/, `${page} must print its prices in dollars`);
   // The gift, offered here and carried into the order. A picker with no line in the message would let a
-  // buyer choose an aroma that never reaches him.
+  // buyer choose an aroma that never reaches them.
   assert.match(source, /<FreeVialPicker items=\{items\} products=\{(catalog|products)\} onPick=\{setGift\} \/>/,
     `${page} does not offer the free vial — both shops have had it since 2026-10-06`);
 }
@@ -105,7 +105,7 @@ for (const page of ['pages/InternationalCartPage.jsx']) {
 
   // AND IT NAMES THE AROMA, NOT THE PRODUCT. The gift is one product carrying a variant per scent, so
   // its cart line is called "Vial hadiah — La Tulipe". Passed straight through, an English buyer sent
-  // himself "- Vial hadiah — La Tulipe — free vial, no charge" — two Indonesian words inside his own
+  // out "- Vial hadiah — La Tulipe — free vial, no charge" — two Indonesian words inside their own
   // order, live until 2026-10-23.
   //
   // No i18n guard could have caught it, and that is the part worth keeping: the phrase is DATA, read
@@ -160,8 +160,8 @@ for (const page of ['pages/PublicProductDetailPage.jsx', 'pages/ImmersiveProduct
     assert.match(call, /quotedInternationalPrice\(exportPrice/, `${page}: an add-to-cart label prints the domestic price in the English shop: ${call}`);
   }
   // And every price a page STORES for its "added to cart" confirmation. The phone's sheet printed
-  // "30 ml — Rp 323.000" to Dekito himself under a US$80 page, the hour the English cart went live —
-  // the member price, because he was signed in. Any `price:` written into that state must go through the
+  // "30 ml — Rp 323.000" to Dekito personally under a US$80 page, the hour the English cart went live —
+  // the member price, because that account was signed in. Any `price:` written into that state must go through the
   // helper, whichever export-price variable the page happens to hold.
   for (const call of source.match(/setLastAddedItem\(\{[^}]*\}\)/g) || []) {
     assert.match(call, /price: quotedInternationalPrice\(/, `${page}: the added-to-cart confirmation stores the domestic price: ${call}`);

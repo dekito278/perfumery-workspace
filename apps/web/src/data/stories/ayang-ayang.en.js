@@ -2,7 +2,7 @@ import id from './ayang-ayang.js';
 
 // The English Ayang-ayang. Not a literal translation — the Indonesian is spoken, almost conversational
 // ("Sakit gak, jatuh cinta sama orang yang kita gak bisa gapai?"), and a word-for-word English version of
-// that reads like a greeting card. Two rules keep it his letter rather than a brochure:
+// that reads like a greeting card. Two rules keep it the writer's letter rather than a brochure:
 //
 //   - It says WE, never YOU. The Indonesian is "kita" three times over and "kamu" not once — the writer
 //     is standing inside the feeling, not diagnosing the reader. In English "you" turns the confession

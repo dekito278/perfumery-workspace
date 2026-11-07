@@ -7,9 +7,9 @@
 // near-Asia destinations off that sheet — Rp 90.000 the kilo to Malaysia against Rp 1.188.000, about a
 // seventh. Both were live, and the Studio quote screen put a "Pakai" button under each: two freight
 // figures seven times apart, side by side, for the same parcel. Whichever one Dekito pressed, the other
-// said he had got it badly wrong.
+// said Dekito had got it badly wrong.
 //
-// Dekito settled it on 6 Oct 2026: he ships DHL, and the sheet is his. The second table is deleted.
+// Dekito settled it on 6 Oct 2026: the shop ships DHL, and the sheet is Dekito's. The second table is deleted.
 //
 // What this guard holds is not "DHL" — it is the shape that let the contradiction exist: more than one
 // source of freight, more than one function quoting it, and a heading that branched instead of saying
@@ -102,7 +102,7 @@ assert.equal(quoteExportShipping({ countryCode: 'ID', weightGram: 500 }), null, 
 // the parcels, the fix went to the quoter and to every panel showing a result — and not here, because a
 // heading is not a result. Nothing connected the two.
 // Comments stripped first. A heading that names DHL in a {/* comment */} and prints a bare date to the
-// screen reads as correct source and tells Dekito nothing — the claim has to be in what he can see.
+// screen reads as correct source and tells Dekito nothing — the claim has to be in what can be seen.
 const page = stripComments(readFileSync(join(src, 'pages', 'ExportShippingCalculatorPage.jsx'), 'utf8'));
 const start = page.indexOf('<header');
 const heading = page.slice(start, page.indexOf('</header>', start));

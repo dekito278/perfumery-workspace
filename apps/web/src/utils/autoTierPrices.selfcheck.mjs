@@ -5,7 +5,7 @@
 //
 // The arithmetic is the easy half. The half that matters is knowing when NOT to write: a price Dekito
 // set deliberately must survive a retail edit, and a price this rule produced must follow one. Get the
-// first wrong and the automation silently undoes his decisions; get the second wrong and a 10% member
+// first wrong and the automation silently undoes Dekito's decisions; get the second wrong and a 10% member
 // discount quietly becomes 25% the next time a price goes up.
 //
 // It writes MONEY on every product save, so every rule here is run.

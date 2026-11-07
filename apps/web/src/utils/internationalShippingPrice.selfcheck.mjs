@@ -3,12 +3,12 @@
 // The international shipping price, checked as a RULE that is run rather than a table that is read.
 //
 // Until 2026-10-06 this chain read a hand-written card back — nine countries, three tiers, the dollar
-// figures Dekito had published. Then he put the card beside the carrier's rate sheet: every figure was
-// the carrier's cost plus about ten percent, when his own practice was US$65 to the United States against
+// figures Dekito had published. Then Dekito put the card beside the carrier's rate sheet: every figure was
+// the carrier's cost plus about ten percent, when the shop's own practice was US$65 to the United States against
 // a US$95 cost. And Iceland sat in "Europe" at US$140 while the carrier bills it at US$155. The card was
-// a margin on freight that he was not actually charging, and it lost money on one destination before any
+// a margin on freight that the shop was not actually charging, and it lost money on one destination before any
 // subsidy. So the card is gone and the rule is: carrier cost for the parcel's bracket, in dollars, less a
-// fixed support — US$30 for one bottle, US$50 for two or more. His numbers, made general.
+// fixed support — US$30 for one bottle, US$50 for two or more. Dekito's numbers, made general.
 //
 // Two failure modes, and the second is the expensive one:
 //   * a wrong number — the rule says US$65 to the United States and the app must say US$65
@@ -56,7 +56,7 @@ const {
 
 // --- 1. Dekito's own numbers, as facts -------------------------------------------------------------------
 // The rule was fitted to these four and must keep producing them. "DHL ke Amerika sekitar $95" is
-// Rp 1.709.000 at 18.000; he charges US$65 for one bottle and US$45 for two.
+// Rp 1.709.000 at 18.000; Dekito charges US$65 for one bottle and US$45 for two.
 assert.equal(SHIPPING_COST_RATE, 18000, 'the cost is converted at the market rate he quoted, not the pricing rate');
 assert.deepEqual(SHIPPING_SUPPORT_USD, { single: 30, multiple: 50 }, "Dekito's decision, 2026-10-06");
 {
@@ -234,8 +234,8 @@ assert.doesNotMatch(read('components', 'storefront', 'InternationalPrice.jsx'), 
 // Neither was a figure Dekito had agreed to apply to every order: the card charges US$80 to Southeast
 // Asia where RaySpeed costs about Rp 90.000, and the cost is not a price at all.
 //
-// His decision, 2026-09-25: the international price is fixed at 3.5x retail, and he sets the shipping
-// himself on this screen with both tables in front of him. So the charge is the TYPED figure, and the
+// Dekito's decision, 2026-09-25: the international price is fixed at 3.5x retail, and the shipping is set
+// by hand on this screen with both tables in view. So the charge is the TYPED figure, and the
 // card and the carrier rate are reference — each with a button that fills the field, because a number
 // you have to retype is a number that gets retyped wrong.
 const page = read('pages', 'ExportShippingCalculatorPage.jsx');

@@ -1,6 +1,6 @@
 // Buyer quotes: what the owner pasted, cleaned up, never invented.
 //
-// Dekito chose this over a review system on 25 Oct against his own numbers: 35 orders ever, 24 paid, and
+// Dekito chose this over a review system on 25 Oct against the shop's own numbers: 35 orders ever, 24 paid, and
 // the best-selling perfume has four buyers. A form with stars and a moderation queue would, at full
 // participation, show 4 reviews on the best page and 0 or 1 on most — and "Ulasan (0)" on 14 of 18
 // product pages announces that nobody has bought. So these are quotes from WhatsApp and Instagram,

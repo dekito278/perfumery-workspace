@@ -12,7 +12,7 @@ import { activateWaitingServiceWorker, subscribeToPwaUpdates } from '@/utils/pwa
 //
 // Which is also why this copy stays Indonesian while its two neighbours in the App shell moved into
 // MESSAGES. The isAdmin gate above is the whole audience: one reader, who speaks Indonesian. Translating
-// it would only put English in front of him on his own shop. The guard in storefrontMessages knows this
+// it would only put English in front of them on their own shop. The guard in storefrontMessages knows this
 // and will start demanding a translation the moment that gate goes away.
 const DISMISS_KEY = 'solivagant.pwa.update-dismissed';
 

@@ -33,7 +33,7 @@ export const getOpsHealthSnapshot = (orders = []) => {
   const dokuWindowLapsedOrders = pendingPaymentOrders.filter((order) => isOrderReservationExpired(order, nowDate));
   // A paid parcel with no waybill was counted here as something to notice. It is not: not one of the
   // 35 orders on production carries a tracking_number, 13 of them shipped, and Dekito confirmed on
-  // 2026-10-10 that this is how he ships — so the count could only ever be "all of them", on both
+  // 2026-10-10 that this is how the shop ships — so the count could only ever be "all of them", on both
   // dashboards, forever. An alarm that never stops is not an alarm.
   const localOrders = orders.filter((order) => order.persistence === 'local' || order.syncStatus === 'sync_required');
 

@@ -123,8 +123,8 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const offCardSizes = [...new Set(lines
     .filter((line) => line.product && Number(line.quantity) > 0 && !String(line.size || '').startsWith(String(SHIPPING_RATE_BOTTLE_SIZE_ML)))
     .map((line) => line.size))];
-  // One shipping figure for the whole page, and Dekito types it. The summary he copies into WhatsApp and
-  // the order he creates from it were once reading two different sources, so the message quoted the
+  // One shipping figure for the whole page, and Dekito types it. The summary copied into WhatsApp and
+  // the order created from it were once reading two different sources, so the message quoted the
   // carrier cost while the order billed the card price — Rp 180.000 against Rp 2.227.500 for the same six
   // bottles to Malaysia.
   //
@@ -134,7 +134,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // since that carrier billed a one-kilo MINIMUM. Then it billed the published card outright, which is a
   // price Dekito had not agreed to apply to every order. The second carrier is gone as of 6 Oct 2026.
   //
-  // His decision: the international PRICE is fixed at 3.5x retail and the shipping is set by hand, here,
+  // Dekito's decision: the international PRICE is fixed at 3.5x retail and the shipping is set by hand, here,
   // with both tables on this screen as the reference. So the typed figure is the charge; the card and the
   // carrier rate below only advise it, and "Pakai" fills the field from either.
   const typedShipping = Math.max(0, Math.round(Number(manualShipping) || 0));
@@ -143,7 +143,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const quoteLater = canQuoteLater && quoteShippingLater;
   const shippingCharged = quoteLater ? 0 : typedShipping;
   // An order may not be written on an undecided figure. Zero is a legitimate answer — Dekito can waive
-  // the freight on an order he chooses to — but it has to be typed, not left behind.
+  // the freight on any order, by choice — but it has to be typed, not left behind.
   const shippingSettled = quoteLater || manualShipping !== '';
   // The label travels INTO a message the buyer reads, so it is written in their language, not in the
   // Studio's. "dikutip menyusul" went out to a German customer verbatim until 2026-10-06.
@@ -562,7 +562,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
         </section>
 
         {/* THE TWO NUMBERS THAT ARE A DECISION, editable here because they are the only part of the rule
-            Dekito sets himself. The carrier's sheet is not on this screen for the same reason the price
+            Dekito sets. The carrier's sheet is not on this screen for the same reason the price
             of a stamp is not: it is transcribed, not decided. Saving writes one row and the storefront
             cart reads the same one, so the figure above and the figure a buyer sees move together. */}
         <section className="mt-4 rounded-2xl border border-editorial-charcoal/15 bg-white p-4">
@@ -609,7 +609,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               Simpan kebijakan
             </Button>
             {/* The effect, not the setting: one bottle to the United States is the example in Dekito's
-                own brief, so he can see the number he wrote about move as he types. */}
+                own brief, so Dekito can see the number written there move while typing. */}
             <p className="text-xs font-semibold text-[#6b7280]">
               Contoh: 1 botol ke Amerika ={' '}
               {formatShippingUsd(quoteInternationalShippingPrice({
@@ -634,7 +634,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
                 {' '}(kurs {USD_PRICE_RATE.toLocaleString('id-ID')}, {USD_PRICE_RATE_SET_ON})
               </p>
               {/* The arithmetic, in the open: a figure Dekito can check against the carrier's sheet is a
-                  figure he can trust the "Pakai" button with. */}
+                  figure worth trusting the "Pakai" button with. */}
               <p className="mt-1 text-xs text-[#6b7280]">
                 Biaya kurir {formatShippingUsd(priceCard.costUsd)} ({formatPrice(priceCard.costIdr)}) − ditanggung SOLIVAGANT {formatShippingUsd(priceCard.supportUsd)}
               </p>

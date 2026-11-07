@@ -12,7 +12,7 @@ import { freeVialChoices, isFreeVialProduct } from '@/utils/freeVial.js';
  * could change a mind was the one surface that withheld it.
  *
  * Both houses Dekito pointed at put what comes with the bottle on the product page rather than saving
- * it for the cart. This is the same move with something he had already built.
+ * it for the cart. This is the same move with something Dekito had already built.
  *
  * It uses the cart's OWN strings, not new ones. The wording was written once and translated once; a
  * second copy here would be a second thing to keep in step, and the first time they drifted the shop

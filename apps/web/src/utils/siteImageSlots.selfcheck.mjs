@@ -62,7 +62,7 @@ assert.deepEqual(
 // waiting for a page that is not built yet — but it has to be a decision, not a surprise.
 // home-statement joined these on 2026-10-31: the Naskah Gelap home has no statement band (the canvas
 // Dekito chose has none), and the phone home that also read it retired the same day. The slot stays in
-// Studio so an uploaded photo is not lost; putting it back on the page is his call, reported to him.
+// Studio so an uploaded photo is not lost; putting it back on the page is Dekito's call, reported back.
 const KNOWN_UNUSED = ['catalog-banner', 'about-hero', 'home-statement'];
 const unused = slots.filter((key) => !readKeys.has(key)).sort();
 assert.deepEqual(

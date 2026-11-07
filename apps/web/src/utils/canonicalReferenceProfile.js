@@ -408,15 +408,15 @@ const normalizeSourceSnapshots = (sourceSnapshots = {}) => Object.fromEntries(
 );
 
 /** Fitted, not chosen — see the measurement above deriveTopMiddleBaseTendency. */
-// MEASURED against Dekito's own 549 placed materials on 2026-10-24, not chosen by taste. His answers
+// MEASURED against Dekito's own 549 placed materials on 2026-10-24, not chosen by taste. Those answers
 // separate perfectly by substantivity, with no overlap at all:
 //
 //     top     n=157   0 – 11 h
 //     middle  n=281   12 – 112 h
 //     base    n=111   120 – 2000 h
 //
-// Disjoint intervals, so these two numbers reproduce 549 of 549 of his answers — 100%. The ceiling was
-// 10, which put the eleven-hour materials on the wrong side of his own line.
+// Disjoint intervals, so these two numbers reproduce 549 of 549 of the answers — 100%. The ceiling was
+// 10, which put the eleven-hour materials on the wrong side of Dekito's own line.
 export const TOP_LIFE_HOURS_CEILING = 11;
 export const BASE_LIFE_HOURS_FLOOR = 120;
 export const CLASS_LEAD_MARGIN = 60;
@@ -443,7 +443,7 @@ export const CLASS_LEAD_MARGIN = 60;
 // the old ones. canonicalTendency.selfcheck.mjs holds the shape that follows from those measurements.
 //
 // On the 27 formulas as they stand this moves 10 of 680 rows, no score by more than 5 points, and 3 of 81
-// PACE suggestions -- because the 536 rows Dekito has answered himself are untouched. The gain is for the
+// PACE suggestions -- because the 536 rows Dekito has answered by hand are untouched. The gain is for the
 // materials nobody has answered yet, and any single one can be overridden in the material form (#449).
 export const deriveTopMiddleBaseTendency = ({ lifeHours, distribution }) => {
   const woodyBaseLetters = new Set(['Q', 'T', 'U', 'V', 'W', 'X', 'Y']);
@@ -454,7 +454,7 @@ export const deriveTopMiddleBaseTendency = ({ lifeHours, distribution }) => {
   // This used to return only for the two extremes and fall through to the ABC-class weighing in
   // between, which is where the inaccuracy came from: withholding the column and re-deriving it agreed
   // with Dekito on 295 of 551 materials, 46%. Deciding from hours alone agrees on 549 of 549 — because
-  // the hours ARE the rule he was already applying. The class weighing stays for materials whose life
+  // the hours ARE the rule Dekito was already applying. The class weighing stays for materials whose life
   // nobody has measured, which is the only case it was ever any good for.
   //
   // Deliberately `!== null` and NOT `> 0`. An unrecorded life arriving as 0 would be read as "instantly

@@ -1,9 +1,9 @@
 // SOLIVAGANT international shipping — what the BUYER pays, derived from what the carrier bills us.
 //
 // This file used to be a hand-written card: five regions, 57 countries, three dollar figures each,
-// transcribed from a sheet Dekito published on 2026-09-24. On 2026-10-06 he put the card next to the
+// transcribed from a sheet Dekito published on 2026-09-24. On 2026-10-06 Dekito put the card next to the
 // carrier's own rate sheet and found two things. Every figure on the card was the carrier's cost PLUS
-// about ten percent — a margin on freight, when his actual practice was the opposite: US$65 to the United
+// about ten percent — a margin on freight, when the actual practice was the opposite: US$65 to the United
 // States against a US$95 cost, the difference paid out of the bottle's export margin. And Iceland sat in
 // the card's "Europe" group at US$140 while the carrier bills it as zone 8, US$155, so the card lost
 // money there before any subsidy at all.
@@ -54,7 +54,7 @@ export const SHIPPING_SUPPORT_USD = { single: 30, multiple: 50 };
  * dengan ukuran 1kg."
  *
  * So the thing the carrier bills is the BOX, not the bottle. One bottle ships in the same kilo as two —
- * confirmed by his own cost figure for the United States, "DHL sekitar $95": that is Rp 1.709.000, the
+ * confirmed by Dekito's own cost figure for the United States, "DHL sekitar $95": that is Rp 1.709.000, the
  * sheet's 1 kg row for zone 5, and not the 0.5 kg row at Rp 1.304.000. A single bottle is not half a
  * parcel; it is a parcel with a spare slot.
  *
@@ -148,8 +148,8 @@ export const shippingZoneFor = (countryCode) => {
  * estimated arrival, not ask for them. The carrier's sheet prints prices and no transit times, so these
  * are the express service's typical ranges from Jakarta by zone — the neighbours in a day or two, Europe
  * within a week, zone 8 up to a fortnight — and they are a PROMISE the shop makes, so they live here as
- * one table he can correct rather than inside a sentence. Counted from dispatch, not from the order:
- * the days between confirming and handing the parcel to the courier are his, and the courier's clock
+ * one table Dekito can correct rather than inside a sentence. Counted from dispatch, not from the order:
+ * the days between confirming and handing the parcel to the courier are Dekito's, and the courier's clock
  * only starts at the counter.
  */
 // WIDER THAN THE COURIER'S OWN FIGURES, on purpose. Dekito, 6 Oct 2026: "dikasih gap lebih jauh aja biar

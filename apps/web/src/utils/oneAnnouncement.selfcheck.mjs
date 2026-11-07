@@ -1,6 +1,6 @@
 // `node src/utils/oneAnnouncement.selfcheck.mjs`
 //
-// Screenshot from Dekito's phone, 2026-09-21 09.33: he taps "Tambah ke Keranjang" on L'iris and gets
+// Screenshot from Dekito's phone, 2026-09-21 09.33: Dekito taps "Tambah ke Keranjang" on L'iris and gets
 // told twice. The sheet slides up — "Masuk ke keranjang · L'iris · 30 ml — Rp 279.000" — and a toast
 // lands on top of it saying the same sentence with less in it. A toast sits at the bottom of the screen,
 // which is exactly where the sheet keeps "Lanjut belanja" and "Checkout": the second announcement covered

@@ -47,8 +47,8 @@ export const buildExportOrderData = ({
   if (!customerName.trim()) return { ok: false, reason: 'Isi nama pembelinya.', warnings: [], orderData: null };
   if (!contact.trim()) return { ok: false, reason: 'Isi kontak pembelinya — nomor WhatsApp atau email.', warnings: [], orderData: null };
   if (!deliveryAddress.trim()) return { ok: false, reason: 'Isi alamat kirimnya, lengkap dengan negara.', warnings: [], orderData: null };
-  // Shipping is DECIDED, never defaulted. Dekito sets the figure himself with the rate tables on the
-  // same screen as his reference (his decision, 2026-09-25), so an empty field means he has not decided
+  // Shipping is DECIDED, never defaulted. Dekito sets the figure by hand with the rate tables on the
+  // same screen as the reference (Dekito's decision, 2026-09-25), so an empty field means Dekito has not decided
   // yet — and a silent Rp 0 on an export order is the whole freight given away without anyone choosing
   // to. The other way out is the "quoted later" box, which is a decision too.
   if (!shippingSettled) {
@@ -60,7 +60,7 @@ export const buildExportOrderData = ({
     };
   }
 
-  // Lines still on the domestic price. NOT refused: Dekito is allowed to sell at whatever price he
+  // Lines still on the domestic price. NOT refused: Dekito is allowed to sell at whatever price was
   // agreed to. But it is the exact mistake the overseas tier exists to prevent, so it is named on the
   // screen and written into the order rather than passing silently.
   const domesticPriced = priced.filter((line) => !line.overseasPriceSet).map((line) => line.name);
@@ -103,7 +103,7 @@ export const buildExportOrderData = ({
       // The point of the whole exercise. Every message about this order is written from this field.
       clientContext: { shop: 'en' },
       // This order is written FOR someone else. Without this the customer upsert falls back to the
-      // signed-in account — Dekito's own row — and replaces his name, contact and address with the
+      // signed-in account — Dekito's own row — and replaces its name, contact and address with the
       // buyer's. It did exactly that on the first real attempt.
       skipCustomerRecord: true,
       notesLines: [

@@ -1,8 +1,8 @@
 // `node src/utils/theShopDoesNotChaseAWaybill.selfcheck.mjs`
 //
-// Dekito's decision, 2026-10-10, in his own words: "biar aja no resi udh aman semua itu."
+// Dekito's decision, 2026-10-10, verbatim: "biar aja no resi udh aman semua itu."
 //
-// The data agrees with him. Not one of the 35 orders on production carries a tracking_number — 13 of
+// The data agrees with Dekito. Not one of the 35 orders on production carries a tracking_number — 13 of
 // them 'shipped', 8 'completed' — over months of trading. The parcel goes out and the buyer is answered
 // on WhatsApp.
 //
@@ -20,7 +20,7 @@
 // All of it fired on every order, forever. An alarm that never stops is not an alarm, and a refusal that
 // always refuses is just a broken button.
 //
-// The rule now: the waybill is a field he MAY fill, never a thing the shop demands. This guard holds
+// The rule now: the waybill is a field Dekito MAY fill, never a thing the shop demands. This guard holds
 // both halves — nothing may chase it, and nothing may take the field away either.
 process.env.TZ = 'Asia/Jakarta';
 
@@ -115,7 +115,7 @@ const workflow = stripComments(readFileSync(join(root, 'utils', 'orderWorkflow.j
 const tasks = workflow.match(/export const ORDER_TASKS = \{([\s\S]*?)\n\};/);
 assert.ok(tasks, "could not find ORDER_TASKS — this guard's parse is broken, not the ladder");
 // The TITLES are what the card headlines, and none of them may ask for a number. "Simpan kurir/resi"
-// and "Cetak resi PDF" are helpers about things he does anyway — the printed label is also called a
+// and "Cetak resi PDF" are helpers about things Dekito does anyway — the printed label is also called a
 // resi — so the test is the ASK, not the word.
 const ASKS_FOR_A_WAYBILL = /(?:lengkapi|isi|minta|scan|paste)[^'"]{0,24}resi|nomor resi/i;
 const taskTitles = [...tasks[1].matchAll(/title: '([^']+)'/g)].map((match) => match[1]);
@@ -127,7 +127,7 @@ for (const title of taskTitles) {
   );
 }
 
-// ── 5. But the field is still his to fill ─────────────────────────────────────────────────────────
+// ── 5. But the field is still Dekito's to fill ────────────────────────────────────────────────────
 // "Stop chasing it" is not "take it away". Every screen that could save a waybill before still can, so
 // a number a courier does hand over has somewhere to go.
 const CAN_STILL_SAVE = {

@@ -287,8 +287,8 @@ for (const page of ['pages/CheckoutPage.jsx']) {
     `${page} computes the line total itself, so it has to say the word itself`);
 }
 
-// The sheet Dekito packs from names the gift whatever he called the vial product. Without this the only
-// thing marking it is a product name he chose, which nothing here can see.
+// The sheet Dekito packs from names the gift whatever the vial product is called. Without this the only
+// thing marking it is a product name Dekito chose, which nothing here can see.
 const label = read('utils', 'shippingLabelPdf.js');
 assert.match(label, /isFreeVialLine\(item\) \? ` \(\$\{FREE_VIAL_PRICE_LABEL\}\)` : ''/,
   'the shipping label must mark the gift line');

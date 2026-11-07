@@ -41,7 +41,7 @@ export const exportOrdersCsv = (orders = [], filename = 'orders.csv') => {
  *
  * Promise.all rejects on the FIRST failure, so a bulk action over five orders where the third fails told
  * the owner "Gagal mark paid massal" while four of them had in fact been marked paid — the other requests
- * were already in flight and still completed. He would reload, see the work apparently undone, and never
+ * were already in flight and still completed. Dekito would reload, see the work apparently undone, and never
  * learn which single order had failed.
  *
  * MobileOrdersPage already settled its one bulk action and counted the failures, with the reason written

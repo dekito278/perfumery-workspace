@@ -285,7 +285,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 <div className="flex flex-col gap-3 border-y border-ng-bone/15 py-5">
                   {/* One price, for the shop being read. In the English shop the Indonesian price and the
                       member/tier line are not shown at all: three prices on one screen left the reader to guess
-                      which was theirs, which is what Dekito saw on his own phone. */}
+                      which was theirs, which is what Dekito saw on a phone. */}
                   {exportPrice ? (
                     <InternationalPrice price={exportPrice} />
                   ) : (

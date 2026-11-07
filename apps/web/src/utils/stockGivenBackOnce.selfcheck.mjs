@@ -4,7 +4,7 @@
 //
 // orderService holds the flag that makes that true: `inventory_deducted`. Restoring the units and leaving
 // the flag up means the order still claims to hold stock it no longer holds, and the next thing that ends
-// that order restores the same units a second time — Dekito is then told he has bottles he does not have,
+// that order restores the same units a second time — Dekito is then told of bottles the shop does not have,
 // which is the direction that oversells.
 //
 // markOrderInventoryRestored exists for this and says so in its own comment. Two of the three paths that

@@ -9,7 +9,7 @@ import { usdPriceFor } from '@/utils/usdPrice.js';
  *
  * Dekito's decision, 2026-09-16: in the English shop this is the ONLY price shown, and the cart is not
  * offered. A page that carried the Indonesian price, a struck-through retail price and an international
- * price at once left the reader to guess which of the three was theirs — he saw all three on one screen
+ * price at once left the reader to guess which of the three was theirs — Dekito saw all three on one screen
  * and said so.
  *
  * Dollars lead because that is the number a foreign buyer can judge, and since 2026-09-24 it is also the
@@ -27,7 +27,7 @@ import { usdPriceFor } from '@/utils/usdPrice.js';
 // what lands in the account is never less than the rupiah price.
 //
 // Printed side by side with no label, that cushion reads as the opposite. Dekito did the division
-// himself on 1 Oct 2026 — "kok ini 1.260.000 sih padahal saya cek 1.4 an" — and a buyer abroad would
+// personally on 1 Oct 2026 — "kok ini 1.260.000 sih padahal saya cek 1.4 an" — and a buyer abroad would
 // reach the same place and a worse conclusion: US$80 is ~Rp 1.43 juta at the real rate, so the shop
 // looks like it is quoting 1,26 and charging 1,43.
 //

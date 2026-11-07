@@ -118,7 +118,7 @@ const drawShippingLabel = async (doc, order) => {
   const publicTrackingUrl = buildPublicTrackingUrl(order.orderNumber);
   const publicTrackingQr = await createTrackingQrDataUrl(publicTrackingUrl);
   // The gift is named out loud rather than left to whatever the vial product happens to be called. This
-  // sheet is what Dekito packs from; a line he reads as a sale is a bottle that goes in the box wrong.
+  // sheet is what Dekito packs from; a line read as a sale is a bottle that goes in the box wrong.
   const itemSummary = (order.items || [])
     .map((item) => `${item.name} x${item.quantity}${item.size ? ` / ${item.size}` : ''}${isFreeVialLine(item) ? ` (${FREE_VIAL_PRICE_LABEL})` : ''}`)
     .join('\n');

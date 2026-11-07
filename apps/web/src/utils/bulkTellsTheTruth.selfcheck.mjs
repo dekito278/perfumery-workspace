@@ -4,7 +4,7 @@
 //
 // Eight of the nine used Promise.all, which rejects on the FIRST failure. Mark five orders paid, let the third
 // fail, and the owner is told "Gagal mark paid massal" — while four of them ARE paid, because the other
-// requests were already in flight and still completed. He reloads, sees work he was told had failed, and
+// requests were already in flight and still completed. Dekito reloads, sees work reported as failed, and
 // never learns which single order needs attention.
 //
 // MobileOrdersPage had already settled ONE of its two bulk actions and counted the failures, with the

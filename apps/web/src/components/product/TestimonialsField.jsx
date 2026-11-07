@@ -37,7 +37,7 @@ const TestimonialsField = ({ value, onChange, mobile = false }) => {
         </span>
       </div>
 
-      {/* Said once, here, rather than trusted to memory: these are pasted, never written for him. */}
+      {/* Said once, here, rather than trusted to memory: these are pasted, never written for Dekito. */}
       <p className="text-[10px] leading-relaxed text-stone-400">
         Tempel kalimat yang benar-benar dikirim pembeli lewat WhatsApp atau Instagram. Tanpa bintang,
         tanpa rata-rata. Nama dan kota boleh dikosongkan kalau dia tidak mau dicantumkan — kutipannya

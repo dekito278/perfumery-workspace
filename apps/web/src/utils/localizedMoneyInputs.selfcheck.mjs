@@ -26,7 +26,7 @@ walk(srcRoot);
 // What counts as money the owner types with separators. The first version of this list named only
 // price/harga/cost/amount/subtotal/discount/diskon/ongkir — and "ongkir" is the Indonesian word, so the
 // one field on this site where Dekito types a freight charge BY HAND was invisible to it: Studio ->
-// Ekspor calls it `manualShipping`. He types 1.709.000 (the DHL one-kilo rate to the US), the browser
+// Ekspor calls it `manualShipping`. Dekito types 1.709.000 (the DHL one-kilo rate to the US), the browser
 // reads the dots as decimal points and Math.round hands the order Rp 2.
 const MONEY = /price|harga|cost|amount|subtotal|discount|diskon|ongkir|shipping|fee|biaya|tarif|rupiah|idr|nominal/i;
 

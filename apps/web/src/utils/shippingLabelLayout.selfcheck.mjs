@@ -224,8 +224,8 @@ assert.ok(
 }
 
 // --- the gift is named on the sheet Dekito packs from -------------------------------------------------
-// Rendered, not argued about. Without this the only thing marking a free vial is whatever he happened to
-// call the vial product, and nothing in this repository can see that name. A line he reads as a sale is a
+// Rendered, not argued about. Without this the only thing marking a free vial is whatever Dekito happened to
+// call the vial product, and nothing in this repository can see that name. A line read as a sale is a
 // bottle that goes into the box wrong.
 const gift = await readLabel({
   orderNumber: 'DKT-GIFT-0001',

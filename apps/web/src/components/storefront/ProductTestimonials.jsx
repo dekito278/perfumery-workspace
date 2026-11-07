@@ -11,7 +11,7 @@ import { normalizeTestimonials, testimonialAttribution } from '@/utils/productTe
  * bought. A shop with little to show says less, rather than framing the emptiness.
  *
  * These are not reviews. No stars, no average, no form, no login, no moderation queue — Dekito pastes
- * sentences people really sent him on WhatsApp and Instagram. Nothing in this repo may generate one;
+ * sentences people really sent the shop on WhatsApp and Instagram. Nothing in this repo may generate one;
  * a fabricated customer sentence is a fake review whatever it is called.
  *
  * The quotes are printed as written, in whatever language they were written in, in both shops. A buyer's
