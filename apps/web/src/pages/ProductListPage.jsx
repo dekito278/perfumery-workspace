@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { featuredProducts } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import {
   deleteCustomProduct,
@@ -61,7 +60,7 @@ const ProductListPage = () => {
     try {
       // deleteCustomProduct removes the orphaned images itself, from the row it actually deleted.
       await deleteCustomProduct(product.id);
-      toast.success('Produk dihapus dari katalog custom');
+      toast.success('Produk dihapus dari katalog');
     } catch (error) {
       toast.error(error.message || 'Gagal menghapus produk');
     }
@@ -71,18 +70,18 @@ const ProductListPage = () => {
     <AuthenticatedLayout>
       <Helmet>
         <title>Daftar produk - Solivagant</title>
-        <meta name="description" content="Kelola produk custom storefront Solivagant." />
+        <meta name="description" content="Kelola produk katalog Solivagant." />
       </Helmet>
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="dashboard-hero">
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <PackagePlus className="h-4 w-4 text-primary" />
-              E-commerce
+              Toko
             </div>
             <h1 className="text-3xl font-bold sm:text-4xl">Daftar produk</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Lihat dan kelola produk custom katalog. Buat produk baru, atur kategori, atau cek inventory dari sini.
+              Semua parfum di katalog. Tambah produk, isi harga member sekaligus, tandai kapan dipakai, atur kategori, atau cek stok dari sini.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button className="h-11 rounded-2xl gap-2 px-5" onClick={() => navigate('/studio/products/new')}>
@@ -103,14 +102,16 @@ const ProductListPage = () => {
               </Button>
               <Button variant="outline" className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5" onClick={() => navigate('/studio/products/inventory')}>
                 <AlertTriangle className="h-4 w-4" />
-                Inventory
+                Stok &amp; riwayat
               </Button>
             </div>
           </div>
           <div className="dashboard-hero-panel">
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">All catalog products</span><strong>{products.length}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Produk seed</span><strong>{featuredProducts.length}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Produk custom</span><strong>{customProducts.length}</strong></div>
+            {/* "Produk seed 6" sat beside "All catalog products 20" and "Produk custom 20": the seed is a
+                static fallback list that is not in the catalogue at all, so the three never added up. */}
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total produk</span><strong>{customProducts.length}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Live di toko</span><strong>{productStatusCounts.live || 0}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Hampir habis</span><strong>{productStatusCounts.lowstock || 0}</strong></div>
           </div>
         </div>
 
@@ -118,7 +119,7 @@ const ProductListPage = () => {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold">Daftar produk</h2>
-              <p className="mt-1 text-sm font-semibold text-muted-foreground">Cek status publish, alasan tidak muncul, dan link publik produk.</p>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">Status tiap produk, alasannya kalau belum tampil, dan alamatnya di toko.</p>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -164,15 +165,16 @@ const ProductListPage = () => {
                             </span>
                           ))}
                         </div>
-                        <p className="mt-2 text-xs font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock} left / min {getProductRestockThreshold(product)}</p>
-                        <p className="mt-1 break-all text-[10px] font-bold uppercase text-muted-foreground">{publicPath || 'Slug belum tersedia'}</p>
+                        <p className="mt-2 text-xs font-bold uppercase text-amber-700">{product.category} · {product.price} · stok {product.stock} · batas menipis {getProductRestockThreshold(product)}</p>
+                        {canOpenPublic ? <p className="mt-1 break-all text-[10px] font-bold uppercase text-muted-foreground">{publicPath}</p> : null}
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                      <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => previewProduct(product)} disabled={!canOpenPublic} aria-label={`Preview ${product.name}`}><ExternalLink className="h-4 w-4" /></Button>
-                      <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => copyProductLink(product)} disabled={!canOpenPublic} aria-label={`Salin link ${product.name}`}><Copy className="h-4 w-4" /></Button>
-                      <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => editProduct(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4" /></Button>
-                      <Button type="button" size="icon" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDelete(product)} aria-label={`Hapus ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
+                    {/* Named, not icons alone: four identical outline squares, one of them a delete. */}
+                    <div className="flex shrink-0 flex-col items-stretch gap-2">
+                      <Button type="button" variant="outline" className="h-10 justify-start gap-2 rounded-2xl bg-white px-3 text-xs font-bold" onClick={() => editProduct(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4" />Edit</Button>
+                      <Button type="button" variant="outline" className="h-10 justify-start gap-2 rounded-2xl bg-white px-3 text-xs font-bold" onClick={() => previewProduct(product)} disabled={!canOpenPublic} aria-label={`Lihat ${product.name} di toko`}><ExternalLink className="h-4 w-4" />Lihat di toko</Button>
+                      <Button type="button" variant="outline" className="h-10 justify-start gap-2 rounded-2xl bg-white px-3 text-xs font-bold" onClick={() => copyProductLink(product)} disabled={!canOpenPublic} aria-label={`Salin link ${product.name}`}><Copy className="h-4 w-4" />Salin link</Button>
+                      <Button type="button" variant="outline" className="h-10 justify-start gap-2 rounded-2xl border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700" onClick={() => handleDelete(product)} aria-label={`Hapus ${product.name}`}><Trash2 className="h-4 w-4" />Hapus</Button>
                     </div>
                   </div>
                 </article>
@@ -180,14 +182,14 @@ const ProductListPage = () => {
             })}
             {!customProducts.length ? (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-6 text-center">
-                <h3 className="font-bold">Belum ada produk custom</h3>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">Klik "Tambah produk" untuk mempublish produk ke katalog.</p>
+                <h3 className="font-bold">Belum ada produk</h3>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">Klik "Tambah produk" untuk menambahkan produk ke katalog.</p>
               </div>
             ) : null}
             {customProducts.length && !filteredCustomProducts.length ? (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-6 text-center">
                 <h3 className="font-bold">Tidak ada produk di status ini</h3>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">Pilih filter lain untuk melihat produk custom.</p>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">Pilih filter lain untuk melihat produk lainnya.</p>
               </div>
             ) : null}
           </div>

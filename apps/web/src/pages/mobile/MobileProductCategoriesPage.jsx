@@ -67,13 +67,19 @@ const MobileProductCategoriesPage = () => {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-[#1f2937]">Kategori produk</h2>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Buat kategori sendiri, lalu pilih di produk.</p>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Kategori = keluarga aroma untuk filter katalog. Label LIMITED dan RESERVE pakai centang di form produk.</p>
             </div>
             <Tags className="h-5 w-5 text-amber-700" />
           </div>
           <form onSubmit={handleCategorySubmit} className="mt-3 grid gap-2">
-            <input value={categoryForm.name} onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))} placeholder="Limited, Regular, Gift set..." className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-            <input value={categoryForm.description} onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))} placeholder="Deskripsi opsional" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <label className="grid gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8b949e]">Nama kategori</span>
+              <input value={categoryForm.name} onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))} placeholder="Contoh: Chypre, Musk" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </label>
+            <label className="grid gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8b949e]">Catatan (opsional)</span>
+              <input value={categoryForm.description} onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))} placeholder="Hanya terlihat di Studio" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </label>
             <Button type="submit" className="h-11 rounded-2xl" disabled={savingCategory}>{savingCategory ? 'Menyimpan...' : 'Tambah kategori'}</Button>
           </form>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -85,14 +91,14 @@ const MobileProductCategoriesPage = () => {
               // and now surfaces as a confusing failure (audit round 9).
               const canDelete = category.source === 'custom' && usageCount === 0;
               return (
-                <span key={category.name} className="inline-flex items-center gap-2 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] px-3 py-2 text-[11px] font-bold text-[#344054]">
+                <span key={category.name} className="inline-flex min-h-[44px] items-center gap-2 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] py-1 pl-3 pr-1 text-[11px] font-bold text-[#344054]">
                   {category.name}
-                  <span className="text-[10px] text-[#8b949e]">{usageCount}</span>
+                  <span className="text-[10px] text-[#8b949e]">{usageCount} produk</span>
                   {canDelete ? (
-                    <button type="button" onClick={() => handleCategoryDelete(category)} className="text-rose-600" aria-label={`Hapus ${category.name}`}>
-                      <Trash2 className="h-3.5 w-3.5" />
+                    <button type="button" onClick={() => handleCategoryDelete(category)} className="grid h-9 w-9 place-items-center rounded-xl text-rose-600" aria-label={`Hapus kategori ${category.name}`}>
+                      <Trash2 className="h-4 w-4" />
                     </button>
-                  ) : null}
+                  ) : <span className="w-2" aria-hidden="true" />}
                 </span>
               );
             })}

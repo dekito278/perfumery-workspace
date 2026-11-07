@@ -56,20 +56,20 @@ const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview,
                 </span>
               ))}
             </div>
-            <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock} / min {getProductRestockThreshold(product)}</p>
-            <p className="mt-1 break-all text-[10px] font-bold uppercase text-[#8b949e]">{publicPath || 'Slug belum tersedia'}</p>
+            <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} · {product.price} · stok {product.stock} · batas menipis {getProductRestockThreshold(product)}</p>
+            {canOpenPublic ? <p className="mt-1 break-all text-[10px] font-bold uppercase text-[#8b949e]">{publicPath}</p> : null}
             {formulaId ? (
               <button
                 type="button"
                 onClick={() => onOpenBatch(formulaId)}
                 className="mobile-interactive mobile-pressable mt-2 text-[10px] font-bold uppercase text-editorial-charcoal"
               >
-                View source batch
+                Buka batch sumber
               </button>
             ) : null}
             {batchDetails.movement ? (
               <div className="mt-1 text-[10px] font-bold uppercase text-[#6b7280]">
-                {batchDetails.movement} / initial {batchDetails.initialStock || 0}
+                {batchDetails.movement} · stok awal {batchDetails.initialStock || 0}
               </div>
             ) : null}
             {batchDetails.sku ? (
@@ -86,11 +86,11 @@ const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview,
         </div>
         {/* One row, not a 4-high column: the column made every card ~2 screens tall and put the red
             delete button directly under edit, one thumb-slip apart (UI/UX pass 2026-09-07). */}
-        <div className="flex items-center gap-2">
-          <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => onPreview(product)} disabled={!canOpenPublic} aria-label={`Preview ${product.name}`}><ExternalLink className="h-4 w-4" /></Button>
-          <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => onCopyLink(product)} disabled={!canOpenPublic} aria-label={`Salin link ${product.name}`}><Copy className="h-4 w-4" /></Button>
-          <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white px-3 text-xs font-bold" onClick={() => onEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="mr-1.5 h-4 w-4" />Edit</Button>
-          <Button type="button" size="icon" variant="outline" className="ml-auto h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => onDelete(product)} aria-label={`Hapus ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
+          <Button type="button" variant="outline" className="h-10 min-w-0 gap-1.5 rounded-2xl bg-white px-2 text-xs font-bold" onClick={() => onEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4 shrink-0" />Edit</Button>
+          <Button type="button" variant="outline" className="h-10 min-w-0 gap-1.5 rounded-2xl bg-white px-2 text-xs font-bold" onClick={() => onPreview(product)} disabled={!canOpenPublic} aria-label={`Lihat ${product.name} di toko`}><ExternalLink className="h-4 w-4 shrink-0" />Lihat</Button>
+          <Button type="button" variant="outline" className="h-10 min-w-0 gap-1.5 rounded-2xl bg-white px-2 text-xs font-bold" onClick={() => onCopyLink(product)} disabled={!canOpenPublic} aria-label={`Salin link ${product.name}`}><Copy className="h-4 w-4 shrink-0" />Link</Button>
+          <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => onDelete(product)} aria-label={`Hapus ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
         </div>
       </div>
     </article>
@@ -131,7 +131,7 @@ const MobileProductListPage = () => {
   };
 
   const handleDelete = async (product) => {
-    if (!await confirmAction({ message: `Hapus produk "${product.name || product.id}"?`, destructive: true })) return;
+    if (!await confirmAction({ message: `Hapus produk "${product.name || product.id}" dari katalog? Tindakan ini tidak bisa dibatalkan.`, destructive: true })) return;
     try {
       await deleteCustomProduct(product.id);
       toast.success('Produk dihapus');
@@ -146,7 +146,7 @@ const MobileProductListPage = () => {
         <title>Produk - Solivagant</title>
       </Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title="Produk" subtitle={`${products.length} item katalog`} eyebrow="Admin Studio" action={<PackagePlus className="h-5 w-5 text-amber-700" />} />
+        <MobileTopBar title="Produk" subtitle={`${customProducts.length} produk · ${productStatusCounts.live || 0} live di toko`} eyebrow="Admin Studio" action={<PackagePlus className="h-5 w-5 text-amber-700" />} />
 
         <div className="grid grid-cols-2 gap-2">
           <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => navigate('/mobile/studio/products/new')}>
@@ -166,7 +166,7 @@ const MobileProductListPage = () => {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Daftar produk</h2>
-            <span className="text-xs font-bold text-amber-700">{filteredCustomProducts.length} / {customProducts.length} produk</span>
+            <span className="text-xs font-bold text-amber-700">{filteredCustomProducts.length} dari {customProducts.length} produk</span>
           </div>
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {PRODUCT_LIST_FILTERS.map((filter) => (
@@ -195,14 +195,14 @@ const MobileProductListPage = () => {
           ))}
           {!customProducts.length ? (
             <div className="mobile-card p-5 text-center">
-              <h3 className="font-bold text-[#1f2937]">Belum ada produk custom</h3>
+              <h3 className="font-bold text-[#1f2937]">Belum ada produk</h3>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">Ketuk "Tambah produk" untuk menerbitkannya ke katalog.</p>
             </div>
           ) : null}
           {customProducts.length && !filteredCustomProducts.length ? (
             <div className="mobile-card p-5 text-center">
               <h3 className="font-bold text-[#1f2937]">Tidak ada produk di status ini</h3>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Pilih filter lain untuk melihat produk custom.</p>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Pilih filter lain untuk melihat produk lainnya.</p>
             </div>
           ) : null}
         </section>

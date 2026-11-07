@@ -4,8 +4,9 @@ import { AlertTriangle, Save } from 'lucide-react';
 import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { listTierPricesForProduct, saveTierPrice } from '@/services/tierPricingService.js';
-import { tierPriceIsNotBelowRetail } from '@/utils/memberPriceFill.js';
+import { DEFAULT_MEMBER_DISCOUNT_PERCENT, DEFAULT_OVERSEAS_MULTIPLIER } from '@/utils/memberPriceFill.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
+import { tierCellKey as cellKey, tierEditorRows, tierEmptyMeaning, tierPriceWarning } from '@/utils/tierEditorRows.js';
 
 // Retail is deliberately absent: it stays on the product itself, so there is never a second copy of it
 // to drift. Empty here means "no tier price", which falls back to retail — see src/utils/tierPrice.js.
@@ -15,7 +16,6 @@ const EDITABLE_TIERS = [
   { key: 'overseas', label: 'Luar negeri' },
 ];
 
-const cellKey = (variantId, tier) => `${variantId}|${tier}`;
 const asCellValue = (price) => (Number(price) > 0 ? Number(price) : '');
 
 const buildCells = (rows) => {
@@ -70,23 +70,9 @@ const TierPriceEditor = ({ productId = '', variants = [], compact = false }) => 
   }, [productId]);
 
   // Row '' applies to every size; a row with a variant id overrides it for that size only. Same merge
-  // the order endpoint does, so what is shown here is what a buyer is charged.
-  //
-  // With a single size those two rows mean the same bottle, so only one is drawn — and it is the '' row,
-  // labelled with the size. That keeps anything already saved visible instead of hiding a price that is
-  // still being applied, and it stops the form asking the same question twice.
-  const rows = useMemo(() => {
-    const sizes = variants.map((variant) => ({
-      id: String(variant.id || ''),
-      label: variant.size || variant.id || 'Varian',
-      retail: Number(variant.priceNumber || 0),
-    })).filter((row) => row.id);
-
-    if (sizes.length <= 1) {
-      return [{ id: '', label: sizes[0]?.label || 'Semua ukuran', retail: sizes[0]?.retail || 0 }];
-    }
-    return [{ id: '', label: 'Semua ukuran', retail: 0 }, ...sizes];
-  }, [variants]);
+  // the order endpoint does, so what is shown here is what a buyer is charged. Which rows are drawn is
+  // decided from what is SAVED, so clearing a box while typing does not make its row disappear.
+  const rows = useMemo(() => tierEditorRows(variants, saved), [variants, saved]);
 
   const dirtyKeys = useMemo(
     () => Object.keys({ ...saved, ...draft }).filter((key) => (draft[key] ?? '') !== (saved[key] ?? '')),
@@ -169,7 +155,13 @@ const TierPriceEditor = ({ productId = '', variants = [], compact = false }) => 
                 // Mirror of the export column's "Di bawah harga retail" on the curation screen: member
                 // and reseller exist to be CHEAPER, so one at or above retail charges a signed-in buyer
                 // more than a stranger. Flagged, not blocked — the number is Dekito's to set.
-                const notBelow = tierPriceIsNotBelowRetail(row.retail, draft[cellKey(row.id, tier.key)]);
+                //
+                // The export price is the opposite: it exists to be ABOVE retail, so the member rule painted
+                // every correct export price red the day those prices first became visible here (they were
+                // hidden until 2026-11-08). It gets the curation screen's own check instead.
+                const value = draft[cellKey(row.id, tier.key)];
+                const warning = tierPriceWarning(tier.key, row.retail, value);
+                const notBelow = Boolean(warning);
                 return (
                   <label key={tier.key} className="grid gap-1">
                     <span className="text-[10px] font-bold uppercase text-muted-foreground">{tier.label}</span>
@@ -177,11 +169,11 @@ const TierPriceEditor = ({ productId = '', variants = [], compact = false }) => 
                       value={draft[cellKey(row.id, tier.key)] ?? ''}
                       onChange={(value) => setCell(row.id, tier.key, value)}
                       disabled={disabled}
-                      placeholder="Kosong = retail"
+                      placeholder={tierEmptyMeaning(row.id, tier.key, draft)}
                       className={`${inputClass}${notBelow ? ' border-destructive text-destructive' : ''}`}
                     />
                     {notBelow ? (
-                      <span className="text-[11px] font-bold text-destructive">Tidak di bawah harga retail</span>
+                      <span className="text-[11px] font-bold text-destructive">{warning}</span>
                     ) : null}
                   </label>
                 );
@@ -192,8 +184,13 @@ const TierPriceEditor = ({ productId = '', variants = [], compact = false }) => 
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* The automation in autoTierPrices.js runs on every product save, so an emptied member or export
+            box does not stay empty: the next save writes the rule's price back. Saying "empty = retail"
+            without that was a promise the next save broke. */}
         <p className="text-[11px] font-semibold text-muted-foreground">
-          Disimpan terpisah dari tombol Simpan produk. Kosongkan isian untuk kembali ke harga retail.
+          Punya tombol simpan sendiri, terpisah dari Simpan produk. Member (−{DEFAULT_MEMBER_DISCOUNT_PERCENT}%) dan
+          luar negeri ({String(DEFAULT_OVERSEAS_MULTIPLIER).replace('.', ',')}× retail) terisi otomatis setiap kali
+          produk disimpan. Angka yang kamu ubah sendiri tidak ditimpa, tapi isian yang dikosongkan terisi lagi.
         </p>
         <Button
           type="button"

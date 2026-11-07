@@ -88,7 +88,7 @@ const TestimonialsField = ({ value, onChange, mobile = false }) => {
         <button
           type="button"
           onClick={addRow}
-          className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed font-bold text-stone-600 ${pad}`}
+          className={`flex min-h-[44px] w-full items-center justify-center gap-2 rounded-2xl border border-dashed font-bold text-stone-600 ${pad}`}
         >
           <Plus className="h-4 w-4" />
           Tambah kutipan

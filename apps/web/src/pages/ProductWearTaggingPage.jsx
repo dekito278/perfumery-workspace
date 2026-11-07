@@ -15,7 +15,7 @@ const ProductWearTaggingPage = () => {
       <div className="mx-auto grid w-full max-w-4xl gap-6 p-6">
         <div className="grid gap-2">
           <Button variant="ghost" className="w-fit gap-2 px-0" onClick={() => navigate('/studio/products')}>
-            <ArrowLeft className="h-4 w-4" /> Produk
+            <ArrowLeft className="h-4 w-4" /> Daftar produk
           </Button>
           <h1 className="text-2xl font-bold text-editorial-charcoal">Tandai kapan dipakai</h1>
           <p className="text-sm text-muted-foreground">
