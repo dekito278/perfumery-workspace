@@ -12,6 +12,14 @@
 // /api/shipping/destinations keeps working through a rewrite, so no caller moved at all.
 import { Buffer } from 'node:buffer';
 import process from 'node:process';
+import { clientAddress, createRateLimit } from '../../src/utils/requestRateLimit.js';
+
+// A person typing an address searches a few times a second at most, and picks a courier a few times a
+// checkout. These ceilings are far above that and far below a script; api/orders/create.js asks once
+// per order, from Vercel's own address.
+const allowSearch = createRateLimit({ limit: 120, windowMs: 60_000 });
+const allowQuote = createRateLimit({ limit: 60, windowMs: 60_000 });
+const TOO_MANY = { message: 'Too many shipping requests. Wait a minute and try again.' };
 
 const DEFAULT_COURIERS = ['jnt', 'jne', 'pos', 'anteraja', 'ide'];
 
@@ -130,6 +138,10 @@ const normalizeDestination = (item) => ({
 export default async function handler(request, response) {
   // GET is the destination search; POST is the rate quote. Two jobs, one function, one ceiling.
   if (request.method === 'GET') {
+    if (!allowSearch(clientAddress(request))) {
+      response.setHeader('Retry-After', '60');
+      return jsonResponse(response, 429, TOO_MANY);
+    }
 
     const apiKey = String(process.env.RAJAONGKIR_API_KEY || '').trim();
   if (!apiKey) {
@@ -181,6 +193,10 @@ export default async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
     return jsonResponse(response, 405, { message: 'Method not allowed' });
+  }
+  if (!allowQuote(clientAddress(request))) {
+    response.setHeader('Retry-After', '60');
+    return jsonResponse(response, 429, TOO_MANY);
   }
 
   const apiKey = String(process.env.RAJAONGKIR_API_KEY || '').trim();
