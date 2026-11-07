@@ -14,6 +14,7 @@ import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import {
   getJournalCategoryLabel,
+  getJournalCategoryShopLabel,
   getJournalPublicPath,
   getPublishedJournalPosts,
   JOURNAL_POSTS_CHANGED_EVENT,
@@ -110,6 +111,8 @@ const PublicJournalPage = () => {
   // category they are standing in. Falling back to All beats showing an empty grid under a tab that is
   // no longer on screen.
   const effectiveCategory = categories.includes(activeCategory) ? activeCategory : JOURNAL_ALL_TAB;
+  // Tabs are keyed, filtered and addressed by the Studio label; only the words on them follow the shop.
+  const tabName = (label) => getJournalCategoryShopLabel(journalCategories.find((category) => category.label === label)?.value, t);
 
   useEffect(() => { setVisibleCount(9); }, [activeCategory]);
 
@@ -126,7 +129,7 @@ const PublicJournalPage = () => {
   return (
     <>
       <Helmet>
-        <title>{effectiveCategory === 'All' ? t("journal.tab") : `${effectiveCategory} — ${t("journal.tab")}`}</title>
+        <title>{effectiveCategory === 'All' ? t("journal.tab") : `${tabName(effectiveCategory)} — ${t("journal.tab")}`}</title>
         <meta name="description" content={t("journal.meta")} />
         <link rel="canonical" href={journalCanonical} />
         <meta property="og:type" content="website" />
@@ -155,7 +158,7 @@ const PublicJournalPage = () => {
                   aria-current={effectiveCategory === cat ? 'page' : undefined}
                   className="ng-chip ng-filter"
                 >
-                  {cat === JOURNAL_ALL_TAB ? t("journal.all") : cat}
+                  {cat === JOURNAL_ALL_TAB ? t("journal.all") : tabName(cat)}
                   {error ? null : <span className="ng-chip__count">{tabCounts[cat] ?? 0}</span>}
                 </Link>
               ))}
@@ -203,7 +206,7 @@ const PublicJournalPage = () => {
                     {/* Without a cover the frame was an empty dark box printing the title again beside the title. */}
                     {featured.cover_image_url ? <JournalCoverFrame post={featured} className="ng-cover border-ng-bone/10" imageClassName="aspect-[5/4]" /> : null}
                     <span className="flex flex-col gap-5">
-                      <span className="ng-mono text-ng-ember">{getJournalCategoryLabel(featured.category)} · {formatDate(featured.published_at || featured.updated || featured.created, t('fmt.dateLocale'))}</span>
+                      <span className="ng-mono text-ng-ember">{getJournalCategoryShopLabel(featured.category, t)} · {formatDate(featured.published_at || featured.updated || featured.created, t('fmt.dateLocale'))}</span>
                       <span className="font-ng-display text-[40px] leading-[1.02] md:text-[60px]">{featured.title}</span>
                       <span className="max-w-[520px] text-[17px] leading-relaxed text-ng-dust">{getExcerpt(featured)}</span>
                       <span className="ng-mono inline-flex items-center gap-2">{t('journal.read')} <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
@@ -216,7 +219,7 @@ const PublicJournalPage = () => {
                   <div className="flex flex-col border-t border-ng-bone/30" data-reveal>
                     {remaining.map((article) => (
                       <Link key={article.id} to={getJournalPublicPath(article)} className="ng-journal-row">
-                        <span className="ng-mono text-ng-ash">{getJournalCategoryLabel(article.category)}</span>
+                        <span className="ng-mono text-ng-ash">{getJournalCategoryShopLabel(article.category, t)}</span>
                         <span className="font-ng-display text-[28px] leading-[1.1] md:text-[32px]">{article.title}</span>
                         <span className="text-[15px] leading-relaxed text-ng-dust">{getExcerpt(article)}</span>
                         <time className="ng-mono text-ng-ash">{formatDate(article.published_at || article.updated || article.created, t('fmt.dateLocale'))}</time>

@@ -365,7 +365,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <div className="flex flex-col gap-4">
               <p className="ng-mono m-0 text-ng-ash">{t('pdp.ngDetails')}</p>
               <ul className="ng-tags">
-                {isPlaceholderMood(product.mood) ? null : <li>{product.mood}</li>}
+                {/* Typed in Indonesian in Studio, with no English field: the English shop shows none rather than "TENANG". */}
+                {isPlaceholderMood(product.mood) || isInternational ? null : <li>{product.mood}</li>}
                 {product.concentration ? <li>{product.concentration}</li> : null}
                 {product.intensity ? <li>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</li> : null}
                 {(product.sizeVariants || []).length ? <li>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</li> : null}
