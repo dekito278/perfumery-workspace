@@ -26,9 +26,15 @@ const emptyOption = {
   value: '',
   price: 0,
   description: '',
+  labelEn: '',
+  descriptionEn: '',
   imageUrl: '',
   enabled: true,
 };
+
+// Named above each box. With placeholders alone, an option opened for editing read "30 ml / 30 ml / 0 /
+// …" and nothing said which box was the price.
+const fieldCaption = 'text-[10px] font-bold uppercase tracking-[0.12em] text-[#8b949e]';
 
 const MobileBespokeSettingsPage = () => {
   const settings = useBespokeSettings();
@@ -169,15 +175,37 @@ const MobileBespokeSettingsPage = () => {
             <Button type="button" variant="outline" className="h-9 rounded-2xl bg-white px-3 text-xs" onClick={resetForm} disabled={saving}>Baru</Button>
           </div>
           <div className="mt-3 grid gap-2">
-            <input value={form.label} onChange={(event) => updateField('label', event.target.value)} placeholder="Nama opsi" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-            <input value={form.value} onChange={(event) => updateField('value', event.target.value)} placeholder="Value internal, boleh sama dengan nama" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-            <LocalizedNumberInput value={form.price} onChange={(value) => updateField('price', value === '' ? 0 : value)} placeholder="Harga tambahan" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-            <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Deskripsi pendek untuk customer" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <label className="grid gap-1.5">
+              <span className={fieldCaption}>Nama opsi</span>
+              <input value={form.label} onChange={(event) => updateField('label', event.target.value)} placeholder="Contoh: 30 ml" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </label>
+            <label className="grid gap-1.5">
+              <span className={fieldCaption}>Kode internal</span>
+              <input value={form.value} onChange={(event) => updateField('value', event.target.value)} placeholder="Boleh sama dengan nama" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </label>
+            <label className="grid gap-1.5">
+              <span className={fieldCaption}>{activeCollection === 'bottleSizes' ? 'Harga (Rp)' : 'Harga tambahan (Rp)'}</span>
+              <LocalizedNumberInput value={form.price} onChange={(value) => updateField('price', value === '' ? 0 : value)} placeholder="0" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </label>
+            <label className="grid gap-1.5">
+              <span className={fieldCaption}>Deskripsi untuk pembeli</span>
+              <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Deskripsi pendek" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </label>
+            {/* Saved by bespokeSettingsService all along, and read by the English bespoke page, but there was
+                no box for either: the 30 ml description reached the /en shop through an SQL statement. */}
+            <label className="grid gap-1.5">
+              <span className={fieldCaption}>Nama (toko Inggris)</span>
+              <input value={form.labelEn || ''} onChange={(event) => updateField('labelEn', event.target.value)} placeholder="Kosong = sama dengan nama" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </label>
+            <label className="grid gap-1.5">
+              <span className={fieldCaption}>Deskripsi (toko Inggris)</span>
+              <textarea value={form.descriptionEn || ''} onChange={(event) => updateField('descriptionEn', event.target.value)} placeholder="Kosong = toko Inggris tidak menampilkan deskripsi" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </label>
             <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
               {form.imageUrl ? (
                 <div className="relative aspect-square overflow-hidden rounded-2xl border bg-white">
                   <img src={form.imageUrl} alt={form.label || 'Opsi bespoke'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
-                  <button type="button" onClick={() => updateField('imageUrl', '')} className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-rose-700" aria-label="Remove option image">
+                  <button type="button" onClick={() => updateField('imageUrl', '')} className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-rose-700" aria-label="Hapus gambar opsi">
                     <ImageOff className="h-4 w-4" />
                   </button>
                 </div>
@@ -191,7 +219,10 @@ const MobileBespokeSettingsPage = () => {
                 {uploadingImage ? 'Mengunggah...' : 'Upload gambar'}
                 <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage || saving} />
               </label>
-              <input value={form.imageUrl} onChange={(event) => updateField('imageUrl', event.target.value)} placeholder="Atau paste Image URL" className="mt-2 h-12 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+              <label className="mt-2 grid gap-1.5">
+                <span className={fieldCaption}>Atau alamat gambar</span>
+                <input value={form.imageUrl} onChange={(event) => updateField('imageUrl', event.target.value)} placeholder="https://…" className="h-12 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+              </label>
               <p className="mt-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
                 Untuk botol, cap, label, atau material. Upload otomatis dikompres ke WebP ringan.
               </p>

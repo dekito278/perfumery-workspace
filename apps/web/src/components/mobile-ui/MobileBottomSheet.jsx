@@ -141,6 +141,7 @@ const MobileBottomSheet = ({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent
         ref={contentRef}
+        handle={false}
         className={cn(
           'mobile-bottom-sheet-content border-[#e5e7eb]',
           inputFocused && 'mobile-bottom-sheet-keyboard-active'

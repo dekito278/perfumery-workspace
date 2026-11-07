@@ -584,7 +584,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
                 {label}
                 <LocalizedNumberInput
                   value={shippingPolicy[field]}
-                  onValueChange={(next) => setShippingPolicy((current) => ({ ...current, [field]: next }))}
+                  onChange={(next) => setShippingPolicy((current) => ({ ...current, [field]: next }))}
                   className="h-11 rounded-xl border border-editorial-charcoal/15 bg-white px-3 text-sm font-bold text-editorial-charcoal"
                 />
               </label>

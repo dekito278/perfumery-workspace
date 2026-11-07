@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import { cn } from '@/lib/utils.js';
+import { MOBILE_NAV_GROUP_PATHS, activeNavGroup, mostSpecificPath } from '@/utils/mobileNavActive.js';
 
 const navGroups = [
   {
@@ -29,7 +30,7 @@ const navGroups = [
     label: 'E-commerce',
     icon: ShoppingBag,
     description: 'Produk, order, customer, bespoke, dan tampilan home.',
-    paths: ['/mobile/studio/products', '/mobile/studio/orders', '/mobile/studio/fulfillment', '/mobile/studio/customers', '/mobile/studio/bespoke', '/mobile/studio/vouchers', '/mobile/studio/shipping', '/mobile/studio/export-shipping'],
+    paths: MOBILE_NAV_GROUP_PATHS.commerce,
     items: [
       { path: '/mobile/studio/products', label: 'Produk', helper: 'Kelola produk katalog', icon: PackagePlus },
       { path: '/mobile/studio/orders', label: 'Orders', helper: 'Antrean order dari checkout', icon: PackageCheck },
@@ -48,7 +49,7 @@ const navGroups = [
     label: 'Studio',
     icon: Beaker,
     description: 'Formula, material, dan workspace validasi.',
-    paths: ['/mobile/studio', '/mobile/journal', '/mobile/formulas', '/mobile/batches', '/mobile/raw-materials', '/mobile/validation', '/mobile/studio/site-images', '/mobile/studio/site-facts'],
+    paths: MOBILE_NAV_GROUP_PATHS.studio,
     items: [
       { path: '/mobile/studio', label: 'Dasbor', helper: 'Ringkasan Studio', icon: LayoutDashboard },
       { path: '/mobile/journal', label: 'Journal', helper: 'Artikel, accord, ide', icon: BookOpenText },
@@ -68,8 +69,10 @@ const MobileBottomNavigation = () => {
   const [openGroupId, setOpenGroupId] = useState(null);
   const openGroup = navGroups.find((group) => group.id === openGroupId);
 
-  const isPathActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
-  const isGroupActive = (group) => group.paths.some(isPathActive);
+  // Most specific wins — see utils/mobileNavActive.js for why "starts with" lit both tabs.
+  const activeGroupId = activeNavGroup(location.pathname);
+  const isGroupActive = (group) => group.id === activeGroupId;
+  const isItemActive = (item, items) => item.path === mostSpecificPath(location.pathname, items.map((entry) => entry.path));
 
   const navigateTo = (path) => {
     setOpenGroupId(null);
@@ -112,7 +115,7 @@ const MobileBottomNavigation = () => {
           <div className="grid grid-cols-2 gap-3 pb-2">
             {openGroup.items.map((item) => {
               const Icon = item.icon;
-              const active = isPathActive(item.path);
+              const active = isItemActive(item, openGroup.items);
               return (
                 <button
                   key={item.path}
