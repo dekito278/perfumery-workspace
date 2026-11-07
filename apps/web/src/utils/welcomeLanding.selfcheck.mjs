@@ -5,7 +5,7 @@
 // phone, which is where most cards get opened.
 //
 // Its copy claims two things about price, and both are held below: the member price, and that the shop
-// is already under the marketplace. The second one was checked — Dekito confirmed on 2026-09-15 that his
+// is already under the marketplace. The second one was checked — Dekito confirmed on 2026-09-15 that the brand's
 // marketplace listings sit above the shop's retail — and it stays a statement of policy rather than a
 // number or a name, for the reasons written beside the assertion. A landing page that lies once is not
 // believed twice, so what it may say is pinned rather than trusted.
@@ -49,7 +49,7 @@ assert.match(page, /<WhyBuyDirect \/>/, 'the reasons come from the one shared so
 assert.match(page, /useScrollReveal\(\)/, 'the page has a reveal container — WhyBuyDirect carries data-reveal');
 
 // --- 3. Price claims: true, as policy, never as a number or a name ---------------------------------------
-// Dekito confirmed on 2026-09-15 that his marketplace listings are priced above the shop's retail, so
+// Dekito confirmed on 2026-09-15 that the brand's marketplace listings are priced above the shop's retail, so
 // "below the marketplace" is a true statement of policy. It stays a statement: a percentage goes stale the
 // day a listing changes, and naming a competitor in a price claim is a legal and tone risk.
 assert.match(MESSAGES.id['welcome.lead'], /di bawah marketplace/,

@@ -10,7 +10,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * standing somewhere holding a phone, mildly worried about a parcel. Telling them to message us and then
  * leaving them to find the number in the footer is the same defect as a broken link, only politer.
  *
- * The draft names the order, so the first thing Dekito receives is the number he needs to answer.
+ * The draft names the order, so the first thing Dekito receives is the number needed to answer.
  *
  * Hidden when no WhatsApp number is configured: a button that opens a chat with nobody is worse than no
  * button (same rule as OverseasInquiryButton).

@@ -26,7 +26,7 @@ import { productCopyFor } from '@/utils/productCopy.js';
  * The English shop's cart: the same basket as the Indonesian one, priced in dollars, with the parcel's
  * destination, shipping and arrival next to it, and WhatsApp as the till.
  *
- * Dekito's decision, 2026-10-06, reversing his own of 18 Sep: "saya maunya orang luar itu masukin ke
+ * Dekito's decision, 2026-10-06, reversing an earlier one of 18 Sep: "saya maunya orang luar itu masukin ke
  * keranjang sama kayak di Indonesia — dari situ baru pilih negara dan kelihatan ongkir, baru order ke
  * WA." Between those dates the English shop had no cart at all and sold one bottle at a time by enquiry,
  * because the only cart was the domestic one — rupiah, a voucher box and an Indonesian courier list.

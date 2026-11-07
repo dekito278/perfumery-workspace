@@ -4,7 +4,7 @@
 // a rounded number, "approx. US$76" over the rupiah figure that would really be charged. That was honest
 // while the rupiah was the amount being charged.
 //
-// It stopped being honest on 2026-09-24, when Dekito decided international buyers pay in USD into his
+// It stopped being honest on 2026-09-24, when Dekito decided international buyers pay in USD into the
 // Jenius USD account. The dollar figure is now THE amount transferred — the rupiah underneath is the
 // reference, not the charge — and a headline marked "approx." on a page that then asks for an exact
 // transfer is the worst of both.

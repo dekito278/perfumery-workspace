@@ -3,8 +3,8 @@
 // The Telegram bot can write to the shop. These are the locks on it.
 //
 // Dekito was told what a writing bot costs — the endpoints hold SUPABASE_SERVICE_ROLE_KEY and bypass
-// every RLS rule, while Studio protects the same writes behind a login AND the TOTP factor he set up
-// on 6 September — and he chose it. So the decision is his and this file does not relitigate it. What
+// every RLS rule, while Studio protects the same writes behind a login AND the TOTP factor set up
+// on 6 September — and chose it. So the decision is Dekito's and this file does not relitigate it. What
 // it does is make sure the locks that made it acceptable cannot quietly come off.
 //
 // Every assertion here has a specific way of being wrong behind it. They are not style rules.

@@ -9,7 +9,7 @@
 //   * pyramid_placement is filled on 551 of 774 materials, so Dekito's own answer decides for those;
 //   * the remaining 223 are inferred.
 //
-// And the inference is not reliable. Withholding the column and comparing the guess against his own
+// And the inference is not reliable. Withholding the column and comparing the guess against Dekito's own
 // answer on those 551 materials: it agrees on 295 and DISAGREES ON 256 -- 46%.
 //
 // That reaches every screen that prints a pyramid balance, because topPercent / middlePercent /

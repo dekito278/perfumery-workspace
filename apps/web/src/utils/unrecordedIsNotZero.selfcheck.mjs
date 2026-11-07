@@ -40,8 +40,8 @@ assert.equal(typeof buildFallbackReferenceProfileFromRawMaterial, 'function',
 assert.equal(typeof deriveTopMiddleBaseTendency, 'function');
 // Pinned so that if the ceiling moves, whoever moves it is made to re-read what leans on it here rather
 // than silently changing what this guard tests. It moved from 10 to 11 on 2026-10-24: measured against
-// Dekito's own 549 placed materials, his longest top note lasts 11 hours and his shortest middle 12, so
-// 10 was cutting his own line in the wrong place. The assertions below use the constant symbolically and
+// Dekito's own 549 placed materials, the longest top note lasts 11 hours and the shortest middle 12, so
+// 10 was cutting Dekito's own line in the wrong place. The assertions below use the constant symbolically and
 // hold at either value — what they are really about is that an UNRECORDED life must not be read as 0.
 assert.equal(TOP_LIFE_HOURS_CEILING, 11, 'the top ceiling is the number the assertions below lean on');
 

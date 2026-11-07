@@ -1,7 +1,7 @@
 // `node src/utils/staleCatalog.selfcheck.mjs`
 //
-// Dekito opened his own shop through a VPN and read a product description that had been replaced two
-// days earlier. The server no longer held that text anywhere — it came out of his own phone's storage,
+// Dekito opened the shop through a VPN and read a product description that had been replaced two
+// days earlier. The server no longer held that text anywhere — it came out of the phone's own storage,
 // because the catalogue fetch failed and the app quietly served the last copy it had.
 //
 // The fallback is worth keeping: a stale shop beats a blank one on a bad connection. Being SILENT about

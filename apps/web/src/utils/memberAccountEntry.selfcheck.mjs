@@ -133,7 +133,7 @@ for (const door of bootDoors) {
 
 // --- 7. "Cek Order" is gone from everything a BUYER reads ----------------------------------------------
 // Derived rather than listed, because the phrase came back in a file this guard was not looking at.
-// The one survivor is an alert to DEKITO naming the Studio screen he has to open — "Cek Orders > Review
+// The one survivor is an alert to DEKITO naming the Studio screen to open — "Cek Orders > Review
 // bukti" is an instruction to the owner, not a name for the buyer's account.
 const TELLS_THE_OWNER_WHERE_TO_LOOK = new Set(['utils/orderNotifier.js']);
 const buyerSurfaces = [];

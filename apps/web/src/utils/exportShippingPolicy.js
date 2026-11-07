@@ -1,8 +1,8 @@
 // The two numbers in the international shipping rule that are POLICY rather than arithmetic.
 //
 // The rule itself does not change: the buyer pays the carrier's rate for the parcel's weight bracket,
-// in dollars, minus a fixed amount SOLIVAGANT carries. What Dekito decides is how much he carries, and
-// what rate he converts the carrier's rupiah at. Both were constants in a source file until now, which
+// in dollars, minus a fixed amount SOLIVAGANT carries. What Dekito decides is how much it carries, and
+// what rate the carrier's rupiah converts at. Both were constants in a source file until now, which
 // meant a change of policy needed me.
 //
 // The carrier's own sheet stays where it is — exportRates.js is transcribed data, not a decision, and

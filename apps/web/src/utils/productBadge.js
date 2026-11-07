@@ -110,7 +110,7 @@ export const catalogCategoryPills = (products = []) => {
     if (category && !pills.includes(category)) pills.push(category);
   }
   // Each badge's pill is kept alive by the badge: present while anything wears it, absent when nothing
-  // does — which is also why RESERVE costs nothing until Dekito flags his first bottle.
+  // does — which is also why RESERVE costs nothing until Dekito flags the first bottle.
   for (const badge of BADGES) {
     const already = pills.some((pill) => String(pill).trim().toLowerCase() === badge.key);
     if (!already && list.some((product) => wearsBadge(product, badge))) pills.push(badge.label);

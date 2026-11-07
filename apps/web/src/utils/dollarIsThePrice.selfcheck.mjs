@@ -4,10 +4,10 @@
 //
 // The two are not the same amount, on purpose: the rupiah is Dekito's export price and the dollar is
 // that price converted at a rate held BELOW the market and rounded UP to the next $5, so what lands in
-// his account is never less than the rupiah price.
+// the account is never less than the rupiah price.
 //
 // Printed side by side with no label, that cushion reads as the opposite. Dekito did the division
-// himself on 1 Oct 2026 — Animal Farm showed "US$80  Rp 1.260.000", and US$80 is about Rp 1.43 juta at
+// personally on 1 Oct 2026 — Animal Farm showed "US$80  Rp 1.260.000", and US$80 is about Rp 1.43 juta at
 // the real rate, so the shop looked like it was quoting one number and charging another. A buyer abroad
 // reaches the same arithmetic and a worse conclusion.
 //
@@ -66,8 +66,8 @@ assert.deepEqual(offenders, [],
   + `that makes the shop look like it quotes one number and charges another:\n  ${offenders.join('\n  ')}`);
 
 // --- and EVERY message that leaves the page carries the dollar -----------------------------------------
-// The draft is the buyer's own words back to Dekito; a rupiah figure in it is a number he has to explain
-// before he can quote a parcel.
+// The draft is the buyer's own words back to Dekito; a rupiah figure in it is a number that has to be explained
+// before a parcel can be quoted.
 //
 // This check used to look at ONE component and pin the exact expression it happened to contain. Both
 // mistakes cost something the same day. Scoped to that component it never saw the two STICKY BARS, which
@@ -102,7 +102,7 @@ assert.ok(drafters.length >= 2,
   `only ${drafters.length} draft surface(s) found (${drafters.join(', ')}) — the derivation broke`);
 assert.deepEqual(spellingTheirOwn, [],
   'these build a WhatsApp enquiry without going through quotedInternationalPrice, so an overseas buyer '
-  + `sends Dekito a number in a currency he never quoted:\n  ${spellingTheirOwn.join('\n  ')}`);
+  + `sends Dekito a number in a currency Dekito never quoted:\n  ${spellingTheirOwn.join('\n  ')}`);
 
 // --- and EVERY surface that PRINTS an international price prints it in dollars ---------------------
 // A third gap, found on a phone on 2026-10-06 while the destination picker was being tested: the sticky

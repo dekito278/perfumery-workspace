@@ -7,9 +7,9 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * reached.
  *
  * The fallback itself is worth keeping — a stale shop beats a blank one on a flaky connection. What was
- * not acceptable is that it was SILENT. Dekito opened his own shop through a VPN and read a product
+ * not acceptable is that it was SILENT. Dekito opened the shop through a VPN and read a product
  * description that had been replaced two days earlier; the server no longer held that text anywhere, so
- * nothing on the page could have told him. A buyer in the same position sees prices that may have moved
+ * nothing on the page could have said so. A buyer in the same position sees prices that may have moved
  * and adds them to a cart the order endpoint then prices properly at checkout.
  *
  * Deliberately not a blocker. The shop stays usable and the buyer gets to decide whether to trust what

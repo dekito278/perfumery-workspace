@@ -6,7 +6,7 @@
 // people it was built to show it to.
 //
 // The hard part is not the arithmetic. It is knowing when NOT to write. A price Dekito set deliberately
-// must survive a retail edit, or the automation quietly undoes his own decisions; a price this rule
+// must survive a retail edit, or the automation quietly undoes Dekito's own decisions; a price this rule
 // produced must follow the retail price, or it goes stale and a 10% member discount silently becomes 25%.
 //
 // So a saved tier price is treated as "still automatic" only while it equals what this rule would have

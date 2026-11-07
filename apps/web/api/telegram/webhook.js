@@ -1,8 +1,8 @@
 // The two-way half of the Telegram bot: Dekito sends a command, the shop answers.
 //
-// He asked for one that can also WRITE — stock, products, articles — was told plainly that these
+// Dekito asked for one that can also WRITE — stock, products, articles — was told plainly that these
 // endpoints hold SUPABASE_SERVICE_ROLE_KEY and bypass every RLS rule, that Studio protects the same
-// writes behind a login and a TOTP second factor, and that a chat message has neither. He chose it
+// writes behind a login and a TOTP second factor, and that a chat message has neither. Dekito chose it
 // anyway, so it is built to that scope with the strongest locks that do not take the feature away.
 //
 // The locks, all enforced before a single byte is read as a command:

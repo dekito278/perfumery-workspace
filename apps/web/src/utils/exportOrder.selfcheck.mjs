@@ -56,7 +56,7 @@ for (const [input, expected] of refusals) {
 }
 
 // --- 1b. And it refuses an order whose shipping nobody decided ----------------------------------------
-// Dekito sets the freight by hand, with the rate tables beside him. An empty field therefore means "not
+// Dekito sets the freight by hand, with the rate tables alongside. An empty field therefore means "not
 // decided yet", not "free": defaulting it to zero gives away Rp 670.500 on a single bottle to Los
 // Angeles without anyone choosing to. Zero is still allowed — it just has to be typed.
 const undecided = buildExportOrderData({ ...filled, shippingSettled: false, lines: [line()] });
@@ -68,7 +68,7 @@ assert.equal(buildExportOrderData({ ...filled, shippingSettled: undefined, lines
   'a caller that never mentions shipping must be refused, not defaulted to free');
 // A typed zero is a decision and is accepted.
 assert.equal(buildExportOrderData({ ...filled, lines: [line()], shippingTotal: 0 }).ok, true,
-  'a waived freight Dekito typed himself is a decision, and must be allowed');
+  'a waived freight Dekito typed in is a decision, and must be allowed');
 
 // --- 2. The buyer is charged the OVERSEAS price -------------------------------------------------------
 // The whole reason the overseas tier exists. A line at 260000 here is the Indonesian price reaching an
@@ -113,7 +113,7 @@ assert.match(orderService, /client_context: sanitizeClientContext\(clientContext
 //
 // Measured on the real database, on the first attempt: saveCustomer with no customer code resolves the
 // row from the SIGNED-IN account, and in Studio that is Dekito. Recording an order for a buyer in Kuala
-// Lumpur rewrote HIS OWN row — SOLI89523 came back reading "UJI TOKO EN" with a Malaysian address.
+// Lumpur rewrote DEKITO'S OWN row — SOLI89523 came back reading "UJI TOKO EN" with a Malaysian address.
 //
 // An order written for someone else writes no customer row at all. The buyer's details are on the order,
 // which is where every screen reads them from; a customer record belonging to the wrong person is worse
@@ -125,7 +125,7 @@ assert.match(service, /orderData\.skipCustomerRecord \? null : await saveCustome
   'createOrder ignores skipCustomerRecord, so the flag on the order data changes nothing');
 
 // --- 5. A domestic-priced line is named, not swallowed — and not refused either ------------------------
-// Dekito is allowed to sell at whatever price he agreed to. He is not allowed to do it by accident.
+// Dekito is allowed to sell at whatever price was agreed to. Never by accident.
 const mixed = buildExportOrderData({
   ...filled,
   lines: [line(), line({ name: 'Sudra', product: { slug: 'sudra', name: 'Sudra' }, overseasPriceSet: false, unitPrice: 240000 })],

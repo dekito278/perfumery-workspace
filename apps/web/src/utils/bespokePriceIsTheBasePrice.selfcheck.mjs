@@ -2,7 +2,7 @@
 //
 // Bespoke stopped being an itemised build on 2026-10-23. Dekito's instruction: the 30 ml price is
 // 569.000 — the same as a tier B bottle from the catalogue — and the bottle, cap and label choices
-// "gausah ada". 50 ml follows his own ratio between the two sizes (395.000 / 240.000 = 1,646), applied
+// "gausah ada". 50 ml follows Dekito's own ratio between the two sizes (395.000 / 240.000 = 1,646), applied
 // to the new base: 939.000.
 //
 // SWITCHING THE OPTIONS OFF IS A DATA CHANGE, AND THE DATA CHANGE ALONE WOULD HAVE BROKEN THE PHONE.

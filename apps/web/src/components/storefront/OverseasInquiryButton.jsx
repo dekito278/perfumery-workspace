@@ -28,7 +28,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // The export price belongs to the product, not to a guess about the reader. Detection decides who gets
   // the English panel; it must not decide who is allowed to know the price at all — a visitor abroad
   // behind a VPN, on a browser that reports no timezone, or simply misread would otherwise have to open
-  // WhatsApp to find out, and Dekito could never check his own export prices from Indonesia.
+  // WhatsApp to find out, and Dekito could never check the shop's export prices from Indonesia.
   //
   // Shown here only when the English panel is NOT already showing it, which is exactly the two cases
   // this component is used in: the panel passes english, everything else does not.
@@ -57,13 +57,13 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // And it quotes the price this page is actually offering for an overseas shipment. The callers pass a
   // price that is region-gated — null for an Indonesian reader — so it fell back to the DOMESTIC label,
   // and the draft said "the price I saw on your site: Rp 750.000" directly under a line reading "Harga
-  // untuk pengiriman ke luar negeri: Rp 2.630.000". Dekito then received an enquiry quoting a number he
+  // untuk pengiriman ke luar negeri: Rp 2.630.000". Dekito then received an enquiry quoting a number the shop
   // had not offered for that shipment. The export price is right here, ungated, for exactly this.
   // An ENQUIRY in both shops since 2026-10-06. It was the purchase in the English shop while that shop
   // had no cart; the purchase is the cart's "Order on WhatsApp" now, and this stays the question asked
   // beside it — which is why its draft carries the settled quote when there is one.
   // In dollars, for the same reason the panel shows dollars: this draft is the buyer's own words back to
-  // Dekito, and a rupiah figure in it is a number he then has to explain before he can quote a parcel.
+  // Dekito, and a rupiah figure in it then has to be explained before a parcel can be quoted.
   const quoted = quotedInternationalPrice(exportPrice, price);
   const message = buildOverseasDraft({
     t, name: product.name, size, price: quoted, quote: internationalDraft,

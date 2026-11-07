@@ -19,7 +19,7 @@
 //
 // Both halves derived, and neither from a list in this file: the actions come from the database's own CHECK
 // constraint, lifted from the newest migration that defines it, and the renderers are found on disk.
-// Dekito's English wording on the dashboard is his and is not touched; the rule here is only that every
+// The English wording on the dashboard is Dekito's and is not touched; the rule here is only that every
 // action has words, wherever it is shown.
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';

@@ -1153,7 +1153,7 @@ export const createOrder = async (orderData) => {
 
   // saveCustomer with no customer code resolves the row from the SIGNED-IN account, because that is what
   // the checkout wants: the buyer is the person at the keyboard. In Studio the person at the keyboard is
-  // Dekito, and the buyer is someone in Kuala Lumpur — so recording an export order overwrote HIS OWN
+  // Dekito, and the buyer is someone in Kuala Lumpur — so recording an export order overwrote DEKITO'S OWN
   // customer row with the buyer's name, contact and address. Measured, on the real one: SOLI89523 came
   // back reading "UJI TOKO EN" with a Malaysian address.
   //

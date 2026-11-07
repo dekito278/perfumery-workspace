@@ -26,7 +26,7 @@ export const createInitialRawMaterialFormData = () => ({
   // Dekito's own answer to where this material sits in the pyramid. Until now nothing in the app could
   // set it: the column was read by three utils and written by no screen and no service payload, so the
   // 551 materials that have one got it from an import and the other 223 were stuck being guessed -- and
-  // that guess disagrees with his own answers 46% of the time (#445).
+  // that guess disagrees with Dekito's answers 46% of the time (#445).
   pyramid_placement: '',
   unit: 'ml',
   stock_quantity: '',

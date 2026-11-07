@@ -11,13 +11,13 @@ import { BOTTLE_CUSTOMS_DESCRIPTION, vialCustomsDescription } from '@/utils/invo
 // word "oud". So every line says "Perfume, alcohol-based, synthetic fragrance, 30 ml" and the gift says
 // "Perfume sample, 3 ml".
 //
-// THE PERFUME NAMES ARE NOT ON IT, and that is a decision Dekito should overrule if he wants to. His
+// THE PERFUME NAMES ARE NOT ON IT, and that is a decision Dekito is free to overrule. The
 // brief asks for the variant name in the item table AND forbids the word Aquilaria on a shipping
 // document — and "Aquilaria tuberosa" is one of the nineteen products. Printing names would put that one
 // in front of an inspector holding a species list. The order number is the buyer's reference, and the
 // quote they agreed on names what they bought.
 //
-// NO "SHIPPING INCLUDED" NOTE either, which his brief also asks for. That promise was retired on
+// NO "SHIPPING INCLUDED" NOTE either, which the brief also asks for. That promise was retired on
 // 2026-09-25 because the carrier bills a one-kilo minimum, so it only ever held for a full parcel — and
 // this invoice prints the freight as its own line, so the note would contradict the number above it.
 

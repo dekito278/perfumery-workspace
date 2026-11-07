@@ -42,7 +42,7 @@ export const useShippingDestination = () => {
     listeners.add(setState);
     if (!resolved) {
       resolved = true;
-      // The address first, then the stored choice. ?dest=DE is how Dekito and anyone checking his work
+      // The address first, then the stored choice. ?dest=DE is how Dekito and anyone checking the shop's work
       // see what a buyer in Berlin is quoted from a desk in Jakarta, so it has to outrank the value this
       // browser happens to have saved.
       const fromUrl = readDestinationFromUrl();

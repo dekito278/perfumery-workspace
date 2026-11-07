@@ -222,7 +222,7 @@ const ShipmentsPage = () => {
       ...(bulkDraft.courierName.trim() ? { courierName: bulkDraft.courierName } : {}),
     };
     // Every selected order moves. This used to hold back the ones with no waybill, which on this shop's
-    // data is all of them — Dekito's decision, 2026-10-10: the waybill is not part of how he ships.
+    // data is all of them — Dekito's decision, 2026-10-10: the waybill is not part of how the shop ships.
     const movable = selectedShipmentOrders;
     setBulkSaving(true);
     try {

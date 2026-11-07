@@ -224,8 +224,8 @@ assert.ok(
 }
 
 // --- the gift is named on the sheet Dekito packs from -------------------------------------------------
-// Rendered, not argued about. Without this the only thing marking a free vial is whatever he happened to
-// call the vial product, and nothing in this repository can see that name. A line he reads as a sale is a
+// Rendered, not argued about. Without this the only thing marking a free vial is whatever Dekito happened to
+// call the vial product, and nothing in this repository can see that name. A line read as a sale is a
 // bottle that goes into the box wrong.
 const gift = await readLabel({
   orderNumber: 'DKT-GIFT-0001',
@@ -282,7 +282,7 @@ assert.deepEqual(inWaybillColumn(withoutWaybill), [],
 const withWaybill = await readLabel({ ...BARE_ORDER, trackingNumber: 'JP1234567890' });
 const withText = withWaybill.placed.map((run) => run.text).join('\n');
 assert.match(withText, /NOMOR RESI/i,
-  'a waybill he DID fill in must still print — the decision was that the shop never demands one, not '
+  'a waybill Dekito DID fill in must still print — the decision was that the shop never demands one, not '
   + 'that the field is gone');
 assert.ok(withText.includes('JP1234567890'), 'and the number itself must be on the label');
 assert.ok(inWaybillColumn(withWaybill).includes('JP1234567890'),

@@ -15,7 +15,7 @@ import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 // Where the greeting card in every parcel points. One URL for every buyer who came from a marketplace,
 // so it is noindex — it is a door, not a page to be found.
 //
-// Two price claims, both true: the shop's own prices sit below the marketplace (Dekito, 2026-09-15 — his
+// Two price claims, both true: the shop's own prices sit below the marketplace (Dekito, 2026-09-15 — its
 // marketplace listings are priced higher), and signing in lowers them again to the member price. Stated as
 // policy, never as a number or against a named marketplace: a figure goes stale and a name is a legal
 // risk, and a landing page that lies once is not believed twice.

@@ -3,8 +3,8 @@
 //
 // ONE CARRIER. From 19 Sep to 6 Oct 2026 a second rate table lived beside this one (RaySpeed Asia,
 // measured on their simulator) and eight near-Asia destinations were quoted from it instead — about a
-// seventh of the DHL price to Malaysia. Dekito ships DHL; he said so on 6 Oct, and the sheet the whole
-// price rule is built on is his. The second table is gone, and `carrierNamedIsCarrierUsed.selfcheck.mjs`
+// seventh of the DHL price to Malaysia. Dekito ships DHL, as stated on 6 Oct, and the sheet the whole
+// price rule is built on is Dekito's. The second table is gone, and `carrierNamedIsCarrierUsed.selfcheck.mjs`
 // holds the rule that made it dangerous: the carrier a screen NAMES is the carrier its quote CAME from,
 // so a second sheet cannot be added here without the screen saying which parcels it covers.
 import { EXPORT_FLAT_PER_KG, EXPORT_ODA_FEE, EXPORT_PACKAGE_RATES } from '@/data/exportRates.js';

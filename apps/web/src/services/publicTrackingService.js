@@ -66,7 +66,7 @@ export const buildPublicTrackingPath = (orderNumber = '') => {
  *
  * `basename` is explicit for the day that stops being true: an order carries the shop it came from in
  * client_context.region, and a link Dekito copies out of Studio should follow the BUYER's shop rather
- * than his own. Nothing passes it yet; the argument is the hook, not a guess about what it should be.
+ * than Dekito's own. Nothing passes it yet; the argument is the hook, not a guess about what it should be.
  */
 export const buildPublicTrackingUrl = (orderNumber = '', { basename = routerBasename() } = {}) => {
   const path = buildPublicTrackingPath(orderNumber);

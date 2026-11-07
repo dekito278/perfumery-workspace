@@ -2,7 +2,7 @@
 //
 // Which shop a visitor is looking at used to be decided entirely by guessing at their browser. The guess
 // is a good one — a German customer has a German browser — but it could not be argued with: Dekito could
-// not see his own international shop from Indonesia, a VPN does not change it (a VPN moves the IP, not
+// not see the international shop from Indonesia, a VPN does not change it (a VPN moves the IP, not
 // the clock or the language), and a visitor read wrong had no way to say so.
 //
 // Then the visitor could choose, and the choice won. Since 2026-11-02 the ADDRESS decides — /en/... is the

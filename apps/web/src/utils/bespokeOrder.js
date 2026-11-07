@@ -162,7 +162,7 @@ export const buildBespokeNotes = (request = {}) => {
  * not even "mulai dari" — on the most expensive thing this atelier sells.
  *
  * Summed from the CHEAPEST enabled option in each required group, so it is the true floor rather than a
- * marketing number, and it follows Dekito's own prices the moment he changes them in Studio. Nothing is
+ * marketing number, and it follows Dekito's own prices the moment they change in Studio. Nothing is
  * hardcoded: a figure typed into the copy would be a second source of truth, free to go stale.
  *
  * Exotic material is deliberately left out. It is the one group with no default — a buyer who picks

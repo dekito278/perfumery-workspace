@@ -1,7 +1,7 @@
 // `node src/utils/exportQuote.selfcheck.mjs`
 //
 // The quote Dekito copies out of the Studio and sends to an overseas buyer — the only message that
-// crosses from his side of the shop to theirs.
+// crosses from Dekito's side of the shop to theirs.
 //
 // It was written in Indonesian rupiah until 2026-10-06, and this chain asserted exactly that: it matched
 // "Subtotal produk", "Ongkir", "Rp 2.209.000". The storefront learned English in September and moved its

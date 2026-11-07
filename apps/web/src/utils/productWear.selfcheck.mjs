@@ -33,7 +33,7 @@ assert.equal(matchesWear(bottle, { weather: ['hujan'] }), false, 'silence is not
 assert.equal(matchesWear({}, { times: ['pagi'] }), false, 'an untagged product stays out of a filtered view');
 
 // The storefront version takes the shop's translator; the Studio version does not, because Studio has
-// one reader and he reads Indonesian. Both are held here so the split cannot quietly collapse back into
+// one reader, who reads Indonesian. Both are held here so the split cannot quietly collapse back into
 // one function that prints Indonesian into the English shop.
 assert.deepEqual(describeWear(bottle, (k) => translate('id', k)), ['Kerja', 'Pagi']);
 assert.deepEqual(describeWear(bottle, (k) => translate('en', k)), ['Work', 'Morning']);

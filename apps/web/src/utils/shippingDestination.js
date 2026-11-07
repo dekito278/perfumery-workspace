@@ -96,7 +96,7 @@ export const destinationOptions = (locale = 'en') => SHIPPING_RATE_REGIONS.map((
  * ?dest=DE on the address, which beats both the stored choice and the clock.
  *
  * The same reason ?lang= and ?ship= exist, and the same lesson: Dekito cannot see what a buyer in Berlin
- * is quoted from a desk in Jakarta, and neither can anyone checking his work. A guess nobody can override
+ * is quoted from a desk in Jakarta, and neither can anyone checking the shop's work. A guess nobody can override
  * is a guess nobody can correct.
  */
 export const readDestinationFromUrl = (search) => {

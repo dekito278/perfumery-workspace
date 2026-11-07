@@ -10,7 +10,7 @@ import { SHIPPING_RATE_BOTTLE_SIZE_ML } from '@/data/internationalShippingRates.
  * The complete price an international buyer pays, before they ask instead of after.
  *
  * This screen is the answer to two things Dekito said on 2026-10-05, which turned out to be one thing.
- * He asked how to stop a foreign buyer seeing the Indonesian price, and he asked to stop typing shipping
+ * Dekito asked how to stop a foreign buyer seeing the Indonesian price, and asked to stop typing shipping
  * into Studio by hand because the card already exists. The honest answer to the first is the second:
  * what actually misled a buyer in Germany was not the rupiah price on another page, it was US$80 shown
  * here with no shipping at all, and US$140 arriving in a WhatsApp reply after they had already decided.

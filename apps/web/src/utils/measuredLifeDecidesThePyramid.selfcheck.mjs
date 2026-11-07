@@ -18,10 +18,10 @@
 //     base    n=111  120 – 2000 h
 //
 // Disjoint. So `top if <= 11, base if >= 120, otherwise middle` reproduces 549 of 549 — 100%, verified
-// by query against his own answers. The hours are not a proxy for his rule; they ARE his rule.
+// by query against Dekito's own answers. The hours are not a proxy for that rule; they ARE the rule.
 //
-// What changed to get there: the ceiling was 10, which put his eleven-hour materials on the wrong side
-// of his own line, and a known in-band life fell through to the ABC-class weighing instead of simply
+// What changed to get there: the ceiling was 10, which put the eleven-hour materials on the wrong side
+// of Dekito's own line, and a known in-band life fell through to the ABC-class weighing instead of simply
 // answering "middle". The class weighing remains for materials whose life nobody has measured, which is
 // the only case it was ever for.
 import assert from 'node:assert/strict';
@@ -53,30 +53,30 @@ const volatile_ = (share) => [{ letter: 'A', share }];
 
 // --- 1. The boundaries are the measured ones ---------------------------------------------------------
 assert.equal(TOP_LIFE_HOURS_CEILING, 11,
-  'the ceiling must be his measured boundary: his longest top note lasts 11 hours and his shortest '
-  + 'middle lasts 12. A ceiling of 10 puts the eleven-hour materials on the wrong side of his own line');
+  'the ceiling must be the measured boundary: the longest top note lasts 11 hours and the shortest '
+  + 'middle lasts 12. A ceiling of 10 puts the eleven-hour materials on the wrong side of the measured line');
 assert.equal(BASE_LIFE_HOURS_FLOOR, 120,
-  'his shortest base lasts 120 hours and his longest middle 112 — the floor sits in that gap');
+  'the shortest base lasts 120 hours and the longest middle 112 — the floor sits in that gap');
 
 // --- 2. A measured life decides alone, against the strongest possible contrary class spread ----------
 // This is the whole fix. Each of these would previously have fallen through to the class weighing.
 for (const hours of [12, 20, 36, 60, 90, 112, 119]) {
   assert.equal(derive(hours, woody(100)), 'middle',
-    `${hours}h is inside his measured middle band, so it is a middle note even with a fully woody class `
+    `${hours}h is inside the measured middle band, so it is a middle note even with a fully woody class `
     + 'spread — falling through to the class weighing here is what produced the 46%');
   assert.equal(derive(hours, volatile_(100)), 'middle',
     `${hours}h must not be pulled to top by a volatile class spread either`);
 }
 // And the two ends still answer, likewise regardless of the spread.
-assert.equal(derive(11, woody(100)), 'top', 'eleven hours is his top boundary, inclusive');
-assert.equal(derive(120, volatile_(100)), 'base', 'a hundred and twenty hours is his base floor, inclusive');
+assert.equal(derive(11, woody(100)), 'top', 'eleven hours is the top boundary, inclusive');
+assert.equal(derive(120, volatile_(100)), 'base', 'a hundred and twenty hours is the base floor, inclusive');
 assert.equal(derive(2000, volatile_(100)), 'base');
 
 // --- 3. The boundaries are exact, not approximate ----------------------------------------------------
 // One hour either side flips the answer. A rule whose edges are soft is a rule nobody can check.
 assert.equal(derive(11), 'top');
-assert.equal(derive(12), 'middle', 'twelve hours is his shortest middle, not a top note');
-assert.equal(derive(112), 'middle', 'a hundred and twelve hours is his longest middle, not a base');
+assert.equal(derive(12), 'middle', 'twelve hours is the shortest middle, not a top note');
+assert.equal(derive(112), 'middle', 'a hundred and twelve hours is the longest middle, not a base');
 assert.equal(derive(119), 'middle');
 assert.equal(derive(120), 'base');
 
@@ -91,8 +91,8 @@ assert.equal(derive(null, []), 'middle', 'and with no evidence of any kind it mu
 // --- 5. Zero hours is left exactly as it was ----------------------------------------------------------
 // 0 reads as "instantly volatile" where it may only mean "nobody wrote it down" — the empty-column trap.
 // But the live data will not carry that argument: exactly FOUR materials hold 0 hours, and the single
-// one Dekito has placed, he placed as a MIDDLE. One label cannot move a branch resting on 139 materials
-// with 1 wrong. Four rows are a cleanup for his own hands. This pins the behaviour as unchanged so that
+// one Dekito has placed sits as a MIDDLE. One label cannot move a branch resting on 139 materials
+// with 1 wrong. Four rows are a cleanup for Dekito's own hands. This pins the behaviour as unchanged so that
 // the decision stays deliberate rather than drifting later.
 assert.equal(derive(0, woody(100)), 'top',
   'zero hours was NOT changed by the 2026-10-24 work — see the comment above before touching it');

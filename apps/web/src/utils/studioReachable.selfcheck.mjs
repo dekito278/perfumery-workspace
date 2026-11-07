@@ -5,8 +5,8 @@
 // The export shipping calculator is where an international order gets written down — the only screen in
 // Studio that can do it. It shipped with a desktop route and a mobile route and NO menu entry on either
 // side, so the only way to open it was to type the URL. Dekito went looking for it in the E-commerce
-// sheet on his phone, found Produk, Orders, Fulfillment, Customer, Bespoke, Vouchers, Ongkir, Journal,
-// Toko — and no calculator. A live international enquiry was waiting while he looked.
+// sheet on the phone, found Produk, Orders, Fulfillment, Customer, Bespoke, Vouchers, Ongkir, Journal,
+// Toko — and no calculator. A live international enquiry was waiting while Dekito looked.
 //
 // The rule is not "these two menu objects contain these two strings". It is: wherever the router renders
 // this page, a navigation menu on that side must point at it — and every path a menu points at must be a

@@ -218,7 +218,7 @@ export const useCartInternationalQuote = (items = []) => {
     onTheCard: lines.every((line) => line.onTheCard), t, region, policy,
   });
   // Every line travels, priced or not: a line the shop cannot price yet is the one Dekito most needs to
-  // see, and leaving it out of the message would hand him a basket missing a bottle.
+  // see, and leaving it out of the message would hand over a basket missing a bottle.
   const lineText = [
     ...lines.map((line) => t('export.waCartLine', {
       name: line.name,
@@ -228,12 +228,12 @@ export const useCartInternationalQuote = (items = []) => {
     })),
     // The gift rides in the same parcel and is the one line Dekito cannot infer from the total: it costs
     // nothing, weighs 10 g against a one-kilo minimum, and changes neither the bottle count nor the
-    // shipping. Left out of the message he would pack the order without it, and the buyer would have
+    // shipping. Left out of the message Dekito would pack the order without it, and the buyer would have
     // chosen an aroma that never arrived.
     //
     // THE AROMA, NOT THE PRODUCT NAME. The gift is one product with a variant per scent, so its line
-    // name is "Vial hadiah — La Tulipe" — and an English buyer was sending himself
-    // "- Vial hadiah — La Tulipe — free vial, no charge", two Indonesian words inside his own order.
+    // name is "Vial hadiah — La Tulipe" — and an English buyer was sending out
+    // "- Vial hadiah — La Tulipe — free vial, no charge", two Indonesian words inside their own order.
     // Every i18n guard missed it because the phrase is DATA, not a message: it comes from the product
     // row, which the English shop never translates and should not, since the perfume names are
     // deliberately Indonesian. The variant holds the aroma on its own, and "free vial" already says

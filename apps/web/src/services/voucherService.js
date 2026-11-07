@@ -203,7 +203,7 @@ export const saveVoucher = async (input) => {
   // dropped that one field and retried, saving the voucher without the limit Dekito had just typed.
   // Measured 2026-10-02: the column exists, so the retry could only ever fire on an error that MENTIONED
   // the column for some other reason, and then it would discard a per-account limit and report the save as
-  // successful. Gone, along with the Studio hint that told him the field needed a migration.
+  // successful. Gone, along with the Studio hint that told Dekito the field needed a migration.
   if (error) {
     throw new Error(error.message || 'Gagal menyimpan voucher');
   }

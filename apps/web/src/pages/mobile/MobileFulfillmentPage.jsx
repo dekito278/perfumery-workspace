@@ -47,7 +47,7 @@ const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 
 const isPaid = (order) => order.paymentStatus === 'paid';
-// The shared rule, so the dashboard card that sends Dekito here counts exactly what he will see.
+// The shared rule, so the dashboard card that sends Dekito here counts exactly what this screen shows.
 const isFulfillmentReady = (order) => isReadyToPack(order);
 
 const queueFilterOptions = [

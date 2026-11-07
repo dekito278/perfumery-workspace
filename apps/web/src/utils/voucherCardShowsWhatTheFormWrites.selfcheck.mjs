@@ -1,6 +1,6 @@
 // `node src/utils/voucherCardShowsWhatTheFormWrites.selfcheck.mjs`
 //
-// The voucher edit form writes eleven fields. The card Dekito reviews his codes on showed six of them,
+// The voucher edit form writes eleven fields. The card Dekito reviews the codes on showed six of them,
 // and the one it left out is the one that changes WHO can use the code: usageLimitPerAccount. Above zero,
 // validateVoucher refuses an anonymous buyer outright — "hanya untuk pembeli yang masuk ke akunnya" —
 // because a per-account limit is bypassable by not signing in. So a code with it set behaves completely

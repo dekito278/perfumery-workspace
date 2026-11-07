@@ -62,8 +62,8 @@ export const buildExportQuote = ({
     )),
     '',
     `Perfume: US$${goodsUsd}`,
-    // Zero is an ANSWER here, not a missing number — Dekito can waive the freight on an order he chooses
-    // to, and he can also decide to quote it after this message. Both are decisions and both are said.
+    // Zero is an ANSWER here, not a missing number — Dekito can waive the freight on any order
+    // by choice, and can also decide to quote it after this message. Both are decisions and both are said.
     // (This branch was once justified by "the international price already carries the shipping". That
     // promise was retired on 2026-09-25: the carrier bills a one-kilo minimum, so it only ever held on a
     // full parcel. Nothing here may imply the freight is included.)
@@ -79,7 +79,7 @@ export const buildExportQuote = ({
     `Total: US$${goodsUsd + shippingUsd}`,
     ...(eta ? ['', `Estimated delivery: ${eta}`] : []),
     '',
-    // What Dekito needs back before he can pack anything. It used to be typed by hand every time, which
+    // What Dekito needs back before packing anything. It used to be typed by hand every time, which
     // is how an order reaches the payment step with no phone number.
     'Please also send your full shipping address, email, and phone number.',
     '',

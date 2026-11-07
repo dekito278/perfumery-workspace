@@ -749,7 +749,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
             <div className="text-xs font-bold uppercase">{t('pay.quoteTitle')}</div>
             <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.quoteBody', { hours: siteFacts.quoteHours })}</p>
             <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.quoteNoTransfer')}</p>
-            {/* Dekito's request: the buyer confirms on WhatsApp so he learns the order exists at all.
+            {/* Dekito's request: the buyer confirms on WhatsApp so Dekito learns the order exists at all.
                 The automatic alert in orderNotifier only fires when ORDER_ALERT_WEBHOOK_URL is set, and
                 it is not — so without this button a Europe order waits for someone to open Studio. */}
             {whatsappNumber ? (
@@ -822,7 +822,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
 
         <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-4 text-ng-ember">
           {transfer.swift ? (
-            /* Dekito's own line, off the invoice he already sends by hand. "OUR" makes the SENDER pay every
+            /* Dekito's own line, off the invoice already sent by hand. "OUR" makes the SENDER pay every
                fee in the chain, so the amount arrives whole instead of losing $15-25 to an intermediary
                bank — an exact fix where the rounding in usdPrice.js is only a cushion. */
             <p className="mb-3 rounded-none border border-ng-ember/40 bg-ng-ember/10 p-3 text-xs font-semibold leading-relaxed text-ng-ember">

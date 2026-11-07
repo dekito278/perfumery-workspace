@@ -86,7 +86,7 @@ for (const forbidden of [/tracking/i, /waybill/i, /nomor resi/i, /AWB/]) {
 
 // --- 5. What Dekito needs back -----------------------------------------------------------------------
 assert.match(quote.message, /full shipping address, email, and phone number/,
-  'the quote asks for what he cannot pack without');
+  'the quote asks for what Dekito cannot pack without');
 assert.match(quote.message, /Import duties and taxes/, 'and keeps the two promises it must not make');
 assert.match(quote.message, /does not reserve stock/);
 

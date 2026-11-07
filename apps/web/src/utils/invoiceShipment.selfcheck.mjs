@@ -1,6 +1,6 @@
 // `node src/utils/invoiceShipment.selfcheck.mjs`
 //
-// Measured on Dekito's own invoices, 2026-09-21, opened with his customer code:
+// Measured on Dekito's own invoices, 2026-09-21, opened with that customer code:
 //
 //   DKT-MPEBTVGS      PENGIRIMAN · Belum siap · "Sudah dikirim, resi belum masuk ke sistem"
 //   DKT-MTBC51CN...   PENGIRIMAN · Belum siap · "Resi akan muncul setelah dikirim"   (EXPIRED order)

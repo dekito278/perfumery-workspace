@@ -167,8 +167,8 @@ assert.match(catalog, /overseas: false/,
 // the one caller left is the hint, which links and never prices.
 const hook = read('hooks', 'useStorefrontRegion.js');
 // Two hooks, deliberately. The price exists for everyone; being QUOTED in it is a guess. Collapsing them
-// would either hide the price from an Indonesian visitor with a reason to see it — Dekito checking his
-// own shop — or silence the member nudge for people who can still use it.
+// would either hide the price from an Indonesian visitor with a reason to see it — Dekito checking the
+// shop itself — or silence the member nudge for people who can still use it.
 const exportHook = read('hooks', 'useOverseasPrice.js');
 assert.match(exportHook, /export const useExportPrice = \(product, variant = null\) =>/, 'the price, for anyone');
 assert.match(exportHook, /export const useOverseasPrice = \(product, variant = null\) => \{[\s\S]{0,240}?return overseasVisitor \? price : null;/,
@@ -383,7 +383,7 @@ const draftBuilder = read('utils', 'overseasEnquiry.js');
   assert.doesNotMatch(bare, /\n\s*\n\s*\n/, 'and must not leave a blank line where the price was');
 
   // A settled total REPLACES the price line rather than joining it. Both name the bottle price, and a
-  // draft carrying it twice makes Dekito check one number against itself before he can reply.
+  // draft carrying it twice makes Dekito check one number against itself before replying.
   const quoted = draftFor({
     price: 'US$80',
     quote: {
@@ -476,7 +476,7 @@ assert.match(cardPrice, /getPrimaryVariant\(Array\.isArray\(product\?\.variants\
 // --- 10. The export price is reachable without the guess ----------------------------------------------------
 // Detection decides who gets the English panel. It must not decide who is allowed to know the price at
 // all: a visitor abroad behind a VPN or on a browser reporting no timezone would otherwise have to open
-// WhatsApp to find out, and Dekito could never check his own export prices from Indonesia.
+// WhatsApp to find out, and Dekito could never check the shop's export prices from Indonesia.
 assert.match(button, /const \{ price: exportPrice, overseasVisitor \} = useExportPrice\(product, variant\);/,
   'the always-visible enquiry button knows the export price');
 assert.match(button, /const showExportPrice = Boolean\(exportPrice\) && !english && !overseasVisitor;/,

@@ -1,7 +1,7 @@
 // The gate, the grammar and the wording of the two-way Telegram bot — kept out of the endpoint so a
 // chain can test the parts that decide who gets in.
 //
-// Dekito asked for a bot that can also WRITE: stock, products, articles. He was told what that costs
+// Dekito asked for a bot that can also WRITE: stock, products, articles. Dekito was told what that costs
 // and chose it anyway, so this is built to that scope — with the strongest locks that do not take the
 // feature away.
 //

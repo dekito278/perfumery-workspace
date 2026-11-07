@@ -1,8 +1,8 @@
 // One free 2 ml vial per order, chosen by the buyer in the cart.
 //
 // Dekito's decisions, 2026-09-29: ONE vial per order rather than per bottle; stock counted per aroma so a
-// scent he has run out of stops being offered; and ONE pool — every aroma, no tiers. The tiered version
-// was considered and dropped against his own catalogue: the cheapest bottle is Rp 359.000, so a "below
+// scent the shop has run out of stops being offered; and ONE pool — every aroma, no tiers. The tiered version
+// was considered and dropped against the shop's own catalogue: the cheapest bottle is Rp 359.000, so a "below
 // Rp 300.000" tier can never fire and an "above Rp 500.000" tier fires on every single-bottle order. The
 // two tiers collapsed into one. A vial is also the cheapest way to sell the SECOND bottle, and the buyer
 // who most needs convincing is the first-time single-bottle one — the last person to ration it to.
@@ -12,7 +12,7 @@
 // The buyer's browser has to know which aromas are still in stock, and the only thing an anonymous
 // browser can read is storefront_products_public. So the vial has to be a product. It is one product
 // carrying one VARIANT PER AROMA, which buys per-aroma stock, the existing deduct/restore RPCs (both key
-// on variantId inside the variants jsonb) and the product form he already knows — with no migration, no
+// on variantId inside the variants jsonb) and the product form Dekito already knows — with no migration, no
 // new RLS policy, and no new SQL to deploy. A dedicated table would be tidier and is still possible
 // later; it would also join a migration queue that is already waiting and add RLS that has taken this
 // project down before while every check stayed green.
@@ -89,7 +89,7 @@ export const isFreeVialLine = (line = {}) => isFreeVialProduct({
  *
  * The weight of every other line comes from its SIZE label, and for the vial that would mean trusting
  * whatever Dekito typed into the variant — a label naming the aroma ("HUG N°1") parses to no millilitres
- * at all and falls to the 300 g default. Nothing in this repository can see his labels, so the weight is
+ * at all and falls to the 300 g default. Nothing in this repository can see those labels, so the weight is
  * not left to them: a line the tag says is a vial weighs a vial, whatever it is called.
  *
  * Used by BOTH sides — the browser that quotes the freight and the endpoint that charges it. They must
@@ -135,7 +135,7 @@ export const splitFreeVialLines = (items = []) => {
 /**
  * The cart line for a chosen aroma.
  *
- * The name is the owner's own: the vial product's name as he wrote it, and the variant label as he wrote
+ * The name is the owner's own: the vial product's name as Dekito wrote it, and the variant label as Dekito wrote
  * it. It travels to the invoice and to the packing slip, where it is the only thing saying this bottle
  * was not paid for — so it has to read as a gift without any translation layer.
  *

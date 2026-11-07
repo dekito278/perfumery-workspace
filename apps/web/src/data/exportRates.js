@@ -1,6 +1,6 @@
 // DHL "EXPORT RATE EXPRESS 2026" (efektif 5 Februari 2026), PACKAGE table, in IDR.
 //
-// This is the sheet Dekito handed over, and DHL is the carrier he ships with — his words, 6 Oct 2026.
+// This is the sheet Dekito handed over, and DHL is the carrier the shop ships with — Dekito's words, 6 Oct 2026.
 // Every export figure in the app comes from here, the published price card included. An earlier header
 // named it "LTU Express", which was a guess at the forwarder rather than anything the sheet prints.
 // Rows are the carrier's weight brackets in kg; a parcel is billed at the first bracket it fits in.

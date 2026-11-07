@@ -566,7 +566,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-right">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Active orders</div>
-                  {/* Counted the way the order list counts it, since this tile is how he gets there. */}
+                  {/* Counted the way the order list counts it, since this tile is how Dekito gets there. */}
                   <div className="text-2xl font-bold">{activeOrderCount}</div>
                 </div>
               </div>

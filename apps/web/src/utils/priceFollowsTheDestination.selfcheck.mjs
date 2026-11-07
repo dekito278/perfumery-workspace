@@ -12,7 +12,7 @@
 //     reply, after they had already decided. A total that nearly triples after the fact is the same
 //     bait-and-switch the English shop's missing cart was built to remove, pointing the other way.
 //
-// His decisions: 5 Oct — price by DESTINATION, show the whole total, say why the gap exists. 6 Oct — ONE
+// Dekito's decisions: 5 Oct — price by DESTINATION, show the whole total, say why the gap exists. 6 Oct — ONE
 // bottle price everywhere (the 2.2x Southeast Asia split retired), and shipping derived from the
 // carrier's sheet less a fixed support, so the neighbours still pay the least in total by paying the
 // least to ship to. This chain holds all of it by RUNNING the real code rather than by reading it.
@@ -214,8 +214,8 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
   const one = ask({ country: 'US', bottles: 1 });
   const two = ask({ country: 'US', bottles: 2 });
   assert.equal(one.shippingCostUsd, two.shippingCostUsd, 'one and two bottles are the same one-kilo parcel');
-  assert.equal(one.shippingUsd, 65, 'his number for one bottle');
-  assert.equal(two.shippingUsd, 45, 'his number for two');
+  assert.equal(one.shippingUsd, 65, "Dekito's number for one bottle");
+  assert.equal(two.shippingUsd, 45, "Dekito's number for two");
   assert.equal(two.goodsUsd, one.goodsUsd * 2, 'while the bottles themselves multiply');
   assert.equal(two.totalUsd, two.goodsUsd + two.shippingUsd, 'and the total must still be the sum');
 }
@@ -230,7 +230,7 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
     'past the last bracket the reason is the quantity');
   // THE SIZE THE RULE WAS WRITTEN FOR. Every bottle in the shop is 30 ml today, which is why this rule
   // would otherwise be invisible: a 50 ml added next month would be quoted 30 ml freight as a published
-  // promise rather than a figure Dekito reads with both tables in front of him.
+  // promise rather than a figure Dekito reads with both tables in view.
   assert.equal(ask({ country: 'DE', bottles: 1, size: '50 ml' }).onRequest, 'size',
     'a bottle the rule was not written for must be quoted on request, not at the 30 ml rate');
   assert.equal(ask({ country: 'DE', bottles: 1, size: '50 ml' }).shippingUsd, null, 'and must carry no freight figure at all');

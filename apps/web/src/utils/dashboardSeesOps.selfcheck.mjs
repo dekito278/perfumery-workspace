@@ -147,7 +147,7 @@ assert.equal(getOpsHealthSnapshot([lapsed]).hasCriticalIssues, true);
 
 // A paid parcel with no waybill USED to be counted here, and this assertion required it. It is gone:
 // not one of the 35 orders on production carries a tracking_number, 13 of them shipped, and Dekito
-// confirmed on 2026-10-10 that this is how he ships. The count could only ever be "all of them", on
+// confirmed on 2026-10-10 that this is how the shop ships. The count could only ever be "all of them", on
 // both dashboards, forever — an alarm that never stops is not an alarm. So the snapshot must NOT grow
 // it back, and a shop whose parcels carry no number must read clean.
 assert.ok(!('shipmentNeedsResi' in snapshot),

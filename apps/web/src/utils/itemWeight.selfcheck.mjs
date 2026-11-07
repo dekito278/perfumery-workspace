@@ -24,7 +24,7 @@ const read = (...parts) => readFileSync(join(webRoot, ...parts), 'utf8');
 
 // --- the measurements -------------------------------------------------------------------------------
 // Pinned whole, on purpose. The 2 ml line is the free gift vial, Dekito's figure of 2026-09-29; the four
-// bottles are his own measurements of 2026-09-13. Adding one is a deliberate act, and this line is where
+// bottles are Dekito's own measurements of 2026-09-13. Adding one is a deliberate act, and this line is where
 // it has to be said out loud.
 assert.deepEqual(ITEM_WEIGHT_GRAM_BY_ML, { 2: 10, 10: 100, 30: 250, 50: 350, 100: 650 },
   'these are weighed values, not a formula — changing one changes what a buyer is charged for shipping');

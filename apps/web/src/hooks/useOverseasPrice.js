@@ -18,7 +18,7 @@ import { internationalPriceFor } from '@/utils/shippingRegion.js';
 export const useExportPrice = (product, variant = null) => {
   const { index } = useTierPrices();
   // The chosen shop, not the raw guess. The guess is still what decides the default — it just no longer
-  // has the last word, so a visitor it reads wrong can correct it and Dekito can see his own
+  // has the last word, so a visitor it reads wrong can correct it and Dekito can see the
   // international shop from Indonesia.
   const { isInternational: overseasVisitor } = useStorefrontRegion();
 
