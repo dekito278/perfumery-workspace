@@ -140,14 +140,18 @@ export const lookupCheckoutCustomerByCode = async (customerCode, securityAnswer 
   }
 };
 
-export const getCustomerPortalByCode = async (customerCode) => {
+export const getCustomerPortalByCode = async (customerCode, contact = '') => {
   const normalizedCode = normalizeCustomerCode(customerCode);
   if (!normalizedCode) return null;
 
+  // A code alone no longer opens the orders (20261107100000): the server answers requires_identity and
+  // the page asks for the WhatsApp number. Sent only then — the one-argument function this replaced
+  // refuses an extra name, and the client ships before the migration.
+  const params = { p_customer_code: normalizedCode };
+  if (contact?.trim()) params.p_contact = contact.trim();
+
   try {
-    const { data, error } = await supabase.rpc('storefront_customer_portal', {
-      p_customer_code: normalizedCode,
-    });
+    const { data, error } = await supabase.rpc('storefront_customer_portal', params);
 
     if (error) throw error;
     const result = data?.[0];
@@ -161,6 +165,16 @@ export const getCustomerPortalByCode = async (customerCode) => {
         customer: buildLockedPortalCustomer(customer),
         orders: [],
         requiresSecurity: true,
+        persistence: 'database',
+      };
+    }
+
+    if (result.customer.requires_identity) {
+      return {
+        customer: { ...buildLockedPortalCustomer(customer), requiresSecurity: false },
+        orders: [],
+        requiresSecurity: false,
+        requiresIdentity: true,
         persistence: 'database',
       };
     }

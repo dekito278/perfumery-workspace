@@ -828,6 +828,9 @@ const CustomerPortalPage = () => {
   // Required to protect a code for the FIRST time: proof the setter is the customer, not a code-guesser.
   // Unused when re-setting an existing answer (the current answer proves ownership then).
   const [securityContact, setSecurityContact] = useState('');
+  // A code alone opens nothing since 2026-11-07: the number the buyer checked out with proves the code is theirs.
+  const [identityContact, setIdentityContact] = useState('');
+  const [identityLoading, setIdentityLoading] = useState(false);
   const [savingSecurity, setSavingSecurity] = useState(false);
   const [refreshingPaymentOrder, setRefreshingPaymentOrder] = useState('');
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
@@ -883,7 +886,7 @@ const CustomerPortalPage = () => {
     setLastCustomerCode(result.customer.customerCode);
     writeLastCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
-    if (!silent) toast.success(t('cust.codeLoaded', { code: result.customer.customerCode }));
+    if (!silent && !result.requiresIdentity) toast.success(t('cust.codeLoaded', { code: result.customer.customerCode }));
   }, [setSearchParams, t]);
 
   useEffect(() => {
@@ -1096,6 +1099,35 @@ const CustomerPortalPage = () => {
     if (!portal?.customer?.customerCode) return;
     const copied = await copyTextToClipboard(portal.customer.customerCode);
     copied ? toast.success(t('cust.codeCopied', { code: portal.customer.customerCode })) : toast.error(t('cust.copyFailed'));
+  };
+
+  const confirmIdentity = async (event) => {
+    event.preventDefault();
+    if (!identityContact.trim()) {
+      toast.error(t('cust.contactRequired'));
+      return;
+    }
+
+    setIdentityLoading(true);
+    let result;
+    try {
+      result = await getCustomerPortalByCode(portal.customer.customerCode, identityContact);
+    } catch {
+      toast.error(t('cust.codeLookupFailed'));
+      return;
+    } finally {
+      setIdentityLoading(false);
+    }
+
+    // The server asks again when the number is not the one on this code — the same answer as no number.
+    if (!result || result.requiresIdentity) {
+      toast.error(t('cust.contactMismatch'));
+      return;
+    }
+
+    setPortal(result);
+    setIdentityContact('');
+    toast.success(t('cust.dashOpened'));
   };
 
   const unlockPortal = async (event) => {
@@ -1359,7 +1391,38 @@ const CustomerPortalPage = () => {
           </div>
 
           <div className="space-y-4">
-            {portal?.requiresSecurity ? (
+            {portal?.requiresIdentity ? (
+              <section className="rounded-none border bg-transparent p-5">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-none bg-ng-ink text-ng-bone">
+                    <KeyRound className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.securityCheck')}</div>
+                    <h2 className="ng-display mt-1 text-[2rem]">{t('cust.identityTitle')}</h2>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
+                      {t('cust.identityBody')}
+                    </p>
+                  </div>
+                </div>
+                <form onSubmit={confirmIdentity} className="mt-5 grid gap-3">
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={identityContact}
+                    onChange={(event) => setIdentityContact(event.target.value)}
+                    aria-label={t('cust.identityLabel')}
+                    placeholder={t('cust.identityPlaceholder')}
+                    className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
+                  />
+                  <Button type="submit" className="h-12 rounded-none gap-2" disabled={identityLoading}>
+                    {identityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                    {t('cust.openDashboard')}
+                  </Button>
+                </form>
+              </section>
+            ) : portal?.requiresSecurity ? (
               <section className="rounded-none border bg-transparent p-5">
                 <div className="flex items-start gap-3">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-none bg-ng-ink text-ng-bone">
