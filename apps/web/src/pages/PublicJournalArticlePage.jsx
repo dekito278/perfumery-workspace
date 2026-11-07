@@ -11,6 +11,7 @@ import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import {
   getJournalCategoryLabel,
+  getJournalCategoryShopLabel,
   getPublishedJournalPostBySlug,
 } from '@/services/journalPostsSupabaseService.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
@@ -37,7 +38,7 @@ const DEFAULT_DESCRIPTION = 'Read a Solivagant perfumery journal article.';
 /* ─── Mobile article view (unchanged Tailwind-based layout) ─── */
 /* ─── Desktop article view (editorial design system) ─── */
 const PublicJournalArticlePage = () => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const { slug } = useParams();
   const revealRef = useScrollReveal();
   const [post, setPost] = useState(null);
@@ -176,7 +177,7 @@ const PublicJournalArticlePage = () => {
             <header className="ng-section !border-b-0 !pb-14 !pt-20 md:!pt-28">
               <div className="mx-auto flex max-w-[880px] flex-col items-center gap-7 text-center">
                 <p className="ng-mono m-0 flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1 text-ng-ash">
-                  <Link to={`/journal`} className="inline-flex min-h-[44px] items-center text-ng-ember no-underline">{getJournalCategoryLabel(post.category)}</Link>
+                  <Link to={`/journal`} className="inline-flex min-h-[44px] items-center text-ng-ember no-underline">{getJournalCategoryShopLabel(post.category, t)}</Link>
                   {/* Each dot travels with the item after it, so a wrapped line starts with "·" instead of the
                       line above ending in one (seen on a phone, 2026-11-02). */}
                   <span><span aria-hidden="true" className="mr-3.5">·</span>{formatDate(post.published_at || post.updated || post.created, t('fmt.dateLocale'))}</span>
@@ -186,6 +187,8 @@ const PublicJournalArticlePage = () => {
                 {post.excerpt ? (
                   <p className="m-0 max-w-[600px] font-ng-display text-[22px] italic leading-snug text-ng-sand md:text-[24px]">{post.excerpt}</p>
                 ) : null}
+                {/* Said in the reader's language, inside an article marked lang="id". */}
+                {isInternational ? <p lang="en" className="m-0 text-sm text-ng-dust">{t('journal.articleIndonesian')}</p> : null}
               </div>
             </header>
 

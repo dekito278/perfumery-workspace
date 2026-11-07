@@ -1,6 +1,6 @@
 import supabase from '@/lib/supabaseClient.js';
 import { getCurrentUserId, toAppRecord } from '@/services/supabaseDataHelpers.js';
-import { journalCategoryLabelIn } from '@/data/siteFacts.js';
+import { DEFAULT_JOURNAL_CATEGORIES, journalCategoryLabelIn } from '@/data/siteFacts.js';
 import { getSiteFacts, subscribeSiteFacts } from '@/services/siteSettingsService.js';
 
 // The categories are Dekito's since 2026-11-03 (Studio → Fakta toko), not a list in this file. A live
@@ -39,6 +39,19 @@ export const JOURNAL_CATEGORY_COVER_CLASS_NAMES = {
 
 // An unknown key used to read as "Experience" — a wrong answer; now it reads as itself.
 export const getJournalCategoryLabel = (value) => journalCategoryLabelIn(JOURNAL_CATEGORIES, value);
+
+// What the SHOP calls a category. The five it ships with are named in the reader's language
+// (journal.cat.*): their Studio labels are English, so the Indonesian shop read "MATERIAL NOTE" under a
+// heading saying "CATATAN BAHAN" (2026-11-07). A label Dekito has renamed in Studio, or a category Dekito
+// added, is Dekito's own words and is shown as written, in both shops.
+export const getJournalCategoryShopLabel = (value, t) => {
+  const label = getJournalCategoryLabel(value);
+  const shipped = DEFAULT_JOURNAL_CATEGORIES.find((category) => category.value === value);
+  if (!shipped || shipped.label !== label) return label;
+  const key = `journal.cat.${value}`;
+  const named = t(key);
+  return named === key ? label : named;
+};
 
 export const getJournalCategoryBadgeClassName = (value) => (
   JOURNAL_CATEGORY_BADGE_CLASS_NAMES[value] || JOURNAL_CATEGORY_BADGE_CLASS_NAMES.experience

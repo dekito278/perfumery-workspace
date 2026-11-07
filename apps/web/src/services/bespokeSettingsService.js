@@ -271,9 +271,9 @@ export const resetBespokeSettings = async () => {
  * could ever see them: the English bespoke page read "Tulis tangan", "Ukuran default bespoke." and a
  * heading saying "UKURAN" straight out of the database, in the middle of otherwise English copy.
  *
- * Falls back per FIELD, not per option: a row whose label is translated but whose description is not
- * should show the English name with the Indonesian note, rather than throwing both away. An empty
- * translation is not a translation.
+ * The label falls back to the Indonesian one ("30 ml" reads the same in both); the description does not.
+ * An English page with "Ukuran default bespoke." under the first bottle (2026-11-07) is worse than a
+ * bottle with no note. An empty translation is not a translation.
  */
 export const bespokeOptionText = (option = {}, isInternational = false) => {
   // Trimmed here as well as in normalizeOption: a row typed with a stray space is not a translation,
@@ -281,7 +281,7 @@ export const bespokeOptionText = (option = {}, isInternational = false) => {
   const english = (value) => (isInternational ? String(value || '').trim() : '');
   return {
     label: english(option.labelEn) || option.label || '',
-    description: english(option.descriptionEn) || option.description || '',
+    description: isInternational ? english(option.descriptionEn) : option.description || '',
   };
 };
 

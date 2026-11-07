@@ -85,6 +85,8 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // The service's name in the menu and the footer, the same two words in both shops. The Indonesian
   // side read "Bespoke Ritual" until 2026-11-06, a capital none of the links beside it has.
   'nav.bespoke',
+  // One numbering mark in both shops: the Indonesian side wrote "No." and the English "N°" (2026-11-07).
+  'home.ngFeatNo',
   // The member account page: commerce and perfumery words an Indonesian receipt already prints in
   // English, plus the three bespoke production stages named the same way on both sides of the shop.
   'cust.voucherCode', 'cust.bp.formula', 'cust.bp.sample', 'cust.bp.approval', 'cust.cap',
@@ -1133,6 +1135,7 @@ const DYNAMIC_KEY_FAMILIES = [
   ['intlQuote.region.', ['components', 'storefront', 'InternationalShippingQuote.jsx'], 'intlQuote.region.${'],
   ['intlQuote.onRequest.', ['components', 'storefront', 'InternationalShippingQuote.jsx'], 'intlQuote.onRequest.${'],
   ['about.fact.', ['pages', 'AboutPage.jsx'], 'about.fact.${'],
+  ['journal.cat.', ['services', 'journalPostsSupabaseService.js'], 'journal.cat.${'],
 ];
 // Every source file under src, not a list of directories: naming them missed data/, where the bespoke
 // occasions and the why-direct reasons keep their keys, and reported twenty live keys as dead.

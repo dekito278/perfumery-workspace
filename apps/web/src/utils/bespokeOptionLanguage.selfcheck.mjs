@@ -44,18 +44,21 @@ assert.deepEqual(bespokeOptionText(option, false), {
   description: 'Label stiker dengan tulisan tangan saya',
 });
 
-// --- 2. The fallback is per FIELD, not per option -----------------------------------------------------
-// Dekito fills nine rows by hand. A row whose label is translated and whose description is not must show
-// the English name with the Indonesian note — throwing the good half away because the other half is
-// missing would make a half-finished translation worse than none.
+// --- 2. The fallback is per FIELD, and only the label has one ------------------------------------------
+// Dekito fills nine rows by hand. A row whose label is translated keeps it when the description is not.
+// The label falls back to the Indonesian one ("30 ml" reads the same in both shops); the description
+// does not — "Ukuran default bespoke." under the first bottle of the English page (2026-11-07) was worse
+// than no note at all.
 assert.deepEqual(bespokeOptionText({ ...option, descriptionEn: '' }, true), {
   label: 'Handwritten',
-  description: 'Label stiker dengan tulisan tangan saya',
+  description: '',
 });
 assert.deepEqual(bespokeOptionText({ ...option, labelEn: '', descriptionEn: '' }, true), {
   label: 'Tulis tangan',
-  description: 'Label stiker dengan tulisan tangan saya',
+  description: '',
 });
+assert.equal(bespokeOptionText({ ...option, descriptionEn: '' }, false).description, 'Label stiker dengan tulisan tangan saya',
+  'the Indonesian shop keeps its own description');
 // An empty translation is not a translation — a blank button is worse than an Indonesian one.
 assert.equal(bespokeOptionText({ ...option, labelEn: '   ' }, true).label, 'Tulis tangan',
   'a stray space counted as a translation, so the button would render blank');

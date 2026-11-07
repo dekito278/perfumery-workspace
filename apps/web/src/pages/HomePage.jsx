@@ -19,7 +19,7 @@ import { CURATED_LIMIT_DESKTOP, pickCuratedProducts } from '@/utils/curatedProdu
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
+import { getPublishedJournalPosts, getJournalCategoryShopLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 import { DEFAULT_SHARE_IMAGE, buildOrganizationJsonLd, buildWebSiteJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
 import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 import { articleExcerpt } from '@/utils/articleExcerpt.js';
@@ -58,7 +58,7 @@ const familyLine = (product) => [product.category, product.limited && product.ca
 
 const HomePage = () => {
   const fetchedProducts = useStorefrontProducts();
-  const { t, region } = useTranslate();
+  const { t, region, isInternational } = useTranslate();
   // Same reason as CatalogPage: the bundled seed is six perfumes this shop does not sell, and showing
   // them during an outage put phantom stock on the front page.
   const catalogProducts = fetchedProducts;
@@ -271,14 +271,18 @@ const HomePage = () => {
                   <p className="ng-mono m-0 text-ng-ash">{t('home.ngSpecEyebrow')}</p>
                   <h2 id="home-spec-title" className="ng-display ng-h2">{t('home.ngSpecTitle')} <em>{t('home.ngSpecTitleEm')}</em></h2>
                 </div>
-                <p className="ng-lead md:justify-self-end">{t('home.ngSpecLead')}</p>
+                <div className="flex flex-col gap-3 md:justify-self-end">
+                  <p className="ng-lead m-0">{t('home.ngSpecLead')}</p>
+                  {/* The notes below are Indonesian; the journal says so, and so must the home page that links to them. */}
+                  {isInternational ? <p className="m-0 text-sm text-ng-dust">{t('journal.indonesianOnly')}</p> : null}
+                </div>
               </div>
               <div className="grid gap-6 md:grid-cols-3">
                 {publishedArticles.map((article, index) => (
                   <Link key={article.id} to={getJournalPublicPath(article)} className="ng-specimen">
                     <span className="ng-mono flex justify-between gap-4 text-ng-ash">
                       <span className="text-ng-ember">{t('home.ngSpecLabel', { number: String(index + 1).padStart(2, '0') })}</span>
-                      <span>{getJournalCategoryLabel(article.category)}</span>
+                      <span>{getJournalCategoryShopLabel(article.category, t)}</span>
                     </span>
                     <span lang="id" className="font-ng-display text-[32px] leading-[1.05]">{article.title}</span>
                     <span lang="id" className="text-[15px] leading-relaxed text-ng-dust">{getArticleExcerpt(article)}</span>
