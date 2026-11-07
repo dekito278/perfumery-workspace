@@ -776,7 +776,7 @@ const MobileFormulaComposerWorkspace = ({
                         </button>
                         <div className="flex items-center gap-1">
                           {hasSyncIssue ? <AlertTriangle className="h-4 w-4 text-amber-500" aria-label="Guidance needs sync" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                          <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} className="rounded-lg p-1 text-[#6b7280]"><MoreHorizontal className="h-4 w-4" /></button>
+                          <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} aria-expanded={open} aria-label={`${open ? 'Tutup' : 'Buka'} detail ${item.materialName}`} className="grid h-11 w-11 place-items-center rounded-lg text-[#6b7280]"><MoreHorizontal className="h-4 w-4" /></button>
                         </div>
                       </div>
 

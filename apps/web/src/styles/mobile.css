@@ -114,6 +114,22 @@ body:has([contenteditable="true"]:focus) .mobile-fixed-action {
   min-height: 44px;
 }
 
+/* Radix draws a checkbox and a switch as <button>, so the rule above stretched a 16px checkbox into a
+   16x44 pill — "Pilih semua yang tampil" on Orders and Pengiriman, and every order card. They keep their
+   drawn size and get the 44px from an invisible ring instead. */
+.mobile-app button[role='checkbox'],
+.mobile-app button[role='switch'] {
+  position: relative;
+  min-height: 0;
+}
+
+.mobile-app button[role='checkbox']::after,
+.mobile-app button[role='switch']::after {
+  content: '';
+  position: absolute;
+  inset: -14px;
+}
+
 .mobile-app input,
 .mobile-app textarea {
   -webkit-user-select: text;
@@ -650,6 +666,13 @@ body:has([contenteditable="true"]:focus) .mobile-fixed-action {
   border-right: 1px solid rgba(229, 231, 235, 0.94);
 }
 
+/* The add button floats 80px up, 56px tall, over the right of the page. The shell's 88px bottom padding
+   cleared the nav, not the button, so the last row of the dashboard ended under it even scrolled all the
+   way down. Pages that carry the button get room for it too. */
+.mobile-app:has(.mobile-fab) .mobile-app-shell {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 152px);
+}
+
 .mobile-fab {
   position: fixed;
   right: max(14px, calc((100vw - 430px) / 2 + 14px));
@@ -687,6 +710,12 @@ body:has([contenteditable="true"]:focus) .mobile-fixed-action {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* The account button floats over the top-right corner of every phone screen. MobileTopBar leaves room for
+   it (pr-12); a page that writes its own header did not, and "Hitung ongkir ke luar negeri" ran under it. */
+.mobile-page > header:first-child:not(.mobile-top-bar) {
+  padding-right: 48px;
 }
 
 .mobile-session-button {

@@ -731,7 +731,9 @@ const MobileProductForm = ({ product = null, onSaved, backTo = '' }) => {
           <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={resetForm} disabled={!hasUnsavedChanges}>Batalkan</Button>
           <Button type="button" className="h-12 min-w-0 rounded-2xl gap-2" onClick={handleSubmit} disabled={savingProduct || !requiredReady}>
             <Save className="h-4 w-4 shrink-0" />
-            <span className="truncate">{savingProduct ? 'Menyimpan...' : requiredReady ? 'Simpan produk' : `Isi dulu: ${missingRequired.join(', ')}`}</span>
+            {/* Two short lines rather than one cut off: "Isi dulu: Nama, Kategori, Rin…" hid the very field
+                it was asking for. */}
+            <span className={`line-clamp-2 whitespace-normal text-left ${requiredReady ? '' : 'text-xs leading-tight'}`}>{savingProduct ? 'Menyimpan...' : requiredReady ? 'Simpan produk' : `Isi dulu: ${missingRequired.join(', ')}`}</span>
           </Button>
         </div>
         <Button type="button" variant="outline" className="mt-2 h-11 w-full rounded-2xl bg-white gap-2 text-xs font-bold" onClick={previewCurrentProduct}>

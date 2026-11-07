@@ -25,7 +25,9 @@ const DrawerOverlay = React.forwardRef(({ className, ...props }, ref) => (
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
-const DrawerContent = React.forwardRef(({ className, children, ...props }, ref) => (
+// `handle={false}` for a sheet that draws its own grip — MobileBottomSheet does, on its header, and every
+// phone sheet showed two grey bars stacked one above the other.
+const DrawerContent = React.forwardRef(({ className, children, handle = true, ...props }, ref) => (
   <DrawerPortal>
     <DrawerOverlay />
     <DrawerPrimitive.Content
@@ -35,7 +37,7 @@ const DrawerContent = React.forwardRef(({ className, children, ...props }, ref) 
         className
       )}
       {...props}>
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" data-mobile-sheet-drag-zone />
+      {handle ? <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" data-mobile-sheet-drag-zone /> : null}
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>

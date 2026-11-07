@@ -64,23 +64,38 @@ const getKeyboardAnchor = (element) => {
   return contextualWrapper || element;
 };
 
+/**
+ * How far to scroll so the focused field — with its label, when that fits — sits between the top gap and
+ * the keyboard. Pure, so the guard runs it.
+ *
+ * The anchor is a guess: the nearest label, or failing that the nearest `.space-y-*` wrapper. On a phone
+ * the wrapper is often a whole page section. The Fulfillment queue is one `.space-y-3` holding every order
+ * card, so tapping "Kurir" in the first card scrolled the page until the LIST's bottom edge cleared the
+ * keyboard — 682px, then 640, then 207 as the settle timers re-measured — and the field being typed into
+ * left the screen at the top. Measured 2026-11-08. An anchor taller than the space it has to fit in can
+ * only be shown by hiding the field, so it falls back to the field itself.
+ */
+export const keyboardScrollDelta = ({ field, anchor = field, bounds, padding = 12 }) => {
+  const room = bounds.bottom - bounds.top;
+  const target = anchor && anchor.bottom - anchor.top <= room ? anchor : field;
+  if (target.top >= bounds.top && target.bottom <= bounds.bottom) return 0;
+  // Taller than the room (a long textarea): show where typing starts, not where it ends.
+  if (target.bottom - target.top > room || target.top < bounds.top) return target.top - bounds.top - padding;
+  return target.bottom - bounds.bottom + padding;
+};
+
 const scrollElementIntoSafeView = (element, behavior = 'smooth') => {
   if (!element?.matches?.(focusTargets)) return;
 
   const anchor = getKeyboardAnchor(element);
-  const rect = anchor.getBoundingClientRect();
-  const { top, bottom } = getVisibleBounds();
   const scrollContainer = findScrollContainer(anchor);
-  const isTextarea = element.matches('textarea');
-  const contextPadding = isTextarea ? 24 : 12;
-
-  if (rect.top >= top && rect.bottom <= bottom) {
-    return;
-  }
-
-  const targetDelta = rect.bottom > bottom
-    ? rect.bottom - bottom + contextPadding
-    : rect.top - top - contextPadding;
+  const targetDelta = keyboardScrollDelta({
+    field: element.getBoundingClientRect(),
+    anchor: anchor.getBoundingClientRect(),
+    bounds: getVisibleBounds(),
+    padding: element.matches('textarea') ? 24 : 12,
+  });
+  if (!targetDelta) return;
 
   if (scrollContainer === window) {
     window.scrollBy({ top: targetDelta, behavior });

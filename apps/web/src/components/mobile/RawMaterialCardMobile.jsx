@@ -41,7 +41,9 @@ const RawMaterialCardMobile = ({
             <span className="truncate">impact {impact ?? '-'}</span>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        {/* 44px squares, 8px apart. At h-7 w-7 the 44px phone minimum stretched them into 28px-wide pills,
+            with Delete 6px from Archive. */}
+        <div className="flex shrink-0 items-center gap-2">
           <MobileStatusBadge tone={ready ? 'active' : 'warning'} className="h-5 px-2 text-[10px]">
             {ready ? 'Ready' : 'Audit'}
           </MobileStatusBadge>
@@ -50,20 +52,20 @@ const RawMaterialCardMobile = ({
             variant="outline"
             size="icon"
             onClick={onArchive}
-            className="mobile-interactive mobile-pressable h-7 w-7 rounded-xl border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+            className="mobile-interactive mobile-pressable h-11 w-11 rounded-xl border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800"
             aria-label={`${archived ? 'Restore' : 'Archive'} ${material.name}`}
           >
-            <Archive className="h-3.5 w-3.5" />
+            <Archive className="h-4 w-4" />
           </Button>
           <Button
             type="button"
             variant="outline"
             size="icon"
             onClick={onDelete}
-            className="mobile-interactive mobile-delete-action h-7 w-7 rounded-xl border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800"
+            className="mobile-interactive mobile-delete-action h-11 w-11 rounded-xl border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800"
             aria-label={`Delete ${material.name}`}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
