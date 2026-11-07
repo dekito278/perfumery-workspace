@@ -1093,9 +1093,9 @@ const walk = (dir, out = []) => {
 
 // --- The bespoke floor price is gated, and never typed into the copy ----------------------------------
 //
-// storefront_bespoke_options holds ONE domestic set of prices with no international variant, and the
-// English bespoke path takes no payment at all (#209). A rupiah floor shown there would be exactly the
-// promise buildBespokeEnquiryDraft was written to avoid.
+// storefront_bespoke_options holds ONE domestic set of prices, and the English bespoke path takes no payment
+// (#209). Its price there is that set converted by the overseas rule (bespokeUsdPrice) — a rupiah floor in
+// the English shop would be a number the buyer is never asked to pay.
 {
   for (const [name, file] of [
     ['desktop', ['pages', 'BespokePage.jsx']],
@@ -1103,8 +1103,9 @@ const walk = (dir, out = []) => {
     const source = read(...file);
     assert.match(source, /bespokeFloorPrice\(/,
       `${name} must derive the floor from the option rows, not carry its own number`);
-    assert.match(source, /isInternational \? t\('bsp\.floor'\) : t\('bsp\.floor', \{ price:/,
-      `${name} shows a rupiah floor to the English shop, which has no international price and takes no payment`);
+    // Since 2026-11-07 the English floor is the dollar price (bespokeUsdPrice), never the rupiah one.
+    assert.match(source, /t\('bsp\.floor', \{ price: isInternational \? `US\$\$\{bespokeUsdPrice\(floorPrice\)\}` : formatRupiah\(floorPrice\) \}\)/,
+      `${name} shows the English shop a floor that is not its dollar price`);
   }
 
   // The number may not be pasted into the message file either — that is the second source of truth.
@@ -1113,9 +1114,9 @@ const walk = (dir, out = []) => {
     assert.doesNotMatch(MESSAGES[lang]['bsp.floor'], /\d{3}/,
       `${lang} bsp.floor contains a hardcoded figure — it goes stale the day a price changes in Studio`);
   }
-  assert.match(MESSAGES.id['bsp.floor'], /\{price\}/, 'the Indonesian line must interpolate the derived figure');
-  assert.doesNotMatch(MESSAGES.en['bsp.floor'], /\{price\}|Rp/,
-    'the English line must not quote rupiah at all — it is a different, true sentence');
+  // Both interpolate the derived figure: rupiah in Indonesia, the dollar price in the English shop.
+  for (const lang of ['id', 'en']) assert.match(MESSAGES[lang]['bsp.floor'], /\{price\}/, `the ${lang} line must interpolate the derived figure`);
+  assert.doesNotMatch(MESSAGES.en['bsp.floor'], /Rp/, 'the English line must not quote rupiah');
 }
 
 // --- A SIXTH way to leak: a key nothing reads, beside a page that prints its words by hand ------------

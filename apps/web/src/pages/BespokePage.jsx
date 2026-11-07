@@ -30,7 +30,7 @@ import {
   clearAppliedVoucherCode,
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
-import { bespokeStepKeys, bespokeTakesPayment, bespokeOccasionLabel, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice, optionExtraPrice } from '@/utils/bespokeOrder.js';
+import { bespokeStepKeys, bespokeTakesPayment, bespokeOccasionLabel, bespokeUsdPrice, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice, optionExtraPrice } from '@/utils/bespokeOrder.js';
 import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
@@ -185,11 +185,17 @@ const BespokePage = () => {
   const labelDesignOptions = useMemo(() => settings.labelDesigns.filter((option) => option.enabled), [settings.labelDesigns]);
   const exoticMaterialOptions = useMemo(() => settings.exoticMaterials.filter((option) => option.enabled), [settings.exoticMaterials]);
   const floorPrice = useMemo(() => bespokeFloorPrice(settings), [settings]);
-  // Same gate as the floor: domestic prices only, and the English bespoke path quotes nothing.
+  // Rupiah in the Indonesian shop. Dollars in the English one, as the difference between the two bottles'
+  // dollar prices — so "+US$75" is exactly what choosing it adds to the total shown below.
   const optionPriceLabel = useCallback((option, group) => {
-    if (isInternational) return '';
     const extra = optionExtraPrice(option, group);
-    return extra ? t('bsp.optionExtra', { price: formatRupiah(extra) }) : '';
+    if (!extra) return '';
+    if (isInternational) {
+      const base = Number(option.price || 0) - extra;
+      const usd = bespokeUsdPrice(Number(option.price || 0)) - bespokeUsdPrice(base);
+      return usd > 0 ? t('bsp.optionExtra', { price: `US$${usd}` }) : '';
+    }
+    return t('bsp.optionExtra', { price: formatRupiah(extra) });
   }, [isInternational, t]);
   const defaultSize = cheapestEnabled(bottleSizeOptions);
   const defaultBottle = cheapestEnabled(bottleTypeOptions);
@@ -711,12 +717,12 @@ const BespokePage = () => {
             <p className="ng-eyebrow ng-mono m-0">{t('bsp.eyebrow')}</p>
             <h1 className="ng-display ng-h1 max-w-[980px]">{t('bsp.title')}</h1>
             <p className="ng-lead">{t('bsp.lead', { days: siteFacts.bespokeDays })}</p>
-            {/* Same rule as the phone: a floor derived from Studio's own option prices, and never shown
-                to the English shop, whose bespoke path takes no payment and has no international price. */}
+            {/* A floor derived from Studio's own option prices: rupiah here, dollars in the English shop by the
+                rule every perfume abroad is priced with (bespokeUsdPrice). */}
             {/* The price and its condition, each on its own line: run together they read "Mulai dari Rp 569.000
                 Sebelum ongkir…", one sentence that is not one (2026-11-02). */}
             <p className="m-0 flex flex-col gap-1 text-[15px] text-ng-dust">
-              <strong className="font-medium text-ng-bone">{isInternational ? t('bsp.floor') : t('bsp.floor', { price: formatRupiah(floorPrice) })}</strong>
+              <strong className="font-medium text-ng-bone">{t('bsp.floor', { price: isInternational ? `US$${bespokeUsdPrice(floorPrice)}` : formatRupiah(floorPrice) })}</strong>
               <span>{t('bsp.floorNote')}</span>
             </p>
             <ol className="ng-mono m-0 mt-2 flex list-none flex-wrap gap-x-8 gap-y-3 p-0 text-ng-ash">
@@ -840,7 +846,7 @@ const BespokePage = () => {
                 <dl className="m-0 flex flex-col gap-3 border-t border-ng-bone/15 pt-4 text-[15px]">
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.scent')}</dt><dd className="m-0 text-right">{form.scentDescription || t('bsp.notFilled')}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.bottle')}</dt><dd className="m-0 text-right">{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
-                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0 shrink-0 whitespace-nowrap font-ng-display text-[32px]">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
+                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0 shrink-0 whitespace-nowrap font-ng-display text-[32px]">{priceReady ? (isInternational ? `US$${bespokeUsdPrice(estimatedTotal)}` : formatRupiah(estimatedTotal)) : '—'}</dd></div>
                 </dl>
               </div>
               {/* Where the two shops part. The Indonesian one opens its checkout; the English one hands
@@ -867,6 +873,7 @@ const BespokePage = () => {
                         scent: form.scentDescription || form.mood,
                         occasion: bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions),
                         bottle: [selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / '),
+                        price: priceReady && estimatedTotal > 0 ? `US$${bespokeUsdPrice(estimatedTotal)}` : '',
                       }), getStorefrontWhatsAppNumber())}
                       target="_blank"
                       rel="noopener noreferrer"

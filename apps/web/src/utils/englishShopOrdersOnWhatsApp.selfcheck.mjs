@@ -256,20 +256,19 @@ for (const [page, needles] of [
       `${key} still promises a payment step the English shop no longer has:\n  ${line.trim()}`);
   }
 
-  // The one rupiah figure the English bespoke page still shows. It is the DOMESTIC cost of the build,
-  // printed a few lines above "the price is quoted on WhatsApp" — true, but read as the final price
-  // unless it says which price it is. Same shape as Rp 1.020.000 on the product page against Rp 260.000
-  // in the cart: two honest numbers that contradict each other when neither is labelled.
+  // The English bespoke summary showed the DOMESTIC rupiah cost, labelled "(Indonesian price)". Since
+  // 2026-11-07 it is the dollar price, by the rule every perfume abroad is priced with (Dekito: "pake usd")
+  // — so the label promises no rupiah figure, and the page prints dollars there.
   const subtotalLine = en.split('\n').find((row) => row.includes('"bsp.subtotal"'));
   assert.ok(subtotalLine, 'bsp.subtotal has gone missing from the English block');
-  assert.match(subtotalLine, /Indonesian/,
-    `the English bespoke summary prints a rupiah figure without saying which price it is:\n  ${subtotalLine.trim()}`);
+  assert.doesNotMatch(subtotalLine, /Indonesian|Rp/, `the English bespoke summary still speaks of a rupiah price:\n  ${subtotalLine.trim()}`);
+  assert.match(readCode('pages/BespokePage.jsx'), /isInternational \? `US\$\$\{bespokeUsdPrice\(estimatedTotal\)\}` : formatRupiah\(estimatedTotal\)/,
+    'the English bespoke summary must print the dollar price');
 }
 
-// --- 6. The bespoke handoff is written in the message file, and quotes no price -----------------------
-// There IS no international bespoke price — the options are one domestic set — so a number here would be
-// invented. Run the real builder against a stub translator: a draft hardcoded in the component would not
-// come back as the stub's output.
+// --- 6. The bespoke handoff is written in the message file, with the price the page showed --------------
+// Run the real builder against a stub translator: a draft hardcoded in the component would not come back
+// as the stub's output. Since 2026-11-07 it carries the dollar price (bespokeUsdPrice) the buyer saw.
 const stub = (key, vars = {}) => `${key}|${vars.name}|${vars.scent}|${vars.occasion}|${vars.bottle}`;
 assert.equal(
   buildBespokeEnquiryDraft({ t: stub, perfumeName: 'Rain Letter', scent: 'Woody', occasion: 'A gift', bottle: '30 ml / Classic' }),
@@ -278,5 +277,7 @@ assert.equal(
 );
 assert.match(buildBespokeEnquiryDraft({ t: stub }), /\|-\|-\|-\|-$/, 'an unanswered field must read as a dash, not as "undefined"');
 assert.equal(buildBespokeEnquiryDraft(), '', 'no translator, no draft');
+assert.equal(buildBespokeEnquiryDraft({ t: (key, vars) => vars.price, price: 'US$125' }), 'US$125', 'the brief carries the price it was given');
+assert.equal(buildBespokeEnquiryDraft({ t: (key, vars) => vars.price }), '-', 'and a dash when the price had not loaded');
 
 console.log(`englishShopOrdersOnWhatsApp selfcheck OK (the English cart is dollars, a destination and WhatsApp; ${payChecked} payment surface(s) still gated; the checkout stays domestic)`);

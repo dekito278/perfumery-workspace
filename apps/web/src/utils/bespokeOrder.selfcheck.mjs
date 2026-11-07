@@ -256,14 +256,37 @@ assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mentio
     const source = strip(readFileSync(join(here, '..', ...file), 'utf8'));
     assert.match(source, /optionExtraPrice\(option, group\)/,
       `${name} must price its options from the shared rule, not a second calculation`);
-    // Gated with the floor: these are domestic prices and the English bespoke path quotes none.
-    assert.match(source, /if \(isInternational\) return '';/,
-      `${name} would show rupiah option prices in the English shop, which takes no payment for bespoke`);
+    // Rupiah in the Indonesian shop, dollars in the English one — never a rupiah figure abroad (2026-11-07).
+    assert.match(source, /if \(isInternational\) \{[\s\S]{0,240}bespokeUsdPrice\(/,
+      `${name} must price the English options in dollars, by the shared rule`);
+    for (const shown of ['bsp.floor', 'bsp.subtotal']) {
+      assert.ok(source.includes(`t('${shown}`), `${name} no longer shows ${shown}`);
+    }
+    assert.match(source, /isInternational \? `US\$\$\{bespokeUsdPrice\(floorPrice\)\}` : formatRupiah\(floorPrice\)/,
+      `${name}: the English floor must be the dollar price`);
+    assert.match(source, /isInternational \? `US\$\$\{bespokeUsdPrice\(estimatedTotal\)\}` : formatRupiah\(estimatedTotal\)/,
+      `${name}: the English subtotal must be the dollar price`);
+    assert.match(source, /price: priceReady && estimatedTotal > 0 \? `US\$\$\{bespokeUsdPrice\(estimatedTotal\)\}`/,
+      `${name}: the WhatsApp brief must carry the dollar price the page showed`);
     // Every group that has prices must pass the label through, or one screen stays silent.
     const passes = (source.match(/extra=\{optionPriceLabel\(/g) || []).length;
     assert.ok(passes >= 1, `${name} computes the extra price but never renders it`);
   }
 
+}
+
+// --- The English price is the rule every perfume abroad is priced with: 3,5x, up to Rp 10.000, then the
+// pricing rate up to US$5. Pinned against the perfume it must stay in step with (Rp 359.000 → US$80).
+{
+  const { bespokeUsdPrice } = await import('./bespokeOrder.js');
+  assert.equal(bespokeUsdPrice(359000), 80, 'a Rp 359.000 bottle is US$80 abroad, as on every product page');
+  assert.equal(bespokeUsdPrice(569000), 125, 'the 30 ml bespoke');
+  assert.equal(bespokeUsdPrice(939000), 200, 'the 50 ml bespoke');
+  assert.equal(bespokeUsdPrice(0), 0, 'no price is no price, not a guess');
+  assert.equal(bespokeUsdPrice(null), 0);
+  const { MESSAGES } = await import('../i18n/messages.js');
+  assert.doesNotMatch(MESSAGES.en['bsp.subtotal'] + MESSAGES.en['bsp.floor'], /Indonesian price|Rp/, 'the English labels no longer promise a rupiah figure');
+  assert.match(MESSAGES.en['bsp.waOrderDraft'], /\{price\}/, 'the English brief says which price the buyer saw');
 }
 
 // The lead time in the brief is the one the buyer ticked, which Dekito sets in Studio (2026-11-03). The
