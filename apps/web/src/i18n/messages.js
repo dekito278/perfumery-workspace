@@ -1414,11 +1414,13 @@ export const MESSAGES = {
     'loading.title': 'Preparing Solivagant',
     'loading.body': 'One moment, the page is being prepared.',
 
-    'why.eyebrow': 'WHY BUY DIRECT',
-    'why.heading': "What a marketplace can't give you.",
+    // A buyer abroad does not shop on an Indonesian marketplace, so the English shop does not measure itself
+    // against one (Dekito, 2026-11-07). The Indonesian copy keeps the comparison: there, it is the alternative.
+    'why.eyebrow': 'WHY ORDER HERE',
+    'why.heading': 'Ordered from the hands that make it.',
     'why.whatsappMessage': 'Hello Solivagant, I would like to ask about a fragrance.',
     'why.member.title': 'Member pricing',
-    'why.member.body': 'Prices here already sit below the marketplace. Sign in with Google and every price drops again — the cut that usually goes to marketplace fees goes to you instead.',
+    'why.member.body': 'Sign in with Google and every price in the catalogue drops to the member price.',
     'why.member.cta': 'Sign in',
     // The card an international visitor sees in that first slot. The member discount is an
     // Indonesian-order thing, so promising it here — or linking to a sign-in that does nothing for them —

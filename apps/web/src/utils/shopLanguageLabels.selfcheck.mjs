@@ -66,4 +66,9 @@ assert.match(pdp, /isPlaceholderMood\(product\.mood\) \|\| isInternational \? nu
 assert.match(read('pages', 'HomePage.jsx'), /isInternational \? <p[^>]*>\{t\('journal\.indonesianOnly'\)\}/, 'the English home page links to Indonesian notes without saying so');
 assert.match(read('pages', 'PublicJournalArticlePage.jsx'), /isInternational \? <p lang="en"[^>]*>\{t\('journal\.articleIndonesian'\)\}/, 'the English article does not say it is in Indonesian');
 
-console.log('shopLanguageLabels selfcheck OK (pyramid captions, journal category names, mood, Indonesian notes)');
+// --- 5. The English shop does not compare itself with a marketplace ------------------------------------
+// A buyer abroad does not shop on an Indonesian marketplace (Dekito, 2026-11-07); the Indonesian copy keeps it.
+const marketplace = Object.entries(MESSAGES.en).filter(([, text]) => /marketplace/i.test(String(text))).map(([key]) => key);
+assert.deepEqual(marketplace, [], `the English shop mentions a marketplace: ${marketplace.join(', ')}`);
+
+console.log('shopLanguageLabels selfcheck OK (pyramid captions, journal category names, mood, Indonesian notes, no marketplace in English)');
