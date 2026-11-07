@@ -1,4 +1,5 @@
-// Why buy here rather than on a marketplace — the four things a marketplace cannot offer.
+// Why buy here rather than on a marketplace — the four things a marketplace cannot offer. Indonesian only:
+// the English shop has no marketplace to compare with, so its copy says what the atelier does (2026-11-07).
 //
 // The greeting card in every parcel sends buyers to this site; this is what the site says to them once
 // they arrive. Pure data, rendered by one component on both homes so the two never drift. Paths are

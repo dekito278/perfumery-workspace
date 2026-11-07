@@ -302,8 +302,8 @@ export const MESSAGES = {
     'why.member.title': 'Harga member',
     'why.member.body': 'Harga di sini sudah di bawah marketplace. Masuk dengan Google, dan setiap harga di katalog turun lagi — potongan yang biasanya jadi biaya marketplace, jadi milikmu.',
     'why.member.cta': 'Masuk',
-    'why.intl.title': 'Harga luar negeri di muka',
-    'why.intl.body': 'Setiap halaman produk menampilkan harga internasionalnya sebelum kamu bertanya. Pilih negara tujuan, ongkir dan totalnya langsung terlihat.',
+    'why.intl.title': 'Sebagian ongkir kami tanggung',
+    'why.intl.body': 'Setiap pesanan luar negeri dikirim lewat DHL, dan atelier menanggung sebagian ongkirnya. Pilih negara di halaman produk mana pun, totalnya langsung terlihat.',
     'why.intl.cta': 'Lihat koleksi',
     'why.atelier.title': 'Langsung dari perfumer',
     'why.atelier.body': 'Diracik dan dikemas di atelier oleh Dekito sendiri. Tidak lewat gudang, tidak lewat reseller.',
@@ -1174,7 +1174,7 @@ export const MESSAGES = {
     // international order does not get — outside Indonesia the price is the export price and shipping is
     // quoted by hand. Promising a discount this buyer cannot have is the bait-and-switch the export panel
     // exists to prevent, wearing a friendlier face.
-    'welcome.lead': 'The perfume that just reached you was blended in this atelier, one bottle at a time. Ordering from here means buying from the person who made it. Outside Indonesia we price and quote shipping by hand — every product page shows the international price before you ask.',
+    'welcome.lead': 'The perfume that just reached you was blended in this atelier, one bottle at a time. Every product page shows its international price, and the atelier covers part of the DHL shipping on every order abroad.',
     'welcome.alreadyMember': "You're signed in — see the collection",
     'welcome.signIn': 'Sign in with Google',
     'welcome.browse': 'Browse the collection',
@@ -1366,7 +1366,7 @@ export const MESSAGES = {
     'nav.accountShort': 'Account',
     'about.eyebrow': 'ARTISAN PERFUME ATELIER',
     'about.title': 'Made by hand, one bottle at a time.',
-    'about.p1': 'SOLIVAGANT is the artisan perfume atelier of Dekito. Every bottle is blended and packed by Dekito personally — no warehouse, no reseller in between.',
+    'about.p1': 'SOLIVAGANT is the artisan perfume atelier of Dekito. Every bottle is blended and packed by Dekito personally.',
     'about.p2': 'The work is slow: a scent is built from raw materials, memory and ritual, then tried again and again until it reads true. Only what survives that is released, and some compositions never are.',
     'about.p3': 'Every fragrance is sold straight from the atelier to the person who wears it, in Indonesia and abroad. For a scent that is not in the collection, there is a bespoke service.',
     'about.factsTitle': 'Brand details',
@@ -1414,10 +1414,11 @@ export const MESSAGES = {
     'loading.title': 'Preparing Solivagant',
     'loading.body': 'One moment, the page is being prepared.',
 
-    // A buyer abroad does not shop on an Indonesian marketplace, so the English shop does not measure itself
-    // against one (Dekito, 2026-11-07). The Indonesian copy keeps the comparison: there, it is the alternative.
-    'why.eyebrow': 'WHY ORDER HERE',
-    'why.heading': 'Ordered from the hands that make it.',
+    // A buyer abroad has no marketplace listing to compare with, so the English shop says what the atelier
+    // does and measures itself against no one (Dekito, 2026-11-07). The Indonesian copy keeps its comparison:
+    // the brand's marketplace listings there really are priced higher.
+    'why.eyebrow': "THE ATELIER'S PROMISE",
+    'why.heading': 'What comes with every order.',
     'why.whatsappMessage': 'Hello Solivagant, I would like to ask about a fragrance.',
     'why.member.title': 'Member pricing',
     'why.member.body': 'Sign in with Google and every price in the catalogue drops to the member price.',
@@ -1425,14 +1426,14 @@ export const MESSAGES = {
     // The card an international visitor sees in that first slot. The member discount is an
     // Indonesian-order thing, so promising it here — or linking to a sign-in that does nothing for them —
     // would be the bait-and-switch the export panel exists to prevent.
-    'why.intl.title': 'The international price, up front',
-    'why.intl.body': 'Every product page shows its international price before you ask. Choose your country and the shipping and total appear with it — nothing waits until the end.',
+    'why.intl.title': 'Shipping, partly on us',
+    'why.intl.body': 'Every international order ships by DHL, and the atelier covers part of the shipping cost. Choose your country on any product page and the total appears straight away.',
     'why.intl.cta': 'Browse the collection',
     'why.atelier.title': 'Straight from the perfumer',
-    'why.atelier.body': 'Blended and packed in the atelier by Dekito personally. No warehouse, no reseller in between.',
+    'why.atelier.body': 'Blended and packed in the atelier by Dekito personally, one bottle at a time.',
     'why.atelier.cta': 'Bespoke ritual',
     'why.first.title': 'First to know',
-    'why.first.body': 'New releases, special sizes, and a handwritten card in every parcel — only for people who order direct.',
+    'why.first.body': 'New releases and special sizes are announced here first, and every parcel carries a card.',
     'why.first.cta': 'See the collection',
     'why.whatsapp.title': 'Ask the maker',
     'why.whatsapp.body': 'Torn between two scents, or want to check stock? The atelier WhatsApp is answered by the person who blends them.',

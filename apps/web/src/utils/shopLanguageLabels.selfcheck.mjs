@@ -66,9 +66,12 @@ assert.match(pdp, /isPlaceholderMood\(product\.mood\) \|\| isInternational \? nu
 assert.match(read('pages', 'HomePage.jsx'), /isInternational \? <p[^>]*>\{t\('journal\.indonesianOnly'\)\}/, 'the English home page links to Indonesian notes without saying so');
 assert.match(read('pages', 'PublicJournalArticlePage.jsx'), /isInternational \? <p lang="en"[^>]*>\{t\('journal\.articleIndonesian'\)\}/, 'the English article does not say it is in Indonesian');
 
-// --- 5. The English shop does not compare itself with a marketplace ------------------------------------
-// A buyer abroad does not shop on an Indonesian marketplace (Dekito, 2026-11-07); the Indonesian copy keeps it.
-const marketplace = Object.entries(MESSAGES.en).filter(([, text]) => /marketplace/i.test(String(text))).map(([key]) => key);
-assert.deepEqual(marketplace, [], `the English shop mentions a marketplace: ${marketplace.join(', ')}`);
+// --- 5. The English shop measures itself against no one ------------------------------------------------
+// Dekito, 2026-11-07: the Indonesian shop compares itself with the marketplace because the brand's listings
+// there really cost more; abroad there is nothing to compare with, so the English copy says what the
+// atelier does — no marketplace, no reseller or warehouse "in between", no "why buy direct".
+const JAB = /marketplace|no reseller|no warehouse|buy direct|order direct/i;
+const jabs = Object.entries(MESSAGES.en).filter(([, text]) => JAB.test(String(text))).map(([key]) => key);
+assert.deepEqual(jabs, [], `the English shop compares itself with someone else: ${jabs.join(', ')}`);
 
-console.log('shopLanguageLabels selfcheck OK (pyramid captions, journal category names, mood, Indonesian notes, no marketplace in English)');
+console.log('shopLanguageLabels selfcheck OK (pyramid captions, journal category names, mood, Indonesian notes, no jab in English)');
