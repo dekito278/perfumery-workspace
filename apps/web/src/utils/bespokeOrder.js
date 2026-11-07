@@ -1,8 +1,10 @@
 // Pure builders for a bespoke order's item + notes + checkout draft.
 // Shared by the browser (services/orderService.js) and the authoritative server endpoint
 // (api/orders/create.js) so both shape the brief identically. No browser/supabase imports — keep it that way;
-// the one import is plain data, relative so the server can load it.
+// the imports are plain data and arithmetic, relative so the server can load them.
 import { DEFAULT_SITE_FACTS } from '../data/siteFacts.js';
+import { overseasPriceFromRetail } from './memberPriceFill.js';
+import { usdPriceFor } from './usdPrice.js';
 
 export const BESPOKE_SOURCE = 'bespoke_request';
 
@@ -232,7 +234,7 @@ export const bespokeOccasionLabel = (t, value, options = []) => {
   return label || value || '';
 };
 
-export const buildBespokeEnquiryDraft = ({ t, perfumeName = '', scent = '', occasion = '', bottle = '' } = {}) => {
+export const buildBespokeEnquiryDraft = ({ t, perfumeName = '', scent = '', occasion = '', bottle = '', price = '' } = {}) => {
   if (typeof t !== 'function') return '';
   const filled = (value) => String(value || '').trim() || '-';
   return t('bsp.waOrderDraft', {
@@ -240,8 +242,19 @@ export const buildBespokeEnquiryDraft = ({ t, perfumeName = '', scent = '', occa
     scent: filled(scent),
     occasion: filled(occasion),
     bottle: filled(bottle),
+    price: filled(price),
   });
 };
+
+/**
+ * A bespoke bottle's price in the English shop, in whole dollars.
+ *
+ * The same rule every perfume abroad is priced by (Dekito, 2026-11-07: "pake usd"): the overseas price is
+ * 3,5x the rupiah price rounded UP to Rp 10.000 (memberPriceFill), then converted at the pricing rate and
+ * rounded UP to US$5 (usdPrice). A 30 ml bespoke at Rp 569.000 is US$125, as a Rp 359.000 perfume is US$80.
+ * 0 for no price, never a guess.
+ */
+export const bespokeUsdPrice = (rupiah) => (Number(rupiah) > 0 ? usdPriceFor(overseasPriceFromRetail(rupiah)) || 0 : 0);
 
 /**
  * Where the bespoke flow stops, per shop.
@@ -251,8 +264,8 @@ export const buildBespokeEnquiryDraft = ({ t, perfumeName = '', scent = '', occa
  * that happened to be written the same way. Two of the three were gated one at a time first, and a
  * guard that only asked "does this file mention isInternational" passed while the till stayed open.
  *
- * The English shop takes no bespoke payment: the option prices are one domestic set with no
- * international variant, and the shipping is worked out by hand.
+ * The English shop takes no bespoke payment: it shows the price in dollars (bespokeUsdPrice) and hands the
+ * brief to WhatsApp, where the shipping to the buyer's country is worked out.
  */
 export const bespokeTakesPayment = (isInternational) => !isInternational;
 
