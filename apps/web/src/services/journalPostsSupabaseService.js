@@ -146,9 +146,9 @@ const normalizeJournalPostPayload = (postData) => ({
   seo_description: postData.seo_description ? String(postData.seo_description).trim() : null,
   cover_image_url: postData.cover_image_url ? String(postData.cover_image_url).trim() : null,
   cover_alt: postData.cover_alt ? String(postData.cover_alt).trim() : null,
-  // Editable since 2026-11-03. Sent as it was loaded, so a save does not move it; null on a published
-  // article lets the database stamp it, and a draft must have none (journal_posts_published_at_matches_status).
-  published_at: postData.status === 'published' ? (postData.published_at || null) : null,
+  // Editable since 2026-11-03. Sent as it was loaded, so a save does not move it — a draft keeps the date
+  // it was first published on (20261107090000), and null on a published article lets the database stamp it.
+  published_at: postData.published_at || null,
   tags: normalizeTags(postData.tags),
 });
 

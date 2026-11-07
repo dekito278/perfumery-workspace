@@ -21,8 +21,8 @@ assert.equal(toDateInputValue(null), '');
 // database would stamp NOW on every save — the article's date moving forward each time it is touched.
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
 const service = readFileSync(join(src, 'services', 'journalPostsSupabaseService.js'), 'utf8');
-assert.match(service, /published_at: postData\.status === 'published' \? \(postData\.published_at \|\| null\) : null/,
-  'the save must carry the published date it was given, and none for a draft (the table refuses a draft with one)');
+assert.match(service, /published_at: postData\.published_at \|\| null,/,
+  'the save must carry the published date it was given, a draft included — unpublishing must not erase it');
 for (const editor of [['pages', 'JournalEditorPage.jsx'], ['pages', 'mobile', 'MobileJournalEditorPage.jsx']]) {
   const source = readFileSync(join(src, ...editor), 'utf8');
   assert.match(source, /published_at: post\.published_at \|\| null/, `${editor.join('/')} loads the article without its date`);
