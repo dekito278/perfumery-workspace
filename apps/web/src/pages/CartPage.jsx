@@ -238,8 +238,9 @@ const CartPage = () => {
           </div>
         </section>
 
-        {/* Cross-sell — complete the ritual */}
-        {items.length && recommendations.length ? (
+        {/* Cross-sell — complete the ritual. Offered to an empty cart too, as the English one is: an empty
+            cart that ends at "add products first" is a dead end. */}
+        {recommendations.length ? (
           <section className="ng-section" aria-labelledby="cart-recommend-title" data-reveal>
             <div className="ng-container flex flex-col gap-10">
               <div className="flex flex-col gap-3.5">

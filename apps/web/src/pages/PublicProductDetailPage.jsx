@@ -336,7 +336,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                     ) : lastAddedSlug === product.slug ? (
                       <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.inCart')}</>
                     ) : (
-                      <><ShoppingBag className="h-4 w-4" aria-hidden="true" /> {t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel) })}</>
+                      <><ShoppingBag className="h-4 w-4" aria-hidden="true" /> {t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') })}</>
                     )}
                   </button>
                   <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />

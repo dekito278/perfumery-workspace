@@ -5,7 +5,6 @@ import { ArrowRight, Ticket, UserRound } from 'lucide-react';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import WhyBuyDirect from '@/components/storefront/WhyBuyDirect.jsx';
-import { Button } from '@/components/ui/button.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
@@ -39,21 +38,21 @@ const WelcomeContent = ({ currentUser, signIn }) => {
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         {currentUser ? (
-          <Link to={`${prefix}/catalog`} className="inline-flex h-12 items-center justify-center gap-2 rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
+          <Link to={`${prefix}/catalog`} className="ng-btn">
             {t('welcome.alreadyMember')} <ArrowRight className="h-4 w-4" />
           </Link>
         ) : (
-          <Button type="button" onClick={signIn} className="h-auto min-h-12 max-w-full whitespace-normal rounded-none gap-2 px-5 py-3 text-left text-sm font-bold">
-            <UserRound className="h-4 w-4" /> {t('welcome.signIn')}
-          </Button>
+          <button type="button" onClick={signIn} className="ng-btn max-w-full py-3">
+            <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" /> {t('welcome.signIn')}
+          </button>
         )}
-        <Link to={`${prefix}/catalog`} className="inline-flex h-12 items-center justify-center gap-2 rounded-none border border-ng-bone/20 bg-transparent px-5 text-sm font-bold text-ng-bone">
+        <Link to={`${prefix}/catalog`} className="ng-btn ng-btn--ghost">
           {t('welcome.browse')} <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
       {isInternational ? null : (
         <div className="mt-8 rounded-none border border-ng-bone/15 bg-ng-deep p-4">
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-ng-bone">
+          <p className="ng-mono m-0 flex items-center gap-2 text-ng-bone">
             <Ticket className="h-3.5 w-3.5" /> {t('welcome.voucherEyebrow')}
           </p>
           <p className="mt-2 text-sm font-medium leading-relaxed text-ng-dust">

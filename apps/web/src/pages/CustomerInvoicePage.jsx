@@ -3,7 +3,8 @@ import { Helmet } from 'react-helmet';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CreditCard, ExternalLink, FileText, Loader2, Printer, Search, ShieldCheck, Truck } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button.jsx';
+import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import {
@@ -91,7 +92,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
   const shipmentState = invoiceShipmentState(order);
 
   return (
-  <section className={`${isMobile ? 'mobile-card p-0' : 'rounded-[28px] border bg-white shadow-sm'} overflow-hidden`}>
+  <section className={`${isMobile ? 'mobile-card p-0' : 'rounded-none border bg-white shadow-sm'} overflow-hidden`}>
     <div className="border-b border-[#e5e7eb] bg-[#121110] p-5 text-editorial-ivory sm:p-7">
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -114,7 +115,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
 
     <div className="p-5 sm:p-7">
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl bg-[#f8f7f4] p-4">
+        <div className="rounded-none bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.customer')}</div>
           {/* An unprotected code comes back masked from storefront_customer_portal: the name is its first
               letter and three dots, and there is no contact at all. Printed plainly, the buyer's own
@@ -126,7 +127,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
             <p className="mt-2 text-[11px] font-semibold leading-relaxed text-amber-800">{t('inv.maskedNote')}</p>
           ) : null}
         </div>
-        <div className="rounded-2xl bg-[#f8f7f4] p-4">
+        <div className="rounded-none bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.payment')}</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <CreditCard className="h-4 w-4 text-editorial-charcoal" />
@@ -134,7 +135,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</div>
         </div>
-        <div className="rounded-2xl bg-[#f8f7f4] p-4">
+        <div className="rounded-none bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.delivery')}</div>
           {/* Headline and sentence from ONE reading of the order. The headline used to trust
               shipment_status alone while the sentence used orderHasShipped(), which reads four fields —
@@ -161,7 +162,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
         </div>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-2xl border border-[#e5e7eb]">
+      <div className="mt-5 overflow-hidden rounded-none border border-[#e5e7eb]">
         <div className="grid grid-cols-[1fr_54px_86px] gap-2 bg-[#f8f7f4] px-3 py-2 text-[10px] font-bold uppercase text-[#6b7280] sm:grid-cols-[1fr_80px_120px_120px]">
           <span>{t('inv.item')}</span>
           <span className="text-right">{t('inv.qty')}</span>
@@ -213,7 +214,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_260px]">
-        <div className="rounded-2xl bg-editorial-ivory p-4 text-xs font-semibold leading-relaxed text-editorial-charcoal">
+        <div className="rounded-none bg-editorial-ivory p-4 text-xs font-semibold leading-relaxed text-editorial-charcoal">
           {/* A closed order has no updates to follow. The old sentence promised them anyway. */}
           {t(shipmentState === 'closed' ? 'inv.keepThisClosed' : 'inv.keepThis')}
           <div className="mt-3 flex flex-wrap gap-2">
@@ -222,30 +223,30 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
                 payment_status alone, which cannot see an order cancelled while its payment status still
                 says 'unpaid'. Same question the payment page and the portal ask. */}
             {order.paymentUrl && !isOrderClosedForPayment(order) && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-              <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
+              <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-none bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
                 <CreditCard className="h-4 w-4" />
                 {t('inv.continuePay')}
               </Link>
             ) : null}
             {order.trackingUrl && order.trackingNumber ? (
-              <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
+              <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-none border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
                 <ExternalLink className="h-4 w-4" />
                 {t('inv.trackParcel')}
               </a>
             ) : null}
             {!order.trackingUrl && courierSearchUrl ? (
-              <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
+              <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-none border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
                 <ExternalLink className="h-4 w-4" />
                 {t('inv.searchWaybill')}
               </a>
             ) : null}
-            <a href={buildPublicTrackingUrl(order.orderNumber, { basename: shopPrefixForRegion(region) })} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
+            <a href={buildPublicTrackingUrl(order.orderNumber, { basename: shopPrefixForRegion(region) })} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-none border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
               <ExternalLink className="h-4 w-4" />
               {t('inv.publicTracking')}
             </a>
           </div>
         </div>
-        <div className="rounded-2xl border border-editorial-charcoal/10 bg-white p-4">
+        <div className="rounded-none border border-editorial-charcoal/10 bg-white p-4">
           <div className="flex items-center justify-between text-sm font-semibold text-[#6b7280]">
             <span>{t('inv.totalItems')}</span>
             <span>{order.quantity}</span>
@@ -420,29 +421,30 @@ const CustomerInvoicePage = () => {
   };
 
   const content = (
-    <main className={isMobileRoute ? 'mobile-page space-y-4' : 'mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8'}>
-      <div className={isMobileRoute ? 'flex items-center justify-between gap-3' : 'mb-5 flex items-center justify-between gap-4'}>
-        <Link to={dashboardPath} className="inline-flex items-center gap-2 text-sm font-bold text-editorial-charcoal">
+    <main className={isMobileRoute ? 'mobile-page space-y-4' : 'ng-section !border-b-0'}>
+      <div className="ng-container max-w-[960px]">
+      <div className={isMobileRoute ? 'flex items-center justify-between gap-3' : 'no-print mb-6 flex items-center justify-between gap-4'}>
+        <Link to={dashboardPath} className="ng-link ng-mono gap-2">
           <ArrowLeft className="h-4 w-4" />
           {t('inv.dashboard')}
         </Link>
         {order ? (
-          <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.print()}>
-            <Printer className="h-4 w-4" />
+          <button type="button" className="ng-btn ng-btn--ghost" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" aria-hidden="true" />
             {t('inv.print')}
-          </Button>
+          </button>
         ) : null}
       </div>
 
       {!portal ? (
-        <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
+        <section className={isMobileRoute ? 'mobile-card p-5' : 'border border-ng-line bg-ng-deep p-6'}>
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
+            <span className="grid h-11 w-11 place-items-center rounded-none bg-ng-card text-ng-bone">
               <FileText className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-editorial-charcoal">{t('inv.invoice')}</h1>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">{t('inv.enterCode', { order: orderNumber })}</p>
+              <h1 className="ng-display m-0 text-[2rem]">{t('inv.invoice')}</h1>
+              <p className="mt-1 text-xs font-semibold text-ng-dust">{t('inv.enterCode', { order: orderNumber })}</p>
             </div>
           </div>
           <form onSubmit={submitLookup} className="mt-5 grid grid-cols-[1fr_auto] gap-2">
@@ -451,25 +453,25 @@ const CustomerInvoicePage = () => {
               onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
               aria-label={t('cust.customerCode')}
               placeholder="SOLI•••••" autoCapitalize="characters" spellCheck={false}
-              className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
+              className="h-12 min-w-0 rounded-none border border-ng-line bg-transparent px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-ng-bone/40"
             />
-            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
+            <button type="submit" className="ng-btn" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               {t('inv.open')}
-            </Button>
+            </button>
           </form>
-          {searched && !loading ? <p className="mt-3 text-xs font-semibold text-[#6b7280]">{t('inv.notFoundForData')}</p> : null}
+          {searched && !loading ? <p className="mt-3 text-xs font-semibold text-ng-dust">{t('inv.notFoundForData')}</p> : null}
         </section>
       ) : portal.requiresIdentity ? (
-        <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
+        <section className={isMobileRoute ? 'mobile-card p-5' : 'border border-ng-line bg-ng-deep p-6'}>
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none bg-ng-card text-ng-bone">
               <ShieldCheck className="h-5 w-5" />
             </span>
             <div>
-              <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('inv.securityCheck')}</div>
-              <h1 className="mt-1 text-xl font-bold text-editorial-charcoal">{t('inv.openInvoice')}</h1>
-              <p className="mt-2 text-sm font-semibold text-[#6b7280]">{t('cust.identityBody')}</p>
+              <div className="ng-mono text-ng-ash">{t('inv.securityCheck')}</div>
+              <h1 className="ng-display mt-1 text-[2rem]">{t('inv.openInvoice')}</h1>
+              <p className="mt-2 text-sm font-semibold text-ng-dust">{t('cust.identityBody')}</p>
             </div>
           </div>
           <form onSubmit={confirmIdentity} className="mt-5 grid gap-3">
@@ -481,24 +483,24 @@ const CustomerInvoicePage = () => {
               onChange={(event) => setIdentityContact(event.target.value)}
               aria-label={t('cust.identityLabel')}
               placeholder={t('cust.identityPlaceholder')}
-              className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+              className="h-12 rounded-none border border-ng-line bg-transparent px-4 text-sm font-semibold outline-none focus:border-ng-bone/40"
             />
-            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
+            <button type="submit" className="ng-btn" disabled={securityLoading}>
               {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
               {t('inv.open')}
-            </Button>
+            </button>
           </form>
         </section>
       ) : portal.requiresSecurity ? (
-        <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
+        <section className={isMobileRoute ? 'mobile-card p-5' : 'border border-ng-line bg-ng-deep p-6'}>
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-none bg-ng-card text-ng-bone">
               <ShieldCheck className="h-5 w-5" />
             </span>
             <div>
-              <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('inv.securityCheck')}</div>
-              <h1 className="mt-1 text-xl font-bold text-editorial-charcoal">{t('inv.openInvoice')}</h1>
-              <p className="mt-2 text-sm font-semibold text-[#6b7280]">{portal.customer.securityQuestion}</p>
+              <div className="ng-mono text-ng-ash">{t('inv.securityCheck')}</div>
+              <h1 className="ng-display mt-1 text-[2rem]">{t('inv.openInvoice')}</h1>
+              <p className="mt-2 text-sm font-semibold text-ng-dust">{portal.customer.securityQuestion}</p>
             </div>
           </div>
           <form onSubmit={unlockInvoice} className="mt-5 grid gap-3">
@@ -508,32 +510,38 @@ const CustomerInvoicePage = () => {
               value={securityAnswer}
               onChange={(event) => setSecurityAnswer(event.target.value)}
               placeholder={t('inv.answer')}
-              className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
+              className="h-12 rounded-none border border-ng-line bg-transparent px-4 text-sm font-semibold outline-none focus:border-ng-bone/40"
             />
-            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
+            <button type="submit" className="ng-btn" disabled={securityLoading}>
               {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
               {t('inv.open')}
-            </Button>
+            </button>
           </form>
         </section>
       ) : order ? (
         <InvoiceCard customer={portal.customer} order={order} isMobile={isMobileRoute} />
       ) : (
         <StateBlock
-          className={isMobileRoute ? 'mobile-card' : 'rounded-[28px]'}
+          className={isMobileRoute ? 'mobile-card' : 'rounded-none'}
           icon={FileText}
           title={t('inv.notFound')}
           description={t('inv.notFoundBody', { order: orderNumber })}
         />
       )}
+      </div>
     </main>
   );
 
   return (
     <>
       <Helmet><title>{t('inv.tab', { order: orderNumber })}</title><meta name="robots" content="noindex,follow" /></Helmet>
-      <div className="min-h-screen bg-editorial-paper text-editorial-charcoal">
+      {/* The shop's frame since 2026-11-07: a buyer opening this from a WhatsApp link landed on a light
+          Studio-style page with no way back into the shop. The invoice itself stays a sheet of paper, and
+          printing drops the frame (print.css). */}
+      <div className="ng-scope invoice-page min-h-screen bg-ng-ink text-ng-bone">
+        <div className="no-print"><PublicHeader /></div>
         {content}
+        <div className="no-print"><StorefrontFooter /></div>
       </div>
     </>
   );

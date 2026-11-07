@@ -53,12 +53,13 @@ const InternationalCartPage = () => {
   // Lines the catalogue can no longer fulfil. The domestic cart has said this since audit round 9; this
   // one said nothing, and three bottles are out of stock in the shop as this is written.
   const unfulfillable = lines.filter((line) => line.unavailable || line.outOfStock);
-  // An empty English cart offers four bottles that can be bought, as the phone one did before the phone
-  // storefront retired (2026-10-31) — without it the English shop's empty cart was a dead end. The Studio
-  // catalogue has no publicStatus, so stock is counted.
-  const recommended = !items.length
-    ? catalog.filter((entry) => isProductVisibleInStorefront(entry) && getProductStockTotal(entry.variants || []) > 0).slice(0, 4)
-    : [];
+  // Four bottles that can be bought and are not in the cart yet — empty or full, as the Indonesian cart
+  // does (the English one only offered them while empty, 2026-11-07). The Studio catalogue has no
+  // publicStatus, so stock is counted.
+  const inCart = new Set(items.map((item) => item.productSlug || item.slug));
+  const recommended = catalog
+    .filter((entry) => isProductVisibleInStorefront(entry) && !inCart.has(entry.slug) && getProductStockTotal(entry.variants || []) > 0)
+    .slice(0, 4);
 
   return (
     <>
@@ -167,14 +168,18 @@ const InternationalCartPage = () => {
           </div>
         </section>
 
-        {!lines.length && recommended.length ? (
+        {recommended.length ? (
           <section className="ng-section" aria-labelledby="intl-cart-recommend">
             <div className="ng-container flex flex-col gap-10">
-              <h2 id="intl-cart-recommend" className="ng-display text-[44px] md:text-[56px]">{t('cart.recommendations')}</h2>
+              <div className="flex flex-col gap-3.5">
+                <p className="ng-mono m-0 text-ng-ash">{t('cart.completeEyebrow')}</p>
+                <h2 id="intl-cart-recommend" className="ng-display text-[44px] md:text-[56px]">{t('cart.complete')}</h2>
+              </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-6">
                 {recommended.map((product) => (
                   <Link key={product.slug} to={`/catalog/${product.slug}`} className="ng-card">
                     <ProductVisual product={product} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 320px" />
+                    <span className="ng-mono text-ng-ash">{product.category}</span>
                     <span className="font-ng-display text-[26px] leading-none">{splitScriptName(product.name).name}</span>
                     {/* CardPrice, not a conversion of its own: the export price is keyed by variant. */}
                     <span className="text-[15px]"><CardPrice product={product} /></span>

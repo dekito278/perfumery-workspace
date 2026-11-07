@@ -17,6 +17,17 @@
     display: none !important;
   }
 
+  /* The invoice page wears the dark shop frame on screen; on paper it is the invoice alone, on white
+     (print-color-adjust: exact above would otherwise print the ink ground). */
+  .invoice-page {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .invoice-page .ng-section {
+    padding: 0 !important;
+  }
+
   .print-avoid-break {
     page-break-inside: avoid;
   }

@@ -665,10 +665,11 @@ main :is(a, figure, picture, div, span):has(> img) {
   border-radius: 0;
   background: var(--ng-bone);
   color: var(--ng-ink);
-  font-family: var(--font-body);
-  font-size: var(--text-caption);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  /* The shop's button type, as .ng-btn: it was the only bold-sans button left on the page. */
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
@@ -1743,10 +1744,10 @@ main :is(a, figure, picture, div, span):has(> img) {
 
 .imm-eyebrow {
   display: block;
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--imm-accent);
   margin-bottom: 14px;
@@ -1769,21 +1770,16 @@ main :is(a, figure, picture, div, span):has(> img) {
   margin: 0;
 }
 
-.imm-text-image__visual img,
-.imm-placeholder-visual {
+/* Square, like every photo in the shop. A slot with no photo is not drawn (ImmersiveProductPage). */
+.imm-text-image__visual img {
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
-  border-radius: 14px;
 }
 
-.imm-placeholder-visual {
-  background: linear-gradient(135deg, rgba(196, 145, 123, 0.15) 0%, rgba(196, 145, 123, 0.05) 100%);
-  border: 1px solid var(--imm-border);
-}
-
-.imm-placeholder-visual--wide {
-  aspect-ratio: 21 / 9;
+.imm-text-image--text-only {
+  grid-template-columns: minmax(0, 680px);
+  justify-content: center;
 }
 
 .imm-full-bleed {
@@ -1794,7 +1790,6 @@ main :is(a, figure, picture, div, span):has(> img) {
   width: 100%;
   aspect-ratio: 21 / 9;
   object-fit: cover;
-  border-radius: 14px;
 }
 
 .imm-full-bleed__caption {
@@ -1877,10 +1872,10 @@ main :is(a, figure, picture, div, span):has(> img) {
 }
 
 .imm-product__note-label {
-  font-family: var(--font-body);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--imm-muted);
   padding-top: 2px;
@@ -1902,13 +1897,12 @@ main :is(a, figure, picture, div, span):has(> img) {
 }
 
 .imm-product__meta span {
-  border: 1.5px solid var(--imm-border);
-  border-radius: 100px;
-  padding: 6px 16px;
-  font-family: var(--font-body);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  border: 1px solid var(--imm-border);
+  padding: 8px 14px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--imm-muted);
 }
@@ -1954,11 +1948,12 @@ main :is(a, figure, picture, div, span):has(> img) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
   color: var(--imm-muted);
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-decoration: none;
   text-transform: uppercase;
   transition: color 0.25s;

@@ -192,6 +192,8 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   text-decoration: none;
+  /* A long label breaks into two even lines ("TAMBAH KE KERANJANG" / "— RP 429.000"), never one word. */
+  text-wrap: balance;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.12s ease;
 }
@@ -221,6 +223,13 @@
 .ng-btn--block {
   display: flex;
   width: 100%;
+}
+
+/* For a button sharing a row in a narrow grid: "PASTE THE CODE" and "LAST CHECKED" side by side on a 390px
+   phone pushed the English portal's code box past its own border at the shop's 24px padding. */
+.ng-btn--tight {
+  min-width: 0;
+  padding: 0 12px;
 }
 
 .ng-btn--ghost {
@@ -1712,8 +1721,8 @@ body:has(.ng-buybar.is-visible) .back-to-top {
 
 /* --- Immersive story page ------------------------------------------------------------------------- */
 
-/* Its own palette predates the redesign (a plum ground); the variables it reads are re-pointed rather
-   than every rule rewritten, so the story keeps its layout and joins the rest of the shop's colours. */
+/* The first paint, in the shop's colours. Each story then sets its own colour world inline from its
+   data (Studio → Cerita produk), and that one wins — the story's tint is a choice, not a leftover. */
 .immersive-page {
   --imm-bg: var(--ng-ink);
   --imm-text: var(--ng-bone);
