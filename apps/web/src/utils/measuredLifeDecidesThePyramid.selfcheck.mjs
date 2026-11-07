@@ -53,30 +53,30 @@ const volatile_ = (share) => [{ letter: 'A', share }];
 
 // --- 1. The boundaries are the measured ones ---------------------------------------------------------
 assert.equal(TOP_LIFE_HOURS_CEILING, 11,
-  'the ceiling must be his measured boundary: his longest top note lasts 11 hours and his shortest '
-  + 'middle lasts 12. A ceiling of 10 puts the eleven-hour materials on the wrong side of his own line');
+  'the ceiling must be the measured boundary: the longest top note lasts 11 hours and the shortest '
+  + 'middle lasts 12. A ceiling of 10 puts the eleven-hour materials on the wrong side of the measured line');
 assert.equal(BASE_LIFE_HOURS_FLOOR, 120,
-  'his shortest base lasts 120 hours and his longest middle 112 — the floor sits in that gap');
+  'the shortest base lasts 120 hours and the longest middle 112 — the floor sits in that gap');
 
 // --- 2. A measured life decides alone, against the strongest possible contrary class spread ----------
 // This is the whole fix. Each of these would previously have fallen through to the class weighing.
 for (const hours of [12, 20, 36, 60, 90, 112, 119]) {
   assert.equal(derive(hours, woody(100)), 'middle',
-    `${hours}h is inside his measured middle band, so it is a middle note even with a fully woody class `
+    `${hours}h is inside the measured middle band, so it is a middle note even with a fully woody class `
     + 'spread — falling through to the class weighing here is what produced the 46%');
   assert.equal(derive(hours, volatile_(100)), 'middle',
     `${hours}h must not be pulled to top by a volatile class spread either`);
 }
 // And the two ends still answer, likewise regardless of the spread.
-assert.equal(derive(11, woody(100)), 'top', 'eleven hours is his top boundary, inclusive');
-assert.equal(derive(120, volatile_(100)), 'base', 'a hundred and twenty hours is his base floor, inclusive');
+assert.equal(derive(11, woody(100)), 'top', 'eleven hours is the top boundary, inclusive');
+assert.equal(derive(120, volatile_(100)), 'base', 'a hundred and twenty hours is the base floor, inclusive');
 assert.equal(derive(2000, volatile_(100)), 'base');
 
 // --- 3. The boundaries are exact, not approximate ----------------------------------------------------
 // One hour either side flips the answer. A rule whose edges are soft is a rule nobody can check.
 assert.equal(derive(11), 'top');
-assert.equal(derive(12), 'middle', 'twelve hours is his shortest middle, not a top note');
-assert.equal(derive(112), 'middle', 'a hundred and twelve hours is his longest middle, not a base');
+assert.equal(derive(12), 'middle', 'twelve hours is the shortest middle, not a top note');
+assert.equal(derive(112), 'middle', 'a hundred and twelve hours is the longest middle, not a base');
 assert.equal(derive(119), 'middle');
 assert.equal(derive(120), 'base');
 

@@ -282,7 +282,7 @@ assert.deepEqual(inWaybillColumn(withoutWaybill), [],
 const withWaybill = await readLabel({ ...BARE_ORDER, trackingNumber: 'JP1234567890' });
 const withText = withWaybill.placed.map((run) => run.text).join('\n');
 assert.match(withText, /NOMOR RESI/i,
-  'a waybill he DID fill in must still print — the decision was that the shop never demands one, not '
+  'a waybill Dekito DID fill in must still print — the decision was that the shop never demands one, not '
   + 'that the field is gone');
 assert.ok(withText.includes('JP1234567890'), 'and the number itself must be on the label');
 assert.ok(inWaybillColumn(withWaybill).includes('JP1234567890'),

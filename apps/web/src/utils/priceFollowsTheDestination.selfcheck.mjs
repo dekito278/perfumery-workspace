@@ -214,8 +214,8 @@ const ask = ({ country = '', bottles = 1, price = 1260000, size = '30 ml' }) => 
   const one = ask({ country: 'US', bottles: 1 });
   const two = ask({ country: 'US', bottles: 2 });
   assert.equal(one.shippingCostUsd, two.shippingCostUsd, 'one and two bottles are the same one-kilo parcel');
-  assert.equal(one.shippingUsd, 65, 'his number for one bottle');
-  assert.equal(two.shippingUsd, 45, 'his number for two');
+  assert.equal(one.shippingUsd, 65, "Dekito's number for one bottle");
+  assert.equal(two.shippingUsd, 45, "Dekito's number for two");
   assert.equal(two.goodsUsd, one.goodsUsd * 2, 'while the bottles themselves multiply');
   assert.equal(two.totalUsd, two.goodsUsd + two.shippingUsd, 'and the total must still be the sum');
 }

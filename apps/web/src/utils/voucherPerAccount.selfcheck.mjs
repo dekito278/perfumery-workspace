@@ -154,7 +154,7 @@ for (const form of ['pages/VoucherManagementPage.jsx', 'pages/mobile/MobileVouch
     shedsTheColumn
       ? `${form} must warn that the limit is not saved yet, because saveVoucher still drops the column`
       : `${form} warns about a migration that is applied — saveVoucher no longer drops the column, so the `
-        + 'field saves and the warning tells him a working feature is broken');
+        + 'field saves and the warning tells Dekito a working feature is broken');
 }
 
 // --- Every way to apply a voucher must be able to see the account --------------------------------------

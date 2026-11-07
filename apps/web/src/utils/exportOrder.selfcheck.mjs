@@ -68,7 +68,7 @@ assert.equal(buildExportOrderData({ ...filled, shippingSettled: undefined, lines
   'a caller that never mentions shipping must be refused, not defaulted to free');
 // A typed zero is a decision and is accepted.
 assert.equal(buildExportOrderData({ ...filled, lines: [line()], shippingTotal: 0 }).ok, true,
-  'a waived freight Dekito typed himself is a decision, and must be allowed');
+  'a waived freight Dekito typed in is a decision, and must be allowed');
 
 // --- 2. The buyer is charged the OVERSEAS price -------------------------------------------------------
 // The whole reason the overseas tier exists. A line at 260000 here is the Indonesian price reaching an

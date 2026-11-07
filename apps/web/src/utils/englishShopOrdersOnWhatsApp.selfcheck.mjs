@@ -98,7 +98,7 @@ for (const page of ['pages/InternationalCartPage.jsx']) {
 {
   const hook = readCode('hooks/useInternationalQuote.js');
   assert.match(hook, /gift \? \[t\('export\.waCartGiftLine'/,
-    'the English cart order does not name the gift, so he would pack the parcel without it');
+    'the English cart order does not name the gift, so Dekito would pack the parcel without it');
   for (const shop of ['id', 'en']) {
     assert.ok(MESSAGES[shop]['export.waCartGiftLine'], `export.waCartGiftLine is missing from the ${shop} shop`);
   }

@@ -147,7 +147,7 @@ assert.ok(prints.length >= 4, `only ${prints.length} pages mention the bank acco
 const NO_STORED_ORDER = new Map([
   ['BespokePage.jsx', 'builds the payment payload for the order it is creating in this same submit; there is no saved order yet to be closed'],
   ['MobileBespokePage.jsx', 'same, plus the payment-method picker, which shows the account before any order exists'],
-  ['ExportShippingCalculatorPage.jsx', 'Studio: Dekito recording an order himself, not a buyer being invited to pay'],
+  ['ExportShippingCalculatorPage.jsx', 'Studio: Dekito recording an order by hand, not a buyer being invited to pay'],
 ]);
 
 let asked = 0;

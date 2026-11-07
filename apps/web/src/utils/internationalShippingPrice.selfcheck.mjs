@@ -57,15 +57,15 @@ const {
 // --- 1. Dekito's own numbers, as facts -------------------------------------------------------------------
 // The rule was fitted to these four and must keep producing them. "DHL ke Amerika sekitar $95" is
 // Rp 1.709.000 at 18.000; Dekito charges US$65 for one bottle and US$45 for two.
-assert.equal(SHIPPING_COST_RATE, 18000, 'the cost is converted at the market rate he quoted, not the pricing rate');
+assert.equal(SHIPPING_COST_RATE, 18000, 'the cost is converted at the market rate Dekito quoted, not the pricing rate');
 assert.deepEqual(SHIPPING_SUPPORT_USD, { single: 30, multiple: 50 }, "Dekito's decision, 2026-10-06");
 {
   const one = quote({ countryCode: 'US', bottles: 1 });
   const two = quote({ countryCode: 'US', bottles: 2 });
   assert.equal(one.costUsd, 95, 'one bottle to the United States costs the shop US$95 to send');
-  assert.equal(one.usd, 65, 'and the buyer is charged US$65 — his number');
+  assert.equal(one.usd, 65, 'and the buyer is charged US$65 — the number Dekito set');
   assert.equal(two.costUsd, 95, 'two bottles ride in the same one-kilo parcel');
-  assert.equal(two.usd, 45, 'and are charged US$45 — his number');
+  assert.equal(two.usd, 45, 'and are charged US$45 — the number Dekito set');
   assert.equal(one.zone, 5, 'the United States is zone 5 on the carrier sheet');
 }
 
@@ -255,7 +255,7 @@ for (const automatic of ['priceCardIdr', 'quote?.total', 'quote.total']) {
 assert.match(page, /onClick=\{\(\) => setManualShipping\((?:String\()?priceCardIdr/,
   'the card figure must be one press away from the shipping field');
 assert.match(page, /onClick=\{\(\) => setManualShipping\((?:String\()?Math\.round\(quote\.total\)/,
-  'and so must the carrier cost, for the orders he passes through at cost');
+  'and so must the carrier cost, for the orders Dekito passes through at cost');
 // An empty field is "not decided", never "free": that is what stops a whole freight being given away by
 // someone tabbing past it. Zero is still allowed — it just has to be typed. RUN the rule rather than
 // pinning its text: the control now reports a number, so `.trim()` is gone and the words changed while

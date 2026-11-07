@@ -102,7 +102,7 @@ assert.ok(drafters.length >= 2,
   `only ${drafters.length} draft surface(s) found (${drafters.join(', ')}) — the derivation broke`);
 assert.deepEqual(spellingTheirOwn, [],
   'these build a WhatsApp enquiry without going through quotedInternationalPrice, so an overseas buyer '
-  + `sends Dekito a number in a currency he never quoted:\n  ${spellingTheirOwn.join('\n  ')}`);
+  + `sends Dekito a number in a currency Dekito never quoted:\n  ${spellingTheirOwn.join('\n  ')}`);
 
 // --- and EVERY surface that PRINTS an international price prints it in dollars ---------------------
 // A third gap, found on a phone on 2026-10-06 while the destination picker was being tested: the sticky
