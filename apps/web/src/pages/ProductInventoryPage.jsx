@@ -24,8 +24,8 @@ const ProductInventoryPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Inventory ops - Solivagant</title>
-        <meta name="description" content="Monitor low stock dan riwayat koreksi stok produk custom." />
+        <title>Stok & riwayat - Solivagant</title>
+        <meta name="description" content="Produk yang hampir habis dan riwayat koreksi stok." />
       </Helmet>
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center gap-3">
@@ -36,22 +36,22 @@ const ProductInventoryPage = () => {
         </div>
         <div className="mb-6 flex items-center gap-3">
           <AlertTriangle className="h-6 w-6 text-rose-700" />
-          <h1 className="text-3xl font-bold sm:text-4xl">Inventory ops</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">Stok &amp; riwayat</h1>
         </div>
 
         <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
-          <p className="text-sm font-semibold text-muted-foreground">Threshold restock, notifikasi low stock, dan riwayat koreksi stok.</p>
+          <p className="text-sm font-semibold text-muted-foreground">Produk yang stoknya sudah di batas menipis, dan setiap perubahan stok yang dicatat dari form produk. Produk dengan stok 0 ada di filter &quot;Stok habis&quot; di daftar produk.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-rose-50 px-4 py-3">
-              <div className="text-xs font-bold uppercase text-rose-700">Low stock</div>
+              <div className="text-xs font-bold uppercase text-rose-700">Hampir habis</div>
               <div className="mt-1 text-2xl font-bold text-rose-800">{lowStockProducts.length}</div>
             </div>
             <div className="rounded-2xl bg-amber-50 px-4 py-3">
-              <div className="text-xs font-bold uppercase text-amber-700">Corrections</div>
+              <div className="text-xs font-bold uppercase text-amber-700">Koreksi stok</div>
               <div className="mt-1 text-2xl font-bold text-amber-800">{stockCorrectionHistory.length}</div>
             </div>
             <div className="rounded-2xl bg-editorial-ivory px-4 py-3">
-              <div className="text-xs font-bold uppercase text-editorial-charcoal">Avg threshold</div>
+              <div className="text-xs font-bold uppercase text-editorial-charcoal">Rata-rata batas menipis</div>
               <div className="mt-1 text-2xl font-bold text-editorial-charcoal">
                 {customProducts.length ? Math.round(customProducts.reduce((sum, product) => sum + getProductRestockThreshold(product), 0) / customProducts.length) : 0}
               </div>
@@ -63,13 +63,13 @@ const ProductInventoryPage = () => {
                 <button key={product.id} type="button" onClick={() => navigate(`/studio/products/${product.id}/edit`)} className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-left">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm font-bold text-[#1f2937]">{product.name}</span>
-                    <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-rose-700">{product.stock} / min {getProductRestockThreshold(product)}</span>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-rose-700">stok {product.stock} · batas {getProductRestockThreshold(product)}</span>
                   </div>
                 </button>
               ))}
             </div>
           ) : (
-            <p className="mt-4 rounded-2xl bg-[#fbfaf7] px-4 py-3 text-sm font-semibold text-muted-foreground">Semua custom product masih di atas restock threshold.</p>
+            <p className="mt-4 rounded-2xl bg-[#fbfaf7] px-4 py-3 text-sm font-semibold text-muted-foreground">Semua produk masih di atas batas stok menipis.</p>
           )}
           <div className="mt-5 border-t pt-4">
             <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase text-editorial-charcoal">
@@ -82,9 +82,9 @@ const ProductInventoryPage = () => {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm font-bold text-[#1f2937]">{event.productName}</div>
-                      <p className="mt-1 text-xs font-semibold text-muted-foreground">{event.note || 'Manual stock correction'}</p>
+                      <p className="mt-1 text-xs font-semibold text-muted-foreground">{event.note || 'Koreksi stok tanpa catatan'}</p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">{event.previousStock} -&gt; {event.nextStock}</span>
+                    <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">{event.previousStock} → {event.nextStock}</span>
                   </div>
                 </div>
               ))}

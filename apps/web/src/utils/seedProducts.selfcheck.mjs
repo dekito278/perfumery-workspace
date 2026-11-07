@@ -22,7 +22,9 @@ const seedNames = [...seed.matchAll(/name: '([^']+)'/g)].map((m) => m[1]);
 assert.ok(seedNames.includes('Santal Morn'), 'the seed products moved — update this guard');
 
 // Only the service may reference them, and only as reference data for normalisation.
-const ALLOWED = new Set(['services/productCatalogService.js', 'pages/ProductListPage.jsx']);
+// ProductListPage used to be listed too, for a "Produk seed 6" statistic beside "Produk custom 20" that
+// never added up to the catalogue it sat on. It was removed 2026-11-08, so no page needs the seed at all.
+const ALLOWED = new Set(['services/productCatalogService.js']);
 
 // Comments are stripped first. The fix itself explains the seed data by name, and a raw substring scan
 // would flag that prose as a use — the same blindness silentWrites.selfcheck.mjs had to fix.
@@ -52,13 +54,6 @@ assert.deepEqual(
   + `sell:\n  ${offenders.join('\n  ')}\n`
   + 'Showing them during an outage puts phantom stock in front of buyers. Render an empty state instead, '
   + `or add the file to ALLOWED if it genuinely needs the seed for normalisation.`,
-);
-
-// ProductListPage is admin-only and shows the seed count as a statistic, never as buyable stock.
-const adminUse = stripComments(readFileSync(join(src, 'pages', 'ProductListPage.jsx'), 'utf8'));
-assert.ok(
-  /featuredProducts\.length/.test(adminUse) && !/: featuredProducts/.test(adminUse),
-  'ProductListPage now uses the seed as more than a count — check it is not being rendered as stock',
 );
 
 console.log(`seedProducts selfcheck OK (${seedNames.length} seed names, 0 customer-facing uses)`);

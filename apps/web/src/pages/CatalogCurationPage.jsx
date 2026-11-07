@@ -114,7 +114,7 @@ const CatalogCurationPage = () => {
         await saveProductFeatured(change.productId, change.featured);
         saved += 1;
       } catch (error) {
-        failures.push(`${change.row.name} (pilihan): ${error.message}`);
+        failures.push(`${change.row.name} (pilihan beranda): ${error.message}`);
       }
     }
 
@@ -141,14 +141,16 @@ const CatalogCurationPage = () => {
       <div className="mx-auto grid w-full max-w-5xl gap-5 p-6">
         <div className="grid gap-2">
           <Button variant="ghost" className="w-fit gap-2 px-0" onClick={() => navigate('/studio/products')}>
-            <ArrowLeft className="h-4 w-4" /> Produk
+            <ArrowLeft className="h-4 w-4" /> Daftar produk
           </Button>
           <h1 className="text-2xl font-bold text-editorial-charcoal">Kurasi katalog</h1>
+          {/* Two sentences here went stale: the export price follows the ADDRESS (/en), not the browser's
+              language (2026-11-02), and the English shop has shown shipping by itself since 2026-10-06. */}
           <p className="text-sm text-muted-foreground">
-            Harga member, harga luar negeri, dan produk pilihan untuk seluruh katalog, dalam satu layar.
-            Harga member tampil di etalase untuk pengunjung yang belum masuk — itulah alasan mereka membuat
-            akun. Harga luar negeri tampil untuk pengunjung yang browsernya bukan Indonesia, supaya mereka
-            tidak melihat harga Indonesia lalu kaget saat bertanya lewat WhatsApp.
+            Harga member, harga luar negeri, dan pilihan beranda untuk seluruh katalog, dalam satu layar.
+            Harga member tampil di toko untuk pengunjung yang belum masuk — itulah alasan mereka membuat
+            akun. Harga luar negeri dipakai toko Inggris (/en), dikonversi ke dolar. Member dan luar negeri
+            juga terisi otomatis setiap kali produk disimpan; angka yang kamu ubah sendiri tidak ditimpa.
           </p>
         </div>
 
@@ -203,8 +205,8 @@ const CatalogCurationPage = () => {
                 </div>
               </label>
               <p className="text-xs font-semibold leading-relaxed text-muted-foreground">
-                Dibulatkan ke ATAS ke puluhan ribu terdekat. Belum termasuk ongkir — ongkir tetap kamu
-                kutip sendiri lewat WhatsApp.
+                Dibulatkan ke ATAS ke puluhan ribu terdekat. Belum termasuk ongkir — toko Inggris menghitung
+                ongkir DHL sendiri setelah pembeli memilih negara.
               </p>
             </div>
           </div>
@@ -221,7 +223,7 @@ const CatalogCurationPage = () => {
 
         <div className="text-xs font-semibold text-muted-foreground">
           {productCount} produk · {withMember} punya harga member · {withOverseas} punya harga luar negeri
-          · {featuredCount} ditandai pilihan
+          · {featuredCount} pilihan beranda (maks. 6 tampil)
         </div>
 
         <div className="overflow-x-auto rounded-2xl border bg-white">
@@ -233,7 +235,7 @@ const CatalogCurationPage = () => {
                 <th className="px-4 py-3 text-right">Harga member</th>
                 <th className="px-4 py-3 text-right">Hemat</th>
                 <th className="px-4 py-3 text-right">Harga luar negeri</th>
-                <th className="px-4 py-3 text-center">Pilihan</th>
+                <th className="px-4 py-3 text-center">Pilihan beranda</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -292,7 +294,7 @@ const CatalogCurationPage = () => {
                         type="checkbox"
                         checked={Boolean(valueFor(row, 'featured'))}
                         onChange={(event) => setValue(row, 'featured', event.target.checked)}
-                        aria-label={`Tandai ${row.name} sebagai pilihan`}
+                        aria-label={`Tandai ${row.name} sebagai pilihan beranda`}
                         className="h-4 w-4"
                       />
                     </td>

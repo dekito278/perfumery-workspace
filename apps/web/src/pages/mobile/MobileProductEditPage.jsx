@@ -21,13 +21,16 @@ const MobileProductEditPage = () => {
       </Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Edit produk" subtitle={product?.name || 'Produk katalog'} eyebrow="Admin Studio" action={<Edit3 className="h-5 w-5 text-amber-700" />} />
-        <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={() => navigate('/mobile/studio/products')}>
-          <ArrowLeft className="h-4 w-4" />
-          Daftar produk
-        </Button>
+        {/* With a product, the way back lives in the form, which knows whether there is unsaved work. */}
+        {product ? null : (
+          <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={() => navigate('/mobile/studio/products')}>
+            <ArrowLeft className="h-4 w-4" />
+            Daftar produk
+          </Button>
+        )}
 
         {product ? (
-          <MobileProductForm product={product} onSaved={() => navigate('/mobile/studio/products')} />
+          <MobileProductForm product={product} backTo="/mobile/studio/products" onSaved={() => navigate('/mobile/studio/products')} />
         ) : products.loading ? (
           <div className="mobile-card p-5 text-center text-xs font-semibold text-[#6b7280]">Memuat produk...</div>
         ) : (

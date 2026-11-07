@@ -109,7 +109,7 @@ export const getProductPublishChecklist = (product = {}) => {
   const items = [
     { key: 'name', label: 'Nama produk', ok: Boolean(String(product.name || '').trim()), required: true, message: 'Nama produk wajib diisi.' },
     { key: 'category', label: 'Kategori', ok: Boolean(String(product.category || '').trim()), required: true, message: 'Pilih kategori sebelum publish.' },
-    { key: 'summary', label: 'Ringkasan katalog', ok: Boolean(String(product.notes || '').trim()), required: true, message: 'Ringkasan singkat wajib diisi.' },
+    { key: 'summary', label: 'Ringkasan aroma', ok: Boolean(String(product.notes || '').trim()), required: true, message: 'Ringkasan aroma wajib diisi.' },
     // A gift has no price — by definition, and by enforcement: api/orders/create.js sets a vial line to
     // zero whatever its variant says, so a price here would be a number nobody can ever be charged.
     //
@@ -197,6 +197,19 @@ export const getProductPublishStatus = (product = {}) => {
       label: 'Draft',
       tone: 'amber',
       reason: 'Draft - tidak tampil di toko.',
+      checklist,
+    };
+  }
+
+  // The gift vial is stock for a present, not something on sale: isProductVisibleInStorefront keeps it
+  // out of every listing. It read "Live — Tampil di katalog customer" in the list, with a preview and a
+  // copy-link button pointing at a page no buyer is meant to open.
+  if (isFreeVialProduct(product)) {
+    return {
+      key: 'gift',
+      label: 'Hadiah',
+      tone: 'emerald',
+      reason: 'Stok vial hadiah — tidak dijual di katalog, dipilih pembeli di keranjang.',
       checklist,
     };
   }

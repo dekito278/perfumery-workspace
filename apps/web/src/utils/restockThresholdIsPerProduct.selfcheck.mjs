@@ -98,7 +98,9 @@ for (const name of ['pages/ProductListPage.jsx', 'pages/mobile/MobileProductList
   const text = readFileSync(join(src, name), 'utf8');
   assert.match(text, /variant\.stock <= getProductRestockThreshold\(product\)/,
     `${name} no longer colours its variant badge against the product's own threshold`);
-  assert.match(text, /min \{getProductRestockThreshold\(product\)\}/,
+  // Worded "batas menipis" since 2026-11-08, the name the form gives the same field ("Batas stok
+  // menipis"); it read "min", which named nothing a person could find on the edit screen.
+  assert.match(text, /batas menipis \{getProductRestockThreshold\(product\)\}/,
     `${name} colours a badge by a rule it never states — the number has to be on screen or the colour `
     + 'cannot be questioned. That is how the desktop went two lines contradicting itself');
 }

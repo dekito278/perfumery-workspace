@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, PackagePlus, Save, Tags, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -26,7 +26,7 @@ const ProductCategoriesPage = () => {
   const handleCategorySubmit = async (event) => {
     event.preventDefault();
     if (!categoryForm.name.trim()) {
-      toast.error('Category name is required');
+      toast.error('Nama kategori wajib diisi');
       return;
     }
 
@@ -34,7 +34,7 @@ const ProductCategoriesPage = () => {
     try {
       await saveStorefrontCategory(categoryForm);
       setCategoryForm({ name: '', description: '' });
-      toast.success('Product category saved');
+      toast.success('Kategori tersimpan');
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan kategori');
     } finally {
@@ -47,7 +47,7 @@ const ProductCategoriesPage = () => {
     if (!await confirmAction({ message: `Hapus kategori "${category.name}"?`, destructive: true })) return;
     try {
       await deleteStorefrontCategory(category.id);
-      toast.success('Product category removed');
+      toast.success('Kategori dihapus');
     } catch (error) {
       toast.error(error.message || 'Gagal menghapus kategori');
     }
@@ -56,19 +56,15 @@ const ProductCategoriesPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Product Categories - Solivagant</title>
-        <meta name="description" content="Manage e-commerce product categories for the Solivagant storefront." />
+        <title>Kategori produk - Solivagant</title>
+        <meta name="description" content="Kelola kategori produk katalog Solivagant." />
       </Helmet>
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <Button variant="ghost" className="h-9 gap-2 rounded-2xl" onClick={() => navigate('/studio')}>
+          <Button variant="ghost" className="h-10 gap-2 rounded-2xl" onClick={() => navigate('/studio/products')}>
             <ArrowLeft className="h-4 w-4" />
-            Back to dashboard
-          </Button>
-          <Button variant="outline" className="h-9 gap-2 rounded-2xl bg-white" onClick={() => navigate('/studio/products')}>
-            <PackagePlus className="h-4 w-4" />
-            Product management
+            Daftar produk
           </Button>
         </div>
 
@@ -76,55 +72,55 @@ const ProductCategoriesPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <Tags className="h-4 w-4 text-primary" />
-              E-commerce
+              Toko
             </div>
-            <h1 className="text-3xl font-bold sm:text-4xl">Product categories</h1>
+            <h1 className="text-3xl font-bold sm:text-4xl">Kategori produk</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Kelola kategori produk public storefront secara terpisah dari product management. Kategori ini dipakai untuk filter katalog dan form produk.
+              Kategori = keluarga aroma. Dipakai sebagai filter di katalog dan pilihan di form produk. Label LIMITED dan RESERVE tidak diatur di sini — pakai centang di form produk.
             </p>
           </div>
           <div className="dashboard-hero-panel">
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Categories</span><strong>{categories.length}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Catalog products</span><strong>{products.length}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Kategori</span><strong>{categories.length}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Produk</span><strong>{products.length}</strong></div>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
           <form onSubmit={handleCategorySubmit} className="rounded-2xl border bg-white/90 p-5 shadow-sm">
-            <h2 className="text-xl font-bold">Add category</h2>
+            <h2 className="text-xl font-bold">Tambah kategori</h2>
             <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
-              Buat kategori seperti Regular, Limited, Gift Set, atau seasonal collection.
+              Buat keluarga aroma baru kalau parfum tidak cocok di yang sudah ada.
             </p>
             <label className="mt-5 block">
-              <span className="text-xs font-bold uppercase text-muted-foreground">Category name</span>
+              <span className="text-xs font-bold uppercase text-muted-foreground">Nama kategori</span>
               <input
                 value={categoryForm.name}
                 onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))}
                 className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300"
-                placeholder="Limited, Regular, Gift set..."
+                placeholder="Contoh: Chypre, Musk"
               />
             </label>
             <label className="mt-4 block">
-              <span className="text-xs font-bold uppercase text-muted-foreground">Description</span>
+              <span className="text-xs font-bold uppercase text-muted-foreground">Catatan (opsional)</span>
               <textarea
                 value={categoryForm.description}
                 onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
                 rows={4}
                 className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300"
-                placeholder="Optional short description for storefront display"
+                placeholder="Hanya terlihat di Studio, tidak tampil di toko"
               />
             </label>
             <Button type="submit" className="mt-5 h-11 rounded-2xl gap-2" disabled={savingCategory}>
               <Save className="h-4 w-4" />
-              {savingCategory ? 'Saving...' : 'Save category'}
+              {savingCategory ? 'Menyimpan...' : 'Simpan kategori'}
             </Button>
           </form>
 
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold">Current categories</h2>
-                <p className="mt-1 text-sm font-semibold text-muted-foreground">Kategori dari produk existing tetap tampil sebagai reference.</p>
+                <h2 className="text-xl font-bold">Kategori yang ada</h2>
+                <p className="mt-1 text-sm font-semibold text-muted-foreground">Bawaan toko dan yang dipakai produk tidak bisa dihapus. Kategori buatanmu bisa dihapus selama belum dipakai produk.</p>
               </div>
               <Tags className="h-5 w-5 text-amber-700" />
             </div>
@@ -142,12 +138,12 @@ const ProductCategoriesPage = () => {
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-bold text-[#101b10]">{category.name}</h3>
                         <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
-                          {category.description || 'No description yet'}
+                          {category.description || 'Belum ada catatan'}
                         </p>
-                        <p className="mt-3 text-xs font-bold uppercase text-amber-700">{usageCount} product</p>
+                        <p className="mt-3 text-xs font-bold uppercase text-amber-700">{usageCount} produk</p>
                       </div>
                       {canDelete ? (
-                        <Button type="button" size="icon" variant="outline" className="shrink-0 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleCategoryDelete(category)} aria-label={`Delete ${category.name}`}>
+                        <Button type="button" size="icon" variant="outline" className="shrink-0 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleCategoryDelete(category)} aria-label={`Hapus kategori ${category.name}`}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       ) : null}

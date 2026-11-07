@@ -11,6 +11,7 @@
 // member price, sees no complaint, and believes it is live.
 import assert from 'node:assert/strict';
 import { tierPriceIsNotBelowRetail } from './memberPriceFill.js';
+import { tierEditorRows, tierEmptyMeaning, tierPriceWarning } from './tierEditorRows.js';
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -79,14 +80,36 @@ for (const tier of ['member', 'reseller', 'overseas']) {
 assert.match(tierEditor, /const \{ rows: freshRows[\s\S]{0,200}listTierPricesForProduct\(productId\)/,
   'the editor must re-read after saving rather than trusting its own draft');
 
-// --- one size, one row -------------------------------------------------------------------------------
-// The '' row is the default for sizes left blank. With a single size it and the size row are the same
-// bottle, so drawing both asked the same question twice — and the owner filled one and left the other
-// empty, which looks like a half-finished form. Every live product has exactly one variant today.
-assert.match(tierEditor, /if \(sizes\.length <= 1\)/, 'a single-size product must not be shown two rows');
-assert.match(tierEditor, /return \[\{ id: '', label: sizes\[0\]\?\.label/,
-  "the one row must stay the '' row, or a price already saved there would vanish from the form while "
-  + 'still being applied to orders');
+// --- every saved price is on screen ----------------------------------------------------------------
+// The rule used to be "one size, one row — and that row is ''". It guarded against a '' price vanishing,
+// and in doing so hid every other price: the automatic member and export prices are written per SIZE, so
+// on 2026-11-08 all 39 rows in the table were size rows and the form showed every one of them as empty.
+// A price typed there landed on '' and the size row it could not see went on overriding it.
+//
+// Run, not read: whatever is saved, its row is drawn, and a single-size product still gets one row.
+assert.match(tierEditor, /tierEditorRows\(variants, saved\)/, 'the editor must take its rows from the shared builder');
+const oneSize = [{ id: '30-ml', size: '30 ml', priceNumber: 429000 }];
+const ids = (rows) => rows.map((row) => row.id);
+assert.deepEqual(ids(tierEditorRows(oneSize, { '30-ml|member': 386000, '30-ml|overseas': 1510000 })), ['30-ml'],
+  'one size with its prices on the size row — the case every live product is in — draws that row, and only it');
+assert.deepEqual(ids(tierEditorRows(oneSize, {})), ['30-ml'],
+  'a single size with nothing saved yet is still one row, so the automation and the owner write to the same place');
+assert.deepEqual(ids(tierEditorRows(oneSize, { '|member': 300000 })), ['', '30-ml'],
+  'a price saved on the every-size row is still applied to orders, so it must stay visible');
+assert.deepEqual(ids(tierEditorRows([...oneSize, { id: '50-ml', size: '50 ml', priceNumber: 939000 }], {})), ['', '30-ml', '50-ml'],
+  'two sizes draw the default row and one row each');
+assert.deepEqual(ids(tierEditorRows([], {})), [''], 'a product with no variants prices the every-size row');
+assert.equal(tierEditorRows(oneSize, {})[0].retail, 429000, 'a size row knows the retail price it is compared against');
+assert.equal(tierEmptyMeaning('30-ml', 'member', { '|member': 300000 }), 'Kosong = ikut semua ukuran',
+  'an empty size box falls back to the every-size price when there is one — saying "retail" there would be wrong');
+assert.equal(tierEmptyMeaning('30-ml', 'member', {}), 'Kosong = harga retail');
+// The export price is meant to be ABOVE retail. The member rule applied to it painted L'iris's correct
+// Rp 1.510.000 red the moment it was first shown.
+assert.equal(tierPriceWarning('overseas', 429000, 1510000), '', 'a correct export price above retail is not a warning');
+assert.equal(tierPriceWarning('overseas', 429000, 400000), 'Di bawah harga retail', 'an export price under retail is a typo');
+assert.equal(tierPriceWarning('member', 429000, 386000), '', 'a member price under retail is the point');
+assert.equal(tierPriceWarning('member', 429000, 429000), 'Tidak di bawah harga retail');
+assert.equal(tierPriceWarning('reseller', 429000, ''), '', 'an empty box is not a mistake');
 assert.match(tierEditor, /row\.retail \? `Retail \$\{formatRupiah\(row\.retail\)\}`/,
   'the row must show the retail price it is being compared against when it knows one');
 
@@ -129,7 +152,8 @@ const walkStudio = (dir) => {
     const source = read(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     if (!/\bsaveTierPrice\s*\(/.test(source)) continue;
     setsTierPrices.push(rel);
-    if (!/tierPriceIsNotBelowRetail\s*\(/.test(source)) silent.push(rel);
+    // tierPriceWarning carries the same member/reseller rule (run above) plus the export price's own.
+    if (!/(tierPriceIsNotBelowRetail|tierPriceWarning)\s*\(/.test(source)) silent.push(rel);
   }
 };
 for (const dir of ['pages', 'components']) walkStudio(dir);
