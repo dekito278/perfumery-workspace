@@ -1568,51 +1568,19 @@ main :is(a, figure, picture, div, span):has(> img) {
   --imm-border: rgba(245, 237, 228, 0.12);
   background: var(--imm-bg);
   color: var(--imm-text);
-  min-height: 100vh;
 }
 
-.immersive-page .editorial-header {
-  background: transparent;
-  backdrop-filter: none;
-}
-
-.immersive-page .editorial-wordmark {
-  color: var(--imm-text);
-}
-
+/* The story's opening, in the story's colours, under the product block. It was a full-screen photo when the
+   story was a page of its own; inside the product page that photo is the gallery's cover, one scroll up,
+   so the opening is words only and as tall as they are. */
 .imm-hero {
   position: relative;
   width: 100%;
-  height: 100vh;
-  min-height: 600px;
-  max-height: 1000px;
   overflow: hidden;
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
-}
-
-.imm-hero__visual {
-  position: absolute;
-  inset: 0;
-}
-
-.imm-hero__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.imm-hero__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    var(--imm-bg) 0%,
-    rgba(26, 15, 20, 0.7) 35%,
-    rgba(26, 15, 20, 0.2) 65%,
-    rgba(26, 15, 20, 0.4) 100%
-  );
+  border-top: 1px solid var(--imm-border);
 }
 
 .imm-hero__content {
@@ -1753,7 +1721,7 @@ main :is(a, figure, picture, div, span):has(> img) {
   margin-bottom: 14px;
 }
 
-.imm-text-image__text h2 {
+.imm-text-image__text h3 {
   font-family: var(--font-display);
   font-size: clamp(1.5rem, 2.5vw, 2.4rem);
   font-weight: 400;
@@ -1841,135 +1809,8 @@ main :is(a, figure, picture, div, span):has(> img) {
   background: rgba(26, 15, 20, 0.85);
 }
 
-.imm-product {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: clamp(48px, 8vh, 96px) clamp(24px, 5vw, 80px);
-  text-align: center;
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-
-.imm-product.imm-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.imm-product__notes {
-  display: grid;
-  gap: 0;
-  margin-bottom: 32px;
-}
-
-.imm-product__note-row {
-  display: grid;
-  grid-template-columns: 60px 1fr;
-  gap: 16px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--imm-border);
-  text-align: left;
-}
-
-.imm-product__note-label {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--imm-muted);
-  padding-top: 2px;
-}
-
-.imm-product__note-values {
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-style: italic;
-  line-height: 1.5;
-}
-
-.imm-product__meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
-
-.imm-product__meta span {
-  border: 1px solid var(--imm-border);
-  padding: 8px 14px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--imm-muted);
-}
-
-/* The stale-catalogue notice keeps its own light amber panel here on purpose: on #1a0f14 it reads as
-   what it is, a warning that interrupts. Only its spacing belongs to this page. */
-.imm-product__stale {
-  margin-bottom: 28px;
-  text-align: left;
-}
-
-/* PriceNote is written for the light storefront — amber on cream. Here it sits on #1a0f14, so the
-   colours come from the immersive tokens instead. Selected structurally rather than by utility class:
-   a Tailwind class name is not a hook this stylesheet gets to rely on. */
-.imm-product__price-note {
-  justify-content: center;
-  margin: -20px 0 28px;
-  color: var(--imm-accent);
-}
-
-.imm-product__price-note > span + span {
-  opacity: 0.72;
-}
-
-.imm-product__price-note > button {
-  color: inherit;
-}
-
-.imm-back {
-  text-align: center;
-  padding-bottom: clamp(48px, 6vh, 80px);
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-
-.imm-back.imm-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.imm-back a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  color: var(--imm-muted);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  text-decoration: none;
-  text-transform: uppercase;
-  transition: color 0.25s;
-}
-
-.imm-back a:hover {
-  color: var(--imm-accent);
-}
-
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .imm-hero {
-    min-height: 500px;
-    max-height: 85vh;
-  }
-
   .imm-hero__content {
     padding: 32px 24px;
   }

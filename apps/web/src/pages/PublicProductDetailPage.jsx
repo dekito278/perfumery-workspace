@@ -17,7 +17,7 @@ import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
-import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
+import ProductStory from '@/components/storefront/ProductStory.jsx';
 import { findPublicFragrance, getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { getProductStory } from '@/data/stories/index.js';
 import useProductStory from '@/hooks/useProductStory.js';
@@ -201,10 +201,6 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
     );
   }
 
-  if (productStory) {
-    return <ImmersiveProductPage product={product} story={productStory} stale={studioProducts.stale} />;
-  }
-
   const siteOrigin = getSiteOrigin();
   const canonicalUrl = shopCanonicalUrl(`/catalog/${product.slug}`, region, siteOrigin);
   const shareImage = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, siteOrigin);
@@ -356,6 +352,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             </div>
           </div>
         </section>
+
+        {/* The story, when there is one, between the buy block and the pyramid: the same frame as every
+            other bottle, with the story whole in the middle (Dekito's choice, 2026-11-08). It used to
+            REPLACE this page, which left the one perfume with a story shaped like no other. */}
+        {productStory ? <ProductStory product={product} story={productStory} /> : null}
 
         <section className="ng-section ng-section--deep" aria-labelledby="pdp-pyramid-heading" data-reveal>
           <div className="ng-container flex flex-col gap-14">

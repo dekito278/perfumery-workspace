@@ -82,7 +82,9 @@ for (const file of surfaces.files) {
   }
 }
 // Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
-assert.ok(checked >= 7, `only ${checked} canonicals were found on buyer surfaces — the sweep used to `
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(checked >= 6, `only ${checked} canonicals were found on buyer surfaces — the sweep used to `
   + 'find 13, so it has gone blind and this check passes on nothing');
 assert.ok(journalExempt >= 1 && journalExempt < checked,
   `${journalExempt} of ${checked} canonicals were treated as the journal — if that is all of them, the `

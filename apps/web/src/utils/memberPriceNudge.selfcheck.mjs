@@ -162,7 +162,9 @@ const showsAProduct = walkPages(pagesRoot)
   .map((file) => [file.slice(pagesRoot.length + 1), stripComments(readFileSync(file, 'utf8'))])
   .filter(([, source]) => /<ProductVisual/.test(source));
 // Floor lowered from 10 when the phone storefront retired (2026-10-31): its product, catalogue and cart pages went.
-assert.ok(showsAProduct.length >= 9,
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(showsAProduct.length >= 8,
   `only ${showsAProduct.length} pages render the product visual — the scan is broken, not the code`);
 
 let sellingPages = 0;
@@ -174,7 +176,9 @@ for (const [name, source] of showsAProduct) {
   sellingPages += 1;
 }
 // Floor lowered from 6 when the phone storefront retired (2026-10-31): home, catalogue, product and story remain.
-assert.ok(sellingPages >= 4, `only ${sellingPages} selling pages checked — the exemptions swallowed them`);
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(sellingPages >= 3, `only ${sellingPages} selling pages checked — the exemptions swallowed them`);
 
 // --- 9. The cart saving on the checkout button ----------------------------------------------------------
 // A cart line's `slug` is the cartSlug (product slug + variant suffix). The index is keyed by product

@@ -66,7 +66,9 @@ const variantPickers = walkPages(pagesRoot)
   .map((file) => [file.slice(pagesRoot.length + 1), strip(readFileSync(file, 'utf8'))])
   .filter(([, source]) => /=== selectedVariantId\)/.test(source));
 // Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
-assert.ok(variantPickers.length >= 2,
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(variantPickers.length >= 1,
   `only ${variantPickers.length} pages resolve a chosen variant — the scan is broken, not the code`);
 
 for (const [name, source] of variantPickers) {

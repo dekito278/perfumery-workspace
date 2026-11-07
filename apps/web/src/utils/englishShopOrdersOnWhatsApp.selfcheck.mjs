@@ -148,7 +148,7 @@ assert.match(keys, /export const overseasDraftKeys = \(\) => \(\{ labelKey: 'exp
 const messages = read('i18n/messages.js');
 assert.doesNotMatch(messages, /'export\.waOrderDraft'|'export\.order'/, 'the order-from-product-page copy is retired with the button');
 assert.match(messages, /'export\.waCartDraft'/, 'the cart order draft must exist');
-for (const page of ['pages/PublicProductDetailPage.jsx', 'pages/ImmersiveProductPage.jsx']) {
+for (const page of ['pages/PublicProductDetailPage.jsx']) {
   const source = readCode(page);
   assert.doesNotMatch(source, /buildWhatsAppCheckoutUrl\(|buildOverseasDraft\(/, `${page} builds its own WhatsApp link — the enquiry button is the one surface for that`);
   // The button's own price. Found on the first local run: "Add to cart — Rp 359.000" in the English shop,

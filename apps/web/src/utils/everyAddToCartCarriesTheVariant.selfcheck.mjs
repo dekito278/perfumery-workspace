@@ -41,7 +41,9 @@ const callers = files
   .filter(([, body]) => /\baddItem\(/.test(body));
 
 // Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
-assert.ok(callers.length >= 3,
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(callers.length >= 2,
   `only ${callers.length} addItem call sites found; the search has stopped matching`);
 
 // Each call must name the variant inside the object it builds. A bare `addItem(product, 1)` is the bug.
