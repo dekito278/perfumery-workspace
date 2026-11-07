@@ -140,7 +140,9 @@ const showsAProduct = walkPages(pagesRoot)
   .map((file) => [file.slice(pagesRoot.length + 1), readFileSync(file, 'utf8')])
   .filter(([, source]) => /<ProductVisual/.test(source));
 // Floor lowered when the phone storefront retired (2026-10-31): its catalogue, product and cart pages went.
-assert.ok(showsAProduct.length >= 9,
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(showsAProduct.length >= 8,
   `only ${showsAProduct.length} pages render the product visual — the scan is broken, not the code`);
 
 let actingSurfaces = 0;
@@ -152,7 +154,9 @@ for (const [name, source] of showsAProduct) {
   actingSurfaces += 1;
 }
 // Floor lowered when the phone storefront retired (2026-10-31): its catalogue, product and cart pages went.
-assert.ok(actingSurfaces >= 4,
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(actingSurfaces >= 3,
   `only ${actingSurfaces} surfaces checked — the exemptions swallowed them`);
 
 // The notice on a stand-in page is only as alive as the flag it is handed. A page that renders one of
@@ -163,15 +167,18 @@ const standIns = walkPages(pagesRoot)
   .flatMap((file) => [...readFileSync(file, 'utf8').matchAll(/<(\w*ProductPage)\b([^>]*)>/g)]
     .filter(([, name]) => name !== 'ProductPage')
     .map(([, name, props]) => [file.slice(pagesRoot.length + 1), name, props]));
-// Floor lowered when the phone storefront retired (2026-10-31): its catalogue, product and cart pages went.
-assert.ok(standIns.length >= 1, `only ${standIns.length} pages render a stand-in product page — the scan is broken`);
+// There are none any more, and that is the fix rather than a hole in the scan. The one stand-in —
+// ImmersiveProductPage, returned in place of the product page for a product with a story — kept dropping
+// what the product page carried (this notice among them). Since 2026-11-08 the story is a section INSIDE
+// the product page (ProductStory), so the notice above covers it. A page that replaces the product page
+// again would bring the old trap back, so it fails here until it is handed `stale`.
 for (const [where, name, props] of standIns) {
-  // A spread forwards it: the immersive page's own shell renders itself as `<ImmersiveProductPage
-  // {...props} />`, which passes the flag along rather than dropping it.
   assert.match(props, /stale=\{|\{\.\.\.props\}/,
     `${where} renders <${name}> without handing it the staleness of its own catalogue, so the notice `
     + 'inside it can never fire');
 }
+assert.doesNotMatch(readFileSync(join(pagesRoot, 'PublicProductDetailPage.jsx'), 'utf8'), /return <\w+ProductPage\b/,
+  'the product page hands itself over to another page again — the story belongs inside it (ProductStory)');
 
 // --- Every screen where a buyer acts on a price -------------------------------------------------------
 // This file's own closing line has always claimed that, and nothing checked it. The flag reached four

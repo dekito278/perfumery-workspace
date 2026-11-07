@@ -57,7 +57,7 @@ for (const bad of [null, { currency: 'USD', price: 0 }, { currency: 'USD' }]) {
 // Two pages render a product — the standard one and the immersive one that REPLACES it when a product
 // has a story. A fix on one of them is a fix on half the catalogue, which is how the immersive page has
 // slipped past guards before.
-for (const page of ['PublicProductDetailPage.jsx', 'ImmersiveProductPage.jsx']) {
+for (const page of ['PublicProductDetailPage.jsx']) {
   const source = readFileSync(join(src, '..', 'pages', page), 'utf8');
   assert.match(source, /offer: exportPrice \? \{ currency: 'USD', price: usdPriceFor\(exportPrice\) \} : null/,
     `${page} must state the export price to Google, converted the way the page displays it`);

@@ -63,7 +63,9 @@ const walk = (dir) => {
 };
 walk('pages');
 // Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
-assert.ok(screens.length >= 3, `only ${screens.length} add-to-cart screen(s) found — the derivation broke`);
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(screens.length >= 2, `only ${screens.length} add-to-cart screen(s) found — the derivation broke`);
 
 const cartHook = strip(readFileSync(join(src, 'hooks', 'useCart.js'), 'utf8'));
 assert.match(cartHook, /addItem: \([\s\S]*?CART_ITEM_ADDED_EVENT/,

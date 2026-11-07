@@ -29,7 +29,9 @@ const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flat
 const adders = [...walk('pages'), ...walk('components')]
   .map((file) => [file, read(file)])
   .filter(([, source]) => /\baddItem\(\{/.test(source));
-assert.ok(adders.length >= 3, `only ${adders.length} screens add to the cart — the sweep is broken (catalogue, product, story)`);
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(adders.length >= 2, `only ${adders.length} screens add to the cart — the sweep is broken (catalogue, product)`);
 
 for (const [file, source] of adders) {
   // A screen that opens its own added-to-cart sheet again must come back through this check: the sheet

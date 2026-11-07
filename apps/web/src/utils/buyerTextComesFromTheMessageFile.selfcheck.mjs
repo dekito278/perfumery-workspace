@@ -84,12 +84,14 @@ for (const name of ['InternationalCartPage']) {
 // The phone storefront retired on 2026-10-31, and with it the three-level path these proofs used to name
 // (MobileCommerceTabsPage -> MobileArticlesPage -> MobileSearchBar). The same two traps are still proved,
 // on what is left: a screen reached only by the import walk, and a file three steps down.
-assert.ok(files.some((file) => file.endsWith('ImmersiveProductPage.jsx')),
-  'the immersive story page is not in the sweep — no route mounts it; the product page RETURNS it for a '
-  + 'product with a story, so only the import walk can find it');
+// The story page used to prove the first trap — a screen no route mounts, which the product page
+// RETURNED. Since 2026-11-08 the story is a component (ProductStory) in components/storefront, which the
+// sweep reads whole; it must still be read, since it prints the hero, the letter and the music label.
+assert.ok(files.some((file) => file.endsWith('ProductStory.jsx')),
+  'the product story is not in the sweep, so its words are never checked against the message file');
 // Nothing in the buyer graph sits three steps down any more (measured: the deepest is two), so the proof
 // is that the walk goes past the routed file at all — which is what a one-level sweep could not do.
-assert.ok(depthOf('ImmersiveProductPage') >= 2 && depthOf('JournalMarkdownContent') >= 2,
+assert.ok(depthOf('JournalMarkdownContent') >= 2,
   'the stand-in story page and the article body are not reached past the routed file, so the walk is no '
   + 'longer following imports');
 assert.ok(files.length >= 60,
@@ -470,7 +472,9 @@ for (const file of files) {
 }
 // Floor lowered from 14 when the phone storefront retired (2026-10-31): five phone pages and two phone
 // branches (the article view and the member portal) each carried their own description. Measured: 11.
-assert.ok(describedPages >= 11,
+// And to 10 on 2026-11-08: the story page that replaced the product page carried its own head; the story
+// is a section inside the product page now, which describes itself once.
+assert.ok(describedPages >= 10,
   `only ${describedPages} buyer pages were checked for a description — the sweep used to find 17, so it `
   + 'has gone blind');
 

@@ -1736,7 +1736,7 @@ body:has(.ng-buybar.is-visible) .back-to-top {
   font-family: var(--ng-font-body);
 }
 
-.immersive-page :is(.imm-hero__title, .imm-text-image h2, .imm-quote blockquote) {
+.immersive-page :is(.imm-hero__title, .imm-text-image h3, .imm-quote blockquote) {
   font-family: var(--ng-font-display);
   font-weight: 300;
 }

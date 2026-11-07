@@ -210,7 +210,7 @@ assert.match(priceNote, /useOverseasPrice\(product, variant\)/, 'PriceNote asks 
 // The panel takes its price as a prop; the pages that render it must get that price from the same hook.
 assert.doesNotMatch(note, /useOverseasPrice|useExportPrice|detectOverseasVisitor/,
   'the panel must not decide for itself whether this visitor is abroad');
-for (const page of ['PublicProductDetailPage.jsx', 'ImmersiveProductPage.jsx']) {
+for (const page of ['PublicProductDetailPage.jsx']) {
   const source = read('pages', page);
   assert.match(source, /const exportPrice = useOverseasPrice\(product, selectedVariant\);/, `${page} asks the shared hook`);
   assert.match(source, /<InternationalPrice price=\{exportPrice\}/, `${page} hands the panel that price`);
@@ -263,14 +263,12 @@ assert.match(priceHook, /tierPricesForLine\(index, product\.slug, variant\?\.id 
 // true, because there is no Indonesian price above it any more.
 //
 // What replaced it has to be on BOTH surfaces, which is what this guard is really for.
-// ImmersiveProductPage is in this list because it REPLACES the product page for a product with a
-// story — a third surface, reached by a branch above every line that resolves the copy. It was not
-// reachable from the English shop until Ayang-ayang got an English letter, and the moment it was, it
-// offered an overseas buyer "Tambah ke Keranjang — Rp 289.000": an Indonesian button, the domestic
-// price, and a cart that cannot ship to them.
+// ImmersiveProductPage used to be in this list: it REPLACED the product page for a product with a story,
+// and the moment Ayang-ayang got an English letter it offered an overseas buyer "Tambah ke Keranjang —
+// Rp 289.000". Since 2026-11-08 the story is a section inside this page (ProductStory) and sells nothing
+// itself — productStoryInTheFrame.selfcheck holds that — so the one page here is the whole subject.
 for (const page of [
   ['pages', 'PublicProductDetailPage.jsx'],
-  ['pages', 'ImmersiveProductPage.jsx'],
 ]) {
   const source = read(...page);
   assert.match(source, /<InternationalPrice price=\{exportPrice\}/,
@@ -290,7 +288,6 @@ for (const page of [
 // Indonesian reader too.
 for (const page of [
   ['pages', 'PublicProductDetailPage.jsx'],
-  ['pages', 'ImmersiveProductPage.jsx'],
 ]) {
   const source = read(...page);
   const name = page.join('/');
@@ -459,7 +456,7 @@ for (const file of [
 // to WhatsApp (englishShopOrdersOnWhatsApp.selfcheck holds that); what this block holds is that no
 // product page has quietly kept the old gate, which would hide the cart from exactly the buyer the cart
 // was reopened for.
-for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'ImmersiveProductPage.jsx']]) {
+for (const page of [['pages', 'PublicProductDetailPage.jsx']]) {
   const source = read(...page);
   const carts = (source.match(/t\('pdp\.addToCart(?:WithPrice)?'/g) || []).length;
   assert.ok(carts > 0, `${page.join('/')} no longer offers a cart at all`);
@@ -526,8 +523,7 @@ for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
 
 // Every caller passes the variant. All 18 tier prices are keyed by variant, so a product-level lookup
 // finds nothing and the line silently never appears — the exact shape of the bug that shipped in #147.
-for (const caller of [['pages', 'PublicProductDetailPage.jsx'],
-  ['pages', 'ImmersiveProductPage.jsx']]) {
+for (const caller of [['pages', 'PublicProductDetailPage.jsx']]) {
   assert.match(read(...caller), /<OverseasInquiryButton[\s\S]{0,200}?variant=\{/,
     `${caller.join('/')} passes the variant to the enquiry button`);
 }

@@ -61,7 +61,9 @@ for (const dir of ['pages', join('pages', 'mobile')]) {
 }
 const productSurfaces = pageFiles.filter(([dir, name]) => read(dir, name).includes('<OverseasInquiryButton'));
 // Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
-assert.ok(productSurfaces.length >= 2, 'expected the desktop, phone and immersive product pages to be found');
+// Floor lowered 2026-11-08: the story page that REPLACED the product page (ImmersiveProductPage) is gone —
+// the story is a section inside the one product page now (ProductStory), with no price or cart of its own.
+assert.ok(productSurfaces.length >= 1, 'expected the product page to be found');
 for (const [dir, name] of productSurfaces) {
   assert.match(read(dir, name), /<ShareProductButton/,
     `${dir}/${name} shows a buyer one bottle but gives them no way to send it to anyone`);

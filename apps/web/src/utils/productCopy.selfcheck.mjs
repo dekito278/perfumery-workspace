@@ -155,8 +155,8 @@ assert.match(read('pages', 'PublicProductDetailPage.jsx'), /<ScentPyramid produc
 
 // --- 6b. The immersive story never reaches the English shop -------------------------------------------------
 // One product has a hand-written editorial story — a letter in Indonesian, with no English version — and
-// the product page returns a completely different component for it, above every line that resolves the
-// English copy. An English reader got the whole page in Indonesian with all five columns filled and
+// the product page used to return a completely different component for it, above every line that resolves
+// the English copy. An English reader got the whole page in Indonesian with all five columns filled and
 // every other guard green.
 // Held as the RULE now — the English shop is never shown an Indonesian story — rather than as the one
 // expression that used to enforce it. Ayang-ayang has an English letter of its own; pinning the old
@@ -211,9 +211,10 @@ assert.match(read('pages', 'PublicProductDetailPage.jsx'), /<ScentPyramid produc
   assert.ok(!international.includes('supabaseStory'),
     'the English shop must not be offered the Studio story, which is Indonesian by construction');
   assert.match(gate, /getProductStory\(slug, region\)/, 'and it asks for the story in the shop\'s own language');
-  // And the gate has to sit BEFORE the branch that returns the immersive page, or it gates nothing.
-  assert.ok(page.indexOf('const productStory = isInternational') < page.indexOf('return <ImmersiveProductPage'),
-    'the region gate must be resolved before the immersive page is returned');
+  // And the gate has to sit BEFORE the story is rendered, or it gates nothing. (Until 2026-11-08 the
+  // story was a whole page returned in place of this one; it is a section inside it now.)
+  assert.ok(page.indexOf('const productStory = isInternational') < page.indexOf('<ProductStory product={product} story={productStory}'),
+    'the region gate must be resolved before the story is rendered');
 }
 
 // --- 7. The migration exists, is not destructive, and keeps the view in step ------------------------------------

@@ -102,10 +102,11 @@ assert.ok(surfaces.length >= 60,
   `only ${surfaces.length} buyer-facing files reached — the derivation lost most of them`);
 // MobileArticlesPage (reached through a tabs page) and MobileStatePanel (three levels down) proved these
 // two traps until the phone storefront retired on 2026-10-31. The traps outlive them, so the proofs move
-// to what is left: a page reached only because another page RETURNS it, and one behind a <ByShop>.
-for (const name of ['ImmersiveProductPage', 'InternationalCartPage']) {
+// to what is left: a component reached only through the page that imports it (ProductStory — until
+// 2026-11-08 this was ImmersiveProductPage, a page the product page RETURNED), and one behind a <ByShop>.
+for (const name of ['ProductStory', 'InternationalCartPage']) {
   assert.ok(surfaces.some((file) => basename(file, '.jsx') === name),
-    `${name} fell out of the sweep. It is reached through another element — returned by the product `
+    `${name} fell out of the sweep. It is reached through another element — imported by the product `
     + 'page in one case, a <ByShop> wrapper in the other — which is exactly what the two earlier '
     + 'versions of this derivation lost');
 }
