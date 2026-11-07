@@ -1,7 +1,3 @@
-.storefront-display-heading {
-  line-height: 1.15 !important;
-}
-
 :is(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--editorial-brass, #b08b4f);
   outline-offset: 2px;

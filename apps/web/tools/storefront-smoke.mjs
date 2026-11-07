@@ -716,12 +716,13 @@ const runMotion = async (browser) => {
 // while the menu button stood half off a 360px phone and wholly off a 320px one (2026-11-06).
 const runChrome = async (browser) => {
   const run = 'chrome';
-  const found = { clipped: [], ragged: [], offCentre: [], edges: [] };
+  const found = { bare: [], clipped: [], ragged: [], offCentre: [], edges: [] };
   for (const width of [320, 360, 390, 768, 1024, 1280, 1536, 1920]) {
     const context = await browser.newContext({ viewport: { width, height: 900 }, locale: 'id-ID', timezoneId: 'Asia/Jakarta' });
     await guard(context, { blocked: [], orderBodies: [], order: null });
     const page = await context.newPage();
-    for (const path of ['/home', '/en/home', '/catalog']) {
+    // The account portal kept a header of its own and no footer until 2026-11-07; the tracking page is its sibling.
+    for (const path of ['/home', '/en/home', '/catalog', '/customer', '/en/customer', '/track']) {
       await goto(page, path);
       const m = await page.evaluate(() => {
         const vw = document.documentElement.clientWidth;
@@ -744,9 +745,11 @@ const runChrome = async (browser) => {
         const navCentre = links.length ? (box(links[0]).left + box(links.at(-1)).right) / 2 : null;
         const lefts = ['.ng-header__wordmark', 'main .ng-container', '.ng-hero__body', '.ng-footer__wordmark']
           .map((selector) => box(document.querySelector(selector))?.left).filter((left) => left !== undefined).map(Math.round);
-        return { vw, clipped, ragged, navCentre, lefts };
+        const bare = !document.querySelector('.ng-header') || !document.querySelector('.ng-footer');
+        return { vw, bare, clipped, ragged, navCentre, lefts };
       });
       const at = `${path}@${width}`;
+      if (m.bare) found.bare.push(at);
       if (m.clipped.length) found.clipped.push(`${at}: ${m.clipped.join(', ')}`);
       if (m.ragged) found.ragged.push(`${at}: ${m.ragged} row(s)`);
       // From 1100px the actions fit in half the slack; below it they need more and the nav gives way.
@@ -755,6 +758,7 @@ const runChrome = async (browser) => {
     }
     await context.close();
   }
+  check(run, 'every page wears the shop header and footer', !found.bare.length, found.bare.slice(0, 3).join('; '));
   check(run, 'every header and footer control is on screen, 320–1920px', !found.clipped.length, found.clipped.slice(0, 3).join('; '));
   check(run, 'every footer row runs edge to edge — no block left on a row alone', !found.ragged.length, found.ragged.slice(0, 3).join('; '));
   check(run, 'the header nav stands on the page centre line', !found.offCentre.length, found.offCentre.slice(0, 3).join('; '));

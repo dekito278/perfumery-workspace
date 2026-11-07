@@ -11,7 +11,8 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import { PORTAL_STEP_KEYS, orderHasShipped, portalActiveStepIndex } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
-import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
+import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import {
   claimCustomerCode,
   getCustomerAccount,
@@ -1281,16 +1282,16 @@ const CustomerPortalPage = () => {
         <meta name="description" content={t('cust.meta')} />
       </Helmet>
       <main className="ng-scope min-h-screen bg-ng-ink text-ng-bone">
-        <StorefrontHeader backTo="/home" backLabel={t('cust.home')} actions={[{ to: '/catalog', label: t('cust.catalog') }]} />
+        {/* The shop's own header and footer since 2026-11-07: the portal kept a back-link bar of its own and
+            no footer, so a member signed in from the shop lost the cart, the language switch and the way back. */}
+        <PublicHeader />
 
-        <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
+        <section className="ng-section !border-b-0 !pt-10 md:!pt-16">
+        <div className="ng-container grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
           <div className="space-y-5">
             <div className="rounded-none border border-ng-bone/10 bg-transparent p-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-ng-bone/15 bg-transparent px-3 py-1 text-xs font-bold uppercase text-ng-bone">
-                <UserRound className="h-4 w-4" />
-                {t('cust.eyebrow')}
-              </div>
-              <h1 className="storefront-display-heading mt-5 text-4xl font-bold sm:text-5xl">{t('cust.heroTitle')}</h1>
+              <p className="ng-eyebrow ng-mono m-0">{t('cust.eyebrow')}</p>
+              <h1 className="ng-display mt-5 text-[clamp(2.75rem,5vw,4rem)]">{t('cust.heroTitle')}</h1>
               <p className="mt-4 text-base font-medium leading-relaxed text-ng-dust">
                 {t('cust.heroBody')}
               </p>
@@ -1366,7 +1367,7 @@ const CustomerPortalPage = () => {
                   </span>
                   <div>
                     <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.securityCheck')}</div>
-                    <h2 className="mt-1 text-2xl font-bold">{t('cust.protectedDash')}</h2>
+                    <h2 className="ng-display mt-1 text-[2rem]">{t('cust.protectedDash')}</h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
                       {t('cust.securityOnBody')}
                     </p>
@@ -1397,7 +1398,7 @@ const CustomerPortalPage = () => {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.welcomeBack')}</div>
-                      <h2 className="mt-1 text-2xl font-bold">{portal.customer.customerName}</h2>
+                      <h2 className="ng-display mt-1 text-[2rem]">{portal.customer.customerName}</h2>
                       <p className="mt-1 text-sm font-semibold text-ng-dust">{portal.customer.masked ? t('cust.hiddenForSecurity') : portal.customer.contact}</p>
                       {portal.customer.masked ? (
                         <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-ember">
@@ -1481,7 +1482,7 @@ const CustomerPortalPage = () => {
                 </section>
 
                 <section className="rounded-none border bg-transparent p-5">
-                  <h2 className="text-xl font-bold">{t('cust.orderProgress')}</h2>
+                  <h2 className="ng-display text-[1.75rem]">{t('cust.orderProgress')}</h2>
                   <div className="mt-4 grid gap-4">
                     {portal.orders.map((order) => {
                       const bespoke = isBespokeOrder(order);
@@ -1582,7 +1583,9 @@ const CustomerPortalPage = () => {
               </section>
             )}
           </div>
+        </div>
         </section>
+        <StorefrontFooter />
       </main>
     </>
   );

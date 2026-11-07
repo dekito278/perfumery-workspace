@@ -96,6 +96,13 @@
   color: var(--ng-bone);
 }
 
+/* ...and its icon on a rounded ivory tile — the one light square left on the portal. */
+:is(.solivagant-editorial-home, .ng-scope) section > span.bg-editorial-ivory {
+  border-radius: 0;
+  background: var(--ng-card);
+  color: var(--ng-bone);
+}
+
 .solivagant-editorial-home ::selection {
   background: rgba(212, 87, 58, 0.35);
   color: var(--ng-bone);
