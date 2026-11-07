@@ -134,7 +134,7 @@ for (const page of ['pages/CartPage.jsx', 'pages/CheckoutPage.jsx']) {
 {
   // The phone's bottom nav retired with the phone storefront (2026-10-31): the header below is the
   // navigation on every screen now, phones included, so it is the one that must carry the cart.
-  for (const header of ['components/storefront/PublicHeader.jsx', 'components/storefront/StorefrontHeader.jsx']) {
+  for (const header of ['components/storefront/PublicHeader.jsx']) {
     const source = readCode(header);
     assert.match(source, /'\/cart'|to="\/cart"/, `${header} no longer links to the cart`);
     assert.doesNotMatch(source, /isInternational \? (null|\[\]) :/, `${header} hides the cart from one of the shops`);

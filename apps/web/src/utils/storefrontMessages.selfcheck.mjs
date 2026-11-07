@@ -300,7 +300,6 @@ for (const file of [
   ['pages', 'HomePage.jsx'],
   ['components', 'storefront', 'PublicHeader.jsx'],
   ['components', 'storefront', 'StorefrontFooter.jsx'],
-  ['components', 'storefront', 'StorefrontHeader.jsx'],
   ['components', 'storefront', 'StorefrontLoadingState.jsx'],
   ['components', 'storefront', 'WhyBuyDirect.jsx'],
   ['components', 'storefront', 'RegionSwitch.jsx'],
@@ -364,7 +363,6 @@ for (const file of [
   ['components', 'storefront', 'WhyBuyDirect.jsx'],
   ['components', 'storefront', 'PublicHeader.jsx'],
   ['components', 'storefront', 'StorefrontFooter.jsx'],
-  ['components', 'storefront', 'StorefrontHeader.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
 ]) {
   // React `key=` props legitimately use the message key as an identity — it is never shown — so they are
