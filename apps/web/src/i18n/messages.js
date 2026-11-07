@@ -269,6 +269,10 @@ export const MESSAGES = {
     'journal.cat.material_note': 'Catatan bahan',
     'journal.cat.process': 'Proses',
     'journal.cat.product_idea': 'Ide produk',
+    'imm.musicOn': 'Putar musik',
+    'imm.musicOff': 'Matikan musik',
+    'imm.videoPlay': 'Putar video',
+    'imm.videoPause': 'Jeda video',
     'nav.info': 'Info',
     'nav.whatsapp': 'WhatsApp atelier',
 
@@ -367,7 +371,6 @@ export const MESSAGES = {
     'cart.afterVoucherLine': 'Setelah voucher: {price} / item',
     'cart.payNext': 'Lanjut bayar',
     'cart.unavailable': '{names} sudah tidak tersedia. Hapus dari keranjang untuk lanjut checkout.',
-    'cart.recommendations': 'Rekomendasi',
     'cart.bespoke': 'Aroma bespoke',
 
     'intl.noticeTitle': 'Pengiriman ke luar negeri tidak lewat checkout ini',
@@ -1388,6 +1391,10 @@ export const MESSAGES = {
     'journal.cat.material_note': 'Material note',
     'journal.cat.process': 'Process',
     'journal.cat.product_idea': 'Product idea',
+    'imm.musicOn': 'Play the music',
+    'imm.musicOff': 'Turn the music off',
+    'imm.videoPlay': 'Play the video',
+    'imm.videoPause': 'Pause the video',
     'nav.info': 'Info',
     'nav.whatsapp': 'WhatsApp the atelier',
 
@@ -1480,7 +1487,6 @@ export const MESSAGES = {
     'cart.afterVoucherLine': 'After voucher: {price} / item',
     'cart.payNext': 'Continue to payment',
     'cart.unavailable': '{names} is no longer available. Remove it from the cart to continue to checkout.',
-    'cart.recommendations': 'Recommended',
     'cart.bespoke': 'Bespoke scent',
 
     // Said BEFORE the address form, not after it fails. Shipping destinations come from RajaOngkir, an

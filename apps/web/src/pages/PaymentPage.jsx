@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
-import { Button } from '@/components/ui/button.jsx';
 import { PAYMENT_RESERVATION_TTL_HOURS, getOrderById, getPublicOrderPaymentSession, isOrderClosedForPayment, submitOrderPaymentProof } from '@/services/orderService.js';
 import { paymentDeadlineAt } from '@/utils/paymentDeadline.js';
 import { isAwaitingShippingQuote } from '@/utils/orderWorkflow.js';
@@ -68,12 +67,12 @@ const paymentStatusKeys = {
 
 const paymentStatusTone = {
   unpaid: {
-    className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember',
+    className: 'border-ng-ember/40 bg-transparent text-ng-ember',
     titleKey: 'pay.awaiting',
     bodyKey: 'pay.createdBody',
   },
   pending: {
-    className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember',
+    className: 'border-ng-ember/40 bg-transparent text-ng-ember',
     titleKey: 'pay.awaiting',
     bodyKey: 'pay.createdBody',
   },
@@ -303,7 +302,7 @@ const PaymentFrame = ({ session }) => {
       icon: <AlertCircle className="h-4 w-4" />,
       titleKey: 'pay.panelBlocked',
       bodyKey: 'pay.panelBlockedBody',
-      className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember',
+      className: 'border-ng-ember/40 bg-transparent text-ng-ember',
     },
   }[frameStatus];
   const customerCode = session.customerCode || '';
@@ -323,7 +322,7 @@ const PaymentFrame = ({ session }) => {
       <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.secureCheckout")}</div>
+            <div className="ng-mono text-ng-dust">{t("pay.secureCheckout")}</div>
             <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {t('pay.savedBody')}
@@ -335,20 +334,20 @@ const PaymentFrame = ({ session }) => {
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
+            <div className="ng-mono text-ng-dust">{t('pay.order')}</div>
             <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
+            <div className="ng-mono text-ng-dust">{t('pay.customer')}</div>
             <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">Total</div>
+            <div className="ng-mono text-ng-dust">Total</div>
             <div className="mt-1">{payableAmount(session)}</div>
           </div>
           {session.paymentStatus ? (
             <div className="rounded-none bg-transparent px-4 py-3">
-              <div className="text-[10px] uppercase text-ng-dust">{t('pay.status')}</div>
+              <div className="ng-mono text-ng-dust">{t('pay.status')}</div>
               <div className="mt-1 truncate">{paymentStatusKeys[session.paymentStatus] ? t(paymentStatusKeys[session.paymentStatus]) : session.paymentStatus}</div>
             </div>
           ) : null}
@@ -361,7 +360,7 @@ const PaymentFrame = ({ session }) => {
               <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{t(currentPaymentTone.bodyKey)}</p>
               {expiresAtLabel ? (
                 <>
-                  <p className="mt-2 text-[11px] font-bold uppercase opacity-80">{t('pay.deadline', { time: expiresAtLabel })}</p>
+                  <p className="mt-2 ng-mono opacity-80">{t('pay.deadline', { time: expiresAtLabel })}</p>
                   <p className="mt-1 text-[11px] font-semibold leading-relaxed opacity-80">{t('pay.deadlineNote')}</p>
                 </>
               ) : null}
@@ -397,14 +396,14 @@ const PaymentFrame = ({ session }) => {
       {customerCode ? (
         <div className="flex items-center justify-between gap-3 border-t border-ng-bone/10 bg-transparent px-4 py-3">
           <div className="min-w-0">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.customerCode")}</span>
+            <span className="ng-mono text-ng-dust">{t("pay.customerCode")}</span>
             <div className="select-text text-lg font-bold tracking-[0.12em] text-ng-bone">{customerCode}</div>
             <p className="text-[11px] font-semibold text-ng-dust">{t("pay.saveCode")}</p>
           </div>
-          <Button type="button" variant="outline" className="shrink-0 rounded-none bg-ng-ink gap-2" onClick={copyCustomerCode}>
+          <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={copyCustomerCode}>
             <Copy className="h-4 w-4" />
             {t('pay.copy')}
-          </Button>
+          </button>
         </div>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ng-bone/10 bg-ng-deep p-4">
@@ -413,14 +412,14 @@ const PaymentFrame = ({ session }) => {
         </p>
         <div className="flex flex-wrap gap-2">
           {customerCode ? (
-            <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-none border border-ng-bone/30 bg-transparent px-4 text-sm font-bold text-ng-bone">
+            <Link to={orderTrackingPath} className="ng-btn ng-btn--ghost">
               {t('track.title')}
             </Link>
           ) : null}
-          <Button type="button" variant="outline" className="rounded-none bg-transparent gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
+          <button type="button" className="ng-btn ng-btn--ghost" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
             <ExternalLink className="h-4 w-4" />
             {t('pay.openPayment')}
-          </Button>
+          </button>
         </div>
       </div>
     </section>
@@ -496,7 +495,7 @@ const QrisPanel = ({ session, onPaid }) => {
       <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.qris")}</div>
+            <div className="ng-mono text-ng-dust">{t("pay.qris")}</div>
             <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {t('pay.qrHint')}
@@ -508,15 +507,15 @@ const QrisPanel = ({ session, onPaid }) => {
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
+            <div className="ng-mono text-ng-dust">{t('pay.order')}</div>
             <div className="mt-1 truncate">{orderNumber}</div>
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
+            <div className="ng-mono text-ng-dust">{t('pay.customer')}</div>
             <div className="mt-1 truncate">{customerCode || session.customerName || '-'}</div>
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">Total</div>
+            <div className="ng-mono text-ng-dust">Total</div>
             <div className="mt-1">{payableAmount(session)}</div>
           </div>
         </div>
@@ -525,14 +524,14 @@ const QrisPanel = ({ session, onPaid }) => {
 
       <div className="grid gap-4 p-4 sm:p-6">
         {session.paymentExpiresAt ? (
-          <div className={`flex items-center justify-center gap-2 rounded-none border px-4 py-2 text-sm font-bold ${expired ? 'border-[#f0a090]/40 bg-[#3a1814] text-[#f0a090]' : 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember'}`}>
+          <div className={`flex items-center justify-center gap-2 rounded-none border px-4 py-2 text-sm font-bold ${expired ? 'border-[#f0a090]/40 bg-[#3a1814] text-[#f0a090]' : 'border-ng-ember/40 bg-transparent text-ng-ember'}`}>
             <Clock3 className="h-4 w-4" />
             {expired ? t("pay.qrExpired") : t("pay.finishIn", { time: `${pad(mins)}:${pad(secs)}` })}
           </div>
         ) : null}
 
         <div className="mx-auto w-full max-w-[360px] rounded-none border border-ng-bone/15 bg-transparent p-4 text-center">
-          <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-ng-dust">
+          <div className="flex items-center justify-center gap-2 ng-mono text-ng-dust">
             <span className="grid h-5 w-5 place-items-center rounded-none bg-[#c0392b] text-[9px] font-bold text-white">Q</span>
             {t('pay.qrisOne')}
           </div>
@@ -546,13 +545,13 @@ const QrisPanel = ({ session, onPaid }) => {
               </div>
             )}
           </div>
-          <div className="mt-3 text-[10px] font-bold uppercase text-ng-dust">{t("pay.totalDue")}</div>
+          <div className="mt-3 ng-mono text-ng-dust">{t("pay.totalDue")}</div>
           <div className="text-2xl font-bold text-[#f0a090]">{payableAmount(session)}</div>
         </div>
 
         <div className="mx-auto flex max-w-[360px] flex-wrap items-center justify-center gap-1.5">
           {EWALLET_HINTS.map((name) => (
-            <span key={name} className="rounded-full border border-ng-bone/15 bg-ng-ink px-2.5 py-1 text-[11px] font-bold text-ng-bone">{name}</span>
+            <span key={name} className="border border-ng-bone/15 bg-ng-ink px-2.5 py-1 text-[11px] font-bold text-ng-bone">{name}</span>
           ))}
         </div>
 
@@ -569,13 +568,13 @@ const QrisPanel = ({ session, onPaid }) => {
         {customerCode ? (
           <div className="mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-none border border-ng-bone/10 bg-transparent px-4 py-3">
             <div className="min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.customerCode")}</span>
+              <span className="ng-mono text-ng-dust">{t("pay.customerCode")}</span>
               <div className="select-text text-lg font-bold tracking-[0.12em] text-ng-bone">{customerCode}</div>
             </div>
-            <Button type="button" variant="outline" className="shrink-0 rounded-none bg-ng-ink gap-2" onClick={copyCustomerCode}>
+            <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={copyCustomerCode}>
               <Copy className="h-4 w-4" />
               {t('pay.copy')}
-            </Button>
+            </button>
           </div>
         ) : null}
       </div>
@@ -694,7 +693,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
       <div className="border-b border-ng-bone/10 bg-ng-ink p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-dust">{t("pay.manualTransfer")}</div>
+            <div className="ng-mono text-ng-dust">{t("pay.manualTransfer")}</div>
             <h1 className="mt-1 font-ng-display text-4xl font-normal text-ng-bone">{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
               {/* The lead sentence told a buyer to transfer to the account below. On a cancelled order
@@ -708,15 +707,15 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">{t('pay.order')}</div>
+            <div className="ng-mono text-ng-dust">{t('pay.order')}</div>
             <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">{t('pay.customer')}</div>
+            <div className="ng-mono text-ng-dust">{t('pay.customer')}</div>
             <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
-            <div className="text-[10px] uppercase text-ng-dust">{t("pay.transferTotal")}</div>
+            <div className="ng-mono text-ng-dust">{t("pay.transferTotal")}</div>
             <div className="mt-1">{payableAmount(session)}</div>
           </div>
         </div>
@@ -728,7 +727,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
           <div className="rounded-none border border-ng-bone/15 bg-ng-ink p-5 lg:col-span-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.customerCode")}</div>
+                <div className="ng-mono text-ng-dust">{t("pay.customerCode")}</div>
                 <div className="mt-1 select-text text-3xl font-bold tracking-[0.16em] text-ng-bone">
                   {customerCode}
                 </div>
@@ -736,17 +735,17 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
                   {t('pay.keepCode')}
                 </p>
               </div>
-              <Button type="button" variant="outline" className="shrink-0 rounded-none bg-transparent gap-2" onClick={() => copyValue(t("pay.customerCode"), customerCode)}>
+              <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={() => copyValue(t("pay.customerCode"), customerCode)}>
                 <Copy className="h-4 w-4" />
                 {t('pay.copyCode')}
-              </Button>
+              </button>
             </div>
           </div>
         ) : null}
 
         {awaitingShippingQuote ? (
-          <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-4 text-ng-ember">
-            <div className="text-xs font-bold uppercase">{t('pay.quoteTitle')}</div>
+          <div className="rounded-none border border-ng-ember/40 bg-transparent p-4 text-ng-ember">
+            <div className="ng-mono">{t('pay.quoteTitle')}</div>
             <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.quoteBody', { hours: siteFacts.quoteHours })}</p>
             <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.quoteNoTransfer')}</p>
             {/* Dekito's request: the buyer confirms on WhatsApp so Dekito learns the order exists at all.
@@ -771,7 +770,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
           </div>
         ) : closedForPayment ? (
           <div className="rounded-none border border-[#f0a090]/40 bg-[#3a1814] p-4 text-[#f0a090]">
-            <div className="text-xs font-bold uppercase">{t('pay.closedTitle')}</div>
+            <div className="ng-mono">{t('pay.closedTitle')}</div>
             <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.closedBody')}</p>
             <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.closedTransferred')}</p>
             <AskAtelierButton orderNumber={orderNumber} className="mt-3 w-full border-[#f0a090]/40 bg-transparent text-[#f0a090]" />
@@ -782,16 +781,16 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
         ) : (
           <>
         <div className="rounded-none border border-ng-bone/10 bg-ng-deep p-4">
-          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ng-dust">{t("pay.bankAccount")}</div>
+          <div className="ng-mono text-ng-dust">{t("pay.bankAccount")}</div>
           <div className="mt-3 grid gap-3">
             <div className="rounded-none bg-transparent p-4">
-              <div className="text-xs font-bold uppercase text-ng-dust">Bank</div>
+              <div className="ng-mono text-ng-dust">Bank</div>
               <div className="mt-1 text-xl font-bold text-ng-bone">{transfer.bankName}</div>
             </div>
             <button type="button" onClick={() => copyValue(t("pay.accountNumber"), transfer.accountNumber)} className="rounded-none border border-ng-bone/10 bg-transparent p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-bold uppercase text-ng-dust">{t("pay.accountNumber")}</div>
+                  <div className="ng-mono text-ng-dust">{t("pay.accountNumber")}</div>
                   <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-ng-bone">{transfer.accountNumber}</div>
                 </div>
                 <Copy className="h-4 w-4 text-ng-bone" />
@@ -801,7 +800,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
               <button type="button" onClick={() => copyValue(t("pay.swift"), transfer.swift)} className="rounded-none border border-ng-bone/10 bg-transparent p-4 text-left">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-bold uppercase text-ng-dust">{t("pay.swift")}</div>
+                    <div className="ng-mono text-ng-dust">{t("pay.swift")}</div>
                     <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-ng-bone">{transfer.swift}</div>
                   </div>
                   <Copy className="h-4 w-4 text-ng-bone" />
@@ -811,7 +810,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
             <button type="button" onClick={() => copyValue(t("pay.accountNameLabel"), transfer.accountName)} className="rounded-none border border-ng-bone/10 bg-transparent p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-bold uppercase text-ng-dust">{t("pay.accountName")}</div>
+                  <div className="ng-mono text-ng-dust">{t("pay.accountName")}</div>
                   <div className="mt-1 text-lg font-bold text-ng-bone">{transfer.accountName}</div>
                 </div>
                 <Copy className="h-4 w-4 text-ng-bone" />
@@ -820,28 +819,28 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
           </div>
         </div>
 
-        <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-4 text-ng-ember">
+        <div className="rounded-none border border-ng-ember/40 bg-transparent p-4 text-ng-ember">
           {transfer.swift ? (
             /* Dekito's own line, off the invoice already sent by hand. "OUR" makes the SENDER pay every
                fee in the chain, so the amount arrives whole instead of losing $15-25 to an intermediary
                bank — an exact fix where the rounding in usdPrice.js is only a cushion. */
-            <p className="mb-3 rounded-none border border-ng-ember/40 bg-ng-ember/10 p-3 text-xs font-semibold leading-relaxed text-ng-ember">
+            <p className="mb-3 rounded-none border border-ng-ember/40 bg-transparent p-3 text-xs font-semibold leading-relaxed text-ng-ember">
               {t('pay.ourCharges')}
             </p>
           ) : null}
-          <div className="text-xs font-bold uppercase">{t('pay.instructions')}</div>
+          <div className="ng-mono">{t('pay.instructions')}</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>{t('pay.step1', { amount: payableAmount(session) })}</li>
             <li>{t('pay.step2')}</li>
             <li>{t('pay.step3')}</li>
             <li>{t('pay.step4')}</li>
           </ol>
-          <Button type="button" className="mt-4 w-full rounded-none gap-2" onClick={() => copyValue(t("pay.transferTotal"), Number(session.amount || 0))}>
+          <button type="button" className="ng-btn ng-btn--block mt-4" onClick={() => copyValue(t("pay.transferTotal"), Number(session.amount || 0))}>
             <Copy className="h-4 w-4" />
             {t('pay.copyTotal')}
-          </Button>
+          </button>
           {customerCode && hasSubmittedProof ? (
-            <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-none border border-ng-bone/15 bg-transparent px-4 text-sm font-bold text-ng-bone">
+            <Link to={orderTrackingPath} className="ng-btn ng-btn--ghost ng-btn--block mt-2">
               {t('track.title')}
             </Link>
           ) : null}
@@ -874,13 +873,13 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
 
         <div id="mobile-payment-proof-section" className="rounded-none border border-ng-bone/10 bg-transparent p-4">
           <div className="flex items-start gap-3">
-            <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-none ${hasSubmittedProof ? 'bg-[#14231a] text-[#9fdcb2]' : 'bg-ng-ember/10 text-ng-ember'}`}>
+            <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-none ${hasSubmittedProof ? 'bg-[#14231a] text-[#9fdcb2]' : 'bg-transparent text-ng-ember'}`}>
               {hasSubmittedProof ? <FileCheck2 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <div className="text-xs font-bold uppercase text-ng-dust">{t("pay.proof")}</div>
-                {needsProofUpload ? <span className="rounded-full bg-ng-ember/10 px-2 py-0.5 text-[10px] font-bold uppercase text-ng-ember">{t('pay.requiredTag')}</span> : null}
+                <div className="ng-mono text-ng-dust">{t("pay.proof")}</div>
+                {needsProofUpload ? <span className="border border-ng-ember/40 bg-transparent px-2 py-0.5 ng-mono text-ng-ember">{t('pay.requiredTag')}</span> : null}
               </div>
               <p className="mt-1 text-sm font-semibold leading-relaxed text-ng-bone">
                 {proofStatus === 'rejected'
@@ -891,7 +890,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
               </p>
               {proofStatus === 'rejected' && session.paymentProofNotes ? (
                 <div className="mt-3 rounded-none border border-[#f0a090]/40 bg-[#3a1814] px-3 py-2 text-xs font-semibold leading-relaxed text-[#f0a090]">
-                  <span className="block text-[10px] font-bold uppercase text-[#f0a090]">{t("pay.adminReason")}</span>
+                  <span className="block ng-mono text-[#f0a090]">{t("pay.adminReason")}</span>
                   {session.paymentProofNotes}
                 </div>
               ) : null}
@@ -927,10 +926,10 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
                 {proofFile.name}
               </div>
             ) : null}
-            <Button type="button" className="h-11 rounded-none gap-2" onClick={submitProof} disabled={uploadingProof || !proofFile}>
+            <button type="button" className="ng-btn ng-btn--block" onClick={submitProof} disabled={uploadingProof || !proofFile}>
               {uploadingProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {hasSubmittedProof ? t("pay.reuploadProof") : t("pay.uploadProof")}
-            </Button>
+            </button>
             <p className="text-[11px] font-semibold leading-relaxed text-ng-dust">
               {t('pay.fileFormats')}
             </p>

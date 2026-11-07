@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, CheckCircle2, Volume2, VolumeX, ChevronRight, Play, Pause } from 'lucide-react';
@@ -41,7 +41,20 @@ const ImmersiveProductPage = ({ product, story, stale = false }) => {
   const videoRef = useRef(null);
   const pageRef = useRef(null);
 
-  const { colors, hero, music, video, sections } = story;
+  const { colors, hero, music, video } = story;
+
+  // The stories were written with every image slot empty (image: null), so the page drew four blank
+  // frames between the paragraphs. The slots take the product's own gallery photos, in order, after the
+  // one the hero already shows; a slot left without one is not drawn at all (2026-11-07).
+  const sections = useMemo(() => {
+    const hero = String(product.imageUrl || product.images?.[0] || '').trim();
+    const photos = [...new Set([...(product.images || []), product.imageUrl].map((url) => String(url || '').trim()).filter(Boolean))]
+      .filter((url) => url !== hero);
+    let next = 0;
+    return (story.sections || []).map((section) => (
+      ['text-image', 'full-bleed'].includes(section.type) && !section.image ? { ...section, image: photos[next++] || null } : section
+    ));
+  }, [story.sections, product.images, product.imageUrl]);
 
   // Apply color world as CSS custom properties
   useEffect(() => {
@@ -205,7 +218,7 @@ const ImmersiveProductPage = ({ product, story, stale = false }) => {
 
           {/* Music toggle */}
           {music.src ? (
-            <button type="button" className="imm-music-toggle" onClick={toggleMusic} aria-label={musicPlaying ? 'Matikan musik' : 'Putar musik'}>
+            <button type="button" className="imm-music-toggle" onClick={toggleMusic} aria-label={t(musicPlaying ? 'imm.musicOff' : 'imm.musicOn')}>
               {musicPlaying ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
               <span>{music.label}</span>
             </button>
@@ -237,31 +250,26 @@ const ImmersiveProductPage = ({ product, story, stale = false }) => {
 
             if (section.type === 'text-image') {
               return (
-                <section key={i} className={`imm-section imm-text-image imm-text-image--${section.layout}`} data-imm-reveal>
+                <section key={i} className={`imm-section imm-text-image ${section.image ? `imm-text-image--${section.layout}` : 'imm-text-image--text-only'}`} data-imm-reveal>
                   <div className="imm-text-image__text">
                     <span className="imm-eyebrow">{section.eyebrow}</span>
                     <h2>{section.heading}</h2>
                     <p>{section.body}</p>
                   </div>
-                  <div className="imm-text-image__visual">
-                    {section.image ? (
+                  {section.image ? (
+                    <div className="imm-text-image__visual">
                       <img src={section.image} alt={section.heading} loading="lazy" />
-                    ) : (
-                      <div className="imm-placeholder-visual" />
-                    )}
-                  </div>
+                    </div>
+                  ) : null}
                 </section>
               );
             }
 
             if (section.type === 'full-bleed') {
+              if (!section.image) return null;
               return (
                 <section key={i} className="imm-section imm-full-bleed" data-imm-reveal>
-                  {section.image ? (
-                    <img src={section.image} alt={section.caption || ''} loading="lazy" />
-                  ) : (
-                    <div className="imm-placeholder-visual imm-placeholder-visual--wide" />
-                  )}
+                  <img src={section.image} alt={section.caption || ''} loading="lazy" />
                   {section.caption ? <p className="imm-full-bleed__caption">{section.caption}</p> : null}
                 </section>
               );
@@ -283,7 +291,7 @@ const ImmersiveProductPage = ({ product, story, stale = false }) => {
               playsInline
               preload="none"
             />
-            <button type="button" className="imm-floating-video__toggle" onClick={toggleVideo} aria-label={videoPlaying ? 'Pause video' : 'Play video'}>
+            <button type="button" className="imm-floating-video__toggle" onClick={toggleVideo} aria-label={t(videoPlaying ? 'imm.videoPause' : 'imm.videoPlay')}>
               {videoPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </button>
           </div>
@@ -369,7 +377,7 @@ const ImmersiveProductPage = ({ product, story, stale = false }) => {
             ) : lastAddedSlug === product.slug ? (
               <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
             ) : (
-              <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel) })}</>
+              <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') })}</>
             )}
           </button>
           <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} className="mt-3" />

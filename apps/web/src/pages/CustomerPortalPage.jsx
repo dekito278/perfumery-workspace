@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useSignOut } from '@/hooks/useSignOut.js';
 import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
-import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import { PORTAL_STEP_KEYS, orderHasShipped, portalActiveStepIndex } from '@/utils/trackingLead.js';
@@ -279,7 +278,7 @@ const getPaymentExperienceState = (order, t) => {
       label: t('cust.manualUnpaid'),
       title: t('cust.uploadProof'),
       description: t('cust.manualUnpaidBody'),
-      className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-sand',
+      className: 'border-ng-ember/40 bg-transparent text-ng-sand',
       iconClassName: 'bg-transparent text-ng-ember',
       action: t('cust.uploadProofShort'),
     };
@@ -298,7 +297,7 @@ const getPaymentExperienceState = (order, t) => {
     label: t('cust.unpaid'),
     title: t('cust.awaitingPaymentTitle'),
     description: t('cust.awaitingPaymentBody'),
-    className: 'border-ng-ember/40 bg-ng-ember/10 text-ng-sand',
+    className: 'border-ng-ember/40 bg-transparent text-ng-sand',
     iconClassName: 'bg-transparent text-ng-ember',
     action: t('cust.payNow'),
   };
@@ -317,8 +316,8 @@ const PaymentExperiencePanel = ({ order }) => {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-transparent px-2.5 py-1 text-[10px] font-bold uppercase">{state.label}</span>
-            {state.action ? <span className="text-[10px] font-bold uppercase opacity-75">{state.action}</span> : null}
+            <span className="rounded-none border border-ng-bone/15 bg-transparent px-2.5 py-1 ng-mono">{state.label}</span>
+            {state.action ? <span className="ng-mono opacity-75">{state.action}</span> : null}
           </div>
           <h4 className={`text-base mt-2 font-bold text-ng-bone`}>{state.title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{state.description}</p>
@@ -342,14 +341,14 @@ const PaymentProofPanel = ({ order }) => {
       : t('cust.proofMissing');
 
   return (
-    <div className={`mt-3 rounded-none border ${rejected || !submitted ? 'border-ng-ember/40 bg-ng-ember/10 text-ng-ember' : 'border-[#8fd0a4]/40 bg-[#14231a] text-[#9fdcb2]'} p-4`}>
+    <div className={`mt-3 rounded-none border ${rejected || !submitted ? 'border-ng-ember/40 bg-transparent text-ng-ember' : 'border-[#8fd0a4]/40 bg-[#14231a] text-[#9fdcb2]'} p-4`}>
       <div className="flex items-start gap-3">
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-none ${submitted ? 'bg-[#14231a] text-[#9fdcb2]' : 'bg-transparent text-ng-ember'}`}>
           {submitted ? <FileCheck2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="text-xs font-bold uppercase">{t('cust.proof')}</div>
+            <div className="ng-mono">{t('cust.proof')}</div>
             <PaymentProofBadge status={status} />
           </div>
           <p className="mt-1 text-xs font-semibold leading-relaxed">{message}</p>
@@ -407,33 +406,33 @@ const PaymentTaskPanel = ({
       : t('cust.openPayLink');
 
   return (
-    <div className={`mt-4 p-4 rounded-none border border-ng-ember/40 bg-ng-ember/10 text-ng-sand`}>
+    <div className={`mt-4 p-4 rounded-none border border-ng-ember/40 bg-transparent text-ng-sand`}>
       <div className="flex items-start gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-none bg-transparent text-ng-ember">
           <CreditCard className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ng-ember">{t('cust.payActions')}</div>
+          <div className="ng-mono text-ng-ember">{t('cust.payActions')}</div>
           <h4 className={`text-base mt-1 font-bold text-ng-bone`}>{title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-ember">{description}</p>
 
           <div className={`grid gap-3 sm:grid-cols-3 mt-3`}>
             <div className="rounded-none bg-transparent px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.order')}</div>
+              <div className="ng-mono text-ng-ember">{t('cust.order')}</div>
               <div className="mt-1 truncate text-xs font-bold text-ng-bone">{order.orderNumber}</div>
             </div>
             <div className="rounded-none bg-transparent px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.totalDue')}</div>
+              <div className="ng-mono text-ng-ember">{t('cust.totalDue')}</div>
               <div className="mt-1 text-sm font-bold text-ng-bone">{formatTotal(order.subtotal)}</div>
             </div>
             {dokuPayment ? (
               <div className="rounded-none bg-transparent px-3 py-2">
-                <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.linkDeadline')}</div>
+                <div className="ng-mono text-ng-ember">{t('cust.linkDeadline')}</div>
                 <div className="mt-1 truncate text-xs font-bold text-ng-bone">{expiresAt ? formatDate(expiresAt, t) : t('cust.aboutAnHour')}</div>
               </div>
             ) : (
               <div className="rounded-none bg-transparent px-3 py-2">
-                <div className="text-[10px] font-bold uppercase text-ng-ember">{t('cust.account')}</div>
+                <div className="ng-mono text-ng-ember">{t('cust.account')}</div>
                 <div className="mt-1 truncate text-xs font-bold text-ng-bone">{transfer.bankName} {transfer.accountNumber}</div>
                 <div className="mt-0.5 truncate text-[11px] font-semibold text-ng-dust">{t('cust.accountHolder', { name: transfer.accountName })}</div>
               </div>
@@ -442,23 +441,23 @@ const PaymentTaskPanel = ({
 
           <div className={`flex flex-wrap gap-2 mt-3`}>
             {manualPayment ? (
-              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-4 text-xs font-bold text-ng-ink">
+              <Link to={paymentPath} className="ng-btn">
                 <Upload className="h-4 w-4" />
                 {t('cust.uploadProof')}
               </Link>
             ) : dokuExpired ? (
-              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-4 text-xs font-bold text-ng-ink disabled:opacity-60">
+              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="ng-btn">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 {t('cust.newDokuLink')}
               </button>
             ) : (
-              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-4 text-xs font-bold text-ng-ink">
+              <Link to={paymentPath} className="ng-btn">
                 <CreditCard className="h-4 w-4" />
                 {t('cust.payNow')}
               </Link>
             )}
             {dokuPayment && order.paymentUrl && !dokuExpired ? (
-              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-none border border-ng-bone/15 bg-transparent px-4 text-xs font-bold text-ng-bone disabled:opacity-60">
+              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="ng-btn ng-btn--ghost">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 {t('cust.renewLink')}
               </button>
@@ -506,7 +505,7 @@ const OrderTimeline = ({ order }) => {
       {timeline.map((step, index) => (
         <div key={step.key} className={`rounded-none border px-3 py-3 ${step.done ? 'border-ng-bone/20 bg-transparent' : 'border-ng-bone/10 bg-transparent'} ${step.current ? 'ring-1 ring-ng-bone/40' : ''}`}>
           <div className="flex items-start gap-3">
-            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.done ? 'bg-ng-bone text-ng-ink' : 'bg-ng-card text-ng-ash'}`}>
+            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-none text-xs font-bold ${step.done ? 'bg-ng-bone text-ng-ink' : 'bg-ng-card text-ng-ash'}`}>
               {index + 1}
             </span>
             <div className="min-w-0">
@@ -615,14 +614,14 @@ const BespokeDetailPanel = ({ item }) => {
 
   return (
     <div className={`mt-4 p-4 rounded-none bg-ng-ink`}>
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
+      <div className="flex items-center gap-2 ng-mono text-ng-bone">
         <Sparkles className="h-3.5 w-3.5" />
         {t('cust.bespokeDetail')}
       </div>
       <div className={`mt-3 grid gap-2 sm:grid-cols-2`}>
         {rows.map(([label, value]) => (
           <div key={label} className={`rounded-none bg-transparent px-3 py-2 text-sm font-semibold`}>
-            <span className={`block text-[10px] font-bold uppercase text-ng-dust`}>{label}</span>
+            <span className={`block ng-mono text-ng-dust`}>{label}</span>
             <span className={`mt-1 block text-ng-bone`}>{value}</span>
           </div>
         ))}
@@ -640,11 +639,11 @@ const BespokeProductionPanel = ({ order }) => {
   return (
     <div className={`mt-4 p-4 rounded-none border border-ng-bone/10 bg-ng-deep`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
+        <div className="flex items-center gap-2 ng-mono text-ng-bone">
           <Sparkles className="h-3.5 w-3.5" />
           {t('cust.bespokeProduction')}
         </div>
-        <span className="rounded-full bg-ng-ink px-2.5 py-1 text-[10px] font-bold uppercase text-ng-bone">
+        <span className="rounded-none border border-ng-bone/15 bg-ng-ink px-2.5 py-1 ng-mono text-ng-bone">
           {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, currentStatus, t)}
         </span>
       </div>
@@ -656,8 +655,8 @@ const BespokeProductionPanel = ({ order }) => {
           const done = activeStep >= index;
           return (
             <div key={step} className="min-w-0">
-              <div className={`h-2 rounded-full ${done ? 'bg-ng-bone' : 'bg-ng-bone/15'}`} />
-              <div className={`mt-1 truncate font-bold uppercase text-[9px] ${done ? 'text-ng-bone' : 'text-ng-dust'}`}>
+              <div className={`h-2 ${done ? 'bg-ng-bone' : 'bg-ng-bone/15'}`} />
+              <div className={`mt-1 truncate ng-mono ${done ? 'text-ng-bone' : 'text-ng-dust'}`}>
                 {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, step, t)}
               </div>
             </div>
@@ -679,7 +678,7 @@ const ShipmentPanel = ({ order }) => {
   return (
     <div className={`mt-4 p-4 rounded-none border border-ng-bone/10 bg-transparent`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-ng-bone sm:text-xs">
+        <div className="flex items-center gap-2 ng-mono text-ng-bone">
           <Truck className="h-3.5 w-3.5" />
           {t('cust.delivery')}
         </div>
@@ -688,42 +687,42 @@ const ShipmentPanel = ({ order }) => {
       <div className={`mt-3 grid gap-2 sm:grid-cols-2`}>
         {order.courierName ? (
           <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.courier')}</div>
+            <div className="ng-mono text-ng-dust">{t('cust.courier')}</div>
             <div className="mt-1 text-ng-bone">{order.courierName}</div>
           </div>
         ) : null}
         {order.trackingNumber ? (
           <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.waybill')}</div>
+            <div className="ng-mono text-ng-dust">{t('cust.waybill')}</div>
             <div className="mt-1 text-ng-bone">{order.trackingNumber}</div>
           </div>
         ) : null}
         {order.shippedAt ? (
           <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.shipDate')}</div>
+            <div className="ng-mono text-ng-dust">{t('cust.shipDate')}</div>
             <div className="mt-1 text-ng-bone">{formatDate(order.shippedAt, t)}</div>
           </div>
         ) : null}
         {order.deliveredAt ? (
           <div className="rounded-none bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-ng-dust">{t('cust.delivered')}</div>
+            <div className="ng-mono text-ng-dust">{t('cust.delivered')}</div>
             <div className="mt-1 text-ng-bone">{formatDate(order.deliveredAt, t)}</div>
           </div>
         ) : null}
       </div>
       {order.trackingUrl ? (
-        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-3 text-xs font-bold text-ng-ink">
+        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="ng-btn mt-3">
           <ExternalLink className="h-4 w-4" />
           {t('cust.trackWaybill')}
         </a>
       ) : null}
       {!order.trackingUrl && courierSearchUrl ? (
-        <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-none bg-ng-bone px-3 text-xs font-bold text-ng-ink">
+        <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="ng-btn mt-3">
           <ExternalLink className="h-4 w-4" />
           {t('cust.searchWaybill')}
         </a>
       ) : null}
-      <a href={buildPublicTrackingUrl(order.orderNumber, { basename: shopPrefixForRegion(region) })} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-none border border-ng-bone/15 bg-transparent px-3 text-xs font-bold text-ng-bone">
+      <a href={buildPublicTrackingUrl(order.orderNumber, { basename: shopPrefixForRegion(region) })} target="_blank" rel="noreferrer" className="ng-btn ng-btn--ghost mt-2">
         <ExternalLink className="h-4 w-4" />
         {t('cust.publicTracking')}
       </a>
@@ -751,9 +750,9 @@ const SelfServiceActions = ({
   // writing a new brief.
   const canReorder = getReorderableItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
-  const buttonClass = 'inline-flex h-11 items-center justify-center gap-2 rounded-none px-4 text-sm font-bold';
-  const outlineClass = `${buttonClass} border border-ng-bone/25 bg-transparent text-ng-bone`;
-  const primaryClass = `${buttonClass} bg-ng-bone text-ng-ink`;
+  // The shop's own button, as on every other page (they were Inter bold, 2026-11-07).
+  const outlineClass = 'ng-btn ng-btn--ghost';
+  const primaryClass = 'ng-btn';
   const courierSearchUrl = buildCourierTrackingSearchUrl({
     courierName: order.courierName,
     trackingNumber: order.trackingNumber,
@@ -1023,14 +1022,14 @@ const CustomerPortalPage = () => {
               <UserRound className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block text-xs font-bold uppercase text-ng-bone">
+              <span className="block ng-mono text-ng-bone">
                 {t('cust.accountAddress')}
-                {memberActive ? <span className="ml-2 rounded-full bg-ng-ember/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-ng-ember">{t('cust.memberActive')}</span> : null}
+                {memberActive ? <span className="ml-2 rounded-none border border-ng-bone/15 bg-transparent px-2 py-0.5 ng-mono text-ng-ember">{t('cust.memberActive')}</span> : null}
               </span>
               <span className="mt-0.5 block truncate text-[11px] font-semibold text-ng-dust">{currentUser.email}</span>
             </span>
           </span>
-          <span className="shrink-0 rounded-full bg-ng-card px-3 py-1 text-[10px] font-bold uppercase text-ng-bone">
+          <span className="shrink-0 rounded-none border border-ng-bone/15 bg-ng-card px-3 py-1 ng-mono text-ng-bone">
             {accountPanelOpen ? t('cust.close') : t('cust.edit')}
           </span>
         </button>
@@ -1040,20 +1039,20 @@ const CustomerPortalPage = () => {
           <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder={t('cust.recipientName')} className={inputClass} />
           <input value={profileContact} onChange={(e) => setProfileContact(e.target.value)} placeholder={t('cust.phone')} className={inputClass} />
           <textarea value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} rows="2" placeholder={t('cust.fullAddress')} className={`${inputClass} h-auto py-2`} />
-          <Button type="submit" disabled={profileLoading} className="h-11 rounded-none gap-2">
+          <button type="submit" disabled={profileLoading} className="ng-btn">
             {profileLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
             {t('cust.saveAddress')}
-          </Button>
+          </button>
         </form>
 
         <form onSubmit={submitClaim} className="mt-4 grid gap-2 border-t border-[#e5e7eb] pt-3">
-          <div className="text-[11px] font-bold uppercase text-ng-dust">{t('cust.haveOldCode')}</div>
+          <div className="ng-mono text-ng-dust">{t('cust.haveOldCode')}</div>
           <input value={claimCodeValue} onChange={(e) => setClaimCodeValue(e.target.value.toUpperCase())} aria-label={t('cust.customerCode')} placeholder="SOLI•••••" autoCapitalize="characters" spellCheck={false} className={`${inputClass} uppercase tracking-[0.08em]`} />
           <input value={claimAnswer} onChange={(e) => setClaimAnswer(e.target.value)} placeholder={t('cust.answerIfAny')} className={inputClass} />
-          <Button type="submit" variant="outline" disabled={claimLoading} className="h-11 rounded-none gap-2 bg-transparent">
+          <button type="submit" disabled={claimLoading} className="ng-btn ng-btn--ghost">
             {claimLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
             {t('cust.linkCode')}
-          </Button>
+          </button>
         </form>
         </div>
         )}
@@ -1341,31 +1340,31 @@ const CustomerPortalPage = () => {
             </div>
 
             <form onSubmit={loadPortal} className="rounded-none border bg-transparent p-4">
-              <label className="text-xs font-bold uppercase text-ng-dust">{t('cust.customerCode')}</label>
+              <label className="ng-mono text-ng-dust">{t('cust.customerCode')}</label>
               <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
                 <input
                   value={customerCode}
                   onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
                   aria-label={t('cust.customerCode')}
                   placeholder="SOLI•••••" autoCapitalize="characters" spellCheck={false}
-                  className="h-12 rounded-none border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-ng-bone/30"
+                  className="h-12 min-w-0 rounded-none border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-ng-bone/30"
                 />
-                <Button type="submit" className="h-12 rounded-none gap-2" disabled={loading}>
+                <button type="submit" className="ng-btn ng-btn--tight" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   {t('cust.check')}
-                </Button>
+                </button>
               </div>
               {/* Paste and "last code" came over from the phone portal when it retired (2026-10-31): on a phone
                   the code is usually sitting in a WhatsApp message, two taps away. */}
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" className="h-11 gap-2 rounded-none bg-transparent text-xs font-bold" onClick={pasteCustomerCode}>
+                <button type="button" className="ng-btn ng-btn--ghost ng-btn--tight" onClick={pasteCustomerCode}>
                   <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
                   {t('cust.pasteCode')}
-                </Button>
-                <Button type="button" variant="outline" className="h-11 gap-2 rounded-none bg-transparent text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
+                </button>
+                <button type="button" className="ng-btn ng-btn--ghost ng-btn--tight" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
                   <History className="h-4 w-4" aria-hidden="true" />
                   {t('cust.lastCheck')}
-                </Button>
+                </button>
               </div>
               {lastCustomerCode ? (
                 <button type="button" onClick={checkLastCustomerCode} className="mt-2 min-h-[44px] text-left text-xs font-bold text-ng-bone underline underline-offset-4">
@@ -1381,10 +1380,10 @@ const CustomerPortalPage = () => {
                   <button type="button" onClick={signOut} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
                 </div>
               ) : (
-                <Button type="button" variant="outline" className="mt-3 h-12 w-full rounded-none gap-2 text-sm font-bold" onClick={signInGoogle}>
+                <button type="button" className="ng-btn ng-btn--ghost ng-btn--block mt-3" onClick={signInGoogle}>
                   <UserRound className="h-4 w-4" />
                   {t('cust.signInMember')}
-                </Button>
+                </button>
               )}
             </form>
             {renderAccountPanel()}
@@ -1398,7 +1397,7 @@ const CustomerPortalPage = () => {
                     <KeyRound className="h-5 w-5" />
                   </span>
                   <div>
-                    <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.securityCheck')}</div>
+                    <div className="ng-mono text-ng-bone">{t('cust.securityCheck')}</div>
                     <h2 className="ng-display mt-1 text-[2rem]">{t('cust.identityTitle')}</h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
                       {t('cust.identityBody')}
@@ -1416,10 +1415,10 @@ const CustomerPortalPage = () => {
                     placeholder={t('cust.identityPlaceholder')}
                     className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
                   />
-                  <Button type="submit" className="h-12 rounded-none gap-2" disabled={identityLoading}>
+                  <button type="submit" className="ng-btn" disabled={identityLoading}>
                     {identityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                     {t('cust.openDashboard')}
-                  </Button>
+                  </button>
                 </form>
               </section>
             ) : portal?.requiresSecurity ? (
@@ -1429,7 +1428,7 @@ const CustomerPortalPage = () => {
                     <KeyRound className="h-5 w-5" />
                   </span>
                   <div>
-                    <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.securityCheck')}</div>
+                    <div className="ng-mono text-ng-bone">{t('cust.securityCheck')}</div>
                     <h2 className="ng-display mt-1 text-[2rem]">{t('cust.protectedDash')}</h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
                       {t('cust.securityOnBody')}
@@ -1438,7 +1437,7 @@ const CustomerPortalPage = () => {
                 </div>
                 <form onSubmit={unlockPortal} className="mt-5 grid gap-3">
                   <div className="rounded-none bg-ng-card p-4">
-                    <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.question')}</div>
+                    <div className="ng-mono text-ng-dust">{t('cust.question')}</div>
                     <div className="mt-1 text-base font-bold">{portal.customer.securityQuestion}</div>
                   </div>
                   <input
@@ -1449,10 +1448,10 @@ const CustomerPortalPage = () => {
                     placeholder={t('cust.answer')}
                     className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
                   />
-                  <Button type="submit" className="h-12 rounded-none gap-2" disabled={securityLoading}>
+                  <button type="submit" className="ng-btn" disabled={securityLoading}>
                     {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                     {t('cust.openDashboard')}
-                  </Button>
+                  </button>
                 </form>
               </section>
             ) : portal ? (
@@ -1460,7 +1459,7 @@ const CustomerPortalPage = () => {
                 <section className="rounded-none border bg-transparent p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.welcomeBack')}</div>
+                      <div className="ng-mono text-ng-bone">{t('cust.welcomeBack')}</div>
                       <h2 className="ng-display mt-1 text-[2rem]">{portal.customer.customerName}</h2>
                       <p className="mt-1 text-sm font-semibold text-ng-dust">{portal.customer.masked ? t('cust.hiddenForSecurity') : portal.customer.contact}</p>
                       {portal.customer.masked ? (
@@ -1475,15 +1474,15 @@ const CustomerPortalPage = () => {
                   </div>
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-none border border-ng-bone/10 bg-ng-card p-4">
-                      <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.order')}</div>
+                      <div className="ng-mono text-ng-dust">{t('cust.order')}</div>
                       <div className="mt-1 text-2xl font-bold">{portal.orders.length}</div>
                     </div>
                     <div className="rounded-none border border-ng-bone/10 bg-ng-ink p-4">
-                      <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.active')}</div>
+                      <div className="ng-mono text-ng-dust">{t('cust.active')}</div>
                       <div className="mt-1 text-2xl font-bold">{activeOrders.length}</div>
                     </div>
-                    <div className="rounded-none border border-ng-ember/40 bg-ng-ember/10 p-4">
-                      <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.latest')}</div>
+                    <div className="rounded-none border border-ng-ember/40 bg-transparent p-4">
+                      <div className="ng-mono text-ng-dust">{t('cust.latest')}</div>
                       <div className="mt-1 text-sm font-bold">{latestOrder ? labelFrom(orderStatusKeys, statusLabels, latestOrder.status, t) : '-'}</div>
                     </div>
                   </div>
@@ -1500,7 +1499,7 @@ const CustomerPortalPage = () => {
                         <span className="mt-0.5 block text-sm font-semibold text-ng-dust">{t('cust.addSecurityIf')}</span>
                       </span>
                     </span>
-                    <span className="shrink-0 rounded-full bg-ng-card px-4 py-2 text-xs font-bold uppercase text-ng-bone">
+                    <span className="shrink-0 rounded-none border border-ng-bone/15 bg-ng-card px-4 py-2 ng-mono text-ng-bone">
                       {securityFormOpen ? t('cust.close') : t('cust.open')}
                     </span>
                   </button>
@@ -1536,10 +1535,10 @@ const CustomerPortalPage = () => {
                         placeholder={t('cust.answer')}
                         className="h-12 rounded-none border px-4 text-sm font-semibold outline-none focus:border-ng-bone/30"
                       />
-                      <Button type="submit" className="h-12 rounded-none gap-2" disabled={savingSecurity}>
+                      <button type="submit" className="ng-btn" disabled={savingSecurity}>
                         {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                         {t('cust.saveProtection')}
-                      </Button>
+                      </button>
                     </form>
                   ) : null}
                 </section>
@@ -1565,7 +1564,7 @@ const CustomerPortalPage = () => {
                               <p className="mt-1 text-sm font-semibold text-ng-dust">{formatDate(order.createdAt, t)}</p>
                             </div>
                             <div className="text-right">
-                              <div className="text-xs font-bold uppercase text-ng-dust">{t('cust.itemCount', { count: order.quantity })}</div>
+                              <div className="ng-mono text-ng-dust">{t('cust.itemCount', { count: order.quantity })}</div>
                               <div className="text-lg font-bold">{formatTotal(order.subtotal)}</div>
                             </div>
                             </div>
@@ -1586,7 +1585,7 @@ const CustomerPortalPage = () => {
                             <div className="mt-4 rounded-none border border-ng-bone/10 bg-ng-card p-4">
                               <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <div className="text-xs font-bold uppercase text-ng-bone">{t('cust.selfService')}</div>
+                                  <div className="ng-mono text-ng-bone">{t('cust.selfService')}</div>
                                   <p className="mt-1 text-sm font-semibold text-ng-dust">{t('cust.manageHere')}</p>
                                 </div>
                               </div>

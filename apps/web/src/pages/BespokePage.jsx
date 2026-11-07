@@ -840,7 +840,7 @@ const BespokePage = () => {
                 <dl className="m-0 flex flex-col gap-3 border-t border-ng-bone/15 pt-4 text-[15px]">
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.scent')}</dt><dd className="m-0 text-right">{form.scentDescription || t('bsp.notFilled')}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.bottle')}</dt><dd className="m-0 text-right">{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
-                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0 font-ng-display text-[32px]">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
+                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0 shrink-0 whitespace-nowrap font-ng-display text-[32px]">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
                 </dl>
               </div>
               {/* Where the two shops part. The Indonesian one opens its checkout; the English one hands

@@ -46,7 +46,8 @@ const rowToStoryConfig = (row) => {
       bg: row.color_bg,
       text: row.color_text,
       accent: row.color_accent,
-      muted: `${row.color_text}73`,
+      // 60% of the text colour (99 = 0.6): 45% read 4.06:1 for the story's small labels (2026-11-07).
+      muted: `${row.color_text}99`,
       border: `${row.color_text}1f`,
     },
     hero: {

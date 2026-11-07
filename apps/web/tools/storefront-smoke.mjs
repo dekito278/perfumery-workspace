@@ -728,7 +728,7 @@ const runMotion = async (browser) => {
 // while the menu button stood half off a 360px phone and wholly off a 320px one (2026-11-06).
 const runChrome = async (browser) => {
   const run = 'chrome';
-  const found = { bare: [], clipped: [], ragged: [], offCentre: [], edges: [] };
+  const found = { bare: [], clipped: [], spilled: [], ragged: [], offCentre: [], edges: [] };
   for (const width of [320, 360, 390, 768, 1024, 1280, 1536, 1920]) {
     const context = await browser.newContext({ viewport: { width, height: 900 }, locale: 'id-ID', timezoneId: 'Asia/Jakarta' });
     await guard(context, { blocked: [], orderBodies: [], order: null });
@@ -758,11 +758,20 @@ const runChrome = async (browser) => {
         const lefts = ['.ng-header__wordmark', 'main .ng-container', '.ng-hero__body', '.ng-footer__wordmark']
           .map((selector) => box(document.querySelector(selector))?.left).filter((left) => left !== undefined).map(Math.round);
         const bare = !document.querySelector('.ng-header') || !document.querySelector('.ng-footer');
-        return { vw, bare, clipped, ragged, navCentre, lefts };
+        // The page's own controls stay inside the content gutter. On the English account page at 390px the
+        // code box's buttons ran past the card's border (2026-11-07): inside the screen, so "clipped" passed.
+        const gutter = parseFloat(getComputedStyle(document.querySelector('main .ng-section') || document.body).paddingLeft) || 0;
+        const spilled = [...document.querySelectorAll('main a, main button, main input')]
+          .filter((el) => el.getClientRects().length && !el.closest('.ng-header, .ng-footer, .ng-filters, nav'))
+          // A floating control (back to top, the phone's pay bar) sits on the screen edge by design.
+          .filter((el) => { for (let n = el; n && n.tagName !== 'MAIN'; n = n.parentElement) if (getComputedStyle(n).position === 'fixed') return false; return true; })
+          .filter((el) => gutter && (box(el).right > vw - gutter + 1 || box(el).left < gutter - 1)).map(name);
+        return { vw, bare, clipped, spilled, ragged, navCentre, lefts };
       });
       const at = `${path}@${width}`;
       if (m.bare) found.bare.push(at);
       if (m.clipped.length) found.clipped.push(`${at}: ${m.clipped.join(', ')}`);
+      if (!['/home', '/en/home', '/catalog'].includes(path) && m.spilled.length) found.spilled.push(`${at}: ${m.spilled.join(', ')}`);
       if (m.ragged) found.ragged.push(`${at}: ${m.ragged} row(s)`);
       // From 1100px the actions fit in half the slack; below it they need more and the nav gives way.
       if (width >= 1100 && m.navCentre !== null && Math.abs(m.navCentre - m.vw / 2) > 2) found.offCentre.push(`${at}: ${Math.round(m.navCentre)} vs ${m.vw / 2}`);
@@ -772,6 +781,7 @@ const runChrome = async (browser) => {
   }
   check(run, 'every page wears the shop header and footer', !found.bare.length, found.bare.slice(0, 3).join('; '));
   check(run, 'every header and footer control is on screen, 320–1920px', !found.clipped.length, found.clipped.slice(0, 3).join('; '));
+  check(run, 'account and tracking controls stay inside the page gutter', !found.spilled.length, found.spilled.slice(0, 3).join('; '));
   check(run, 'every footer row runs edge to edge — no block left on a row alone', !found.ragged.length, found.ragged.slice(0, 3).join('; '));
   check(run, 'the header nav stands on the page centre line', !found.offCentre.length, found.offCentre.slice(0, 3).join('; '));
   check(run, 'header, page and footer start at one left edge', !found.edges.length, found.edges.slice(0, 3).join('; '));

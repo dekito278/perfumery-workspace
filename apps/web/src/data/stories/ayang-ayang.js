@@ -6,7 +6,8 @@ const story = {
     bg: '#1a0f14',
     text: '#f5ede4',
     accent: '#c4917b',
-    muted: 'rgba(245, 237, 228, 0.45)',
+    // 0.45 read 4.06:1 on this ground for the small labels and the way back; 0.6 reads about 6:1.
+    muted: 'rgba(245, 237, 228, 0.6)',
     border: 'rgba(245, 237, 228, 0.12)',
   },
 
