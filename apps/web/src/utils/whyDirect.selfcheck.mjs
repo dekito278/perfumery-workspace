@@ -44,6 +44,12 @@ for (const region of ['id', 'en']) {
 const idReasons = whyDirectReasons('id');
 assert.ok(idReasons.some((r) => r.key === 'member' && r.to === '/customer'), 'the member price reason must lead to the account');
 assert.match(MESSAGES.id[idReasons[0].bodyKey], /di bawah marketplace/, 'the strongest true claim — prices below the marketplace — must be made');
+// The comparison is Indonesian only. Abroad there is no marketplace listing to measure against, so the English
+// reasons say what the atelier does — "jangan nyenggol orang" (Dekito, 2026-11-07).
+for (const reason of whyDirectReasons('en')) {
+  const copy = MESSAGES.en[reason.titleKey] + ' ' + MESSAGES.en[reason.bodyKey];
+  assert.doesNotMatch(copy, /marketplace|reseller|warehouse|order direct/i, `en.${reason.key}: the English reason measures the shop against someone else`);
+}
 
 // The English one cannot. An international order does not get the member discount — outside Indonesia the
 // price is the export price and signing in does not lower it — so this card must neither promise one nor

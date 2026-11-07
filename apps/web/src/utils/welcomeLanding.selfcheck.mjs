@@ -54,6 +54,8 @@ assert.match(page, /useScrollReveal\(\)/, 'the page has a reveal container — W
 // day a listing changes, and naming a competitor in a price claim is a legal and tone risk.
 assert.match(MESSAGES.id['welcome.lead'], /di bawah marketplace/,
   'the verified claim is made — it is the strongest true thing the page can say');
+// Only in Indonesia: a buyer abroad has no marketplace listing to compare with (Dekito, 2026-11-07).
+assert.doesNotMatch(MESSAGES.en['welcome.lead'], /marketplace/i, 'the English welcome does not compare the shop with a marketplace');
 
 // Every rule below now has to hold in BOTH languages. The English copy is a second place the same claim
 // could go wrong, and it is the one Dekito cannot proofread as easily.
