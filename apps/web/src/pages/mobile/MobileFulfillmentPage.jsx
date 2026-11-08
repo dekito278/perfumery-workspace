@@ -545,9 +545,7 @@ const MobileFulfillmentPage = () => {
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   <StatusChip size="xs" tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
-                  <StatusChip size="xs" tone={draft.trackingNumber || order.trackingNumber ? 'success' : 'warning'}>
-                    {draft.trackingNumber || order.trackingNumber ? 'Resi siap' : 'Tanpa resi'}
-                  </StatusChip>
+                  {draft.trackingNumber || order.trackingNumber ? <StatusChip size="xs" tone="success">Resi siap</StatusChip> : null}
                   {isBespokeOrder(order) ? <StatusChip size="xs" tone="primary">Bespoke</StatusChip> : null}
                 </div>
 
