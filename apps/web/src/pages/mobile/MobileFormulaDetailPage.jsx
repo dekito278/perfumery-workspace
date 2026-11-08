@@ -19,6 +19,7 @@ import { useFormulaDetailPage } from '@/hooks/useFormulaDetailPage.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { updateFormulaStatus } from '@/services/formulasSupabaseService.js';
+import { validationTestTypeLabel } from '@/services/validationLogsSupabaseService.js';
 import { formatDate, formatGramAmount, formatStatus } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { buildMobileFormulaMetrics } from '@/utils/mobileFormulaMetrics.js';
@@ -27,11 +28,13 @@ import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import { getMobileFromState, useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 
 const tabs = [
-  { value: 'summary', label: 'Summary' },
-  { value: 'composition', label: 'Composition' },
+  { value: 'summary', label: 'Ringkasan' },
+  { value: 'composition', label: 'Komposisi' },
   { value: 'workbook', label: 'Workbook' },
-  { value: 'activity', label: 'Activity' },
+  { value: 'activity', label: 'Aktivitas' },
 ];
+
+const JOURNAL_STATUS_LABELS = { draft: 'Draf', published: 'Terbit' };
 
 const formatPercent = (value, digits = 1) => `${Number(value || 0).toFixed(digits)}%`;
 const formatScore = (value) => Number.isFinite(Number(value)) ? Math.round(Number(value)) : '-';
@@ -44,7 +47,7 @@ const MetricTile = ({ label, value, helper }) => (
   </div>
 );
 
-const MiniBarRows = ({ rows = [], labelKey = 'label', valueKey = 'value', empty = 'No chart data' }) => {
+const MiniBarRows = ({ rows = [], labelKey = 'label', valueKey = 'value', empty = 'Belum ada data grafik' }) => {
   const visibleRows = rows.filter((row) => Number(row?.[valueKey] || row?.percent || 0) > 0).slice(0, 6);
   if (!visibleRows.length) {
     return <div className="rounded-xl bg-[#f8f7f4] p-3 text-xs font-semibold text-[#6b7280]">{empty}</div>;
@@ -123,7 +126,7 @@ const MobileFormulaDetailPage = () => {
   const paceRecommendations = useMemo(() => {
     const weakestAxis = workbookSimulation?.pace?.weakestAxis;
     if (!weakestAxis?.label) return [];
-    return [`Improve ${String(weakestAxis.label).toLowerCase()} (${Math.round(Number(weakestAxis.value) || 0)}).`];
+    return [`Perkuat ${String(weakestAxis.label).toLowerCase()} (${Math.round(Number(weakestAxis.value) || 0)}).`];
   }, [workbookSimulation]);
 
   useEffect(() => {
@@ -156,7 +159,7 @@ const MobileFormulaDetailPage = () => {
       toast.success('Formula dihapus');
       navigate('/mobile/formulas');
     } catch (error) {
-      toast.error(error.message || 'Failed to delete formula');
+      toast.error(error.message || 'Gagal menghapus formula');
       setDeleting(false);
     }
   };
@@ -164,10 +167,10 @@ const MobileFormulaDetailPage = () => {
   const handleDuplicate = async () => {
     try {
       await duplicateFormula(id);
-      toast.success('Formula duplicated');
+      toast.success('Formula digandakan');
       navigate('/mobile/formulas');
     } catch (error) {
-      toast.error('Failed to duplicate formula');
+      toast.error('Gagal menggandakan formula');
     }
   };
 
@@ -175,17 +178,17 @@ const MobileFormulaDetailPage = () => {
     setUpdatingStatus(true);
     try {
       await updateFormulaStatus(id, 'ready_for_batch');
-      toast.success('Formula marked ready for batch');
+      toast.success('Formula ditandai siap batch');
       navigate(`/mobile/batches?formulaId=${id}`);
     } catch (error) {
-      toast.error(error.message || 'Failed to update formula status');
+      toast.error(error.message || 'Gagal memperbarui status formula');
     } finally {
       setUpdatingStatus(false);
     }
   };
 
   if (loading || !formula) {
-    return <MobileAuthenticatedLayout><MobileLoadingState eyebrow="Formula" title="Loading formula..." subtitle="Preparing workbook and composition data." /></MobileAuthenticatedLayout>;
+    return <MobileAuthenticatedLayout><MobileLoadingState eyebrow="Formula" title="Memuat formula..." subtitle="Menyiapkan workbook dan data komposisi." /></MobileAuthenticatedLayout>;
   }
 
   return (
@@ -198,26 +201,26 @@ const MobileFormulaDetailPage = () => {
           <section className="space-y-3">
             <div className="mobile-soft-card p-4">
               <div className="grid grid-cols-2 gap-3">
-                <div><div className="text-[10px] font-bold uppercase text-amber-700">Size</div><div className="mt-1 text-lg font-bold">{formatGramAmount(totalGrams)}</div></div>
-                <div><div className="text-[10px] font-bold uppercase text-amber-700">Cost</div><div className="mt-1 text-lg font-bold">{formatPrice(totalCost)}</div></div>
-                <div><div className="text-[10px] font-bold uppercase text-amber-700">Impact</div><div className="mt-1 text-lg font-bold">{formulaMetrics.impactDisplay}</div></div>
-                <div><div className="text-[10px] font-bold uppercase text-amber-700">Lifetime</div><div className="mt-1 text-lg font-bold">{formulaMetrics.lifetimeDisplay}</div></div>
+                <div><div className="text-[10px] font-bold uppercase text-amber-700">Ukuran</div><div className="mt-1 text-lg font-bold">{formatGramAmount(totalGrams)}</div></div>
+                <div><div className="text-[10px] font-bold uppercase text-amber-700">Biaya</div><div className="mt-1 text-lg font-bold">{formatPrice(totalCost)}</div></div>
+                <div><div className="text-[10px] font-bold uppercase text-amber-700">Kekuatan</div><div className="mt-1 text-lg font-bold">{formulaMetrics.impactDisplay}</div></div>
+                <div><div className="text-[10px] font-bold uppercase text-amber-700">Ketahanan</div><div className="mt-1 text-lg font-bold">{formulaMetrics.lifetimeDisplay}</div></div>
               </div>
             </div>
             {[
-              ['Version', formula.version || '-'],
-              ['Type', 'Standalone formula'],
-              ['Last updated', formatDate(formula.updated || formula.created)],
-              ['Notes', formula.notes || '-'],
+              ['Versi', formula.version || '-'],
+              ['Jenis', 'Formula mandiri'],
+              ['Terakhir diperbarui', formatDate(formula.updated || formula.created)],
+              ['Catatan', formula.notes || '-'],
             ].map(([label, value]) => <div key={label} className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#6b7280]">{label}</div><div className="mt-1 text-sm font-semibold text-[#1f2937]">{value}</div></div>)}
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs font-bold" onClick={handleExportPdf}><Download className="mr-1 h-4 w-4" />Formula PDF</Button>
-              <Button className="mobile-interactive mobile-pressable h-11 rounded-2xl text-xs font-bold" onClick={markReadyForBatch} disabled={updatingStatus}><Calculator className="mr-1 h-4 w-4" />Ready Batch</Button>
-              <Button variant="outline" className="mobile-interactive mobile-pressable col-span-2 h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => navigate(`/mobile/journal/new?formulaId=${id}`)}><BookOpenText className="mr-1 h-4 w-4" />Write linked Journal note</Button>
+              <Button variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs font-bold" onClick={handleExportPdf}><Download className="mr-1 h-4 w-4" />PDF formula</Button>
+              <Button className="mobile-interactive mobile-pressable h-11 rounded-2xl text-xs font-bold" onClick={markReadyForBatch} disabled={updatingStatus}><Calculator className="mr-1 h-4 w-4" />Siap batch</Button>
+              <Button variant="outline" className="mobile-interactive mobile-pressable col-span-2 h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => navigate(`/mobile/journal/new?formulaId=${id}`)}><BookOpenText className="mr-1 h-4 w-4" />Tulis catatan Journal terkait</Button>
             </div>
             <section className="mobile-card p-4">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-sm font-bold text-[#1f2937]">Journal links</h2>
+                <h2 className="text-sm font-bold text-[#1f2937]">Catatan Journal terkait</h2>
                 <span className="text-[11px] font-bold text-[#6b7280]">{linkedJournalPosts.length}</span>
               </div>
               {linkedJournalPosts.length ? (
@@ -229,8 +232,8 @@ const MobileFormulaDetailPage = () => {
                       onClick={() => navigate(`/mobile/journal/${post.id}`)}
                       className="block w-full rounded-xl border border-[#ece8df] bg-white p-3 text-left"
                     >
-                      <div className="line-clamp-1 text-xs font-bold text-[#1f2937]">{post.title || 'Untitled note'}</div>
-                      <div className="mt-1 text-[11px] font-semibold capitalize text-[#6b7280]">{post.status || 'draft'}</div>
+                      <div className="line-clamp-1 text-xs font-bold text-[#1f2937]">{post.title || 'Catatan tanpa judul'}</div>
+                      <div className="mt-1 text-[11px] font-semibold capitalize text-[#6b7280]">{JOURNAL_STATUS_LABELS[post.status || 'draft'] || post.status}</div>
                     </button>
                   ))}
                 </div>
@@ -244,13 +247,13 @@ const MobileFormulaDetailPage = () => {
           compositionRows.length ? (
             <section className="space-y-3">
               <div className="mobile-soft-card p-4">
-                <div className="text-xs font-bold uppercase text-amber-700">Total percentage</div>
+                <div className="text-xs font-bold uppercase text-amber-700">Total persentase</div>
                 <div className="mt-1 text-xl font-bold">{totalGrams > 0 ? '100.0%' : formatPercent(totalPercentage)}</div>
-                <div className="mt-1 text-xs font-semibold text-[#6b7280]">{compositionRows.length} material rows in full composition</div>
+                <div className="mt-1 text-xs font-semibold text-[#6b7280]">{compositionRows.length} baris bahan dalam komposisi lengkap</div>
               </div>
               <div className="mobile-card overflow-hidden">
                 <div className="grid grid-cols-[1.6fr_62px_62px] gap-2 border-b border-[#ece8df] bg-[#faf9f6] px-3 py-2 text-[10px] font-bold uppercase text-[#6b7280]">
-                  <span>Material</span>
+                  <span>Bahan</span>
                   <span className="text-right">Gram</span>
                   <span className="text-right">%</span>
                 </div>
@@ -259,7 +262,7 @@ const MobileFormulaDetailPage = () => {
                 return (
                   <div key={item.id || item.item_id} className="grid grid-cols-[1.6fr_62px_62px] gap-2 border-b border-[#f0ede7] px-3 py-2 last:border-b-0">
                     <div className="min-w-0">
-                      <div className="truncate text-xs font-bold text-[#1f2937]">{material?.name || item.item_name || item.name || 'Material'}</div>
+                      <div className="truncate text-xs font-bold text-[#1f2937]">{material?.name || item.item_name || item.name || 'Bahan'}</div>
                     </div>
                     <div className="text-right text-xs font-bold">{formatGramAmount(item.grams ?? item.gram_amount)}</div>
                     <div className="text-right text-xs font-bold">{formatPercent(item.displayPercentage)}</div>
@@ -268,7 +271,7 @@ const MobileFormulaDetailPage = () => {
               })}
               </div>
             </section>
-          ) : <MobileEmptyState title="No composition rows" />
+          ) : <MobileEmptyState title="Belum ada baris komposisi" />
         ) : null}
         {tab === 'workbook' ? (
           <section className="space-y-3">
@@ -279,16 +282,16 @@ const MobileFormulaDetailPage = () => {
             />
             <PaceAnalysisCard score={formulaMetrics.paceScore} warnings={paceWarnings} recommendations={paceRecommendations} />
             <section className="mobile-card p-4">
-              <h2 className="text-sm font-bold text-[#1f2937]">Composition Board</h2>
+              <h2 className="text-sm font-bold text-[#1f2937]">Papan komposisi</h2>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <MetricTile label="Rows" value={items.length} helper={`${formulaMetrics.guidanceBackedCount} guided`} />
-                <MetricTile label="Coverage" value={formatPercent(formulaMetrics.coveragePercent, 0)} helper={`${formulaMetrics.missingGuidanceCount} missing`} />
-                <MetricTile label="Impact" value={formulaMetrics.impactDisplay} helper="odour weighted" />
-                <MetricTile label="Lifetime" value={formulaMetrics.lifetimeDisplay} helper="projected decay" />
+                <MetricTile label="Baris" value={items.length} helper={`${formulaMetrics.guidanceBackedCount} berpanduan`} />
+                <MetricTile label="Cakupan" value={formatPercent(formulaMetrics.coveragePercent, 0)} helper={`${formulaMetrics.missingGuidanceCount} tanpa panduan`} />
+                <MetricTile label="Kekuatan" value={formulaMetrics.impactDisplay} helper="berbobot aroma" />
+                <MetricTile label="Ketahanan" value={formulaMetrics.lifetimeDisplay} helper="proyeksi penguapan" />
               </div>
             </section>
             <section className="mobile-card p-4">
-              <h2 className="text-sm font-bold text-[#1f2937]">PACE Board</h2>
+              <h2 className="text-sm font-bold text-[#1f2937]">Papan PACE</h2>
               <div className="mt-3 grid gap-2">
                 {(workbookSimulation.pace?.scores || []).slice(0, 8).map((entry) => (
                   <div key={entry.key} className="grid grid-cols-[86px_1fr_34px] items-center gap-2 text-[11px] font-semibold">
@@ -300,34 +303,34 @@ const MobileFormulaDetailPage = () => {
               </div>
             </section>
             <section className="mobile-card p-4">
-              <h2 className="text-sm font-bold text-[#1f2937]">Facet Chart</h2>
+              <h2 className="text-sm font-bold text-[#1f2937]">Grafik nuansa aroma</h2>
               <div className="mt-3"><MiniBarRows rows={sensoryCharts.fallbackFacetData} labelKey="facet" valueKey="percent" /></div>
             </section>
             <section className="mobile-card p-4">
-              <h2 className="text-sm font-bold text-[#1f2937]">Family Chart</h2>
+              <h2 className="text-sm font-bold text-[#1f2937]">Grafik keluarga aroma</h2>
               <div className="mt-3"><MiniBarRows rows={sensoryCharts.familyData} labelKey="family" valueKey="percent" /></div>
             </section>
             <section className="mobile-card p-4">
-              <h2 className="text-sm font-bold text-[#1f2937]">Decay Preview</h2>
+              <h2 className="text-sm font-bold text-[#1f2937]">Pratinjau penguapan</h2>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {(sensoryCharts.decayData || []).slice(0, 6).map((entry) => (
-                  <MetricTile key={entry.label} label={entry.label} value={formatScore(entry.total)} helper={`T ${formatScore(entry.top)} M ${formatScore(entry.middle)} B ${formatScore(entry.base)}`} />
+                  <MetricTile key={entry.label} label={entry.label} value={formatScore(entry.total)} helper={`A ${formatScore(entry.top)} T ${formatScore(entry.middle)} D ${formatScore(entry.base)}`} />
                 ))}
               </div>
             </section>
             <section className="mobile-card p-4">
-              <h2 className="text-sm font-bold text-[#1f2937]">Billing Preview</h2>
+              <h2 className="text-sm font-bold text-[#1f2937]">Pratinjau biaya</h2>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <MetricTile label="Formula Cost" value={formatPrice(totalCost)} helper={formatGramAmount(totalGrams)} />
-                <MetricTile label="Per 100g" value={formatPrice(totalGrams > 0 ? (totalCost / totalGrams) * 100 : 0)} helper="material only" />
+                <MetricTile label="Biaya formula" value={formatPrice(totalCost)} helper={formatGramAmount(totalGrams)} />
+                <MetricTile label="Per 100 g" value={formatPrice(totalGrams > 0 ? (totalCost / totalGrams) * 100 : 0)} helper="bahan saja" />
               </div>
             </section>
           </section>
         ) : null}
         {tab === 'activity' ? (
           validationLogs?.length ? validationLogs.slice(0, MOBILE_ACTIVITY_LIMIT).map((log) => (
-            <div key={log.id} className="mobile-card p-4"><div className="text-sm font-bold">{formatStatus(log.test_type || 'revision')}</div><div className="mt-1 text-xs text-[#6b7280]">{formatDate(log.tested_at || log.created)}</div><p className="mt-2 text-sm text-[#374151]">{log.note}</p></div>
-          )) : <MobileEmptyState title="No activity yet" />
+            <div key={log.id} className="mobile-card p-4"><div className="text-sm font-bold">{validationTestTypeLabel(log.test_type)}</div><div className="mt-1 text-xs text-[#6b7280]">{formatDate(log.tested_at || log.created)}</div><p className="mt-2 text-sm text-[#374151]">{log.note}</p></div>
+          )) : <MobileEmptyState title="Belum ada aktivitas" />
         ) : null}
         <StickyBottomActionBar>
           <MobileActionDock
@@ -335,14 +338,14 @@ const MobileFormulaDetailPage = () => {
             primary={(
               <Button className="mobile-interactive mobile-pressable h-11 w-full rounded-2xl text-xs font-bold" onClick={() => navigate(`/mobile/batches?formulaId=${id}`)}>
                 <Calculator className="mr-2 h-4 w-4" />
-                Open Batch Calculator
+                Buka kalkulator batch
               </Button>
             )}
             secondary={[
-              <Button key="edit" variant="outline" className="mobile-interactive mobile-pressable h-10 rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/formulas/${id}/edit`, { state: getMobileFromState(location) })}><Pencil className="mr-1 h-4 w-4" />Edit</Button>,
-              <Button key="duplicate" variant="outline" className="mobile-interactive mobile-pressable h-10 rounded-2xl bg-white text-xs" onClick={handleDuplicate}><Copy className="mr-1 h-4 w-4" />Duplicate</Button>,
+              <Button key="edit" variant="outline" className="mobile-interactive mobile-pressable h-10 rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/formulas/${id}/edit`, { state: getMobileFromState(location) })}><Pencil className="mr-1 h-4 w-4" />Ubah</Button>,
+              <Button key="duplicate" variant="outline" className="mobile-interactive mobile-pressable h-10 rounded-2xl bg-white text-xs" onClick={handleDuplicate}><Copy className="mr-1 h-4 w-4" />Gandakan</Button>,
             ]}
-            destructive={<Button variant="outline" className="mobile-interactive mobile-delete-action h-10 rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>}
+            destructive={<Button variant="outline" className="mobile-interactive mobile-delete-action h-10 rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Hapus</Button>}
           />
         </StickyBottomActionBar>
       </main>

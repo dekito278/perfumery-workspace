@@ -48,16 +48,16 @@ const navGroups = [
     id: 'studio',
     label: 'Studio',
     icon: Beaker,
-    description: 'Formula, material, dan workspace validasi.',
+    description: 'Formula, bahan baku, dan validasi.',
     paths: MOBILE_NAV_GROUP_PATHS.studio,
     items: [
       { path: '/mobile/studio', label: 'Dasbor', helper: 'Ringkasan Studio', icon: LayoutDashboard },
-      { path: '/mobile/journal', label: 'Journal', helper: 'Artikel, accord, ide', icon: BookOpenText },
-      { path: '/mobile/formulas', label: 'Formulas', helper: 'Composer dan daftar formula', icon: Beaker },
-      { path: '/mobile/batches', label: 'Batches', helper: 'Produksi dan stok draft', icon: Calculator },
-      { path: '/mobile/raw-materials', label: 'Material', helper: 'Library raw material', icon: LibraryBig },
-      { path: '/mobile/validation', label: 'Validation', helper: 'Log testing dan feedback', icon: ClipboardCheck },
-      { path: '/mobile/studio/site-images', label: 'Site Images', helper: 'Hero, mood, dan banner', icon: ImagePlus },
+      { path: '/mobile/journal', label: 'Journal', helper: 'Artikel, akord, ide', icon: BookOpenText },
+      { path: '/mobile/formulas', label: 'Formula', helper: 'Komposer dan daftar formula', icon: Beaker },
+      { path: '/mobile/batches', label: 'Batch', helper: 'Produksi dan stok draf', icon: Calculator },
+      { path: '/mobile/raw-materials', label: 'Bahan baku', helper: 'Pustaka bahan baku', icon: LibraryBig },
+      { path: '/mobile/validation', label: 'Validasi', helper: 'Catatan uji dan masukan', icon: ClipboardCheck },
+      { path: '/mobile/studio/site-images', label: 'Gambar situs', helper: 'Hero, mood, dan banner', icon: ImagePlus },
       { path: '/mobile/studio/site-facts', label: 'Fakta Toko', helper: 'Bespoke, kota, footer, kategori', icon: ListChecks },
     ],
   },
@@ -81,7 +81,7 @@ const MobileBottomNavigation = () => {
 
   return (
     <>
-      <nav className="mobile-bottom-nav grid grid-cols-2 gap-2 p-1.5" aria-label="Mobile app navigation">
+      <nav className="mobile-bottom-nav grid grid-cols-2 gap-2 p-1.5" aria-label="Navigasi Studio">
         {navGroups.map((group) => {
           const Icon = group.icon;
           const active = isGroupActive(group);
@@ -108,7 +108,7 @@ const MobileBottomNavigation = () => {
       <MobileBottomSheet
         open={Boolean(openGroup)}
         onOpenChange={(open) => !open && setOpenGroupId(null)}
-        title={openGroup?.label || 'Navigation'}
+        title={openGroup?.label || 'Navigasi'}
         description={openGroup?.description}
       >
         {openGroup ? (

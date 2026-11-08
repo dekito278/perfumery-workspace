@@ -154,7 +154,7 @@ const MobileBottomSheet = ({
         <DrawerHeader className="mobile-sheet-drag-zone text-left" data-mobile-sheet-drag-zone>
           <DrawerTitle className="text-lg">{title}</DrawerTitle>
           <DrawerDescription className={description ? 'text-xs' : 'sr-only'}>
-            {description || `${title} sheet`}
+            {description || `Panel ${title}`}
           </DrawerDescription>
         </DrawerHeader>
         <div className={cn('mobile-bottom-sheet-scroll px-4 pb-4', footerVisible && 'mobile-bottom-sheet-scroll-with-footer')}>{children}</div>

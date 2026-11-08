@@ -20,8 +20,8 @@ import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
 import FormulaCostBlindSpotNotice from '@/components/FormulaCostBlindSpotNotice.jsx';
 
 const modeOptions = [
-  { value: 'retail', label: 'Bottle' },
-  { value: 'bulk', label: 'Bulk' },
+  { value: 'retail', label: 'Botol' },
+  { value: 'bulk', label: 'Curah' },
 ];
 
 const unitOptions = [
@@ -147,26 +147,26 @@ const MobileProductionCostingPage = () => {
   } = useProductionCostPage();
 
   const retailFeePercent = Number(retailScenarios[0]?.feePercent || 0);
-  const activeExportLabel = activeTab === 'retail' ? 'Export costing' : 'Export quote';
-  const activePrintLabel = activeTab === 'retail' ? 'Print costing' : 'Print quote';
+  const activeExportLabel = activeTab === 'retail' ? 'Ekspor hitung biaya' : 'Ekspor penawaran';
+  const activePrintLabel = activeTab === 'retail' ? 'Cetak hitung biaya' : 'Cetak penawaran';
   const activeExport = activeTab === 'retail' ? handleExportPdf : handleExportQuotationPdf;
   const activePrint = activeTab === 'retail' ? handlePrint : handlePrintQuotation;
   const retailRecommendations = [
     {
-      label: 'Healthy direct',
-      helper: '60% margin, no fee',
+      label: 'Jual langsung (sehat)',
+      helper: 'margin 60%, tanpa biaya kanal',
       price: getTargetMarginPrice(retailComputed.costPerBottle, 60, 0),
       margin: 60,
     },
     {
       label: 'Marketplace',
-      helper: `60% margin + ${formatQuantity(retailFeePercent, 1)}% fee`,
+      helper: `margin 60% + biaya kanal ${formatQuantity(retailFeePercent, 1)}%`,
       price: getTargetMarginPrice(retailComputed.costPerBottle, 60, retailFeePercent),
       margin: 60,
     },
     {
       label: 'Premium',
-      helper: '70% margin, no fee',
+      helper: 'margin 70%, tanpa biaya kanal',
       price: getTargetMarginPrice(retailComputed.costPerBottle, 70, 0),
       margin: 70,
     },
@@ -175,63 +175,63 @@ const MobileProductionCostingPage = () => {
   if (loading || (selectedFormulaId && !formulaProfile)) {
     return (
       <MobileAuthenticatedLayout>
-        <MobileLoadingState eyebrow="Costing" title="Loading production costing..." subtitle="Preparing formula, solvent, packaging, and quote scenarios." />
+        <MobileLoadingState eyebrow="Hitung biaya" title="Memuat hitung biaya produksi..." subtitle="Menyiapkan formula, pelarut, kemasan, dan skenario penawaran." />
       </MobileAuthenticatedLayout>
     );
   }
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Production Costing - Solivagant</title></Helmet>
+      <Helmet><title>Biaya Produksi Mobile - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
-          title="Production"
-          subtitle="Bottle and bulk costing"
+          title="Produksi"
+          subtitle="Hitung biaya botol dan curah"
           onBack={() => navigate('/mobile/batches')}
           action={<Factory className="h-5 w-5 text-amber-700" />}
         />
 
         {profileLoading ? (
           <section className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-            Updating production profile...
+            Memperbarui profil produksi...
           </section>
         ) : null}
 
         {!formulas.length ? (
           <MobileEmptyState
             icon={Package2}
-            title="No formula available"
-            description="Production costing needs at least one saved formula so it can calculate concentrate, solvent, packaging, and margin scenarios."
-            action="New Formula"
+            title="Belum ada formula"
+            description="Hitung biaya produksi butuh minimal satu formula tersimpan untuk menghitung konsentrat, pelarut, kemasan, dan skenario margin."
+            action="Formula baru"
             onAction={() => navigate('/mobile/formulas/new')}
           />
         ) : (
           <>
             <section className="mobile-soft-card p-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700">Costing task</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700">Tugas hitung biaya</div>
               <h1 className="mt-1 text-2xl font-bold text-editorial-charcoal">
-                {activeTab === 'retail' ? 'Set bottle price from actual COGS.' : 'Build a bulk quotation.'}
+                {activeTab === 'retail' ? 'Tetapkan harga botol dari HPP aktual.' : 'Susun penawaran curah.'}
               </h1>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Pilih formula dan solvent, isi parameter produksi, lalu gunakan hasilnya untuk keputusan harga yang bisa diexport.
+                Pilih formula dan pelarut, isi parameter produksi, lalu pakai hasilnya untuk keputusan harga yang bisa diekspor.
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <MoneyTile label={activeTab === 'retail' ? 'COGS / bottle' : 'Bulk COGS / L'} value={activeTab === 'retail' ? formatPrice(retailComputed.costPerBottle) : formatCurrency(bulkComputed.allInBulkCogsPerLiter)} helper={activeTab === 'retail' ? `${retailComputed.bottleCount} bottles` : `${formatQuantity(bulkComputed.concentration, 1)}% strength`} tone="amber" />
-                <MoneyTile label={activeTab === 'retail' ? 'Suggested direct' : 'Best quote'} value={activeTab === 'retail' ? formatPrice(retailRecommendations[0]?.price || retailChampion?.salePrice || 0) : formatPrice(bulkChampion?.sellPrice || 0)} helper={activeTab === 'retail' ? '60% margin' : (bulkChampion ? `${formatQuantity(bulkChampion.margin, 1)}% margin` : 'No quote')} tone="emerald" />
+                <MoneyTile label={activeTab === 'retail' ? 'HPP / botol' : 'HPP curah / L'} value={activeTab === 'retail' ? formatPrice(retailComputed.costPerBottle) : formatCurrency(bulkComputed.allInBulkCogsPerLiter)} helper={activeTab === 'retail' ? `${retailComputed.bottleCount} botol` : `kekuatan ${formatQuantity(bulkComputed.concentration, 1)}%`} tone="amber" />
+                <MoneyTile label={activeTab === 'retail' ? 'Saran jual langsung' : 'Penawaran terbaik'} value={activeTab === 'retail' ? formatPrice(retailRecommendations[0]?.price || retailChampion?.salePrice || 0) : formatPrice(bulkChampion?.sellPrice || 0)} helper={activeTab === 'retail' ? 'margin 60%' : (bulkChampion ? `margin ${formatQuantity(bulkChampion.margin, 1)}%` : 'Belum ada penawaran')} tone="emerald" />
               </div>
             </section>
 
             <TaskSection
-              eyebrow="Step 1"
-              title="Choose production context"
-              description="Mulai dari formula dan solvent agar semua perhitungan punya sumber yang jelas."
+              eyebrow="Langkah 1"
+              title="Pilih dasar produksi"
+              description="Mulai dari formula dan pelarut agar semua perhitungan punya sumber yang jelas."
             >
               <div className="grid gap-3">
                 <div className="min-w-0 space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-[#6b7280]">Formula</Label>
                   <Select value={selectedFormulaId} onValueChange={setSelectedFormulaId}>
                     <SelectTrigger className="h-10 min-w-0 overflow-hidden rounded-xl bg-white text-left text-xs [&>span]:min-w-0 [&>span]:truncate">
-                      <SelectValue placeholder="Select formula" />
+                      <SelectValue placeholder="Pilih formula" />
                     </SelectTrigger>
                     <SelectContent>
                       {formulas.map((formula) => (
@@ -243,10 +243,10 @@ const MobileProductionCostingPage = () => {
                   </Select>
                 </div>
                 <div className="min-w-0 space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-[#6b7280]">Solvent</Label>
+                  <Label className="text-[10px] font-bold uppercase text-[#6b7280]">Pelarut</Label>
                   <Select value={selectedSolventId} onValueChange={setSelectedSolventId}>
                     <SelectTrigger className="h-10 min-w-0 overflow-hidden rounded-xl bg-white text-left text-xs [&>span]:min-w-0 [&>span]:truncate">
-                      <SelectValue placeholder="Select solvent" />
+                      <SelectValue placeholder="Pilih pelarut" />
                     </SelectTrigger>
                     <SelectContent>
                       {solventOptions.map((material) => (
@@ -263,7 +263,7 @@ const MobileProductionCostingPage = () => {
               </div>
               <div className="mt-4 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] px-3 py-2 text-xs font-semibold text-[#6b7280]">
                 {selectedFormula?.name ? (
-                  <span><strong className="text-[#1f2937]">{selectedFormula.name}</strong> siap dihitung sebagai {activeTab === 'retail' ? 'produk botol retail' : 'bulk/brand quote'}.</span>
+                  <span><strong className="text-[#1f2937]">{selectedFormula.name}</strong> siap dihitung sebagai {activeTab === 'retail' ? 'produk botol retail' : 'penawaran curah/brand'}.</span>
                 ) : (
                   <span>Pilih formula untuk mulai menghitung.</span>
                 )}
@@ -273,39 +273,39 @@ const MobileProductionCostingPage = () => {
             {activeTab === 'retail' ? (
               <>
                 <TaskSection
-                  eyebrow="Step 2"
-                  title="Bottle production inputs"
-                  description="Isi volume batch, ukuran botol, konsentrasi formula, dan loss produksi."
+                  eyebrow="Langkah 2"
+                  title="Isian produksi botol"
+                  description="Isi volume batch, ukuran botol, konsentrasi formula, dan susut produksi."
                 >
                   <div className="grid grid-cols-2 gap-2">
-                    <FieldInput label="Batch volume" value={retailInputs.totalBatchVolume} suffix="ml" onChange={(value) => updateRetailInput('totalBatchVolume', value)} />
-                    <FieldInput label="Bottle size" value={retailInputs.bottleSize} suffix="ml" onChange={(value) => updateRetailInput('bottleSize', value)} />
+                    <FieldInput label="Volume batch" value={retailInputs.totalBatchVolume} suffix="ml" onChange={(value) => updateRetailInput('totalBatchVolume', value)} />
+                    <FieldInput label="Ukuran botol" value={retailInputs.bottleSize} suffix="ml" onChange={(value) => updateRetailInput('bottleSize', value)} />
                     <FieldInput label="Formula" value={retailInputs.formulaPercentage} suffix="%" onChange={(value) => updateRetailInput('formulaPercentage', value)} />
-                    <FieldInput label="Loss" value={retailInputs.productionLossPercent} suffix="%" onChange={(value) => updateRetailInput('productionLossPercent', value)} />
+                    <FieldInput label="Susut" value={retailInputs.productionLossPercent} suffix="%" onChange={(value) => updateRetailInput('productionLossPercent', value)} />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <MoneyTile label="Required" value={`${formatQuantity(retailComputed.requiredProductionVolume, 1)} ml`} helper="with production loss" />
-                    <MoneyTile label="Bottle output" value={`${retailComputed.bottleCount} bottles`} helper={`${formatQuantity(retailComputed.remainingVolume, 1)} ml remainder`} tone="emerald" />
-                    <MoneyTile label="Concentrate" value={`${formatQuantity(retailComputed.formulaVolumeNeeded, 1)} ml`} helper={formatPrice(retailComputed.formulaMaterialCost)} />
-                    <MoneyTile label="Solvent" value={`${formatQuantity(retailComputed.solventVolumeNeeded, 1)} ml`} helper={formatPrice(retailComputed.solventMaterialCost)} />
-                    <MoneyTile label="Packaging" value={formatPrice(retailComputed.totalPackagingCost + retailComputed.totalBatchOverhead)} helper={`${formatPrice(retailComputed.perBottlePackagingCost)} / bottle`} />
-                    <MoneyTile label="Actual COGS" value={formatPrice(retailComputed.costPerBottle)} helper="all-in per bottle" tone="amber" />
+                    <MoneyTile label="Dibutuhkan" value={`${formatQuantity(retailComputed.requiredProductionVolume, 1)} ml`} helper="termasuk susut produksi" />
+                    <MoneyTile label="Hasil botol" value={`${retailComputed.bottleCount} botol`} helper={`sisa ${formatQuantity(retailComputed.remainingVolume, 1)} ml`} tone="emerald" />
+                    <MoneyTile label="Konsentrat" value={`${formatQuantity(retailComputed.formulaVolumeNeeded, 1)} ml`} helper={formatPrice(retailComputed.formulaMaterialCost)} />
+                    <MoneyTile label="Pelarut" value={`${formatQuantity(retailComputed.solventVolumeNeeded, 1)} ml`} helper={formatPrice(retailComputed.solventMaterialCost)} />
+                    <MoneyTile label="Kemasan" value={formatPrice(retailComputed.totalPackagingCost + retailComputed.totalBatchOverhead)} helper={`${formatPrice(retailComputed.perBottlePackagingCost)} / botol`} />
+                    <MoneyTile label="HPP aktual" value={formatPrice(retailComputed.costPerBottle)} helper="semua biaya per botol" tone="amber" />
                   </div>
                 </TaskSection>
 
                 <TaskSection
-                  eyebrow="Step 3"
-                  title="Actual COGS breakdown"
+                  eyebrow="Langkah 3"
+                  title="Rincian HPP aktual"
                   description="Periksa komponen biaya sebelum mengambil keputusan harga."
                 >
                   <div className="px-4 py-1">
-                    <CostLine label="Formula concentrate" quantity={`${formatQuantity(retailComputed.formulaVolumeNeeded, 1)} ml`} total={retailComputed.formulaMaterialCost} />
-                    <CostLine label="Solvent" quantity={`${formatQuantity(retailComputed.solventVolumeNeeded, 1)} ml`} total={retailComputed.solventMaterialCost} />
+                    <CostLine label="Konsentrat formula" quantity={`${formatQuantity(retailComputed.formulaVolumeNeeded, 1)} ml`} total={retailComputed.formulaMaterialCost} />
+                    <CostLine label="Pelarut" quantity={`${formatQuantity(retailComputed.solventVolumeNeeded, 1)} ml`} total={retailComputed.solventMaterialCost} />
                     {retailComputed.packagingLineItems.unitItems.map((item) => (
                       <CostLine
                         key={item.key}
                         label={item.label}
-                        quantity={`${item.quantity} bottles x ${formatPrice(item.unitCost)}`}
+                        quantity={`${item.quantity} botol x ${formatPrice(item.unitCost)}`}
                         total={item.totalCost}
                         unit="/ batch"
                       />
@@ -314,13 +314,13 @@ const MobileProductionCostingPage = () => {
                       <CostLine
                         key={item.key}
                         label={item.label}
-                        quantity="batch cost"
+                        quantity="biaya batch"
                         total={item.totalCost}
                         unit="/ batch"
                       />
                     ))}
                     {!retailComputed.packagingLineItems.unitItems.length && !retailComputed.packagingLineItems.batchItems.length ? (
-                      <div className="py-3 text-xs font-semibold text-[#6b7280]">Bottle, sticker, box, labor, dan overhead belum diisi.</div>
+                      <div className="py-3 text-xs font-semibold text-[#6b7280]">Botol, stiker, box, tenaga kerja, dan overhead belum diisi.</div>
                     ) : null}
                   </div>
                   {/* The desktop page has warned about this since the profile loader was written; this
@@ -329,20 +329,20 @@ const MobileProductionCostingPage = () => {
                       below are too low, and they are exactly the numbers a price gets set from. */}
                   {profileError ? (
                     <div role="alert" className="mx-4 mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold leading-relaxed text-rose-700">
-                      Biaya material formula gagal dimuat — angka COGS &amp; harga di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0). Pilih ulang formula sebelum memakai angka ini.
+                      Biaya bahan formula gagal dimuat — angka HPP &amp; harga di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0). Pilih ulang formula sebelum memakai angka ini.
                     </div>
                   ) : null}
                   <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mx-4 mb-4" />
                   <div className="grid grid-cols-2 gap-2 border-t border-[#ece8df] bg-[#faf9f6] p-4">
-                    <MoneyTile label="Total batch cost" value={formatPrice(retailComputed.totalProductionCost)} helper={`${retailComputed.bottleCount} bottles`} tone="amber" />
-                    <MoneyTile label="COGS / bottle" value={formatPrice(retailComputed.costPerBottle)} helper={`${formatCurrency(retailComputed.cogsPerMl)} / ml`} tone="emerald" />
+                    <MoneyTile label="Total biaya batch" value={formatPrice(retailComputed.totalProductionCost)} helper={`${retailComputed.bottleCount} botol`} tone="amber" />
+                    <MoneyTile label="HPP / botol" value={formatPrice(retailComputed.costPerBottle)} helper={`${formatCurrency(retailComputed.cogsPerMl)} / ml`} tone="emerald" />
                   </div>
                 </TaskSection>
 
                 <TaskSection
-                  eyebrow="Decision"
-                  title="Recommended selling price"
-                  description="Otomatis dari actual COGS per bottle."
+                  eyebrow="Keputusan"
+                  title="Saran harga jual"
+                  description="Otomatis dari HPP aktual per botol."
                 >
                   <div className="grid gap-2 p-4">
                     {retailRecommendations.map((recommendation) => (
@@ -359,8 +359,8 @@ const MobileProductionCostingPage = () => {
 
                 <TaskSection
                   eyebrow="Detail"
-                  title="Packaging and overhead"
-                  description="Isi komponen aktual: botol, cap, sprayer, stiker, box, labor, dan overhead."
+                  title="Kemasan dan overhead"
+                  description="Isi komponen aktual: botol, cap, sprayer, stiker, box, tenaga kerja, dan overhead."
                 >
                   <div className="grid grid-cols-2 gap-2 p-4">
                     {PACKAGING_FIELDS.map((field) => (
@@ -376,9 +376,9 @@ const MobileProductionCostingPage = () => {
                 </TaskSection>
 
                 <TaskSection
-                  eyebrow="What-if"
-                  title="Retail scenario"
-                  description="Set markup or margin and marketplace fee."
+                  eyebrow="Simulasi"
+                  title="Skenario retail"
+                  description="Atur markup atau margin dan biaya marketplace."
                 >
                   <div className="space-y-3 p-4">
                     {retailScenarios.map((scenario) => {
@@ -386,15 +386,15 @@ const MobileProductionCostingPage = () => {
                       return (
                         <article key={scenario.id} className="rounded-xl border border-[#ece8df] bg-[#f8f7f4] p-3">
                           <div className="grid grid-cols-2 gap-2">
-                            <FieldInput label="Percent" value={scenario.percent} suffix="%" onChange={(value) => updateRetailScenario(scenario.id, 'percent', value)} />
-                            <FieldInput label="Channel fee" value={scenario.feePercent} suffix="%" onChange={(value) => updateRetailScenario(scenario.id, 'feePercent', value)} />
+                            <FieldInput label="Persen" value={scenario.percent} suffix="%" onChange={(value) => updateRetailScenario(scenario.id, 'percent', value)} />
+                            <FieldInput label="Biaya kanal" value={scenario.feePercent} suffix="%" onChange={(value) => updateRetailScenario(scenario.id, 'feePercent', value)} />
                           </div>
                           <div className="mt-2">
                             <MobileSegmentedControl options={modeTypeOptions} value={scenario.mode} onChange={(value) => updateRetailScenario(scenario.id, 'mode', value)} className="mobile-compact-tabs" />
                           </div>
                           <div className="mt-3 grid grid-cols-2 gap-2">
-                            <MoneyTile label="Sell price" value={formatPrice(result?.salePrice || 0)} />
-                            <MoneyTile label="Profit" value={formatPrice(result?.profitPerBottle || 0)} helper={`${formatQuantity(result?.profitMargin || 0, 1)}% margin`} tone="emerald" />
+                            <MoneyTile label="Harga jual" value={formatPrice(result?.salePrice || 0)} />
+                            <MoneyTile label="Laba" value={formatPrice(result?.profitPerBottle || 0)} helper={`margin ${formatQuantity(result?.profitMargin || 0, 1)}%`} tone="emerald" />
                           </div>
                         </article>
                       );
@@ -405,23 +405,23 @@ const MobileProductionCostingPage = () => {
             ) : (
               <>
                 <TaskSection
-                  eyebrow="Step 2"
-                  title="Bulk costing inputs"
-                  description="Tetapkan loss produksi, handling, dan overhead per liter sebelum membuat quote."
+                  eyebrow="Langkah 2"
+                  title="Isian biaya curah"
+                  description="Tetapkan susut produksi, penanganan, dan overhead per liter sebelum membuat penawaran."
                 >
                   <div className="grid grid-cols-2 gap-2">
-                    <FieldInput label="Bulk loss" value={bulkInputs.productionLossPercent} suffix="%" onChange={(value) => updateBulkInput('productionLossPercent', value)} />
-                    <FieldInput label="Handling" value={bulkInputs.handlingCostPerLiter} suffix="/L" onChange={(value) => updateBulkInput('handlingCostPerLiter', value)} />
+                    <FieldInput label="Susut curah" value={bulkInputs.productionLossPercent} suffix="%" onChange={(value) => updateBulkInput('productionLossPercent', value)} />
+                    <FieldInput label="Penanganan" value={bulkInputs.handlingCostPerLiter} suffix="/L" onChange={(value) => updateBulkInput('handlingCostPerLiter', value)} />
                     <FieldInput label="Overhead" value={bulkInputs.bulkOverheadCost} suffix="/L" onChange={(value) => updateBulkInput('bulkOverheadCost', value)} />
-                    <MoneyTile label="Material COGS" value={formatCurrency(bulkComputed.materialCogsPerMl * 1000)} helper="per liter" tone="emerald" />
+                    <MoneyTile label="HPP bahan" value={formatCurrency(bulkComputed.materialCogsPerMl * 1000)} helper="per liter" tone="emerald" />
                   </div>
                 </TaskSection>
 
                 <TaskSection
-                  eyebrow="Step 3"
-                  title="Quote scenarios"
-                  description="Buat beberapa volume quote untuk membandingkan margin dan total price."
-                  action={<Button type="button" size="icon" onClick={addBulkScenario} className="h-10 w-10 shrink-0 rounded-xl bg-amber-500 text-white" aria-label="Add bulk quote"><Plus className="h-4 w-4" /></Button>}
+                  eyebrow="Langkah 3"
+                  title="Skenario penawaran"
+                  description="Buat beberapa volume penawaran untuk membandingkan margin dan total harga."
+                  action={<Button type="button" size="icon" onClick={addBulkScenario} className="h-10 w-10 shrink-0 rounded-xl bg-amber-500 text-white" aria-label="Tambah penawaran curah"><Plus className="h-4 w-4" /></Button>}
                 >
                   <div className="space-y-3 p-4">
                     {bulkScenarios.map((scenario) => {
@@ -432,7 +432,7 @@ const MobileProductionCostingPage = () => {
                             <Input
                               value={scenario.label}
                               onChange={(event) => updateBulkScenario(scenario.id, 'label', event.target.value)}
-                              placeholder="Quote label"
+                              placeholder="Nama penawaran"
                               className="h-10 min-w-0 rounded-xl bg-white text-xs font-bold"
                             />
                             <Button
@@ -442,7 +442,7 @@ const MobileProductionCostingPage = () => {
                               onClick={() => removeBulkScenario(scenario.id)}
                               disabled={bulkScenarios.length <= 1}
                               className="h-10 w-10 shrink-0 rounded-xl bg-white text-rose-600"
-                              aria-label="Remove bulk quote"
+                              aria-label="Hapus penawaran curah"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -450,7 +450,7 @@ const MobileProductionCostingPage = () => {
                           <div className="mt-2 grid grid-cols-[minmax(0,1fr)_88px] gap-2">
                             <FieldInput label="Volume" value={scenario.volumeValue} onChange={(value) => updateBulkScenario(scenario.id, 'volumeValue', value)} />
                             <div className="min-w-0 space-y-1.5">
-                              <Label className="text-[10px] font-bold uppercase text-[#6b7280]">Unit</Label>
+                              <Label className="text-[10px] font-bold uppercase text-[#6b7280]">Satuan</Label>
                               <Select value={scenario.volumeUnit} onValueChange={(value) => updateBulkScenario(scenario.id, 'volumeUnit', value)}>
                                 <SelectTrigger className="h-10 min-w-0 rounded-xl bg-white text-xs">
                                   <SelectValue />
@@ -462,7 +462,7 @@ const MobileProductionCostingPage = () => {
                             </div>
                           </div>
                           <div className="mt-2 grid grid-cols-2 gap-2">
-                            <FieldInput label="Percent" value={scenario.percent} suffix="%" onChange={(value) => updateBulkScenario(scenario.id, 'percent', value)} />
+                            <FieldInput label="Persen" value={scenario.percent} suffix="%" onChange={(value) => updateBulkScenario(scenario.id, 'percent', value)} />
                             <div className="min-w-0 space-y-1.5">
                               <Label className="text-[10px] font-bold uppercase text-[#6b7280]">Mode</Label>
                               <Select value={scenario.mode} onValueChange={(value) => updateBulkScenario(scenario.id, 'mode', value)}>
@@ -476,8 +476,8 @@ const MobileProductionCostingPage = () => {
                             </div>
                           </div>
                           <div className="mt-3 grid grid-cols-2 gap-2">
-                            <MoneyTile label="Total COGS" value={formatPrice(result?.totalCogs || 0)} helper={`${formatQuantity(result?.volumeMl || 0, 0)} ml`} />
-                            <MoneyTile label="Quote price" value={formatPrice(result?.sellPrice || 0)} helper={`${formatQuantity(result?.margin || 0, 1)}% margin`} tone="emerald" />
+                            <MoneyTile label="Total HPP" value={formatPrice(result?.totalCogs || 0)} helper={`${formatQuantity(result?.volumeMl || 0, 0)} ml`} />
+                            <MoneyTile label="Harga penawaran" value={formatPrice(result?.sellPrice || 0)} helper={`margin ${formatQuantity(result?.margin || 0, 1)}%`} tone="emerald" />
                           </div>
                         </article>
                       );
@@ -486,7 +486,7 @@ const MobileProductionCostingPage = () => {
                 </TaskSection>
               </>
             )}
-            <StickyBottomActionBar fixed reserveSpace aria-label="Production costing actions">
+            <StickyBottomActionBar fixed reserveSpace aria-label="Aksi hitung biaya produksi">
               <div className="grid grid-cols-[auto_1fr] gap-2">
                 <Button type="button" variant="outline" onClick={activePrint} className="h-12 rounded-2xl bg-white px-4 text-xs font-bold">
                   <Printer className="mr-2 h-4 w-4" />

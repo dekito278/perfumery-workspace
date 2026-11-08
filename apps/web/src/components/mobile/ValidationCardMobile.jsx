@@ -2,32 +2,33 @@ import React from 'react';
 import { ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
-import { formatDate, formatStatus } from '@/utils/formatting.js';
+import { formatDate } from '@/utils/formatting.js';
+import { validationStatusLabel, validationTestTypeLabel } from '@/services/validationLogsSupabaseService.js';
 
 const ValidationCardMobile = ({ canOpen = true, log, formula, onDelete, onEdit, onOpen }) => (
   <article className="mobile-card mobile-compact-card mobile-list-card p-3">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-bold text-[#1f2937]">{formula?.name || 'Unknown formula'}</h3>
-        <div className="mt-0.5 font-mono text-[11px] font-semibold text-[#6b7280]">{formula?.code || 'No code'} - {formatStatus(log.test_type || 'revision')}</div>
+        <h3 className="truncate text-sm font-bold text-[#1f2937]">{formula?.name || 'Formula tak dikenal'}</h3>
+        <div className="mt-0.5 font-mono text-[11px] font-semibold text-[#6b7280]">{formula?.code || 'Tanpa kode'} - {validationTestTypeLabel(log.test_type)}</div>
       </div>
-      <MobileStatusBadge status={log.status || 'logged'} className="h-5 px-2 text-[10px]" />
+      <MobileStatusBadge status={log.status || 'logged'} className="h-5 px-2 text-[10px]">{validationStatusLabel(log.status)}</MobileStatusBadge>
     </div>
-    <p className="mobile-line-clamp-2 mt-2 text-xs text-[#374151]">{log.note || 'No note recorded'}</p>
-    {log.next_action ? <p className="mobile-line-clamp-2 mt-1 text-[11px] font-medium text-[#6b7280]">Next: {log.next_action}</p> : null}
+    <p className="mobile-line-clamp-2 mt-2 text-xs text-[#374151]">{log.note || 'Belum ada catatan'}</p>
+    {log.next_action ? <p className="mobile-line-clamp-2 mt-1 text-[11px] font-medium text-[#6b7280]">Berikutnya: {log.next_action}</p> : null}
     <div className="mt-2 flex items-center justify-between gap-2">
       <div className="min-w-0 text-[11px] font-semibold text-[#6b7280]">
         {formatDate(log.tested_at || log.created)}
         {log.evaluator_name ? ` - ${log.evaluator_name}` : ''}
       </div>
       <div className="flex shrink-0 gap-1.5">
-        <Button type="button" variant="outline" size="icon" onClick={onEdit} className="h-9 w-9 rounded-xl bg-white" aria-label="Edit validation log">
+        <Button type="button" variant="outline" size="icon" onClick={onEdit} className="h-9 w-9 rounded-xl bg-white" aria-label="Ubah catatan uji">
           <Pencil className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="outline" size="icon" onClick={onDelete} className="h-9 w-9 rounded-xl bg-white text-rose-600" aria-label="Delete validation log">
+        <Button type="button" variant="outline" size="icon" onClick={onDelete} className="h-9 w-9 rounded-xl bg-white text-rose-600" aria-label="Hapus catatan uji">
           <Trash2 className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="outline" size="icon" onClick={onOpen} disabled={!canOpen} className="h-9 w-9 rounded-xl bg-white disabled:opacity-45" aria-label={canOpen ? 'Open formula' : 'Formula belum terhubung'}>
+        <Button type="button" variant="outline" size="icon" onClick={onOpen} disabled={!canOpen} className="h-9 w-9 rounded-xl bg-white disabled:opacity-45" aria-label={canOpen ? 'Buka formula' : 'Formula belum terhubung'}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>

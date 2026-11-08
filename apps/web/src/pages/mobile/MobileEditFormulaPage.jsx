@@ -135,10 +135,10 @@ const MobileEditFormulaPage = () => {
         }));
         setSeededCount(wizardSeedItems.length);
         if (wizardSeedItems.length) {
-          toast.success(`${wizardSeedItems.length} wizard materials loaded`);
+          toast.success(`${wizardSeedItems.length} bahan dari wizard dimuat`);
         }
       } catch (error) {
-        toast.error('Failed to load formula');
+        toast.error('Gagal memuat formula');
         navigate('/mobile/formulas');
       } finally {
         if (active) setLoadingData(false);
@@ -157,13 +157,13 @@ const MobileEditFormulaPage = () => {
   const removeItem = (rowKey) => setItems((current) => current.filter((item) => item.row_key !== rowKey));
   const addMaterial = (material) => {
     if (items.some((item) => item.item_id === material.id)) {
-      toast.info('Material already in composition');
+      toast.info('Bahan sudah ada di komposisi');
       setFocusMaterialId(material.id);
       return false;
     }
     setItems((current) => [createItem(material), ...current]);
     setFocusMaterialId(material.id);
-    toast.success('Material added to composition');
+    toast.success('Bahan ditambahkan ke komposisi');
     return true;
   };
 
@@ -196,7 +196,7 @@ const MobileEditFormulaPage = () => {
       }
       setQuickCreateIntent(null);
     } catch (error) {
-      toast.error(error.message || 'Failed to add raw material');
+      toast.error(error.message || 'Gagal menambah bahan baku');
     } finally {
       setQuickCreateLoading(false);
     }
@@ -226,12 +226,12 @@ const MobileEditFormulaPage = () => {
 
   const handleSubmit = async () => {
     if (!name.trim() || !code.trim()) {
-      toast.error('Name and code are required');
+      toast.error('Nama dan kode formula wajib diisi');
       scrollToMetadata();
       return;
     }
     if (!items.length || totalGrams <= 0) {
-      toast.error('Composition needs at least one material');
+      toast.error('Komposisi butuh minimal satu bahan');
       return;
     }
     // Run the same shared validation the desktop modals run, on the same shape buildItemsForSubmit sends.
@@ -273,7 +273,7 @@ const MobileEditFormulaPage = () => {
       toast.success('Revisi disimpan');
       navigate(`/mobile/formulas/${id}`);
     } catch (error) {
-      toast.error(error.message || 'Failed to save revision');
+      toast.error(error.message || 'Gagal menyimpan revisi');
     }
   };
 
@@ -284,8 +284,8 @@ const MobileEditFormulaPage = () => {
   if (loadingData) {
     return (
       <MobileAuthenticatedLayout taskMode>
-        <Helmet><title>Loading Formula Editor - Solivagant</title></Helmet>
-        <MobileLoadingState eyebrow="Formula editor" title="Loading workbook..." subtitle="Syncing composition and material guidance." />
+        <Helmet><title>Memuat editor formula - Solivagant</title></Helmet>
+        <MobileLoadingState eyebrow="Editor formula" title="Memuat workbook..." subtitle="Menyelaraskan komposisi dan panduan bahan." />
       </MobileAuthenticatedLayout>
     );
   }
@@ -294,48 +294,48 @@ const MobileEditFormulaPage = () => {
     <MobileAuthenticatedLayout taskMode>
       <Helmet><title>Edit {name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title={name || 'Edit Formula'} subtitle={unsaved ? 'Unsaved revision' : 'Workbook ready'} onBack={handleBack} action={<MobileStatusBadge status={status} />} />
+        <MobileTopBar title={name || 'Edit formula'} subtitle={unsaved ? 'Revisi belum disimpan' : 'Workbook siap'} onBack={handleBack} action={<MobileStatusBadge status={status} />} />
         {seededCount ? (
           <section className="mobile-card p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-[10px] font-bold uppercase text-emerald-700">Wizard handoff</div>
-                <div className="mt-0.5 text-sm font-bold text-[#1f2937]">{seededCount} new materials added</div>
+                <div className="text-[10px] font-bold uppercase text-emerald-700">Dari wizard</div>
+                <div className="mt-0.5 text-sm font-bold text-[#1f2937]">{seededCount} bahan baru ditambahkan</div>
               </div>
               <MobileStatusBadge status="unsaved" />
             </div>
             <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
-              Review gram dan dilution material baru, lalu Save Revision untuk menyimpan ke formula linked.
+              Periksa gram dan pengenceran bahan baru, lalu ketuk Simpan revisi untuk menyimpannya ke formula ini.
             </p>
           </section>
         ) : null}
         <section ref={metadataRef} className="mobile-card scroll-mt-24 p-3">
           <div>
-            <div className="text-[10px] font-bold uppercase text-amber-700">Formula setup</div>
-            <h2 className="mt-0.5 text-sm font-bold text-[#1f2937]">Metadata utama</h2>
-            <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Edit identity dan status langsung di flow, tanpa membuka sheet tambahan.</p>
+            <div className="text-[10px] font-bold uppercase text-amber-700">Pengaturan formula</div>
+            <h2 className="mt-0.5 text-sm font-bold text-[#1f2937]">Data utama</h2>
+            <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Ubah identitas dan status langsung di sini, tanpa membuka lembar tambahan.</p>
           </div>
           <div className="mt-3 grid gap-3">
-            <MobileFormField id="mobile-edit-formula-name" label="Formula name" helper="Nama yang tampil di daftar formula.">
+            <MobileFormField id="mobile-edit-formula-name" label="Nama formula" helper="Nama yang tampil di daftar formula.">
               <Input id="mobile-edit-formula-name" value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
             </MobileFormField>
             <div className="grid grid-cols-2 gap-2">
-              <MobileFormField id="mobile-edit-formula-code" label="Formula code" helper="Kode singkat untuk pencarian.">
+              <MobileFormField id="mobile-edit-formula-code" label="Kode formula" helper="Kode singkat untuk pencarian.">
                 <Input id="mobile-edit-formula-code" value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
               </MobileFormField>
-              <MobileFormField id="mobile-edit-formula-version" label="Version" helper="Contoh: v2 atau pilot.">
+              <MobileFormField id="mobile-edit-formula-version" label="Versi" helper="Contoh: v2 atau pilot.">
                 <Input id="mobile-edit-formula-version" value={version} onChange={(event) => setVersion(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
               </MobileFormField>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Category</Label>
+              <Label className="text-xs">Kategori</Label>
               <div className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-xs font-bold text-[#1f2937]">{FORMULA_CATEGORIES.find((option) => option.value === category)?.label || category}</div>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Status</Label>
               <MobileSegmentedControl options={FORMULA_STATUSES} value={status} onChange={setStatus} />
             </div>
-            <MobileFormField id="mobile-edit-formula-notes" label="Notes" helper="Catatan revisi, evaluasi, atau arahan batch.">
+            <MobileFormField id="mobile-edit-formula-notes" label="Catatan" helper="Catatan revisi, evaluasi, atau arahan batch.">
               <Textarea id="mobile-edit-formula-notes" value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-[90px] rounded-xl bg-white text-xs" />
             </MobileFormField>
           </div>
@@ -354,7 +354,7 @@ const MobileEditFormulaPage = () => {
           needsGuidanceMaterialId={needsGuidanceMaterialId}
           onOpenMetadata={scrollToMetadata}
           onSave={handleSubmit}
-          saveLabel="Save"
+          saveLabel="Simpan"
           saving={loading}
           saveDisabled={!unsaved}
           showActionBar={false}
@@ -378,10 +378,10 @@ const MobileEditFormulaPage = () => {
           guidanceStatus={null}
           onSaved={handleGuidanceSaved}
         />
-        {!composerOverlayOpen && !guidanceEditorOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula editor actions">
+        {!composerOverlayOpen && !guidanceEditorOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Aksi editor formula">
           <div className="grid grid-cols-2 items-stretch gap-2">
-            <Button variant="outline" className="h-12 rounded-2xl bg-white text-sm font-bold" onClick={() => navigate(`/mobile/formulas/${id}`)}><X className="mr-1 h-4 w-4" />Cancel</Button>
-            <Button className="h-12 rounded-2xl text-sm font-bold" onClick={handleSubmit} disabled={loading || !unsaved}>{loading ? 'Saving...' : 'Save Revision'}</Button>
+            <Button variant="outline" className="h-12 rounded-2xl bg-white text-sm font-bold" onClick={() => navigate(`/mobile/formulas/${id}`)}><X className="mr-1 h-4 w-4" />Batal</Button>
+            <Button className="h-12 rounded-2xl text-sm font-bold" onClick={handleSubmit} disabled={loading || !unsaved}>{loading ? 'Menyimpan...' : 'Simpan revisi'}</Button>
           </div>
         </StickyBottomActionBar> : null}
       </main>

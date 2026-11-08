@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button.jsx';
 const MobileSearchBar = ({
   value,
   onChange,
-  placeholder = 'Search...',
-  clearLabel = 'Clear search',
+  placeholder = 'Cari...',
+  clearLabel = 'Hapus pencarian',
   disabled = false,
 }) => (
   <div className="relative">

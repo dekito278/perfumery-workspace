@@ -42,38 +42,39 @@ import {
 } from '@/utils/mobileGuidanceImport.js';
 import { getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 import { normalizeLocalizedDecimalInput, parseLocalizedNumber } from '@/utils/numberInputs.js';
+import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 
 const COMPOSER_PAGE_SIZE = 5;
 const FINDER_RESULT_SIZE = 3;
 
 const tabs = [
-  { value: 'composition', label: 'Composition' },
-  { value: 'analysis', label: 'Analysis' },
+  { value: 'composition', label: 'Komposisi' },
+  { value: 'analysis', label: 'Analisis' },
   { value: 'workbook', label: 'Workbook' },
-  { value: 'materials', label: 'Materials' },
+  { value: 'materials', label: 'Bahan baku' },
 ];
 
 const materialFilters = [
-  { value: 'all', label: 'All' },
-  { value: 'has_guidance', label: 'Guided' },
-  { value: 'no_guidance', label: 'Needs Guidance' },
-  { value: 'high_impact', label: 'High Impact' },
-  { value: 'missing', label: 'Missing Data' },
+  { value: 'all', label: 'Semua' },
+  { value: 'has_guidance', label: 'Ada panduan' },
+  { value: 'no_guidance', label: 'Perlu panduan' },
+  { value: 'high_impact', label: 'Kekuatan tinggi' },
+  { value: 'missing', label: 'Data kurang' },
 ];
 
 const mediumOptions = [
   { value: 'DPG', label: 'DPG' },
-  { value: 'Alcohol', label: 'Alcohol' },
+  { value: 'Alcohol', label: 'Alkohol' },
   { value: 'TEC', label: 'TEC' },
-  { value: 'Other', label: 'Other' },
+  { value: 'Other', label: 'Lainnya' },
 ];
 
 const dilutionPresets = [
-  { value: 'neat', label: 'Neat 100%', concentration: '100', medium: 'DPG' },
-  { value: 'dpg10', label: '10% in DPG', concentration: '10', medium: 'DPG' },
-  { value: 'dpg1', label: '1% in DPG', concentration: '1', medium: 'DPG' },
-  { value: 'alcohol10', label: '10% in Alcohol', concentration: '10', medium: 'Alcohol' },
-  { value: 'custom', label: 'Custom', concentration: '', medium: 'DPG' },
+  { value: 'neat', label: 'Murni 100%', concentration: '100', medium: 'DPG' },
+  { value: 'dpg10', label: '10% dalam DPG', concentration: '10', medium: 'DPG' },
+  { value: 'dpg1', label: '1% dalam DPG', concentration: '1', medium: 'DPG' },
+  { value: 'alcohol10', label: '10% dalam alkohol', concentration: '10', medium: 'Alcohol' },
+  { value: 'custom', label: 'Atur sendiri', concentration: '', medium: 'DPG' },
 ];
 
 const formatPercent = (value, digits = 1) => `${Number(value || 0).toFixed(digits)}%`;
@@ -84,6 +85,19 @@ const formatMetricNumber = (value, digits = 1) => {
   if (!Number.isFinite(number)) return '-';
   return Number(number.toFixed(digits)).toString();
 };
+
+// Display labels only. The keys are what the workbook simulation returns and what the code compares.
+const PHASE_LABELS = { top: 'Nada atas', middle: 'Nada tengah', base: 'Nada dasar' };
+const BALANCE_STATUS_LABELS = {
+  balanced: 'Seimbang',
+  top: 'Berat di nada atas',
+  middle: 'Berat di nada tengah',
+  base: 'Berat di nada dasar',
+  adjust: 'Perlu penyesuaian',
+};
+// getDilutionLabel (mobileFormulaInsights.js) returns this for a diluted row with no concentration yet.
+const DILUTION_NOT_SET_LABEL = 'Atur pengenceran';
+const optionLabel = (options, value, fallback) => options.find((option) => option.value === value)?.label || value || fallback;
 
 const MetricPill = ({ label, value, tone = 'slate', helper }) => (
   <div className={`rounded-xl border p-2 ${tone === 'amber' ? 'border-amber-200 bg-amber-50' : tone === 'emerald' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
@@ -154,15 +168,15 @@ export const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinks
     <div className="rounded-2xl border border-[#ded6c8] bg-[#fffdf8] p-3" data-testid="compact-live-workbook-preview">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-[10px] font-bold uppercase text-[#8a744d]">Graphic odour</div>
-          <div className="truncate text-xs font-bold text-[#1f2937]">{dominant?.familyName || 'No class data'}</div>
+          <div className="text-[10px] font-bold uppercase text-[#8a744d]">Grafik aroma</div>
+          <div className="truncate text-xs font-bold text-[#1f2937]">{dominant?.familyName || 'Belum ada data kelas'}</div>
         </div>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => setMode('pie')}
             className={`grid h-8 w-8 place-items-center rounded-xl border ${mode === 'pie' ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#6b7280]'}`}
-            aria-label="Pie chart"
+            aria-label="Diagram lingkaran"
           >
             <PieChartIcon className="h-4 w-4" />
           </button>
@@ -170,7 +184,7 @@ export const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinks
             type="button"
             onClick={() => setMode('bar')}
             className={`grid h-8 w-8 place-items-center rounded-xl border ${mode === 'bar' ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#6b7280]'}`}
-            aria-label="Bar chart"
+            aria-label="Diagram batang"
           >
             <BarChart3 className="h-4 w-4" />
           </button>
@@ -179,7 +193,7 @@ export const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinks
             onClick={() => setPlaying((current) => !current)}
             disabled={!maxHour || !rows.length}
             className="grid h-8 min-h-8 w-8 place-items-center rounded-xl bg-amber-500 text-white disabled:bg-[#d8d5cf]"
-            aria-label={playing ? 'Pause' : 'Play'}
+            aria-label={playing ? 'Jeda' : 'Putar'}
           >
             {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
@@ -210,7 +224,7 @@ export const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinks
             </div>
           )}
           <div className="mt-2 text-[10px] font-bold text-[#6b7280]">
-            {roundedHour}h / {maxHour || 0}h
+            {roundedHour} jam / {maxHour || 0} jam
           </div>
         </div>
 
@@ -224,7 +238,7 @@ export const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinks
               <span className="text-right text-[#6b7280]">{Math.round(Number(entry.percent || 0))}</span>
             </div>
           )) : (
-            <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">No guidance data</div>
+            <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">Belum ada data panduan</div>
           )}
         </div>
       </div>
@@ -248,14 +262,14 @@ const getOdorTag = (material = {}) =>
   getResolvedGuidanceValues(material).reference_abc_primary_family
   || material.category
   || material.reference_abc_secondary_family
-  || 'Uncategorized';
+  || 'Tanpa kategori';
 
 const getMaterialImpactLabel = (material = {}) => {
   const impact = Number(getResolvedGuidanceNumber(material, 'reference_impact') || material.impact_value || 0);
   if (!impact) return '';
-  if (impact >= 75) return 'High impact';
-  if (impact >= 45) return 'Medium impact';
-  return 'Low impact';
+  if (impact >= 75) return 'Kekuatan tinggi';
+  if (impact >= 45) return 'Kekuatan sedang';
+  return 'Kekuatan rendah';
 };
 
 const getGuidanceMissingLabels = (item = {}) => {
@@ -266,8 +280,8 @@ const getGuidanceMissingLabels = (item = {}) => {
   const missing = [];
 
   if (!material.cas_number && !resolved.cas_number) missing.push('CAS');
-  if (!Number.isFinite(impact) || impact <= 0) missing.push('impact');
-  if (!Number.isFinite(life) || life <= 0) missing.push('life');
+  if (!Number.isFinite(impact) || impact <= 0) missing.push('kekuatan');
+  if (!Number.isFinite(life) || life <= 0) missing.push('ketahanan di strip');
   if (!resolved.workbook_code && !material.workbook_code) missing.push('workbook');
 
   return missing;
@@ -278,8 +292,8 @@ const getGuidanceStatus = (item = {}) => {
   if (!missing.length) {
     return {
       tone: 'success',
-      label: 'Guidance complete',
-      description: 'CAS, impact, life, workbook ready',
+      label: 'Panduan lengkap',
+      description: 'CAS, kekuatan, ketahanan di strip, dan workbook sudah ada',
       missing,
     };
   }
@@ -287,16 +301,16 @@ const getGuidanceStatus = (item = {}) => {
   if (missing.length >= 3) {
     return {
       tone: 'warning',
-      label: 'Needs guidance',
-      description: `Missing ${missing.join(', ')}`,
+      label: 'Perlu panduan',
+      description: `Belum ada: ${missing.join(', ')}`,
       missing,
     };
   }
 
   return {
     tone: 'partial',
-    label: 'Partial guidance',
-    description: `Missing ${missing.join(', ')}`,
+    label: 'Panduan sebagian',
+    description: `Belum ada: ${missing.join(', ')}`,
     missing,
   };
 };
@@ -366,11 +380,11 @@ const MaterialSuggestion = ({ material, onAdd }) => {
       <div className="min-w-0">
         <h3 className="mobile-line-clamp-2 text-xs font-bold leading-snug text-[#1f2937]">{material.name}</h3>
         <p className="mt-0.5 truncate text-[10px] font-semibold text-[#6b7280]">
-          {material.cas_number ? `CAS ${material.cas_number}` : material.category || 'No CAS'}
+          {material.cas_number ? `CAS ${material.cas_number}` : material.category || 'Tanpa CAS'}
         </p>
       </div>
       <Button type="button" onClick={handleAdd} className="h-7 rounded-lg px-2 text-[10px]">
-        Add
+        Tambah
       </Button>
     </div>
     <div className="mt-2 flex items-center gap-1 overflow-hidden">
@@ -570,7 +584,7 @@ const MobileFormulaComposerWorkspace = ({
     // a rejected apply still left the row marked diluted with no solvent — the exact half-written state the
     // guard exists to prevent (audit round 8).
     if (!isNeat && !dilutionDraft.solventId) {
-      toast.error('Pilih solvent untuk material yang diencerkan');
+      toast.error('Pilih pelarut untuk bahan yang diencerkan');
       return;
     }
     onUpdateItem(dilutionItem.row_key, 'dilution_type', isNeat ? 'neat' : dilutionDraft.preset === 'custom' ? 'custom' : 'solution');
@@ -584,13 +598,13 @@ const MobileFormulaComposerWorkspace = ({
       isNeat ? '' : (solventOptions.find((material) => material.id === dilutionDraft.solventId)?.name || ''),
     );
     setDilutionItem(null);
-    toast.success('Dilution updated');
+    toast.success('Pengenceran diperbarui');
   };
 
   const importGuidance = async () => {
     if (!guidanceForm.url.trim() || !/^https?:\/\//i.test(guidanceForm.url.trim())) {
       setGuidanceState('error');
-      toast.error('Unable to import guidance');
+      toast.error('Gagal mengimpor panduan');
       return;
     }
     setGuidanceState('loading');
@@ -604,10 +618,10 @@ const MobileFormulaComposerWorkspace = ({
       setGuidanceForm({ url: '', sourceType: 'perfumersworld' });
       setGuidanceState('success');
       setGuidanceOpen(false);
-      toast.success('Guidance imported and insights updated');
+      toast.success('Panduan diimpor, analisis diperbarui');
     } catch (error) {
       setGuidanceState('error');
-      toast.error(error.message || 'Unable to import guidance');
+      toast.error(error.message || 'Gagal mengimpor panduan');
     }
   };
 
@@ -623,7 +637,7 @@ const MobileFormulaComposerWorkspace = ({
   const impactDisplay = workbookSimulation.hasImpactData ? formatMetricNumber(workbookSimulation.impactEstimate, 1) : '-';
   const lifetimeHours = workbookSimulation.odourWeightedLifeHours ?? workbookSimulation.simpleLifeHours;
   const lifetimeDisplay = workbookSimulation.hasLifeData ? formatMetricNumber(lifetimeHours, 1) : '-';
-  const lifetimeHelper = workbookSimulation.hasLifeData ? `${lifetimeDisplay} h` : 'No data';
+  const lifetimeHelper = workbookSimulation.hasLifeData ? `${lifetimeDisplay} jam` : 'Belum ada data';
   const impactTone = workbookSimulation.hasImpactData && Number(workbookSimulation.impactEstimate || 0) >= 75 ? 'amber' : 'slate';
   const topMiddleBaseDistribution = {
     top: workbookSimulation.topPercent || 0,
@@ -634,35 +648,37 @@ const MobileFormulaComposerWorkspace = ({
   // The same blind spot the desktop panel announces: these three percentages are sums over per-material
   // placements, and a fifth of the studio's formula rows are placed by inference.
   const placementBlindSpot = pyramidPlacementBlindSpot(workbookSimulation.rows);
-  const workbookBalanceStatus = !composition.length
-    ? 'Needs adjustment'
+  // Decided on the phase key, never on the label: 'top' / 'middle' / 'base' when one phase holds over 55%.
+  const workbookBalanceKey = !composition.length
+    ? 'adjust'
     : dominantPhase[1] > 55
-      ? `${dominantPhase[0][0].toUpperCase()}${dominantPhase[0].slice(1)}-heavy`
-      : 'Balanced';
-  const workbookRecommendation = workbookBalanceStatus === 'Balanced'
-    ? 'Distribution is ready for validation.'
-    : workbookBalanceStatus.includes('Base')
-      ? 'Reduce heavy base materials or increase fresh top notes.'
-      : workbookBalanceStatus.includes('Top')
-        ? 'Add middle or base support for better persistence.'
-        : 'Add more heart materials to support the transition.';
+      ? dominantPhase[0]
+      : 'balanced';
+  const workbookBalanceStatus = BALANCE_STATUS_LABELS[workbookBalanceKey];
+  const workbookRecommendation = workbookBalanceKey === 'balanced'
+    ? 'Sebaran siap divalidasi.'
+    : workbookBalanceKey === 'base'
+      ? 'Kurangi bahan nada dasar yang berat atau tambah nada atas yang segar.'
+      : workbookBalanceKey === 'top'
+        ? 'Tambah penopang nada tengah atau dasar agar lebih tahan lama.'
+        : 'Tambah bahan nada tengah untuk menopang peralihan.';
 
   return (
     <>
       <section className="mobile-soft-card mobile-compact-card p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase text-amber-700">{mode === 'edit' ? 'Edit formula' : 'New formula'}</p>
-            <h1 className="mt-0.5 truncate text-base font-bold text-[#1f2937]">{metadata.name || 'Untitled formula'}</h1>
-            <p className="truncate text-[11px] font-semibold text-[#6b7280]">{metadata.code || 'No code'} - {metadata.category || 'perfume'}</p>
+            <p className="text-[10px] font-bold uppercase text-amber-700">{mode === 'edit' ? 'Edit formula' : 'Formula baru'}</p>
+            <h1 className="mt-0.5 truncate text-base font-bold text-[#1f2937]">{metadata.name || 'Formula tanpa nama'}</h1>
+            <p className="truncate text-[11px] font-semibold text-[#6b7280]">{metadata.code || 'Tanpa kode'} - {optionLabel(FORMULA_CATEGORIES, metadata.category, 'Parfum')}</p>
           </div>
-          <Button type="button" variant="outline" onClick={onOpenMetadata} className="h-8 rounded-xl bg-white px-3 text-[11px]">Metadata</Button>
+          <Button type="button" variant="outline" onClick={onOpenMetadata} className="h-8 rounded-xl bg-white px-3 text-[11px]">Data formula</Button>
         </div>
         <div className="mt-3 grid grid-cols-4 gap-2">
           <MetricPill label="Total" value={formatPercent(insight.totalPercent)} tone={Math.abs(insight.totalPercent - 100) > 0.25 ? 'amber' : 'emerald'} />
-          <MetricPill label="Actual" value={formatGram(insight.totalActualActiveGrams)} helper={formatPercent(insight.totalActualActive)} />
-          <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} />
-          <MetricPill label="Life" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Guidance hours' : 'No data'} />
+          <MetricPill label="Aktif" value={formatGram(insight.totalActualActiveGrams)} helper={formatPercent(insight.totalActualActive)} />
+          <MetricPill label="Kekuatan" value={impactDisplay} helper={insight.impactLabel} />
+          <MetricPill label="Ketahanan" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Jam dari panduan' : 'Belum ada data'} />
         </div>
       </section>
 
@@ -672,11 +688,11 @@ const MobileFormulaComposerWorkspace = ({
         <section className="space-y-2 pb-24">
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle
-              title="Raw Material Finder"
-              subtitle={finderQuery ? `${finderMaterials.length} matches` : 'Swipe cards or search to add'}
+              title="Cari bahan baku"
+              subtitle={finderQuery ? `${finderMaterials.length} cocok` : 'Geser kartu atau cari untuk menambah'}
             />
             <div className="mt-2">
-              <MobileSearchBar value={finderQuery} onChange={setFinderQuery} placeholder="Find raw material..." />
+              <MobileSearchBar value={finderQuery} onChange={setFinderQuery} placeholder="Cari bahan baku..." />
             </div>
             <div ref={finderScrollRef} className="mt-2 flex snap-x gap-2 overflow-x-auto pb-1 mobile-horizontal-scroll mobile-segment-scroll" {...finderScrollHandlers}>
               {finderMaterials.length ? finderMaterials.map((material) => (
@@ -690,12 +706,12 @@ const MobileFormulaComposerWorkspace = ({
                       <PlusCircle className="h-5 w-5" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700">Material not found</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700">Bahan tidak ditemukan</p>
                       <h3 className="mt-1 text-sm font-bold text-[#1f2937]">
-                        {normalizedFinderQuery ? `"${normalizedFinderQuery}" belum ada di library` : 'Cari material atau buat baru'}
+                        {normalizedFinderQuery ? `"${normalizedFinderQuery}" belum ada di pustaka bahan` : 'Cari bahan atau buat baru'}
                       </h3>
                       <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                        Pilih existing dari library, buat raw material baru, atau ubah kata pencarian.
+                        Pilih yang sudah ada di pustaka bahan, buat bahan baku baru, atau ubah kata pencarian.
                       </p>
                     </div>
                   </div>
@@ -720,7 +736,7 @@ const MobileFormulaComposerWorkspace = ({
                         }}
                         className="h-9 rounded-xl bg-white text-xs font-bold"
                       >
-                        Buka Library
+                        Buka pustaka bahan
                       </Button>
                       <Button
                         type="button"
@@ -728,7 +744,7 @@ const MobileFormulaComposerWorkspace = ({
                         onClick={() => setFinderQuery('')}
                         className="h-9 rounded-xl bg-white text-xs font-bold"
                       >
-                        Clear Search
+                        Hapus pencarian
                       </Button>
                     </div>
                   </div>
@@ -739,15 +755,15 @@ const MobileFormulaComposerWorkspace = ({
 
           <section ref={compositionBoardRef} className="mobile-card mobile-compact-card p-3">
             <SectionTitle
-              title="Composition Board"
-              subtitle={`${composition.length} materials - ${formatGram(insight.totalGrams)}`}
+              title="Papan komposisi"
+              subtitle={`${composition.length} bahan - ${formatGram(insight.totalGrams)}`}
             />
             <div className="mt-2 space-y-2">
               {visibleComposition.length ? visibleComposition.map((item) => {
                 const open = expandedRow === item.row_key;
-                const dilutionTone = item.dilutionLabel === 'Set dilution' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#374151]';
+                const dilutionTone = item.dilutionLabel === DILUTION_NOT_SET_LABEL ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#374151]';
                 const guidanceStatus = getGuidanceStatus(item);
-                const hasSyncIssue = guidanceStatus.missing.length > 0 || item.dilutionLabel === 'Set dilution';
+                const hasSyncIssue = guidanceStatus.missing.length > 0 || item.dilutionLabel === DILUTION_NOT_SET_LABEL;
                 const isHighlighted = highlightedRowKey === item.row_key;
                 const guidanceBadgeClass = guidanceStatus.tone === 'success'
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
@@ -755,7 +771,7 @@ const MobileFormulaComposerWorkspace = ({
                     ? 'border-amber-200 bg-amber-50 text-amber-800'
                     : 'border-rose-200 bg-rose-50 text-rose-700';
                 const showGuidanceCta = Boolean(onOpenGuidanceEditor && guidanceStatus.missing.length);
-                const guidanceCtaLabel = item.item_id === needsGuidanceMaterialId ? 'Lengkapi guidance' : 'Edit guidance';
+                const guidanceCtaLabel = item.item_id === needsGuidanceMaterialId ? 'Lengkapi panduan' : 'Edit panduan';
                 return (
                   <article
                     key={item.row_key}
@@ -766,7 +782,7 @@ const MobileFormulaComposerWorkspace = ({
                       <div className="flex items-start justify-between gap-2">
                         <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} className="min-w-0 flex-1 text-left">
                           <div className="flex items-center gap-1.5">
-                            {isHighlighted ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">New</span> : null}
+                            {isHighlighted ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">Baru</span> : null}
                             <span className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a744d]">{item.category}</span>
                           </div>
                           <h3 className="mt-1 truncate text-base font-black leading-tight text-[#1f2937]">{item.materialName}</h3>
@@ -775,14 +791,14 @@ const MobileFormulaComposerWorkspace = ({
                           </p>
                         </button>
                         <div className="flex items-center gap-1">
-                          {hasSyncIssue ? <AlertTriangle className="h-4 w-4 text-amber-500" aria-label="Guidance needs sync" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                          {hasSyncIssue ? <AlertTriangle className="h-4 w-4 text-amber-500" aria-label="Data panduan atau pengenceran belum lengkap" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                           <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} aria-expanded={open} aria-label={`${open ? 'Tutup' : 'Buka'} detail ${item.materialName}`} className="grid h-11 w-11 place-items-center rounded-lg text-[#6b7280]"><MoreHorizontal className="h-4 w-4" /></button>
                         </div>
                       </div>
 
                       <div className="mt-3 grid grid-cols-[minmax(0,1.25fr)_minmax(88px,0.75fr)] gap-2">
                         <label className="min-w-0 rounded-2xl border border-[#e5dfd2] bg-[#fffdf8] p-2">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a744d]">Amount</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a744d]">Jumlah</span>
                           <div className="mt-1 flex items-center gap-2">
                             <Input
                               value={item.gram_amount}
@@ -805,7 +821,7 @@ const MobileFormulaComposerWorkspace = ({
                               onFocus={(event) => event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                               onChange={(event) => setFormulaPercent(item, normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))}
                               className="h-11 min-w-0 rounded-xl bg-white px-2 text-sm font-black"
-                              aria-label={`${item.materialName} formula percent`}
+                              aria-label={`${item.materialName} persen formula`}
                             />
                             <span className="shrink-0 text-xs font-black text-[#6b7280]">%</span>
                           </div>
@@ -814,11 +830,11 @@ const MobileFormulaComposerWorkspace = ({
 
                       <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
                         <div className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[10px] font-bold text-[#6b7280]">
-                          Actual active
+                          Kadar aktif
                           <div className="mt-0.5 text-sm font-black text-[#1f2937]">{formatGram(item.actualActiveGram)} · {formatPercent(item.actualActivePercent)}</div>
                         </div>
                         <button type="button" onClick={() => openDilutionSheet(item)} className={`min-w-[102px] rounded-2xl border px-3 py-2 text-left text-[10px] font-black ${dilutionTone}`}>
-                          Dilution
+                          Pengenceran
                           <span className="mt-0.5 block text-xs">{item.dilutionLabel || getDilutionLabel(item)}</span>
                         </button>
                       </div>
@@ -845,9 +861,9 @@ const MobileFormulaComposerWorkspace = ({
                     {open ? (
                       <div className="border-t border-[#e5e7eb] p-2.5">
                         <div className="grid grid-cols-[1fr_1fr_44px] gap-2">
-                          <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">Active contribution<br /><span className="text-sm font-bold text-[#1f2937]">{formatGram(item.actualActiveGram)} / {formatPercent(item.actualActivePercent)}</span></div>
-                          <button type="button" onClick={() => openDilutionSheet(item)} className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-left text-[11px] font-bold text-amber-800"><Droplets className="mb-1 h-3.5 w-3.5" />Concentrate<br /><span className="text-[10px]">{item.dilutionLabel}</span></button>
-                          <Button type="button" variant="outline" size="icon" onClick={() => onRemoveItem(item.row_key)} className="h-full min-h-[54px] rounded-xl border-rose-200 bg-rose-50 text-rose-700" aria-label="Remove material"><Trash2 className="h-4 w-4" /></Button>
+                          <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">Kontribusi aktif<br /><span className="text-sm font-bold text-[#1f2937]">{formatGram(item.actualActiveGram)} / {formatPercent(item.actualActivePercent)}</span></div>
+                          <button type="button" onClick={() => openDilutionSheet(item)} className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-left text-[11px] font-bold text-amber-800"><Droplets className="mb-1 h-3.5 w-3.5" />Konsentrat<br /><span className="text-[10px]">{item.dilutionLabel}</span></button>
+                          <Button type="button" variant="outline" size="icon" onClick={() => onRemoveItem(item.row_key)} className="h-full min-h-[54px] rounded-xl border-rose-200 bg-rose-50 text-rose-700" aria-label="Hapus bahan"><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </div>
                     ) : null}
@@ -855,10 +871,10 @@ const MobileFormulaComposerWorkspace = ({
                 );
               }) : (
                 <div className="rounded-2xl border border-dashed border-[#d8d5cf] bg-[#faf9f6] p-4 text-center">
-                  <p className="text-sm font-bold text-[#1f2937]">No materials yet</p>
-                  <p className="mt-1 text-xs font-semibold text-[#6b7280]">Use the finder above or open Materials to start the composition.</p>
+                  <p className="text-sm font-bold text-[#1f2937]">Belum ada bahan</p>
+                  <p className="mt-1 text-xs font-semibold text-[#6b7280]">Cari bahan di atas atau buka tab Bahan baku untuk mulai menyusun komposisi.</p>
                   <Button type="button" variant="outline" onClick={() => setTab('materials')} className="mt-3 h-9 rounded-xl bg-white px-3 text-xs">
-                    Open Materials
+                    Buka Bahan baku
                   </Button>
                 </div>
               )}
@@ -866,11 +882,11 @@ const MobileFormulaComposerWorkspace = ({
             <PaginationOrLoadMore visibleCount={Math.min(compositionVisible, composition.length)} totalCount={composition.length} onLoadMore={() => setCompositionVisible((current) => current + COMPOSER_PAGE_SIZE)} />
           </section>
 
-          {showActionBar && !dilutionItem && !guidanceOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula composer actions">
+          {showActionBar && !dilutionItem && !guidanceOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Aksi komposer formula">
             <div className="grid grid-cols-[1fr_1fr_1.2fr] gap-2">
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Formula<br /><span className="text-xs text-[#1f2937]">{formatPercent(insight.totalPercent)}</span></div>
-              <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Actual<br /><span className="text-xs text-[#1f2937]">{formatGram(insight.totalActualActiveGrams)}</span></div>
-              <Button type="button" onClick={onSave} disabled={saveDisabled || saving} className="h-10 rounded-xl text-xs">{saving ? 'Saving...' : saveLabel}</Button>
+              <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Aktif<br /><span className="text-xs text-[#1f2937]">{formatGram(insight.totalActualActiveGrams)}</span></div>
+              <Button type="button" onClick={onSave} disabled={saveDisabled || saving} className="h-10 rounded-xl text-xs">{saving ? 'Menyimpan...' : saveLabel}</Button>
             </div>
           </StickyBottomActionBar> : null}
         </section>
@@ -879,7 +895,7 @@ const MobileFormulaComposerWorkspace = ({
       {tab === 'analysis' ? (
         <section className="space-y-2 pb-4">
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Odor Profile" action={<BarChart3 className="h-4 w-4 text-amber-700" />} />
+            <SectionTitle title="Profil aroma" action={<BarChart3 className="h-4 w-4 text-amber-700" />} />
             {graphEntries.some((entry) => entry.value > 0) ? (
               <>
                 <div className="mt-3 grid gap-1.5">
@@ -897,18 +913,18 @@ const MobileFormulaComposerWorkspace = ({
               </>
             ) : (
               <div className="mt-3 rounded-2xl border border-dashed border-[#d8d5cf] bg-[#faf9f6] p-3 text-xs text-[#6b7280]">
-                <p className="font-bold text-[#1f2937]">No odor profile yet</p>
+                <p className="font-bold text-[#1f2937]">Belum ada profil aroma</p>
               </div>
             )}
           </section>
 
           <div className="grid grid-cols-2 gap-2">
-            <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} tone={impactTone} />
-            <MetricPill label="Lifetime" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Guidance hours' : 'No data'} tone="emerald" />
+            <MetricPill label="Kekuatan" value={impactDisplay} helper={insight.impactLabel} tone={impactTone} />
+            <MetricPill label="Ketahanan" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Jam dari panduan' : 'Belum ada data'} tone="emerald" />
           </div>
 
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Balance Preview" subtitle={`${formatPercent(topMiddleBaseDistribution.top, 0)} top - ${formatPercent(topMiddleBaseDistribution.middle, 0)} middle - ${formatPercent(topMiddleBaseDistribution.base, 0)} base`} />
+            <SectionTitle title="Pratinjau keseimbangan" subtitle={`${formatPercent(topMiddleBaseDistribution.top, 0)} nada atas - ${formatPercent(topMiddleBaseDistribution.middle, 0)} nada tengah - ${formatPercent(topMiddleBaseDistribution.base, 0)} nada dasar`} />
             <FormulaPlacementBlindSpotNotice blindSpot={placementBlindSpot} className="mt-3" />
             <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#ece8df]">
               <div className="inline-block h-full bg-amber-300" style={{ width: `${topMiddleBaseDistribution.top}%` }} />
@@ -916,15 +932,15 @@ const MobileFormulaComposerWorkspace = ({
               <div className="inline-block h-full bg-stone-700" style={{ width: `${topMiddleBaseDistribution.base}%` }} />
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2">
-              {Object.entries(topMiddleBaseDistribution).map(([key, value]) => <MetricPill key={key} label={key} value={formatPercent(value, 0)} />)}
+              {Object.entries(topMiddleBaseDistribution).map(([key, value]) => <MetricPill key={key} label={PHASE_LABELS[key] || key} value={formatPercent(value, 0)} />)}
             </div>
-            <div className={`mt-2 rounded-xl p-2 text-xs font-semibold ${workbookBalanceStatus === 'Balanced' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
+            <div className={`mt-2 rounded-xl p-2 text-xs font-semibold ${workbookBalanceKey === 'balanced' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
               {workbookBalanceStatus}: {workbookRecommendation}
             </div>
           </section>
 
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Live Guidance Preview" subtitle={`${workbookSimulation.guidanceBackedCount}/${workbookSimulation.eligibleItemCount} guided`} />
+            <SectionTitle title="Pratinjau panduan langsung" subtitle={`${workbookSimulation.guidanceBackedCount}/${workbookSimulation.eligibleItemCount} punya panduan`} />
             <div className="mt-3">
               <CompactWorkbookPreview
                 items={workbookItems}
@@ -935,12 +951,12 @@ const MobileFormulaComposerWorkspace = ({
           </section>
 
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Recommendations" subtitle={`${workbookSimulation.warningCount + insight.warnings.length} active`} />
+            <SectionTitle title="Rekomendasi" subtitle={`${workbookSimulation.warningCount + insight.warnings.length} aktif`} />
             <div className="mt-2 space-y-1">
               {visibleWarnings.length ? visibleWarnings.map((warning) => (
                 <div key={warning} className="rounded-xl bg-amber-50 p-2 text-xs font-semibold text-amber-800">{warning}</div>
-              )) : <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">No active warnings.</div>}
-              {workbookSimulation.warningCount + insight.warnings.length > 3 ? <div className="text-[11px] font-bold text-[#6b7280]">View all {workbookSimulation.warningCount + insight.warnings.length} warnings in workbook.</div> : null}
+              )) : <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">Tidak ada peringatan aktif.</div>}
+              {workbookSimulation.warningCount + insight.warnings.length > 3 ? <div className="text-[11px] font-bold text-[#6b7280]">Lihat semua {workbookSimulation.warningCount + insight.warnings.length} peringatan di workbook.</div> : null}
             </div>
           </section>
         </section>
@@ -948,32 +964,32 @@ const MobileFormulaComposerWorkspace = ({
 
       {tab === 'workbook' ? (
         <section className="space-y-2 pb-4">
-          <MobileAccordion title="Metadata" meta={`${metadata.code || 'No code'} - ${metadata.status || 'draft'}`} defaultOpen>
+          <MobileAccordion title="Data formula" meta={`${metadata.code || 'Tanpa kode'} - ${optionLabel(FORMULA_STATUSES, metadata.status, 'Draf')}`} defaultOpen>
             <div className="grid grid-cols-2 gap-2">
-              <MetricPill label="Name" value={metadata.name || 'Untitled'} />
-              <MetricPill label="Version" value={metadata.version || 'Draft'} />
-              <MetricPill label="Category" value={metadata.category || 'Perfume'} />
-              <MetricPill label="Mode" value={mode === 'edit' ? 'Edit' : 'Create'} />
+              <MetricPill label="Nama" value={metadata.name || 'Tanpa nama'} />
+              <MetricPill label="Versi" value={metadata.version || 'Draf'} />
+              <MetricPill label="Kategori" value={optionLabel(FORMULA_CATEGORIES, metadata.category, 'Parfum')} />
+              <MetricPill label="Mode" value={mode === 'edit' ? 'Edit' : 'Buat'} />
             </div>
           </MobileAccordion>
-          <MobileAccordion title="Composition" meta={`${composition.length} materials`}>
+          <MobileAccordion title="Komposisi" meta={`${composition.length} bahan`}>
             {composition.slice(0, COMPOSER_PAGE_SIZE).map((item) => <div key={item.row_key} className="mb-1 rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">{item.materialName} - {formatGram(item.gram)} - {formatPercent(item.formulaPercent)}</div>)}
           </MobileAccordion>
-          <MobileAccordion title="Actuals" meta={formatGram(insight.totalActualActiveGrams)}>
-            {composition.slice(0, COMPOSER_PAGE_SIZE).map((item) => <div key={item.row_key} className="mb-1 rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">{item.materialName} - {item.dilutionLabel} - actual {formatGram(item.actualActiveGram)}</div>)}
+          <MobileAccordion title="Kadar aktif" meta={formatGram(insight.totalActualActiveGrams)}>
+            {composition.slice(0, COMPOSER_PAGE_SIZE).map((item) => <div key={item.row_key} className="mb-1 rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">{item.materialName} - {item.dilutionLabel} - aktif {formatGram(item.actualActiveGram)}</div>)}
           </MobileAccordion>
-          <MobileAccordion title="Odor Profile" meta={insight.dominantNotes.map((entry) => entry.label).join(' / ') || 'No profile'} defaultOpen>
-            {graphEntries.filter((entry) => entry.value > 0).length ? graphEntries.filter((entry) => entry.value > 0).map((entry) => <div key={entry.key} className="mb-1 rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">{entry.label}: {Math.round(entry.value)}</div>) : <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold text-[#6b7280]">No odor profile yet</div>}
+          <MobileAccordion title="Profil aroma" meta={insight.dominantNotes.map((entry) => entry.label).join(' / ') || 'Belum ada profil'} defaultOpen>
+            {graphEntries.filter((entry) => entry.value > 0).length ? graphEntries.filter((entry) => entry.value > 0).map((entry) => <div key={entry.key} className="mb-1 rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">{entry.label}: {Math.round(entry.value)}</div>) : <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold text-[#6b7280]">Belum ada profil aroma</div>}
           </MobileAccordion>
-          <MobileAccordion title="Impact & Lifetime" meta={`${impactDisplay} / ${lifetimeHelper}`} defaultOpen>
+          <MobileAccordion title="Kekuatan & ketahanan" meta={`${impactDisplay} / ${lifetimeHelper}`} defaultOpen>
             <div className="grid grid-cols-2 gap-2">
-              <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} />
-              <MetricPill label="Lifetime" value={lifetimeDisplay} helper={lifetimeHelper} />
+              <MetricPill label="Kekuatan" value={impactDisplay} helper={insight.impactLabel} />
+              <MetricPill label="Ketahanan" value={lifetimeDisplay} helper={lifetimeHelper} />
             </div>
           </MobileAccordion>
-          <MobileAccordion title="Validation" meta={insight.balanceStatus}>
+          <MobileAccordion title="Validasi" meta={insight.balanceStatus}>
             <div className="space-y-1">
-              {(insight.warnings.length ? insight.warnings : [metadata.notes || 'No note.']).slice(0, COMPOSER_PAGE_SIZE).map((entry) => <div key={entry} className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold text-[#6b7280]">{entry}</div>)}
+              {(insight.warnings.length ? insight.warnings : [metadata.notes || 'Tidak ada catatan.']).slice(0, COMPOSER_PAGE_SIZE).map((entry) => <div key={entry} className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold text-[#6b7280]">{entry}</div>)}
             </div>
           </MobileAccordion>
         </section>
@@ -983,26 +999,26 @@ const MobileFormulaComposerWorkspace = ({
         <section className="space-y-2 pb-4">
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle
-              title="Materials"
-              action={<Button type="button" variant="outline" onClick={() => setGuidanceOpen(true)} className="h-8 rounded-xl bg-white px-3 text-[11px]"><Link2 className="mr-1 h-3.5 w-3.5" />Import</Button>}
+              title="Bahan baku"
+              action={<Button type="button" variant="outline" onClick={() => setGuidanceOpen(true)} className="h-8 rounded-xl bg-white px-3 text-[11px]"><Link2 className="mr-1 h-3.5 w-3.5" />Impor</Button>}
             />
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Button type="button" variant="outline" onClick={() => setGuidanceOpen(true)} className="h-9 rounded-xl bg-white text-xs"><Link2 className="mr-1 h-3.5 w-3.5" />Import Guidance</Button>
-              <Button type="button" variant="outline" onClick={() => setTab('analysis')} className="h-9 rounded-xl bg-white text-xs">Review Guidance</Button>
+              <Button type="button" variant="outline" onClick={() => setGuidanceOpen(true)} className="h-9 rounded-xl bg-white text-xs"><Link2 className="mr-1 h-3.5 w-3.5" />Impor panduan</Button>
+              <Button type="button" variant="outline" onClick={() => setTab('analysis')} className="h-9 rounded-xl bg-white text-xs">Tinjau panduan</Button>
             </div>
           </section>
           <section className="mobile-card mobile-compact-card p-3">
-            <MobileSearchBar value={materialQuery} onChange={setMaterialQuery} placeholder="Search material..." />
+            <MobileSearchBar value={materialQuery} onChange={setMaterialQuery} placeholder="Cari bahan..." />
             <MobileFilterChips options={materialFilters} value={materialFilter} onChange={setMaterialFilter} />
           </section>
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Guidance Status" subtitle={guidanceSources.length ? 'Imported' : 'Not connected'} />
+            <SectionTitle title="Status panduan" subtitle={guidanceSources.length ? 'Sudah diimpor' : 'Belum terhubung'} />
             <div className="mt-2 rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold text-[#6b7280]">
-              {guidanceSources.length ? `${guidanceSources.length} source connected` : 'No guidance connected'}
+              {guidanceSources.length ? `${guidanceSources.length} sumber terhubung` : 'Belum ada panduan terhubung'}
             </div>
           </section>
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Material Results" subtitle={`${filteredMaterials.length} materials`} />
+            <SectionTitle title="Hasil bahan" subtitle={`${filteredMaterials.length} bahan`} />
             <div className="mt-2 grid gap-2">
               {getVisibleItems(filteredMaterials, materialsVisible).map((material) => (
                 <MaterialSuggestion key={material.id} material={material} onAdd={handleAddMaterial} />
@@ -1016,12 +1032,12 @@ const MobileFormulaComposerWorkspace = ({
       <MobileBottomSheet
         open={Boolean(dilutionItem)}
         onOpenChange={(open) => !open && setDilutionItem(null)}
-        title="Dilution Setup"
+        title="Atur pengenceran"
         description={dilutionItem?.materialName}
         footer={(
           <div className="grid grid-cols-2 gap-2">
-            <Button type="button" variant="outline" onClick={() => setDilutionItem(null)} className="h-10 rounded-xl bg-white text-xs">Cancel</Button>
-            <Button type="button" onClick={applyDilution} className="h-10 rounded-xl text-xs">Apply</Button>
+            <Button type="button" variant="outline" onClick={() => setDilutionItem(null)} className="h-10 rounded-xl bg-white text-xs">Batal</Button>
+            <Button type="button" onClick={applyDilution} className="h-10 rounded-xl text-xs">Terapkan</Button>
           </div>
         )}
       >
@@ -1040,19 +1056,19 @@ const MobileFormulaComposerWorkspace = ({
           </div>
           {dilutionDraft.preset !== 'neat' ? (
             <div className="space-y-1">
-              <Label className="text-xs">Dilution solvent</Label>
+              <Label className="text-xs">Pelarut</Label>
               <select
                 value={dilutionDraft.solventId}
                 onChange={(event) => setDilutionDraft((current) => ({ ...current, solventId: event.target.value }))}
                 className="h-10 w-full rounded-xl border border-[#e5e7eb] bg-white px-3 text-xs font-bold outline-none focus:border-amber-300"
               >
-                <option value="">Pilih solvent</option>
+                <option value="">Pilih pelarut</option>
                 {solventOptions.map((solvent) => (
                   <option key={solvent.id} value={solvent.id}>{solvent.name}</option>
                 ))}
               </select>
               {!solventOptions.length ? (
-                <p className="text-[11px] font-semibold text-rose-600">Belum ada material bertipe solvent di library.</p>
+                <p className="text-[11px] font-semibold text-rose-600">Belum ada bahan bertipe pelarut di pustaka bahan.</p>
               ) : null}
             </div>
           ) : null}
@@ -1063,15 +1079,15 @@ const MobileFormulaComposerWorkspace = ({
                 <MobileSegmentedControl options={mediumOptions} value={dilutionDraft.medium} onChange={(medium) => setDilutionDraft((current) => ({ ...current, medium }))} />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Concentration %</Label>
+                <Label className="text-xs">Konsentrasi %</Label>
                 <Input value={dilutionDraft.concentration} inputMode="decimal" onChange={(event) => setDilutionDraft((current) => ({ ...current, concentration: normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }) }))} className="h-10 rounded-xl bg-white text-xs" />
               </div>
             </>
           ) : null}
           <div className="rounded-2xl bg-[#f8f7f4] p-3">
             <div className="grid grid-cols-2 gap-2">
-              <MetricPill label="Active contribution" value={formatGram(dilutionPreviewActive)} helper={formatPercent((dilutionPreviewActive / Math.max(insight.totalGrams, 1)) * 100)} tone={dilutionPreviewConcentration ? 'emerald' : 'amber'} />
-              <MetricPill label="Concentrate" value={formatPercent(dilutionPreviewConcentration)} helper={`${formatGram(dilutionPreviewGram)} solution`} />
+              <MetricPill label="Kontribusi aktif" value={formatGram(dilutionPreviewActive)} helper={formatPercent((dilutionPreviewActive / Math.max(insight.totalGrams, 1)) * 100)} tone={dilutionPreviewConcentration ? 'emerald' : 'amber'} />
+              <MetricPill label="Konsentrat" value={formatPercent(dilutionPreviewConcentration)} helper={`${formatGram(dilutionPreviewGram)} larutan`} />
             </div>
           </div>
         </div>
@@ -1080,15 +1096,15 @@ const MobileFormulaComposerWorkspace = ({
       <MobileBottomSheet
         open={guidanceOpen}
         onOpenChange={setGuidanceOpen}
-        title="Import Guidance URL"
-        footer={<Button type="button" onClick={importGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Importing guidance...' : 'Import Guidance'}</Button>}
+        title="Impor URL panduan"
+        footer={<Button type="button" onClick={importGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Mengimpor panduan...' : 'Impor panduan'}</Button>}
       >
         <div className="grid gap-3 pb-2">
           <div className="space-y-1"><Label className="text-xs">URL</Label><Input value={guidanceForm.url} onChange={(event) => setGuidanceForm((current) => ({ ...current, url: event.target.value }))} placeholder="https://..." className="h-10 rounded-xl bg-white text-xs" /></div>
-          <div className="space-y-1"><Label className="text-xs">Source</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
-          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Guidance imported" description={guidanceSummary.slice(0, 6).join(' · ')} /> : null}
-          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Import failed" description="Unable to import guidance. Check the URL and try again." /> : null}
-          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Insights updated" description="Guidance imported and insights updated." /> : null}
+          <div className="space-y-1"><Label className="text-xs">Sumber</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
+          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Panduan diimpor" description={guidanceSummary.slice(0, 6).join(' · ')} /> : null}
+          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Impor gagal" description="Gagal mengimpor panduan. Periksa URL lalu coba lagi." /> : null}
+          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Analisis diperbarui" description="Panduan diimpor, analisis diperbarui." /> : null}
         </div>
       </MobileBottomSheet>
     </>

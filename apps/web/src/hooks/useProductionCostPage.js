@@ -82,7 +82,7 @@ export const useProductionCostPage = () => {
         setSelectedFormulaId(firstFormulaId);
         setSelectedSolventId(firstSolventId);
       } catch {
-        toast.error('Failed to load production costing data');
+        toast.error('Gagal memuat data hitung biaya produksi');
       } finally {
         setLoading(false);
       }
@@ -236,7 +236,7 @@ export const useProductionCostPage = () => {
         if (cancelled) return;
         toast.error(error?.message === 'timeout'
           ? 'Data formula lambat dimuat (timeout). Coba pilih ulang formula.'
-          : 'Failed to load formula profile');
+          : 'Gagal memuat profil formula');
         setFormulaProfile(null);
         setProfileError(true);
       } finally {
@@ -471,22 +471,22 @@ export const useProductionCostPage = () => {
       const { exportWorkbookPdf, printWorkbookPdf } = await importWorkbookActions();
       await action({ exportWorkbookPdf, printWorkbookPdf, exportConfig });
     } catch (error) {
-      toast.error(error.message || 'Failed to prepare PDF');
+      toast.error(error.message || 'Gagal menyiapkan PDF');
     }
   };
 
   const handleExportPdf = async () => withWorkbookExport(
     buildExportConfig,
-    'Choose a formula first',
+    'Pilih formula dulu',
     async ({ exportWorkbookPdf, exportConfig }) => {
       exportWorkbookPdf(exportConfig, `${selectedFormula.code || 'production_cost'}_costing.pdf`);
-      toast.success('Production costing PDF exported');
+      toast.success('PDF hitung biaya produksi diekspor');
     }
   );
 
   const handlePrint = async () => withWorkbookExport(
     buildExportConfig,
-    'Choose a formula first',
+    'Pilih formula dulu',
     async ({ printWorkbookPdf, exportConfig }) => {
       printWorkbookPdf(exportConfig);
     }
@@ -494,16 +494,16 @@ export const useProductionCostPage = () => {
 
   const handleExportQuotationPdf = async () => withWorkbookExport(
     buildQuotationConfig,
-    'Choose a formula and quote first',
+    'Pilih formula dan penawaran dulu',
     async ({ exportWorkbookPdf, exportConfig }) => {
       exportWorkbookPdf(exportConfig, `${selectedFormula.code || 'quotation'}_brand_quotation.pdf`);
-      toast.success('Quotation PDF exported');
+      toast.success('PDF penawaran diekspor');
     }
   );
 
   const handlePrintQuotation = async () => withWorkbookExport(
     buildQuotationConfig,
-    'Choose a formula and quote first',
+    'Pilih formula dan penawaran dulu',
     async ({ printWorkbookPdf, exportConfig }) => {
       printWorkbookPdf(exportConfig);
     }

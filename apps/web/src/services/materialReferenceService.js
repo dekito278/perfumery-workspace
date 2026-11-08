@@ -161,7 +161,7 @@ const loadManualReferenceProfileForRawMaterial = async (rawMaterialId) => {
 
   if (error) {
     console.error('Error loading manual reference profile:', error);
-    throw new Error(error.message || 'Failed to load manual reference profile');
+    throw new Error(error.message || 'Gagal memuat profil acuan manual');
   }
 
   return manualProfile || null;
@@ -176,7 +176,7 @@ const loadRawMaterialForReferenceUpdate = async (rawMaterialId) => {
 
   if (error) {
     console.error('Error loading raw material for reference update:', error);
-    throw new Error(error.message || 'Failed to load raw material');
+    throw new Error(error.message || 'Gagal memuat bahan baku');
   }
 
   return rawMaterial;
@@ -210,7 +210,7 @@ const updateManualReferenceMetadataForRawMaterial = async (rawMaterialId, transf
 
   if (updateError) {
     console.error('Error updating manual reference raw payload:', updateError);
-    throw new Error(updateError.message || 'Failed to update reference review state');
+    throw new Error(updateError.message || 'Gagal memperbarui status tinjauan acuan');
   }
 
   return manualProfile.id;
@@ -232,7 +232,7 @@ export const getReferenceProfileByRawMaterialId = async (rawMaterialId) => {
 
   if (error) {
     console.error('Error fetching material reference profile:', error);
-    throw new Error(error.message || 'Failed to fetch material reference profile');
+    throw new Error(error.message || 'Gagal memuat profil acuan bahan');
   }
 
   return data ? mapReferenceLink(data) : null;
@@ -256,7 +256,7 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
 
     if (chunkLinksError) {
       console.error('Error fetching reference match status map links:', chunkLinksError);
-      throw new Error(chunkLinksError.message || 'Failed to fetch reference match statuses');
+      throw new Error(chunkLinksError.message || 'Gagal memuat status kecocokan acuan');
     }
 
     links.push(...(chunkLinks || []));
@@ -291,7 +291,7 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
 
       if (referenceProfilesError) {
         console.error('Error fetching reference profiles for status map:', referenceProfilesError);
-        throw new Error(referenceProfilesError.message || 'Failed to fetch reference profile details');
+        throw new Error(referenceProfilesError.message || 'Gagal memuat detail profil acuan');
       }
 
       for (const profile of referenceProfiles || []) {
@@ -344,7 +344,7 @@ export const getPrimaryReferenceRawMaterialIds = async ({
 
   if (linksError) {
     console.error('Error fetching primary reference raw material ids:', linksError);
-    throw new Error(linksError.message || 'Failed to fetch reference ids');
+    throw new Error(linksError.message || 'Gagal memuat ID acuan');
   }
 
   for (const row of links || []) {
@@ -381,7 +381,7 @@ export const getPrimaryReferenceRawMaterialIds = async ({
 
       if (profilesError) {
         console.error('Error fetching filtered reference profile ids:', profilesError);
-        throw new Error(profilesError.message || 'Failed to fetch filtered reference profiles');
+        throw new Error(profilesError.message || 'Gagal memuat profil acuan yang disaring');
       }
 
       for (const profile of profiles || []) {
@@ -475,7 +475,7 @@ export const getReferenceLinksByRawMaterialIds = async (rawMaterialIds) => {
 
     if (error) {
       console.error('Error fetching material reference links:', error);
-      throw new Error(error.message || 'Failed to fetch material reference links');
+      throw new Error(error.message || 'Gagal memuat tautan acuan bahan');
     }
 
     links.push(...(data || []));
@@ -547,7 +547,7 @@ export const searchReferenceProfiles = async (query = '', limit = 12) => {
 
   if (error) {
     console.error('Error searching material reference profiles:', error);
-    throw new Error(error.message || 'Failed to search material reference profiles');
+    throw new Error(error.message || 'Gagal mencari profil acuan bahan');
   }
 
   return (data || []).map((row) => ({
@@ -577,7 +577,7 @@ export const assignPrimaryReferenceProfile = async (rawMaterialId, referenceProf
 
   if (existingLinkError) {
     console.error('Error loading existing material reference link:', existingLinkError);
-    throw new Error(existingLinkError.message || 'Failed to load existing material reference link');
+    throw new Error(existingLinkError.message || 'Gagal memuat tautan acuan bahan yang sudah ada');
   }
 
   if (existingLink?.id) {
@@ -593,7 +593,7 @@ export const assignPrimaryReferenceProfile = async (rawMaterialId, referenceProf
 
     if (error) {
       console.error('Error updating material reference link:', error);
-      throw new Error(error.message || 'Failed to update material reference link');
+      throw new Error(error.message || 'Gagal memperbarui tautan acuan bahan');
     }
   } else {
     const { error } = await supabase
@@ -609,7 +609,7 @@ export const assignPrimaryReferenceProfile = async (rawMaterialId, referenceProf
 
     if (error) {
       console.error('Error creating material reference link:', error);
-      throw new Error(error.message || 'Failed to create material reference link');
+      throw new Error(error.message || 'Gagal membuat tautan acuan bahan');
     }
   }
 };
@@ -623,7 +623,7 @@ export const removePrimaryReferenceProfile = async (rawMaterialId) => {
 
   if (error) {
     console.error('Error removing material reference link:', error);
-    throw new Error(error.message || 'Failed to remove material reference link');
+    throw new Error(error.message || 'Gagal melepas tautan acuan bahan');
   }
 };
 
@@ -639,11 +639,11 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
 
   if (userError) {
     console.error('Error loading authenticated user for manual reference sync:', userError);
-    throw new Error(userError.message || 'Failed to load current user');
+    throw new Error(userError.message || 'Gagal membaca akun yang sedang login');
   }
 
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error('Belum login. Masuk lagi dulu.');
   }
 
   const { data: existingManualProfile, error: existingProfileError } = await supabase
@@ -655,7 +655,7 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
 
   if (existingProfileError) {
     console.error('Error loading existing manual reference profile:', existingProfileError);
-    throw new Error(existingProfileError.message || 'Failed to load manual reference profile');
+    throw new Error(existingProfileError.message || 'Gagal memuat profil acuan manual');
   }
 
   if (!hasManualReferenceGuidance(rawMaterial)) {
@@ -667,7 +667,7 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
 
       if (deleteProfileError) {
         console.error('Error deleting manual reference profile:', deleteProfileError);
-        throw new Error(deleteProfileError.message || 'Failed to delete manual reference profile');
+        throw new Error(deleteProfileError.message || 'Gagal menghapus profil acuan manual');
       }
     }
 
@@ -688,7 +688,7 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
 
     if (updateProfileError) {
       console.error('Error updating manual reference profile:', updateProfileError);
-      throw new Error(updateProfileError.message || 'Failed to update manual reference profile');
+      throw new Error(updateProfileError.message || 'Gagal memperbarui profil acuan manual');
     }
   } else {
     const { data: insertedProfile, error: insertProfileError } = await supabase
@@ -699,7 +699,7 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
 
     if (insertProfileError) {
       console.error('Error creating manual reference profile:', insertProfileError);
-      throw new Error(insertProfileError.message || 'Failed to create manual reference profile');
+      throw new Error(insertProfileError.message || 'Gagal membuat profil acuan manual');
     }
 
     referenceProfileId = insertedProfile.id;
@@ -754,11 +754,11 @@ export const removeReferenceArtifactsForRawMaterial = async (rawMaterialId) => {
 
   if (deleteLinksResult.error) {
     console.error('Error deleting raw material reference links:', deleteLinksResult.error);
-    throw new Error(deleteLinksResult.error.message || 'Failed to delete raw material reference links');
+    throw new Error(deleteLinksResult.error.message || 'Gagal menghapus tautan acuan bahan baku');
   }
 
   if (deleteManualProfilesResult.error) {
     console.error('Error deleting manual reference profiles for raw material:', deleteManualProfilesResult.error);
-    throw new Error(deleteManualProfilesResult.error.message || 'Failed to delete manual reference profile');
+    throw new Error(deleteManualProfilesResult.error.message || 'Gagal menghapus profil acuan manual');
   }
 };

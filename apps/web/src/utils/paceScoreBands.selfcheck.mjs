@@ -76,7 +76,7 @@ assert.doesNotMatch(mobile, /'Balanced'/, '"Balanced" was a label only the phone
 
 // A missing score is still its own case on the phone — it must not render as a red "Weak".
 assert.match(mobile, /hasScore \? getScoreBand/, 'no score means no band, not the worst band');
-assert.match(mobile, /'No score'/, 'and it must still say so');
+assert.match(mobile, /'Belum ada skor'/, 'and it must still say so');
 
 // --- 5. The targets are the desktop's, unchanged -------------------------------------------------------
 assert.deepEqual(PACE_TARGETS, {

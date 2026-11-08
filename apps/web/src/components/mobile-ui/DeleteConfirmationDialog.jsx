@@ -14,20 +14,20 @@ const DeleteConfirmationDialog = ({ open, onOpenChange, itemName, onConfirm, loa
   <AlertDialog open={open} onOpenChange={onOpenChange}>
     <AlertDialogContent className="max-w-[340px] rounded-2xl">
       <AlertDialogHeader>
-        <AlertDialogTitle>Delete this item?</AlertDialogTitle>
+        <AlertDialogTitle>Hapus item ini?</AlertDialogTitle>
         <AlertDialogDescription>
-          {itemName ? `"${itemName}" will be deleted. ` : ''}This action cannot be undone.
+          {itemName ? `"${itemName}" akan dihapus. ` : ''}Tindakan ini tidak bisa dibatalkan.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+        <AlertDialogCancel className="rounded-xl">Batal</AlertDialogCancel>
         <AlertDialogAction
           onClick={onConfirm}
           disabled={loading}
           data-haptic="warning"
           className="rounded-xl bg-[#ef4444] text-white hover:bg-[#dc2626]"
         >
-          {loading ? 'Deleting...' : 'Delete'}
+          {loading ? 'Menghapus...' : 'Hapus'}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>

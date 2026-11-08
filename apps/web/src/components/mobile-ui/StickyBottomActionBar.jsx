@@ -11,7 +11,7 @@ const StickyBottomActionBar = ({
   // 'hide' made Simpan/Bayar vanish the moment the buyer or admin started typing (audit round 7).
   keyboardBehavior = 'stay',
   reserveSpace = fixed,
-  'aria-label': ariaLabel = 'Mobile actions',
+  'aria-label': ariaLabel = 'Aksi halaman',
 }) => {
   const normalizedKeyboardBehavior = keyboardBehavior === 'hide' ? 'hide' : 'stay';
   const barRef = useRef(null);

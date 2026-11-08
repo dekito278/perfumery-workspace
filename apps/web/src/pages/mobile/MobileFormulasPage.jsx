@@ -33,12 +33,12 @@ const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfMo
 
 const statusOptions = [
   { value: 'all', label: 'Semua' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'ready_for_batch', label: 'Ready' },
-  { value: 'batched', label: 'Batched' },
-  { value: 'published_product', label: 'Published' },
-  { value: 'validated', label: 'Valid' },
-  { value: 'standalone', label: 'Solo' },
+  { value: 'draft', label: 'Draf' },
+  { value: 'ready_for_batch', label: 'Siap batch' },
+  { value: 'batched', label: 'Sudah batch' },
+  { value: 'published_product', label: 'Jadi produk' },
+  { value: 'validated', label: 'Divalidasi' },
+  { value: 'standalone', label: 'Mandiri' },
 ];
 
 const MobileFormulasPage = () => {
@@ -190,10 +190,10 @@ const MobileFormulasPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Formula Mobile - Solivagant</title></Helmet>
+      <Helmet><title>Formula - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar
-          title="Formulas"
+          title="Formula"
           action={<Button type="button" size="icon" onClick={() => navigate('/mobile/formulas/new')} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl" aria-label="Buat formula"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
@@ -201,7 +201,7 @@ const MobileFormulasPage = () => {
           <MobileFilterChips options={statusOptions} value={status} onChange={setStatus} />
           <Button type="button" variant="outline" onClick={() => setImportOpen(true)} className="mobile-interactive mobile-pressable mt-2 h-11 w-full rounded-2xl bg-white">
             <FileUp className="mr-2 h-4 w-4" />
-            Import PDF formula
+            Impor formula dari PDF
           </Button>
         </div>
         {loading ? <MobileLoadingSkeleton count={4} title="Memuat formula..." subtitle="Menyiapkan ringkasan workbook, validasi, dan kesiapan batch." /> : loadError ? (
@@ -216,7 +216,7 @@ const MobileFormulasPage = () => {
           <MobileEmptyState
             icon={Beaker}
             title="Belum ada formula"
-            description="Buat formula manual atau import PDF workbook untuk mulai costing batch, validasi, dan preview mobile."
+            description="Buat formula manual atau impor PDF workbook untuk mulai menghitung biaya batch, validasi, dan pratinjau di HP."
             action="Formula baru"
             onAction={() => navigate('/mobile/formulas/new')}
           />
@@ -224,7 +224,7 @@ const MobileFormulasPage = () => {
           <MobileEmptyState
             title="Formula tidak ditemukan"
             description="Tidak ada formula yang cocok dengan pencarian dan status saat ini."
-            action="Reset filter"
+            action="Hapus saringan"
             onAction={() => {
               setQuery('');
               setStatus('all');
@@ -253,14 +253,14 @@ const MobileFormulasPage = () => {
       </main>
       <DeleteConfirmationDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)} itemName={deleteTarget?.name} onConfirm={handleDelete} loading={deleting} />
       {importOpen ? (
-        <Suspense fallback={<div className="p-4 text-sm text-[#6b7280]">Memuat import PDF...</div>}>
+        <Suspense fallback={<div className="p-4 text-sm text-[#6b7280]">Memuat impor PDF...</div>}>
           <ImportFormulaPdfModal
             open={importOpen}
             onOpenChange={setImportOpen}
             onSuccess={(createdFormula) => {
               setImportOpen(false);
               triggerMobileHaptic('success');
-              toast.success('Formula diimport');
+              toast.success('Formula diimpor');
               navigate(createdFormula?.id ? `/mobile/formulas/${createdFormula.id}` : '/mobile/formulas');
             }}
           />

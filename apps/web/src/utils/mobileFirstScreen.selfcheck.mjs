@@ -53,10 +53,10 @@ assert.ok(recordVisit(throwing, throwing) < INSTALL_PROMPT_MIN_VISITS, 'and not 
 const app = read('App.jsx');
 assert.match(app, /if \(isMobileCommercePath\(pathname\)\) \{\s*return <StorefrontSplash \/>;/, 'storefront paths must fall back to the splash');
 assert.ok(app.indexOf('isMobileCommercePath(pathname)') < app.indexOf("pathname === '/mobile' || pathname.startsWith('/mobile/')"), 'the storefront check must come BEFORE the generic mobile one, or it never runs');
-assert.match(app, /title="Loading workspace\.\.\."/, 'the studio keeps its own loading state');
+assert.match(app, /title="Memuat Studio\.\.\."/, 'the studio keeps its own loading state');
 
 const splash = read('components', 'mobile-ui', 'StorefrontSplash.jsx');
-assert.doesNotMatch(splash, /workspace|initialization|Menyiapkan/i, 'no studio jargon on the customer splash');
+assert.doesNotMatch(splash, /workspace|initialization|Menyiapkan|Memuat Studio/i, 'no studio jargon on the customer splash');
 assert.match(splash, /SOLIVAGANT/, 'the wordmark is the whole screen');
 assert.match(splash, /aria-label="Memuat Solivagant"/, 'and a screen reader is told what it is');
 

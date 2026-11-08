@@ -84,9 +84,9 @@ export const buildGuidanceLimitAdvisories = ({
     advisories.push({
       type: 'typical',
       severity: 'info',
-      label: 'Above typical use level',
+      label: 'Di atas kadar pakai umum',
       limit: typicalLimit,
-      message: `Effective concentration ${normalizedEffectivePercentage.toFixed(2)}% is above the typical reference level of ${typicalLimit.toFixed(2)}%.`,
+      message: `Konsentrasi efektif ${normalizedEffectivePercentage.toFixed(2)}% di atas kadar pakai umum acuan ${typicalLimit.toFixed(2)}%.`,
     });
   }
 
@@ -94,9 +94,9 @@ export const buildGuidanceLimitAdvisories = ({
     advisories.push({
       type: 'max',
       severity: 'warning',
-      label: 'Above max use level',
+      label: 'Di atas kadar pakai maksimum',
       limit: maxLimit,
-      message: `Effective concentration ${normalizedEffectivePercentage.toFixed(2)}% is above the suggested max reference level of ${maxLimit.toFixed(2)}%.`,
+      message: `Konsentrasi efektif ${normalizedEffectivePercentage.toFixed(2)}% di atas kadar pakai maksimum acuan yang disarankan ${maxLimit.toFixed(2)}%.`,
     });
   }
 
@@ -104,9 +104,9 @@ export const buildGuidanceLimitAdvisories = ({
     advisories.push({
       type: 'ifra',
       severity: 'danger',
-      label: 'Above IFRA reference limit',
+      label: 'Di atas batas IFRA acuan',
       limit: ifraLimit,
-      message: `Effective concentration ${normalizedEffectivePercentage.toFixed(2)}% is above the reference IFRA limit of ${ifraLimit.toFixed(2)}%.`,
+      message: `Konsentrasi efektif ${normalizedEffectivePercentage.toFixed(2)}% di atas batas IFRA acuan ${ifraLimit.toFixed(2)}%.`,
     });
   }
 

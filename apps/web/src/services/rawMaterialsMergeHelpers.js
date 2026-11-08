@@ -43,7 +43,7 @@ export const validateMergeableRawMaterials = (masterRecord, duplicateRecord, hel
   const { normalizeLookupValue, normalizeCasValue, invalidCasMatchValues } = helpers;
 
   if (!masterRecord || !duplicateRecord) {
-    throw new Error('Raw material merge requires both a master and a duplicate row.');
+    throw new Error('Penggabungan bahan baku butuh satu baris utama dan satu baris duplikat.');
   }
 
   // Stock is summed on merge, so mixing units would silently reinterpret the absorbed quantity —
@@ -51,43 +51,43 @@ export const validateMergeableRawMaterials = (masterRecord, duplicateRecord, hel
   const masterUnit = String(masterRecord.unit || '').trim().toLowerCase();
   const duplicateUnit = String(duplicateRecord.unit || '').trim().toLowerCase();
   if (masterUnit && duplicateUnit && masterUnit !== duplicateUnit) {
-    throw new Error(`Cannot merge rows measured in different units (${masterUnit} vs ${duplicateUnit}).`);
+    throw new Error(`Tidak bisa menggabungkan baris dengan satuan berbeda (${masterUnit} vs ${duplicateUnit}).`);
   }
 
   if (masterRecord.id === duplicateRecord.id) {
-    throw new Error('Master and duplicate raw material cannot be the same row.');
+    throw new Error('Bahan baku utama dan duplikat tidak boleh baris yang sama.');
   }
 
   if (masterRecord.user_id !== duplicateRecord.user_id) {
-    throw new Error('Cannot merge raw materials from different users.');
+    throw new Error('Tidak bisa menggabungkan bahan baku milik pengguna berbeda.');
   }
 
   if (masterRecord.type !== duplicateRecord.type) {
-    throw new Error('Cannot merge rows with different raw material types.');
+    throw new Error('Tidak bisa menggabungkan baris dengan jenis bahan baku berbeda.');
   }
 
   if (Boolean(masterRecord.is_diluted) !== Boolean(duplicateRecord.is_diluted)) {
-    throw new Error('Cannot merge diluted and non-diluted raw materials automatically.');
+    throw new Error('Bahan baku yang diencerkan dan yang murni tidak bisa digabung otomatis.');
   }
 
   if (String(masterRecord.dilution_solvent_id || '') === duplicateRecord.id || String(duplicateRecord.dilution_solvent_id || '') === masterRecord.id) {
-    throw new Error('Cannot merge rows that reference each other as dilution solvent. Review manually first.');
+    throw new Error('Tidak bisa menggabungkan baris yang saling menjadi pelarut pengencer. Periksa manual dulu.');
   }
 
   if (masterRecord.is_diluted) {
     if (String(masterRecord.dilution_solvent_id || '') !== String(duplicateRecord.dilution_solvent_id || '')) {
-      throw new Error('Cannot merge diluted raw materials with different solvent links automatically.');
+      throw new Error('Bahan baku encer dengan pelarut berbeda tidak bisa digabung otomatis.');
     }
 
     if (Number(masterRecord.dilution_percentage || 0) !== Number(duplicateRecord.dilution_percentage || 0)) {
-      throw new Error('Cannot merge diluted raw materials with different dilution percentages automatically.');
+      throw new Error('Bahan baku encer dengan persentase pengenceran berbeda tidak bisa digabung otomatis.');
     }
   }
 
   const masterWorkbookCode = normalizeLookupValue(masterRecord.workbook_code);
   const duplicateWorkbookCode = normalizeLookupValue(duplicateRecord.workbook_code);
   if (masterWorkbookCode && duplicateWorkbookCode && masterWorkbookCode !== duplicateWorkbookCode) {
-    throw new Error('Cannot merge rows that have different workbook codes.');
+    throw new Error('Tidak bisa menggabungkan baris dengan kode workbook berbeda.');
   }
 
   const masterCas = normalizeCasValue(masterRecord.cas_number);
@@ -99,7 +99,7 @@ export const validateMergeableRawMaterials = (masterRecord, duplicateRecord, hel
     && !invalidCasMatchValues.has(duplicateCas)
     && masterCas !== duplicateCas
   ) {
-    throw new Error('Cannot merge rows that have different CAS numbers.');
+    throw new Error('Tidak bisa menggabungkan baris dengan nomor CAS berbeda.');
   }
 };
 

@@ -30,7 +30,7 @@ const FormulaCostBlindSpotNotice = ({ readiness, className = '' }) => {
           </ul>
           {readiness.unpricedCount ? (
             <p className="mt-2 text-xs font-semibold leading-relaxed text-amber-800">
-              Bahan tanpa harga dihitung Rp 0, jadi COGS dan harga jual di halaman ini lebih rendah dari yang sebenarnya.
+              Bahan tanpa harga dihitung Rp 0, jadi HPP dan harga jual di halaman ini lebih rendah dari yang sebenarnya.
             </p>
           ) : null}
         </div>

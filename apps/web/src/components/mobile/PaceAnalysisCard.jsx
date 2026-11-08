@@ -10,7 +10,7 @@ const PaceAnalysisCard = ({ score = null, warnings = [], recommendations = [] })
   // badge, so a score of 72 read "Healthy" on the laptop and "Review" on the phone — one number, two
   // verdicts, with the phone the pessimistic one.
   const band = hasScore ? getScoreBand(numericScore) : null;
-  const statusLabel = band ? band.label : 'No score';
+  const statusLabel = band ? band.label : 'Belum ada skor';
 
   return (
     <div className="mobile-soft-card p-4">
@@ -28,12 +28,12 @@ const PaceAnalysisCard = ({ score = null, warnings = [], recommendations = [] })
         {warnings.length ? warnings.slice(0, 3).map((warning) => (
           <div key={warning} className="rounded-xl border border-amber-200 bg-white/80 p-2 text-xs font-medium text-[#6b4e16]">{warning}</div>
         )) : (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-xs font-medium text-emerald-800">No active warnings.</div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-xs font-medium text-emerald-800">Tidak ada peringatan aktif.</div>
         )}
         {recommendations.length ? recommendations.slice(0, 2).map((item) => (
           <div key={item} className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-xs font-medium text-emerald-800">{item}</div>
         )) : (
-          <div className="rounded-xl border border-slate-200 bg-white/80 p-2 text-xs font-medium text-[#6b7280]">No recommendations.</div>
+          <div className="rounded-xl border border-slate-200 bg-white/80 p-2 text-xs font-medium text-[#6b7280]">Belum ada rekomendasi.</div>
         )}
       </div>
     </div>

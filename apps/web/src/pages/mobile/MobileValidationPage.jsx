@@ -71,8 +71,8 @@ const MobileValidationPage = () => {
         console.warn('Validation formula names are delayed:', error);
       }
     } catch (error) {
-      toast.error('Workspace validasi belum bisa dimuat');
-      setLoadError(error.message || 'Workspace validasi belum bisa dimuat saat ini.');
+      toast.error('Ruang kerja validasi belum bisa dimuat');
+      setLoadError(error.message || 'Ruang kerja validasi belum bisa dimuat saat ini.');
       setLoading(false);
     } finally {
       setLoading(false);
@@ -116,11 +116,11 @@ const MobileValidationPage = () => {
     try {
       await deleteValidationLog(deleteTarget.id);
       triggerMobileHaptic('success');
-      toast.success('Catatan validasi dihapus');
+      toast.success('Catatan uji dihapus');
       setDeleteTarget(null);
       await loadWorkspace();
     } catch (error) {
-      toast.error(error.message || 'Catatan validasi belum bisa dihapus');
+      toast.error(error.message || 'Catatan uji belum bisa dihapus');
     } finally {
       setDeleting(false);
     }
@@ -134,7 +134,7 @@ const MobileValidationPage = () => {
           title="Validasi"
           subtitle="Tes dan catatan revisi"
           action={(
-            <Button type="button" size="icon" aria-label="Tambah log validasi" onClick={openNewLog} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl">
+            <Button type="button" size="icon" aria-label="Tambah catatan uji" onClick={openNewLog} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl">
               <Plus className="h-5 w-5" />
             </Button>
           )}
@@ -156,7 +156,7 @@ const MobileValidationPage = () => {
           </div>
         </section>
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />
-        {loading ? <MobileLoadingSkeleton count={4} title="Memuat validasi..." subtitle="Menyiapkan antrean aksi, approval, dan catatan terbaru." /> : loadError ? (
+        {loading ? <MobileLoadingSkeleton count={4} title="Memuat validasi..." subtitle="Menyiapkan antrean aksi, persetujuan, dan catatan terbaru." /> : loadError ? (
           <MobileStatePanel
             tone="error"
             title="Validasi belum bisa dimuat"
@@ -184,12 +184,12 @@ const MobileValidationPage = () => {
         ) : (
           <MobileEmptyState
             icon={NotebookPen}
-            title={tab === 'pending' ? 'Tidak ada item yang perlu aksi' : tab === 'completed' ? 'Belum ada validasi disetujui' : 'Belum ada catatan validasi'}
+            title={tab === 'pending' ? 'Tidak ada item yang perlu aksi' : tab === 'completed' ? 'Belum ada validasi disetujui' : 'Belum ada catatan uji'}
             description={tab === 'pending'
-              ? 'Jika test perlu follow-up, itemnya akan muncul di sini untuk review cepat.'
+              ? 'Jika tes perlu ditindaklanjuti, itemnya muncul di sini agar cepat ditinjau.'
               : tab === 'completed'
-                ? 'Hasil validasi yang disetujui akan terkumpul di sini setelah review.'
-                : 'Catat blotter, skin, stability, atau revisi saat formula siap direview.'}
+                ? 'Hasil validasi yang disetujui terkumpul di sini setelah ditinjau.'
+                : 'Catat tes blotter, kulit, stabilitas, atau revisi saat formula siap ditinjau.'}
             action={tab === 'in_progress' ? 'Validasi baru' : 'Lihat catatan'}
             onAction={tab === 'in_progress' ? openNewLog : () => setTab('in_progress')}
           />
@@ -198,7 +198,7 @@ const MobileValidationPage = () => {
       <DeleteConfirmationDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        itemName={deleteTarget ? formulasById.get(deleteTarget.formula_id)?.name || 'Catatan validasi' : ''}
+        itemName={deleteTarget ? formulasById.get(deleteTarget.formula_id)?.name || 'Catatan uji' : ''}
         onConfirm={handleDeleteLog}
         loading={deleting}
       />

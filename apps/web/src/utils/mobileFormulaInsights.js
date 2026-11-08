@@ -1,6 +1,14 @@
 import { getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 
 const ODOR_KEYS = ['floral', 'citrus', 'woody', 'musky', 'sweet', 'fresh', 'spicy', 'amber'];
+// The keys are matched against material text (English); these are only what the chips say.
+const ODOR_LABELS = {
+  floral: 'Floral', citrus: 'Sitrus', woody: 'Kayu', musky: 'Musk',
+  sweet: 'Manis', fresh: 'Segar', spicy: 'Rempah', amber: 'Amber',
+};
+const PHASE_LABELS = { top: 'atas', middle: 'tengah', base: 'dasar' };
+// Medium values are stored as written ('DPG', 'Alcohol', 'TEC', 'Other'); only their names are translated.
+const MEDIUM_LABELS = { alcohol: 'Alkohol', other: 'Lainnya' };
 
 const numberOrZero = (value) => {
   const number = Number(value);
@@ -19,33 +27,34 @@ const getDilutionMedium = (item) => item.dilution_medium || item.medium || item.
 
 export const getDilutionLabel = (item = {}) => {
   const concentration = getItemConcentration(item);
-  const medium = titleCase(getDilutionMedium(item));
+  const rawMedium = getDilutionMedium(item);
+  const medium = MEDIUM_LABELS[String(rawMedium).toLowerCase()] || titleCase(rawMedium);
 
   if (concentration >= 99.99 || (item.dilution_type || 'neat') === 'neat') {
-    return 'Neat';
+    return 'Murni';
   }
 
   if (!concentration) {
-    return 'Set dilution';
+    return 'Atur pengenceran';
   }
 
   return `${Number(concentration.toFixed(2)).toString()}% ${medium}`;
 };
 
 export const getImpactLabel = (score = null) => {
-  if (!Number.isFinite(Number(score))) return 'No data';
-  if (score >= 75) return 'High';
-  if (score >= 45) return 'Medium';
-  if (score > 0) return 'Low';
-  return 'None';
+  if (!Number.isFinite(Number(score))) return 'Belum ada data';
+  if (score >= 75) return 'Tinggi';
+  if (score >= 45) return 'Sedang';
+  if (score > 0) return 'Rendah';
+  return 'Tidak ada';
 };
 
 export const getLifetimeLabel = (score = null) => {
-  if (!Number.isFinite(Number(score))) return 'No data';
-  if (score >= 70) return 'Long';
-  if (score >= 40) return 'Medium';
-  if (score > 0) return 'Short';
-  return 'Unknown';
+  if (!Number.isFinite(Number(score))) return 'Belum ada data';
+  if (score >= 70) return 'Lama';
+  if (score >= 40) return 'Sedang';
+  if (score > 0) return 'Singkat';
+  return 'Tidak diketahui';
 };
 
 const inferOdorProfile = (material = {}) => {
@@ -90,17 +99,17 @@ export const enrichCompositionItems = (items = [], totalGrams = 0, materialsById
       || lifetimeValue !== null
     );
     const warnings = [
-      concentrationPercent <= 0 ? 'Missing concentration' : null,
-      (item.dilution_type || 'neat') !== 'neat' && !numberOrZero(item.concentration_percent || item.dilution_percent) ? 'Dilution needs %' : null,
-      actualActivePercent > 25 ? 'Over active' : null,
-      !hasGuidanceData ? 'Missing workbook guidance' : null,
+      concentrationPercent <= 0 ? 'Konsentrasi belum diisi' : null,
+      (item.dilution_type || 'neat') !== 'neat' && !numberOrZero(item.concentration_percent || item.dilution_percent) ? 'Pengenceran butuh %' : null,
+      actualActivePercent > 25 ? 'Kadar aktif berlebih' : null,
+      !hasGuidanceData ? 'Panduan workbook belum ada' : null,
     ].filter(Boolean);
 
     return {
       ...item,
       material,
-      materialName: material.name || item.materialName || 'Material',
-      category: material.category || item.category || 'Uncategorized',
+      materialName: material.name || item.materialName || 'Bahan',
+      category: material.category || item.category || 'Tanpa kategori',
       role: item.role || resolved.reference_abc_primary_family || item.item_type || 'modifier',
       gram,
       formulaPercent,
@@ -148,30 +157,31 @@ export const buildFormulaInsight = (compositionItems = [], guidanceSources = [])
   );
   const odorProfileGraph = ODOR_KEYS.map((key) => ({
     key,
-    label: key[0].toUpperCase() + key.slice(1),
+    label: ODOR_LABELS[key],
     value: clamp(totalActualActive > 0
       ? (compositionItems.reduce((sum, item) => sum + (item.odorProfile?.[key] || 0) * (item.actualActivePercent || 0), 0) / totalActualActive) * 100
       : 0),
   })).sort((a, b) => b.value - a.value);
   const dominantNotes = odorProfileGraph.filter((entry) => entry.value > 0).slice(0, 3);
   const itemWarnings = compositionItems.flatMap((item) => item.warnings.map((warning) => `${item.materialName}: ${warning}`));
-  const totalWarning = Math.abs(totalPercent - 100) > 0.25 ? [`Formula total ${totalPercent.toFixed(1)}%`] : [];
+  const totalWarning = Math.abs(totalPercent - 100) > 0.25 ? [`Total formula ${totalPercent.toFixed(1)}%`] : [];
   const warnings = [...totalWarning, ...itemWarnings];
   const dominantTmb = Object.entries(topMiddleBaseDistribution).sort((a, b) => b[1] - a[1])[0];
-  const balanceStatus = !compositionItems.length
-    ? 'Needs adjustment'
-    : warnings.length
-      ? 'Needs adjustment'
-      : dominantTmb?.[1] > 55
-        ? `${titleCase(dominantTmb[0])}-heavy`
-        : 'Balanced';
-  const recommendation = balanceStatus === 'Balanced'
-    ? 'Distribution is ready for validation.'
-    : balanceStatus.includes('Base')
-      ? 'Reduce heavy base materials or increase fresh top notes.'
-      : balanceStatus.includes('Top')
-        ? 'Add middle or base support for better persistence.'
-        : 'Review dilution, missing metadata, or unbalanced material roles.';
+  // The recommendation keys off the phase, not the label it is shown as.
+  const needsAdjustment = !compositionItems.length || warnings.length > 0;
+  const heavyPhase = !needsAdjustment && dominantTmb?.[1] > 55 ? dominantTmb[0] : null;
+  const balanceStatus = needsAdjustment
+    ? 'Perlu penyesuaian'
+    : heavyPhase
+      ? `Berat di nada ${PHASE_LABELS[heavyPhase]}`
+      : 'Seimbang';
+  const recommendation = !needsAdjustment && !heavyPhase
+    ? 'Distribusi siap divalidasi.'
+    : heavyPhase === 'base'
+      ? 'Kurangi bahan nada dasar yang berat, atau tambah nada atas yang segar.'
+      : heavyPhase === 'top'
+        ? 'Tambah penopang nada tengah atau dasar agar lebih tahan lama.'
+        : 'Periksa pengenceran, metadata yang kosong, atau peran bahan yang tidak seimbang.';
 
   return {
     totalPercent,
@@ -191,7 +201,7 @@ export const buildFormulaInsight = (compositionItems = [], guidanceSources = [])
     dominantNotes,
     warnings,
     documentGroup: {
-      status: guidanceSources.length ? 'Imported' : 'Not connected',
+      status: guidanceSources.length ? 'Terimpor' : 'Belum terhubung',
       count: guidanceSources.length,
       updatedAt: guidanceSources[0]?.updatedAt,
     },
@@ -205,6 +215,6 @@ export const createGuidanceSource = ({ url, sourceType, notes, imported }) => ({
   sourceType,
   notes,
   imported,
-  status: 'Imported',
+  status: 'Terimpor',
   updatedAt: new Date().toISOString(),
 });

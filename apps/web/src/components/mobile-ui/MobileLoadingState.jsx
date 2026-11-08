@@ -3,8 +3,8 @@ import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 
 const MobileLoadingState = ({
   eyebrow = 'Solivagant',
-  title = 'Loading...',
-  subtitle = 'Preparing your mobile workspace.',
+  title = 'Memuat...',
+  subtitle = 'Menyiapkan ruang kerja Studio.',
   className = '',
 }) => (
   <div className={`mobile-page mobile-centered-state ${className}`}>

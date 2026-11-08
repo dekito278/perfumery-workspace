@@ -90,7 +90,7 @@ export const useFormulaDetailPage = (id) => {
       });
       setItems(enrichedItems);
     } catch {
-      toast.error('Failed to load formula details');
+      toast.error('Gagal memuat detail formula');
       navigate('/formulas');
     } finally {
       setLoading(false);
@@ -103,7 +103,7 @@ export const useFormulaDetailPage = (id) => {
       const logs = await getValidationLogs({ formulaId: id });
       setValidationLogs(logs);
     } catch {
-      toast.error('Failed to load validation logs');
+      toast.error('Gagal memuat catatan uji');
     } finally {
       setValidationLoading(false);
     }
@@ -165,7 +165,7 @@ export const useFormulaDetailPage = (id) => {
       const { printWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
       printWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }));
     } catch (error) {
-      toast.error(error.message || 'Failed to open formula PDF');
+      toast.error(error.message || 'Gagal membuka PDF formula');
     }
   };
 
@@ -174,15 +174,15 @@ export const useFormulaDetailPage = (id) => {
       const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
       const filename = `${formula?.code || 'formula'}_${String(formula?.name || 'formula').replace(/\s+/g, '_')}.pdf`;
       exportWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }), filename);
-      toast.success('Formula PDF exported');
+      toast.success('PDF formula diekspor');
     } catch (error) {
-      toast.error(error.message || 'Failed to export formula PDF');
+      toast.error(error.message || 'Gagal mengekspor PDF formula');
     }
   };
 
   const handleCreatePacedRevision = async (recommendations = [], priorityMode = 'balance') => {
     if (!formula || !items.length || !recommendations.length) {
-      toast.error('PACE revision needs at least one actionable recommendation');
+      toast.error('Revisi PACE butuh minimal satu rekomendasi yang bisa diterapkan');
       return;
     }
 
@@ -209,11 +209,11 @@ export const useFormulaDetailPage = (id) => {
         revision_note: `Applied ${recommendations.length} PACE adjustment${recommendations.length === 1 ? '' : 's'} (${priorityModeMeta.label}).`,
       }, pacedItems);
 
-      toast.success('PACED revision created');
+      toast.success('Revisi PACED dibuat');
       navigate(`/formulas/${pacedFormula.id}`);
     } catch (error) {
       console.error('Failed to create PACED revision:', error);
-      toast.error(error.message || 'Failed to create PACED revision');
+      toast.error(error.message || 'Gagal membuat revisi PACED');
     } finally {
       setIsCreatingPacedRevision(false);
     }

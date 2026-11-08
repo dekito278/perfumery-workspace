@@ -58,7 +58,7 @@ const getNextAvailableFormulaCode = async (userId, preferredCode) => {
     .eq('user_id', userId);
 
   if (error) {
-    throw new Error(error.message || 'Failed to resolve duplicate formula code');
+    throw new Error(error.message || 'Gagal menentukan kode formula pengganti (kodenya sudah dipakai)');
   }
 
   const existingCodes = new Set((data || []).map((item) => String(item.code || '').trim().toLowerCase()));
@@ -93,7 +93,7 @@ export const getFormulas = async () => {
     .order('created_at', { ascending: false });
 
   if (error) {
-    throw new Error('Failed to fetch formulas');
+    throw new Error('Gagal mengambil daftar formula');
   }
 
   return (data || []).map(toAppRecord);
@@ -108,7 +108,7 @@ export const getFormulaById = async (id) => {
 
   if (error) {
     console.error('Error fetching formula:', error);
-    throw new Error('Failed to fetch formula');
+    throw new Error('Gagal mengambil formula');
   }
 
   return toAppRecord(data);
@@ -124,7 +124,7 @@ export const getFormulaItems = async (formulaId) => {
 
   if (error) {
     console.error('Error fetching formula items:', error);
-    throw new Error('Failed to fetch formula items');
+    throw new Error('Gagal mengambil komposisi formula');
   }
 
   return (data || []).map(toAppRecord);
@@ -146,7 +146,7 @@ export const getFormulaItemsByFormulaIds = async (formulaIds = []) => {
 
   if (error) {
     console.error('Error fetching formula items by formula ids:', error);
-    throw new Error(error.message || 'Failed to fetch formula items');
+    throw new Error(error.message || 'Gagal mengambil komposisi formula');
   }
 
   return (data || []).map(toAppRecord);
@@ -187,7 +187,7 @@ export const createFormula = async (formulaData, items) => {
     }
 
     console.error('Error creating formula:', error);
-    throw new Error(error.message || 'Failed to create formula');
+    throw new Error(error.message || 'Gagal membuat formula');
   }
 
   if (items?.length) {
@@ -207,7 +207,7 @@ export const createFormula = async (formulaData, items) => {
       if (rollbackError || !(rolledBack || []).length) {
         console.error('Failed to roll back the empty formula row:', rollbackError || 'no row was removed');
       }
-      throw new Error(itemsError.message || 'Failed to create formula items');
+      throw new Error(itemsError.message || 'Gagal menyimpan komposisi formula');
     }
   }
 
@@ -224,7 +224,7 @@ export const updateFormula = async (formulaId, formulaData, items) => {
 
   if (formulaError) {
     console.error('Error updating formula:', formulaError);
-    throw new Error(formulaError.message || 'Failed to update formula');
+    throw new Error(formulaError.message || 'Gagal memperbarui formula');
   }
 
   // Snapshot existing items so a failed re-insert can be rolled back — Supabase JS has no
@@ -239,7 +239,7 @@ export const updateFormula = async (formulaId, formulaData, items) => {
 
   if (previousItemsError) {
     console.error('Error reading the formula composition before replacing it:', previousItemsError);
-    throw new Error(previousItemsError.message || 'Failed to read the formula composition');
+    throw new Error(previousItemsError.message || 'Gagal membaca komposisi formula');
   }
 
   // .select() on the delete, for the reason orderWrites.selfcheck.mjs spells out about the orders
@@ -254,7 +254,7 @@ export const updateFormula = async (formulaId, formulaData, items) => {
 
   if (deleteError) {
     console.error('Error replacing formula items:', deleteError);
-    throw new Error(deleteError.message || 'Failed to replace formula items');
+    throw new Error(deleteError.message || 'Gagal mengganti komposisi formula');
   }
 
   if (previousItems.length && !(deletedItems || []).length) {
@@ -273,7 +273,7 @@ export const updateFormula = async (formulaId, formulaData, items) => {
       if (previousItems?.length) {
         await supabase.from('formula_items').insert(previousItems);
       }
-      throw new Error(itemsError.message || 'Failed to update formula items');
+      throw new Error(itemsError.message || 'Gagal memperbarui komposisi formula');
     }
   }
 
@@ -290,7 +290,7 @@ export const updateFormulaStatus = async (formulaId, status) => {
 
   if (error) {
     console.error('Error updating formula status:', error);
-    throw new Error(error.message || 'Failed to update formula status');
+    throw new Error(error.message || 'Gagal memperbarui status formula');
   }
 
   return toAppRecord(data);
@@ -310,7 +310,7 @@ export const deleteFormula = async (formulaId) => {
 
   if (error) {
     console.error('Error deleting formula:', error);
-    throw new Error('Failed to delete formula');
+    throw new Error('Gagal menghapus formula');
   }
 };
 
@@ -334,7 +334,7 @@ export const duplicateFormula = async (formulaId) => {
 
   if (duplicateError) {
     console.error('Error duplicating formula:', duplicateError);
-    throw new Error('Failed to duplicate formula');
+    throw new Error('Gagal menggandakan formula');
   }
 
   if (originalItems.length) {
@@ -351,7 +351,7 @@ export const duplicateFormula = async (formulaId) => {
       if (rollbackError || !(rolledBack || []).length) {
         console.error('Failed to roll back the empty duplicate formula row:', rollbackError || 'no row was removed');
       }
-      throw new Error('Failed to duplicate formula');
+      throw new Error('Gagal menggandakan formula');
     }
   }
 

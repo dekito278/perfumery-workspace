@@ -152,7 +152,7 @@ const MobileCreateFormulaPage = () => {
           setItems(seededItems);
           setSeededCount(seededItems.length);
           if (seededItems.length) {
-            toast.success(`${seededItems.length} wizard materials loaded`);
+            toast.success(`${seededItems.length} bahan dari wizard dimuat`);
           }
         }
         setLoadingData(false);
@@ -162,7 +162,7 @@ const MobileCreateFormulaPage = () => {
           setRawMaterials(enrichedRows);
         }
       } catch (error) {
-        toast.error('Failed to load materials');
+        toast.error('Gagal memuat bahan baku');
       } finally {
         if (active) setLoadingData(false);
       }
@@ -180,7 +180,7 @@ const MobileCreateFormulaPage = () => {
   const removeItem = (rowKey) => setItems((current) => current.filter((item) => item.row_key !== rowKey));
   const addMaterial = (material) => {
     if (itemsRef.current.some((item) => item.item_id === material.id)) {
-      toast.info('Material already in composition');
+      toast.info('Bahan sudah ada di komposisi');
       setFocusMaterialId(material.id);
       return false;
     }
@@ -189,7 +189,7 @@ const MobileCreateFormulaPage = () => {
     itemsRef.current = nextItems;
     setItems(nextItems);
     setFocusMaterialId(material.id);
-    toast.success('Material added to composition');
+    toast.success('Bahan ditambahkan ke komposisi');
     return true;
   };
 
@@ -222,7 +222,7 @@ const MobileCreateFormulaPage = () => {
       }
       setQuickCreateIntent(null);
     } catch (error) {
-      toast.error(error.message || 'Failed to add raw material');
+      toast.error(error.message || 'Gagal menambah bahan baku');
     } finally {
       setQuickCreateLoading(false);
     }
@@ -252,17 +252,17 @@ const MobileCreateFormulaPage = () => {
 
   const validate = () => {
     if (!name.trim()) {
-      toast.error('Formula name is required');
+      toast.error('Nama formula wajib diisi');
       scrollToMetadata();
       return false;
     }
     if (!code.trim()) {
-      toast.error('Formula code is required');
+      toast.error('Kode formula wajib diisi');
       scrollToMetadata();
       return false;
     }
     if (!items.length || totalGrams <= 0) {
-      toast.error('Add composition materials first');
+      toast.error('Tambah bahan ke komposisi dulu');
       return false;
     }
     return true;
@@ -313,16 +313,16 @@ const MobileCreateFormulaPage = () => {
       toast.success('Formula dibuat');
       navigate(`/mobile/formulas/${created.id}`);
     } catch (error) {
-      toast.error(error.message || 'Failed to create formula');
+      toast.error(error.message || 'Gagal membuat formula');
     }
   };
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>New Mobile Formula - Solivagant</title></Helmet>
+      <Helmet><title>Formula baru - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title={name || 'New Formula'} subtitle={code || undefined} onBack={handleBack} action={<MobileStatusBadge status={status} />} />
-        {loadingData ? <MobileLoadingState eyebrow="Formula composer" title="Loading composer..." subtitle="Preparing material guidance." className="min-h-[calc(100dvh-260px)]" /> : (
+        <MobileTopBar title={name || 'Formula baru'} subtitle={code || undefined} onBack={handleBack} action={<MobileStatusBadge status={status} />} />
+        {loadingData ? <MobileLoadingState eyebrow="Komposer formula" title="Memuat komposer..." subtitle="Menyiapkan panduan bahan." className="min-h-[calc(100dvh-260px)]" /> : (
           <>
             {orderContext ? (
               <section className="mobile-soft-card p-3">
@@ -331,10 +331,10 @@ const MobileCreateFormulaPage = () => {
                     <ClipboardList className="h-5 w-5" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Order handoff</div>
+                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Dari order</div>
                     <h2 className="mt-0.5 truncate text-sm font-bold text-[#1f2937]">{orderContext.orderNumber}</h2>
                     <p className="mt-1 mobile-line-clamp-2 text-[11px] font-semibold text-[#6b7280]">
-                      Formula will be linked back to {orderContext.customerName || 'this customer'} after create.
+                      Setelah dibuat, formula ditautkan ke order milik {orderContext.customerName || 'pembeli ini'}.
                     </p>
                   </div>
                 </div>
@@ -344,46 +344,46 @@ const MobileCreateFormulaPage = () => {
               <section className="mobile-card p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[10px] font-bold uppercase text-emerald-700">Wizard handoff</div>
-                    <div className="mt-0.5 text-sm font-bold text-[#1f2937]">{seededCount} materials ready</div>
+                    <div className="text-[10px] font-bold uppercase text-emerald-700">Dari wizard</div>
+                    <div className="mt-0.5 text-sm font-bold text-[#1f2937]">{seededCount} bahan siap</div>
                   </div>
                   <MobileStatusBadge status="loaded" />
                 </div>
                 <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
-                  Material pilihan sudah masuk composition board. Atur gram, dilution, lalu simpan formula.
+                  Bahan pilihan sudah masuk papan komposisi. Atur gram dan pengenceran, lalu simpan formula.
                 </p>
               </section>
             ) : null}
             <section ref={metadataRef} className="mobile-card scroll-mt-24 p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-bold uppercase text-amber-700">Formula setup</div>
-                  <h2 className="mt-0.5 text-sm font-bold text-[#1f2937]">Metadata utama</h2>
-                  <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Isi identity formula dulu, lalu lanjut susun composition.</p>
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Pengaturan formula</div>
+                  <h2 className="mt-0.5 text-sm font-bold text-[#1f2937]">Data utama</h2>
+                  <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Isi identitas formula dulu, lalu susun komposisinya.</p>
                 </div>
                 <Button type="button" variant="outline" onClick={() => navigate('/mobile/formulas?action=import')} className="h-10 shrink-0 rounded-2xl bg-white text-xs font-bold">
                   <FileUp className="mr-1 h-4 w-4" />
-                  Import
+                  Impor
                 </Button>
               </div>
               <div className="mt-3 grid gap-3">
-                <MobileFormField id="mobile-formula-name" label="Formula name" helper="Nama yang akan terlihat di daftar formula.">
+                <MobileFormField id="mobile-formula-name" label="Nama formula" helper="Nama yang akan terlihat di daftar formula.">
                   <Input id="mobile-formula-name" value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
                 </MobileFormField>
                 <div data-mobile-field className="mobile-form-field space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <Label htmlFor="mobile-formula-code" className="text-xs">Formula code</Label>
-                    <button type="button" onClick={() => setCode(buildFormulaCode(name))} className="text-[11px] font-bold text-amber-700">Generate</button>
+                    <Label htmlFor="mobile-formula-code" className="text-xs">Kode formula</Label>
+                    <button type="button" onClick={() => setCode(buildFormulaCode(name))} className="text-[11px] font-bold text-amber-700">Buat otomatis</button>
                   </div>
                   <Input id="mobile-formula-code" value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
                   <p className="mobile-form-helper text-xs font-medium text-[#6b7280]">Gunakan kode singkat yang mudah dicari.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <MobileFormField id="mobile-formula-version" label="Version" helper="Contoh: v1 atau pilot.">
+                  <MobileFormField id="mobile-formula-version" label="Versi" helper="Contoh: v1 atau pilot.">
                     <Input id="mobile-formula-version" value={version} onChange={(event) => setVersion(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
                   </MobileFormField>
                   <div className="space-y-1">
-                    <Label className="text-xs">Category</Label>
+                    <Label className="text-xs">Kategori</Label>
                     <div className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-xs font-bold text-[#1f2937]">{FORMULA_CATEGORIES.find((option) => option.value === category)?.label || category}</div>
                   </div>
                 </div>
@@ -391,18 +391,18 @@ const MobileCreateFormulaPage = () => {
                   <Label className="text-xs">Status</Label>
                   <MobileSegmentedControl options={FORMULA_STATUSES} value={status} onChange={setStatus} />
                 </div>
-                <MobileFormField id="mobile-formula-notes" label="Notes" helper="Catatan opsional untuk revisi atau arah evaluasi.">
+                <MobileFormField id="mobile-formula-notes" label="Catatan" helper="Catatan opsional untuk revisi atau arah evaluasi.">
                   <Textarea id="mobile-formula-notes" value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-[90px] rounded-xl bg-white text-xs" />
                 </MobileFormField>
               </div>
             </section>
             {!canCreate ? (
               <section className="mobile-card p-3">
-                <div className="text-[10px] font-bold uppercase text-amber-700">Setup checklist</div>
+                <div className="text-[10px] font-bold uppercase text-amber-700">Yang perlu diisi</div>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-center text-[10px] font-bold">
-                  <span className={`rounded-xl border px-2 py-2 ${name.trim() && code.trim() ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Metadata</span>
-                  <span className={`rounded-xl border px-2 py-2 ${items.length ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Materials</span>
-                  <span className={`rounded-xl border px-2 py-2 ${totalGrams > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Grams</span>
+                  <span className={`rounded-xl border px-2 py-2 ${name.trim() && code.trim() ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Data</span>
+                  <span className={`rounded-xl border px-2 py-2 ${items.length ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Bahan</span>
+                  <span className={`rounded-xl border px-2 py-2 ${totalGrams > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Gram</span>
                 </div>
               </section>
             ) : null}
@@ -420,7 +420,7 @@ const MobileCreateFormulaPage = () => {
               needsGuidanceMaterialId={needsGuidanceMaterialId}
               onOpenMetadata={scrollToMetadata}
               onSave={handleSubmit}
-              saveLabel="Create"
+              saveLabel="Buat formula"
               saving={loading}
               saveDisabled={!canCreate}
             />
