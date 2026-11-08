@@ -109,6 +109,18 @@ for (const file of files) {
     `${file.slice(root.length + 1)} still labels an order as needing a waybill`,
   );
 }
+// "Butuh resi" was the word; the shape outlived it. Until 2026-11-08 every card on the phone's
+// fulfillment page carried a yellow "Tanpa resi" chip — a warning tone chosen BY the empty number, lit on
+// every order. A chip may say a waybill is there; nothing may colour its absence as a problem. The two
+// order detail screens already did it right: `trackingNumber ? <StatusChip tone="success"> : null`.
+for (const file of files) {
+  const source = stripComments(readFileSync(file, 'utf8'));
+  const where = file.slice(root.length + 1);
+  assert.doesNotMatch(source, /trackingNumber\s*\?\s*'[^']*'\s*:\s*'(?:warning|danger|destructive)'/,
+    `${where} colours an empty waybill as a warning — that lights on every order this shop has`);
+  assert.doesNotMatch(source, /['">]\s*(?:Tanpa resi|Belum ada resi|Resi kosong|Resi belum)/i,
+    `${where} labels the absence of a waybill, which on this shop is every order`);
+}
 
 // ── 4. The shared task ladder does not ask for one ────────────────────────────────────────────────
 const workflow = stripComments(readFileSync(join(root, 'utils', 'orderWorkflow.js'), 'utf8'));
