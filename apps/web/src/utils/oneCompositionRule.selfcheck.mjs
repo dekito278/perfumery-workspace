@@ -54,18 +54,18 @@ const rows = (...ids) => ids.map((item_id, index) => ({ item_id, row_key: `r${in
 
 assert.deepEqual(duplicateMaterialErrors(rows('vanilla', 'iso-e', 'musk')), {},
   'three different materials is a formula, not a mistake');
-assert.deepEqual(duplicateMaterialErrors(rows('vanilla', 'iso-e', 'vanilla')), { item_r2: 'Duplicate material' },
+assert.deepEqual(duplicateMaterialErrors(rows('vanilla', 'iso-e', 'vanilla')), { item_r2: 'Bahan ganda' },
   'the SECOND mention is the error — flagging the first would ask the perfumer to delete the row they meant');
 assert.deepEqual(duplicateMaterialErrors(rows('a', 'a', 'a')), {
-  item_r1: 'Duplicate material',
-  item_r2: 'Duplicate material',
+  item_r1: 'Bahan ganda',
+  item_r2: 'Bahan ganda',
 }, 'every repeat is flagged, not just the first');
 // Keyed by the row, not its position: this is what audit round 8 fixed, and it only holds while the rows
 // carry their own keys.
 assert.deepEqual(duplicateMaterialErrors([
   { item_id: 'a', row_key: 'kept' },
   { item_id: 'a', row_key: 'added-later' },
-]), { 'item_added-later': 'Duplicate material' }, 'the error names the row, so inserting above it does not move it');
+]), { 'item_added-later': 'Bahan ganda' }, 'the error names the row, so inserting above it does not move it');
 // An empty row is not a duplicate of another empty row — it is a row nobody has filled in yet, and
 // validateFormulaItems is what refuses that.
 assert.deepEqual(duplicateMaterialErrors([{ item_id: '' }, { item_id: null }, { item_id: undefined }]), {},
@@ -77,13 +77,13 @@ for (const nothing of [null, undefined, []]) {
 const desktop = validateComposerFields({
   name: 'x', code: 'x', formulaItems: rows('a', 'a'), activeFormulaItems: rows('a', 'a'),
 });
-assert.equal(desktop.item_r1, 'Duplicate material',
+assert.equal(desktop.item_r1, 'Bahan ganda',
   'validateComposerFields no longer reports duplicates — the desktop composers have stopped asking');
 assert.equal(calls.length, 1,
   'validateComposerFields stopped running the per-row checks; the desktop composers ask nothing else');
 assert.deepEqual(validateComposerFields({
   name: ' ', code: ' ', formulaItems: [], activeFormulaItems: [],
-}).name, 'Formula name is required', 'and a nameless formula is still refused');
+}).name, 'Nama formula wajib diisi', 'and a nameless formula is still refused');
 
 // --- 2. Every screen that submits a composition asks it ---------------------------------------------------
 // Found on disk: a screen that builds composition items for submission is a screen that writes a formula.

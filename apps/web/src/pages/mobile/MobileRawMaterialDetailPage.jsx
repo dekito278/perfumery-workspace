@@ -28,10 +28,14 @@ import {
 } from '@/utils/mobileGuidanceImport.js';
 import { enrichMaterialsWithGuidance, getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 
+// Display labels only: the stored values stay `material`/`solvent` and `active`/`needs_review`/`archived`.
+const TYPE_LABELS = { material: 'Bahan', solvent: 'Pelarut' };
+const DATA_STATUS_LABELS = { active: 'Aktif', needs_review: 'Perlu ditinjau', archived: 'Diarsipkan' };
+
 const runDeleteWithTimeout = (promise, timeoutMs = 30000) => Promise.race([
   promise,
   new Promise((_, reject) => {
-    window.setTimeout(() => reject(new Error('Delete is taking longer than expected. Please try again in a moment.')), timeoutMs);
+    window.setTimeout(() => reject(new Error('Penghapusan makan waktu lebih lama dari biasanya. Coba lagi sebentar lagi.')), timeoutMs);
   }),
 ]);
 
@@ -57,7 +61,7 @@ const MobileRawMaterialDetailPage = () => {
         const [enrichedRow] = await enrichMaterialsWithGuidance(row ? [row] : []);
         if (active) setMaterial(enrichedRow || row);
       } catch (error) {
-        toast.error('Failed to load material');
+        toast.error('Gagal memuat bahan baku');
         navigate('/mobile/raw-materials');
       } finally {
         if (active) setLoading(false);
@@ -71,17 +75,17 @@ const MobileRawMaterialDetailPage = () => {
     setDeleting(true);
     try {
       await runDeleteWithTimeout(deleteMaterial(id), 30000);
-      toast.success('Material dihapus');
+      toast.success('Bahan baku dihapus');
       navigate('/mobile/raw-materials');
     } catch (error) {
-      toast.error(error.message || 'Failed to delete material');
+      toast.error(error.message || 'Gagal menghapus bahan baku');
       setDeleting(false);
     }
   };
 
 
   if (loading || !material) {
-    return <MobileAuthenticatedLayout><MobileLoadingState eyebrow="Material" title="Loading material..." subtitle="Preparing guidance and reference data." /></MobileAuthenticatedLayout>;
+    return <MobileAuthenticatedLayout><MobileLoadingState eyebrow="Bahan baku" title="Memuat bahan baku..." subtitle="Menyiapkan panduan dan data referensi." /></MobileAuthenticatedLayout>;
   }
 
   const resolved = getResolvedGuidanceValues(material);
@@ -94,7 +98,7 @@ const MobileRawMaterialDetailPage = () => {
   const handleImportGuidance = async () => {
     if (!/^https?:\/\//i.test(guidanceForm.url.trim())) {
       setGuidanceState('error');
-      toast.error('Unable to import guidance');
+      toast.error('Gagal mengimpor panduan');
       return;
     }
     setGuidanceState('loading');
@@ -110,10 +114,10 @@ const MobileRawMaterialDetailPage = () => {
       setGuidanceSummary(summarizeImportedGuidance({ sourceType: guidanceForm.sourceType, imported }));
       setGuidanceState('success');
       setGuidanceOpen(false);
-      toast.success(`${getGuidanceSourceLabel(guidanceForm.sourceType)} guidance imported`);
+      toast.success(`Panduan ${getGuidanceSourceLabel(guidanceForm.sourceType)} berhasil diimpor`);
     } catch (error) {
       setGuidanceState('error');
-      toast.error(error.message || 'Unable to import guidance');
+      toast.error(error.message || 'Gagal mengimpor panduan');
     }
   };
   const handleRefreshGuidance = async () => {
@@ -121,30 +125,30 @@ const MobileRawMaterialDetailPage = () => {
       const row = await getRawMaterialById(id);
       const [enrichedRow] = await enrichMaterialsWithGuidance(row ? [row] : []);
       setMaterial(enrichedRow || row);
-      toast.success('Material data refreshed');
+      toast.success('Data bahan baku dimuat ulang');
     } catch (error) {
-      toast.error('Failed to refresh material');
+      toast.error('Gagal memuat ulang bahan baku');
     }
   };
   const sections = [
-    ['Basic information', [['Type', formatStatus(material.type)], ['Category', formatStatus(material.category)], ['Unit', material.unit || '-']]],
-    ['Cleanup status', [['Status', formatStatus(material.data_status || 'active')], ['Review note', formatNullable(material.review_notes)], ['Archived', formatNullable(material.archived_at)]]],
-    ['Inventory', [['Stock on hand', `${stockQuantity.toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}`], ['Minimum stock', `${Number(material.minimum_stock || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}`], ['Low alert', stockThreshold > 0 ? `${stockThreshold.toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}` : '-']]],
-    ['CAS and supplier', [['CAS', formatNullable(resolved.cas_number)], ['Supplier', formatNullable(material.vendor)], ['Workbook', formatNullable(resolved.workbook_code)]]],
-    ['Usage recommendation', [['Typical use', resolved.reference_use_level_typical_percent != null ? formatPercentage(resolved.reference_use_level_typical_percent, 2) : '-'], ['Max use', resolved.reference_use_level_max_percent != null ? formatPercentage(resolved.reference_use_level_max_percent, 2) : '-']]],
-    ['Safety / audit status', [['IFRA', resolved.ifra_limit != null ? formatPercentage(resolved.ifra_limit, 2) : '-'], ['Impact', impact ?? '-'], ['Life hours', life ?? '-']]],
+    ['Informasi dasar', [['Jenis', TYPE_LABELS[material.type] || formatStatus(material.type)], ['Kategori', formatStatus(material.category)], ['Satuan', material.unit || '-']]],
+    ['Status kerapian', [['Status', DATA_STATUS_LABELS[material.data_status || 'active'] || formatStatus(material.data_status)], ['Catatan tinjauan', formatNullable(material.review_notes, '-')], ['Diarsipkan', formatNullable(material.archived_at, '-')]]],
+    ['Persediaan', [['Stok tersedia', `${stockQuantity.toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}`], ['Stok minimum', `${Number(material.minimum_stock || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}`], ['Batas stok menipis', stockThreshold > 0 ? `${stockThreshold.toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}` : '-']]],
+    ['CAS dan supplier', [['CAS', formatNullable(resolved.cas_number, '-')], ['Supplier', formatNullable(material.vendor, '-')], ['Workbook', formatNullable(resolved.workbook_code, '-')]]],
+    ['Rekomendasi takaran', [['Takaran umum', resolved.reference_use_level_typical_percent != null ? formatPercentage(resolved.reference_use_level_typical_percent, 2) : '-'], ['Takaran maks', resolved.reference_use_level_max_percent != null ? formatPercentage(resolved.reference_use_level_max_percent, 2) : '-']]],
+    ['Keamanan / status audit', [['IFRA', resolved.ifra_limit != null ? formatPercentage(resolved.ifra_limit, 2) : '-'], ['Kekuatan', impact ?? '-'], ['Ketahanan di strip (jam)', life ?? '-']]],
   ];
 
   return (
     <MobileAuthenticatedLayout>
       <Helmet><title>{material.name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title={material.name} subtitle={resolved.cas_number ? `CAS ${resolved.cas_number}` : undefined} onBack={handleBack} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Ready' : 'Audit'}</MobileStatusBadge>} />
+        <MobileTopBar title={material.name} subtitle={resolved.cas_number ? `CAS ${resolved.cas_number}` : undefined} onBack={handleBack} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Siap' : 'Audit'}</MobileStatusBadge>} />
         {lowStock ? (
           <section className="mobile-card border border-rose-200 bg-rose-50 p-3">
-            <div className="text-[10px] font-bold uppercase text-rose-700">Low stock</div>
+            <div className="text-[10px] font-bold uppercase text-rose-700">Stok menipis</div>
             <div className="mt-1 text-sm font-bold text-rose-900">
-              {stockQuantity.toLocaleString('id-ID', { maximumFractionDigits: 3 })} {material.unit || ''} remaining
+              Tersisa {stockQuantity.toLocaleString('id-ID', { maximumFractionDigits: 3 })} {material.unit || ''}
             </div>
           </section>
         ) : null}
@@ -152,14 +156,14 @@ const MobileRawMaterialDetailPage = () => {
           primary={(
             <Button className="mobile-interactive mobile-add-action mobile-pressable h-12 w-full rounded-2xl text-xs font-bold" onClick={() => navigate(`/mobile/formulas/new?materialIds=${material.id}`)}>
               <Plus className="mr-2 h-4 w-4" />
-              Use in Formula
+              Pakai di formula
             </Button>
           )}
           secondary={[
             <Button key="edit" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/raw-material/${material.id}/edit`)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>,
-            <Button key="import" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={() => setGuidanceOpen(true)}><Link2 className="mr-1 h-4 w-4" />Import</Button>,
+            <Button key="import" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={() => setGuidanceOpen(true)}><Link2 className="mr-1 h-4 w-4" />Impor</Button>,
           ]}
-          destructive={<Button variant="outline" className="mobile-interactive mobile-delete-action h-11 rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>}
+          destructive={<Button variant="outline" className="mobile-interactive mobile-delete-action h-11 rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Hapus</Button>}
         />
         {sections.map(([title, rows]) => (
           <section key={title} className="mobile-card mobile-compact-card p-3">
@@ -177,35 +181,35 @@ const MobileRawMaterialDetailPage = () => {
         <section className="mobile-card mobile-compact-card p-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-bold">Guidance & Source</h2>
-              <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">{ready ? 'Imported or reference data available' : 'Not connected'}</p>
+              <h2 className="text-sm font-bold">Panduan & sumber</h2>
+              <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">{ready ? 'Ada data impor atau referensi' : 'Belum terhubung'}</p>
             </div>
-            <MobileStatusBadge tone={ready ? 'active' : 'warning'} className="h-5 px-2 text-[10px]">{ready ? 'Updated' : 'Needs review'}</MobileStatusBadge>
+            <MobileStatusBadge tone={ready ? 'active' : 'warning'} className="h-5 px-2 text-[10px]">{ready ? 'Terisi' : 'Perlu ditinjau'}</MobileStatusBadge>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">Impact {impact ?? '-'}</div>
-            <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">Lifetime {life ?? '-'}</div>
+            <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">Kekuatan {impact ?? '-'}</div>
+            <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">Ketahanan di strip {life ?? '-'}</div>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <Button type="button" variant="outline" onClick={() => setGuidanceOpen(true)} className="h-9 rounded-xl bg-white text-xs"><Link2 className="mr-1 h-3.5 w-3.5" />Import URL</Button>
-            <Button type="button" variant="outline" onClick={handleRefreshGuidance} className="h-9 rounded-xl bg-white text-xs"><RefreshCw className="mr-1 h-3.5 w-3.5" />Refresh</Button>
+            <Button type="button" variant="outline" onClick={() => setGuidanceOpen(true)} className="h-9 rounded-xl bg-white text-xs"><Link2 className="mr-1 h-3.5 w-3.5" />Impor URL</Button>
+            <Button type="button" variant="outline" onClick={handleRefreshGuidance} className="h-9 rounded-xl bg-white text-xs"><RefreshCw className="mr-1 h-3.5 w-3.5" />Muat ulang</Button>
           </div>
         </section>
-        {material.notes ? <section className="mobile-card mobile-compact-card p-3"><h2 className="text-sm font-bold">Notes</h2><p className="mt-2 whitespace-pre-wrap text-xs text-[#6b7280]">{material.notes}</p></section> : null}
+        {material.notes ? <section className="mobile-card mobile-compact-card p-3"><h2 className="text-sm font-bold">Catatan</h2><p className="mt-2 whitespace-pre-wrap text-xs text-[#6b7280]">{material.notes}</p></section> : null}
       </main>
       <DeleteConfirmationDialog open={deleteOpen} onOpenChange={setDeleteOpen} itemName={material.name} onConfirm={handleDelete} loading={deleting} />
       <MobileBottomSheet
         open={guidanceOpen}
         onOpenChange={setGuidanceOpen}
-        title="Import Guidance URL"
-        footer={<Button type="button" onClick={handleImportGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Importing guidance...' : 'Import Guidance'}</Button>}
+        title="Impor URL panduan"
+        footer={<Button type="button" onClick={handleImportGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Mengimpor panduan...' : 'Impor panduan'}</Button>}
       >
         <div className="grid gap-3 pb-2">
           <div className="space-y-1"><Label className="text-xs">URL</Label><Input value={guidanceForm.url} onChange={(event) => setGuidanceForm((current) => ({ ...current, url: event.target.value }))} className="h-10 rounded-xl bg-white text-xs" placeholder="https://..." /></div>
-          <div className="space-y-1"><Label className="text-xs">Source</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
-          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Guidance imported" description={guidanceSummary.slice(0, 6).join(' · ')} /> : null}
-          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Import failed" description="Check the URL and try again." /> : null}
-          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Insights updated" description="Guidance imported and material insights updated." /> : null}
+          <div className="space-y-1"><Label className="text-xs">Sumber</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
+          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Panduan berhasil diimpor" description={guidanceSummary.slice(0, 6).join(' · ')} /> : null}
+          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Impor gagal" description="Periksa URL-nya lalu coba lagi." /> : null}
+          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Data diperbarui" description="Panduan sudah diimpor dan data bahan diperbarui." /> : null}
         </div>
       </MobileBottomSheet>
     </MobileAuthenticatedLayout>

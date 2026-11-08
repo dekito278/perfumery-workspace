@@ -106,14 +106,27 @@ export const buildRawMaterialSemanticLookupKey = buildSemanticLookupKey;
 export const rawMaterialHasDilutionMarker = hasDilutionMarker;
 export const buildRawMaterialNameCandidates = buildNameCandidates;
 
-const buildResolution = ({ record, matchMethod, incomingName, matchedName }) => ({
-  action: MATCH_RESOLUTION_ACTION,
-  matchMethod,
-  message: incomingName && matchedName && incomingName !== matchedName
-    ? `Matched "${incomingName}" to existing raw material "${matchedName}" via ${matchMethod}.`
-    : `Matched to existing raw material via ${matchMethod}.`,
-  matchedRawMaterialId: record.id,
-});
+// matchMethod stays as it is in the returned object; only the sentence the owner reads is translated.
+const MATCH_METHOD_LABELS = {
+  'workbook code': 'kode workbook',
+  'CAS number': 'nomor CAS',
+  'exact name': 'nama yang sama persis',
+  'alias name': 'nama alias',
+  'normalized alias': 'alias yang dinormalisasi',
+  'semantic alias': 'alias semantik',
+};
+
+const buildResolution = ({ record, matchMethod, incomingName, matchedName }) => {
+  const via = MATCH_METHOD_LABELS[matchMethod] || matchMethod;
+  return {
+    action: MATCH_RESOLUTION_ACTION,
+    matchMethod,
+    message: incomingName && matchedName && incomingName !== matchedName
+      ? `"${incomingName}" dicocokkan ke bahan baku yang sudah ada, "${matchedName}", lewat ${via}.`
+      : `Dicocokkan ke bahan baku yang sudah ada lewat ${via}.`,
+    matchedRawMaterialId: record.id,
+  };
+};
 
 const withCreationResolution = (record, solventMap, resolution = null) => {
   const mapped = mapRawMaterial(record, solventMap);
@@ -212,11 +225,11 @@ const getCurrentUserId = async () => {
   } = await supabase.auth.getUser();
 
   if (error) {
-    throw new Error(error.message || 'Failed to read authenticated user');
+    throw new Error(error.message || 'Gagal membaca akun yang sedang login');
   }
 
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error('Belum login. Masuk lagi dulu.');
   }
 
   return user.id;
@@ -525,7 +538,7 @@ export const getRawMaterials = async () => {
 
     return (data || []).map((row) => mapRawMaterial(row, solventMap));
   } catch (error) {
-    throw new Error('Failed to fetch raw materials');
+    throw new Error('Gagal memuat bahan baku');
   }
 };
 
@@ -638,7 +651,7 @@ export const getRawMaterialsPage = async ({
     };
   } catch (error) {
     console.error('Error fetching paginated raw materials:', error);
-    throw new Error('Failed to fetch raw materials');
+    throw new Error('Gagal memuat bahan baku');
   }
 };
 
@@ -672,6 +685,7 @@ export const getRawMaterialsSummary = async () => {
     }));
   } catch (error) {
     console.error('Error fetching raw material summary:', error);
+    // Stays English: DashboardPage retries a loader only when its message includes 'failed to fetch'.
     throw new Error('Failed to fetch raw material summary');
   }
 };
@@ -745,7 +759,7 @@ export const getRawMaterialOptions = async ({ forceRefresh = false } = {}) => {
   } catch (error) {
     rawMaterialOptionsCache.promise = null;
     console.error('Error fetching raw material options:', error);
-    throw new Error('Failed to fetch raw material options');
+    throw new Error('Gagal memuat pilihan bahan baku');
   }
 };
 
@@ -794,6 +808,7 @@ export const getRawMaterialsReferenceSummary = async () => {
     };
   } catch (error) {
     console.error('Error fetching raw material reference summary:', error);
+    // Stays English: DashboardPage retries a loader only when its message includes 'failed to fetch'.
     throw new Error('Failed to fetch raw material reference summary');
   }
 };
@@ -814,7 +829,7 @@ export const getRawMaterialById = async (id) => {
     return mapRawMaterial(data, solventMap);
   } catch (error) {
     console.error('Error fetching raw material:', error);
-    throw new Error('Failed to fetch raw material');
+    throw new Error('Gagal memuat bahan baku');
   }
 };
 
@@ -836,7 +851,7 @@ export const getSolvents = async () => {
     }));
   } catch (error) {
     console.error('Error fetching solvents:', error);
-    throw new Error('Failed to fetch solvents');
+    throw new Error('Gagal memuat pelarut');
   }
 };
 
@@ -923,7 +938,7 @@ export const createRawMaterial = async (data) => {
     return withCreationResolution(record, solventMap);
   } catch (error) {
     console.error('Error creating raw material:', error);
-    throw new Error(error.message || 'Failed to create raw material');
+    throw new Error(error.message || 'Gagal menambah bahan baku');
   }
 };
 
@@ -958,7 +973,7 @@ export const updateRawMaterial = async (id, data) => {
         findExistingRawMaterialByWorkbookCode,
       });
       if (duplicateWorkbookCodeRecord) {
-        throw new Error(`Workbook code "${payload.workbook_code}" sudah dipakai oleh raw material "${duplicateWorkbookCodeRecord.name}".`);
+        throw new Error(`Kode workbook "${payload.workbook_code}" sudah dipakai oleh bahan baku "${duplicateWorkbookCodeRecord.name}".`);
       }
 
       const duplicateNameRecord = await findDuplicateNameRecord({
@@ -968,7 +983,7 @@ export const updateRawMaterial = async (id, data) => {
         findExistingRawMaterialByName,
       });
       if (duplicateNameRecord) {
-        throw new Error(`Name "${payload.name}" sudah dipakai oleh raw material "${duplicateNameRecord.name}".`);
+        throw new Error(`Nama "${payload.name}" sudah dipakai oleh bahan baku "${duplicateNameRecord.name}".`);
       }
 
       validateDilutionFields(mergedData);
@@ -1005,7 +1020,7 @@ export const updateRawMaterial = async (id, data) => {
     return mapRawMaterial(record, solventMap);
   } catch (error) {
     console.error('Error updating raw material:', error);
-    throw new Error(error.message || 'Failed to update raw material');
+    throw new Error(error.message || 'Gagal memperbarui bahan baku');
   }
 };
 
@@ -1119,7 +1134,7 @@ export const mergeRawMaterialIntoMaster = async (masterId, duplicateId) => {
     };
   } catch (error) {
     console.error('Error merging raw materials:', error);
-    throw new Error(error.message || 'Failed to merge raw materials');
+    throw new Error(error.message || 'Gagal menggabungkan bahan baku');
   }
 };
 
@@ -1135,12 +1150,12 @@ const countRefs = (table, column, id, extra) => {
 
 export const getRawMaterialDeletionDependencies = async (id) => {
   const checks = [
-    ['formula items', 'formula_items', 'item_id', (q) => q.in('item_type', ['raw_material', 'solvent'])],
-    ['formula dilution solvents', 'formula_items', 'dilution_solvent_id', null],
-    ['accord items', 'accord_items', 'raw_material_id', null],
-    ['accord dilution solvents', 'accord_items', 'dilution_solvent_id', null],
-    ['batches using it as solvent', 'batches', 'solvent_id', null],
-    ['batch usage records', 'batch_usage_records', 'raw_material_id', null],
+    ['baris formula', 'formula_items', 'item_id', (q) => q.in('item_type', ['raw_material', 'solvent'])],
+    ['pelarut pengencer di formula', 'formula_items', 'dilution_solvent_id', null],
+    ['baris akord', 'accord_items', 'raw_material_id', null],
+    ['pelarut pengencer di akord', 'accord_items', 'dilution_solvent_id', null],
+    ['batch yang memakainya sebagai pelarut', 'batches', 'solvent_id', null],
+    ['catatan pemakaian batch', 'batch_usage_records', 'raw_material_id', null],
     // The seventh reference, and the one this list was missing while its own header claimed "every".
     // raw_materials.dilution_solvent_id is a foreign key to raw_materials.id — a material diluted with
     // another material — and mergeRawMaterials repoints it alongside the six above. Left out here, the
@@ -1149,7 +1164,7 @@ export const getRawMaterialDeletionDependencies = async (id) => {
     //
     // Zero rows carry it on production today (measured 2026-10-11), which is the only reason nobody has
     // met it. The Studio material form offers the field, so one save is all it takes.
-    ['materials diluted with it', 'raw_materials', 'dilution_solvent_id', (q) => q.neq('id', id)],
+    ['bahan baku yang diencerkan dengannya', 'raw_materials', 'dilution_solvent_id', (q) => q.neq('id', id)],
   ];
 
   const results = await Promise.all(checks.map(([, table, column, extra]) => countRefs(table, column, id, extra)));
@@ -1173,7 +1188,7 @@ export const deleteRawMaterial = async (id, { skipDependencyCheck = false } = {}
       const blockerSummary = blockers
         .map((entry) => `${entry.count} ${entry.label}`)
         .join(', ');
-      throw new Error(`Cannot delete raw material because it is still used in ${blockerSummary}. Remove those references first.`);
+      throw new Error(`Bahan baku tidak bisa dihapus karena masih dipakai di ${blockerSummary}. Lepaskan dulu dari sana.`);
     }
 
     const { error } = await supabase
@@ -1188,10 +1203,10 @@ export const deleteRawMaterial = async (id, { skipDependencyCheck = false } = {}
   } catch (error) {
     console.error('Error deleting raw material:', error);
     if (error?.code === '23503') {
-      throw new Error('Cannot delete raw material because it is still used in another record.');
+      throw new Error('Bahan baku tidak bisa dihapus karena masih dipakai di catatan lain.');
     }
 
-    throw new Error(error.message || 'Failed to delete raw material');
+    throw new Error(error.message || 'Gagal menghapus bahan baku');
   }
 };
 

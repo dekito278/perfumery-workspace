@@ -256,7 +256,7 @@ const RawMaterialFormDialog = ({
 
           <div className="border-t pt-3 space-y-3">
             <FormSelect
-              label="Pyramid placement"
+              label="Posisi piramida"
               value={form.formData.pyramid_placement || ''}
               onChange={(value) => form.handleChange('pyramid_placement', value)}
               options={pyramidPlacementOptions}

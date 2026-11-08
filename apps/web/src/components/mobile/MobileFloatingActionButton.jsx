@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 
 const actions = [
-  { label: 'New Formula', path: '/mobile/formulas/new', icon: FlaskConical },
-  { label: 'Batch Calculator', path: '/mobile/batches', icon: Calculator },
-  { label: 'Production Costing', path: '/mobile/production-costing', icon: Calculator },
-  { label: 'Add Material', path: '/mobile/raw-materials/new', icon: Plus },
-  { label: 'Import Formula PDF', path: '/mobile/formulas?action=import', icon: FileUp },
+  { label: 'Formula baru', path: '/mobile/formulas/new', icon: FlaskConical },
+  { label: 'Kalkulator batch', path: '/mobile/batches', icon: Calculator },
+  { label: 'Hitung biaya produksi', path: '/mobile/production-costing', icon: Calculator },
+  { label: 'Tambah bahan baku', path: '/mobile/raw-materials/new', icon: Plus },
+  { label: 'Impor PDF formula', path: '/mobile/formulas?action=import', icon: FileUp },
 ];
 
 const MobileFloatingActionButton = () => {
@@ -23,14 +23,14 @@ const MobileFloatingActionButton = () => {
         size="icon"
         onClick={() => setOpen(true)}
         className="mobile-fab mobile-interactive mobile-add-action mobile-pressable h-14 w-14 rounded-full bg-[#f59e0b] text-white shadow-2xl shadow-amber-300/50 hover:bg-[#d97706]"
-        aria-label="Open quick actions"
+        aria-label="Buka aksi cepat"
       >
         <Plus className="h-6 w-6" />
       </Button>
       <MobileBottomSheet
         open={open}
         onOpenChange={setOpen}
-        title="Quick actions"
+        title="Aksi cepat"
       >
         <div className="grid gap-2 pb-2">
           {actions.map((action) => {

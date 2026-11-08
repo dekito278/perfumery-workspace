@@ -118,7 +118,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
           }))
         );
       } catch (error) {
-        toast.error('Failed to load import reference data');
+        toast.error('Gagal memuat data rujukan impor');
       } finally {
         setLoadingReferenceData(false);
       }
@@ -256,7 +256,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
       setInternalCode('');
       setFormulaAuthor('');
       setNotes('');
-      toast.success(`Parsed ${parsedResult.items.length} formula items from PDF`);
+      toast.success(`${parsedResult.items.length} baris formula terbaca dari PDF`);
     } catch (error) {
       recordMobileRuntimeError(error, {
         source: 'formula-pdf-import',
@@ -293,7 +293,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
     const nextErrors = {};
 
     if (!formulaName.trim()) {
-      nextErrors.formulaName = 'Formula name is required';
+      nextErrors.formulaName = 'Nama formula wajib diisi';
     }
 
     [...missingMaterialEntries, ...missingSolventEntries.map((solventName) => ({ solventName, key: buildMissingSolventKey(solventName) }))].forEach((entry) => {
@@ -302,11 +302,11 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
       const draft = missingMaterialDrafts[key];
 
       if (!draft?.category) {
-        nextErrors[`${key}.category`] = 'Category is required';
+        nextErrors[`${key}.category`] = 'Kategori wajib diisi';
       }
 
       if (!draft?.unit) {
-        nextErrors[`${key}.unit`] = 'Unit is required';
+        nextErrors[`${key}.unit`] = 'Satuan wajib diisi';
       }
     });
 
@@ -318,12 +318,12 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
     event.preventDefault();
 
     if (!parseResult) {
-      toast.error('Please choose a Perfume Workbook PDF first');
+      toast.error('Pilih PDF Perfume Workbook dulu');
       return;
     }
 
     if (!validateBeforeSubmit()) {
-      toast.error('Please complete the missing material details first');
+      toast.error('Lengkapi dulu detail bahan yang belum ada');
       return;
     }
 
@@ -393,7 +393,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
           : null;
 
         if (!material) {
-          throw new Error(`Missing raw material mapping for ${item.materialName}`);
+          throw new Error(`Bahan baku untuk ${item.materialName} belum terpetakan`);
         }
 
         return {
@@ -421,15 +421,15 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
       );
 
       if (reusedMatches.length) {
-        toast.info(`Reused ${reusedMatches.length} existing raw material ${reusedMatches.length === 1 ? 'match' : 'matches'} during import.`);
+        toast.info(`${reusedMatches.length} bahan baku yang sudah ada dipakai ulang saat impor.`);
       }
-      toast.success('Formula imported successfully');
+      toast.success('Formula diimpor');
       onOpenChange(false);
       if (onSuccess) {
         onSuccess(createdFormula);
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to import formula');
+      toast.error(error.message || 'Gagal mengimpor formula');
     } finally {
       setSubmitting(false);
     }
@@ -441,9 +441,9 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] max-w-[calc(100vw-1rem)] overflow-y-auto p-4 sm:max-w-5xl sm:p-6">
         <DialogHeader>
-          <DialogTitle>Import formula from Perfume Workbook PDF</DialogTitle>
+          <DialogTitle>Impor formula dari PDF Perfume Workbook</DialogTitle>
           <DialogDescription>
-            Upload a workbook PDF, review the parsed formula, then complete any new materials before saving it into the system.
+            Unggah PDF workbook, periksa formula yang terbaca, lalu lengkapi bahan baru sebelum formulanya disimpan.
           </DialogDescription>
         </DialogHeader>
 
@@ -451,7 +451,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
           <div className="rounded-xl border border-dashed bg-muted/30 p-4 space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <FileUp className="h-4 w-4" />
-              Upload PDF
+              Unggah PDF
             </div>
             <Input
               type="file"
@@ -461,11 +461,11 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
             />
             {mobileImportWarnings.length > 0 && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                Mobile browser ini belum lengkap untuk import lokal: {mobileImportWarnings.join(', ')}. Jika import gagal, refresh app setelah update atau coba dari browser mobile terbaru.
+                Browser HP ini belum lengkap untuk impor lokal: {mobileImportWarnings.join(', ')}. Jika impor gagal, muat ulang aplikasi setelah pembaruan atau coba dari browser HP versi terbaru.
               </div>
             )}
             {selectedFileName && (
-              <p className="text-xs text-muted-foreground">Selected file: {selectedFileName}</p>
+              <p className="text-xs text-muted-foreground">Berkas terpilih: {selectedFileName}</p>
             )}
             {parseError && (
               <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
@@ -479,89 +479,89 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
               <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
                 <div className="space-y-4 rounded-xl border p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">{matchedItems.length} items parsed</Badge>
-                    <Badge variant="outline">{missingMaterialEntries.length} new materials</Badge>
-                    <Badge variant="outline">{missingSolventEntries.length} new solvents</Badge>
-                    <Badge variant="outline">{matchedItems.length - missingMaterialEntries.length} matched materials</Badge>
+                    <Badge variant="secondary">{matchedItems.length} baris terbaca</Badge>
+                    <Badge variant="outline">{missingMaterialEntries.length} bahan baru</Badge>
+                    <Badge variant="outline">{missingSolventEntries.length} pelarut baru</Badge>
+                    <Badge variant="outline">{matchedItems.length - missingMaterialEntries.length} bahan cocok</Badge>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
-                      label="Formula name"
+                      label="Nama formula"
                       value={formulaName}
                       onChange={(event) => setFormulaName(event.target.value)}
                       error={validationErrors.formulaName}
                       required
                     />
                     <FormField
-                      label="By"
+                      label="Pembuat"
                       value={formulaAuthor}
                       onChange={(event) => setFormulaAuthor(event.target.value)}
-                    placeholder="e.g. Solivagant"
+                    placeholder="mis. Solivagant"
                     />
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormSelect
-                      label="Formula category"
+                      label="Kategori formula"
                       value={formulaCategory}
                       onChange={setFormulaCategory}
                       options={FORMULA_CATEGORIES}
                     />
                     <FormField
-                      label="Internal code"
+                      label="Kode internal"
                       value={internalCode}
                       onChange={(event) => setInternalCode(event.target.value)}
-                      placeholder="Optional, auto-generated if empty"
+                      placeholder="Opsional, dibuat otomatis jika kosong"
                     />
                     <div className="space-y-2 text-sm col-span-2">
-                      <p className="font-medium">Workbook source</p>
+                      <p className="font-medium">Sumber workbook</p>
                       <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-                        <p>Formula code: {parseResult.workbookFormulaCode || '-'}</p>
+                        <p>Kode formula: {parseResult.workbookFormulaCode || '-'}</p>
                         <p>WS: {parseResult.workbookSheet || '-'}</p>
-                        <p>Price: {parseResult.pricePerGram || '-'}</p>
+                        <p>Harga: {parseResult.pricePerGram || '-'}</p>
                         <p>Total: {formatGramAmount(parseResult.totalGrams)}</p>
-                        <p>Date: {parseResult.formulaDate || '-'}</p>
+                        <p>Tanggal: {parseResult.formulaDate || '-'}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Import notes</label>
+                    <label className="text-sm font-medium">Catatan impor</label>
                     <Textarea
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
                       rows={3}
-                      placeholder="Optional notes to keep with this imported formula"
+                      placeholder="Catatan opsional yang disimpan bersama formula impor ini"
                     />
                   </div>
                 </div>
 
                 <div className="rounded-xl border p-4 space-y-3">
-                  <p className="text-sm font-medium">Import readiness</p>
+                  <p className="text-sm font-medium">Kesiapan impor</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2 text-emerald-700">
                       <CheckCircle2 className="h-4 w-4" />
-                      <span>{matchedItems.length - missingMaterialEntries.length} materials already exist</span>
+                      <span>{matchedItems.length - missingMaterialEntries.length} bahan sudah ada di pustaka bahan</span>
                     </div>
                     <div className="flex items-center gap-2 text-amber-700">
                       <AlertTriangle className="h-4 w-4" />
-                      <span>{missingMaterialEntries.length} materials need library details</span>
+                      <span>{missingMaterialEntries.length} bahan perlu dilengkapi untuk pustaka bahan</span>
                     </div>
                     <div className="flex items-center gap-2 text-amber-700">
                       <AlertTriangle className="h-4 w-4" />
-                      <span>{missingSolventEntries.length} dilution solvents may need library details</span>
+                      <span>{missingSolventEntries.length} pelarut pengenceran mungkin perlu dilengkapi untuk pustaka bahan</span>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Existing materials are matched by workbook code first, then by raw material name.
+                    Bahan yang sudah ada dicocokkan lewat kode workbook dulu, lalu lewat nama bahan baku.
                   </p>
                 </div>
               </div>
 
               <div className="rounded-xl border overflow-hidden">
                 <div className="border-b bg-muted/30 px-4 py-3">
-                  <p className="text-sm font-medium">Parsed formula items</p>
+                  <p className="text-sm font-medium">Baris formula yang terbaca</p>
                 </div>
                 <div className="space-y-3 p-4 md:hidden">
                   {matchedItems.map((item) => (
@@ -569,26 +569,26 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                            Row {item.lineNumber}
+                            Baris {item.lineNumber}
                           </div>
                           <div className="mt-1 text-sm font-medium">{item.pureMaterialName}</div>
                           {item.isDilutedInFormula ? (
                             <div className="mt-1 text-xs text-muted-foreground">
-                              {item.dilutionPercent}% in {item.dilutionSolventName}
+                              {item.dilutionPercent}% dalam {item.dilutionSolventName}
                             </div>
                           ) : null}
                         </div>
                         <Badge variant={item.matchedMaterial ? 'outline' : 'secondary'} className="shrink-0 text-[10px]">
-                          {item.matchedMaterial ? 'Matched' : 'New'}
+                          {item.matchedMaterial ? 'Cocok' : 'Baru'}
                         </Badge>
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
                         <div>
-                          <div className="text-muted-foreground">Workbook code</div>
+                          <div className="text-muted-foreground">Kode workbook</div>
                           <div className="mt-1 font-mono">{item.workbookCode}</div>
                         </div>
                         <div>
-                          <div className="text-muted-foreground">Amount</div>
+                          <div className="text-muted-foreground">Jumlah</div>
                           <div className="mt-1 font-mono">{item.grams.toFixed(4)} g</div>
                         </div>
                       </div>
@@ -600,10 +600,10 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-16">No</TableHead>
-                        <TableHead className="w-28">Workbook code</TableHead>
-                        <TableHead>Raw material</TableHead>
-                        <TableHead className="text-right w-28">Amount (g)</TableHead>
-                        <TableHead className="w-48">Match status</TableHead>
+                        <TableHead className="w-28">Kode workbook</TableHead>
+                        <TableHead>Bahan baku</TableHead>
+                        <TableHead className="text-right w-28">Jumlah (g)</TableHead>
+                        <TableHead className="w-48">Status cocok</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -615,7 +615,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                             {item.pureMaterialName}
                             {item.isDilutedInFormula && (
                               <div className="text-xs text-muted-foreground">
-                                {item.dilutionPercent}% in {item.dilutionSolventName}
+                                {item.dilutionPercent}% dalam {item.dilutionSolventName}
                               </div>
                             )}
                           </TableCell>
@@ -623,11 +623,11 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                           <TableCell>
                             {item.matchedMaterial ? (
                               <Badge variant="outline" className="text-xs">
-                                Existing: {item.matchedMaterial.name}
+                                Sudah ada: {item.matchedMaterial.name}
                               </Badge>
                             ) : (
                               <Badge variant="secondary" className="text-xs">
-                                New material required
+                                Perlu bahan baru
                               </Badge>
                             )}
                           </TableCell>
@@ -641,9 +641,9 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
               {(missingMaterialEntries.length > 0 || missingSolventEntries.length > 0) && (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium">New materials to create</p>
+                    <p className="text-sm font-medium">Bahan baru yang akan dibuat</p>
                     <p className="text-xs text-muted-foreground">
-                      Fill these fields once. Pure materials and dilution solvents created here will be reused automatically on future imports.
+                      Cukup isi sekali. Bahan murni dan pelarut pengenceran yang dibuat di sini otomatis dipakai ulang pada impor berikutnya.
                     </p>
                   </div>
 
@@ -658,25 +658,25 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                             <div>
                               <p className="font-medium text-sm">{item.materialName}</p>
                               <p className="text-xs text-muted-foreground">
-                                Workbook code: <span className="font-mono">{item.workbookCode}</span>
+                                Kode workbook: <span className="font-mono">{item.workbookCode}</span>
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Suggested category: {suggestPerfumersWorldCategory({ workbookCode: item.workbookCode, name: item.materialName }).category?.label || 'Please choose manually'}
+                                Saran kategori: {suggestPerfumersWorldCategory({ workbookCode: item.workbookCode, name: item.materialName }).category?.label || 'Pilih sendiri'}
                               </p>
                             </div>
                             <Badge variant="secondary" className="text-xs">
-                              Needed for {item.grams.toFixed(4)} g
+                              Dibutuhkan {item.grams.toFixed(4)} g
                             </Badge>
                           </div>
 
                           <div className="grid gap-4 md:grid-cols-2">
                             <FormField
-                              label="Material name"
+                              label="Nama bahan"
                               value={draft.name}
                               onChange={(event) => updateMissingMaterialDraft(key, 'name', event.target.value)}
                             />
                             <FormField
-                              label="Workbook code"
+                              label="Kode workbook"
                               value={draft.workbook_code}
                               onChange={(event) => updateMissingMaterialDraft(key, 'workbook_code', event.target.value)}
                             />
@@ -684,16 +684,16 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
 
                           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <FormSelect
-                              label="Category"
+                              label="Kategori"
                               value={draft.category}
                               onChange={(value) => updateMissingMaterialDraft(key, 'category', value)}
                               options={categoryOptions}
                               error={validationErrors[`${key}.category`]}
                               required
-                              placeholder={categoryOptions.length ? 'Select category' : 'Create category first'}
+                              placeholder={categoryOptions.length ? 'Pilih kategori' : 'Buat kategori dulu'}
                             />
                             <FormSelect
-                              label="Unit"
+                              label="Satuan"
                               value={draft.unit}
                               onChange={(value) => updateMissingMaterialDraft(key, 'unit', value)}
                               options={[
@@ -707,33 +707,33 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                               required
                             />
                             <FormField
-                              label="Vendor"
+                              label="Supplier"
                               value={draft.vendor}
                               onChange={(event) => updateMissingMaterialDraft(key, 'vendor', event.target.value)}
-                              placeholder="Optional"
+                              placeholder="Opsional"
                             />
                           </div>
 
                           <div className="grid gap-4 md:grid-cols-2">
                             <FormNumber
-                              label={`Unit price (per 10 ${draft.unit || 'ml'})`}
+                              label={`Harga satuan (per 10 ${draft.unit || 'ml'})`}
                               value={draft.cost_per_unit}
                               onChange={(event) => updateMissingMaterialDraft(key, 'cost_per_unit', event.target.value)}
                               min="0"
                               step="0.01"
                             />
                             <div className="rounded-xl border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                              This imported material will be created as a library record with guidance-ready metadata.
+                              Bahan impor ini masuk ke pustaka bahan, dengan metadata yang siap diberi panduan.
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Material notes</label>
+                            <label className="text-sm font-medium">Catatan bahan</label>
                             <Textarea
                               value={draft.notes}
                               onChange={(event) => updateMissingMaterialDraft(key, 'notes', event.target.value)}
                               rows={2}
-                              placeholder="Optional note for this raw material"
+                              placeholder="Catatan opsional untuk bahan baku ini"
                             />
                           </div>
                         </div>
@@ -749,15 +749,15 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                             <div>
                               <p className="font-medium text-sm">{solventName}</p>
                               <p className="text-xs text-muted-foreground">
-                                Dilution solvent from imported formula
+                                Pelarut pengenceran dari formula yang diimpor
                               </p>
                             </div>
-                            <Badge variant="secondary" className="text-xs">Solvent</Badge>
+                            <Badge variant="secondary" className="text-xs">Pelarut</Badge>
                           </div>
 
                           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <FormSelect
-                              label="Category"
+                              label="Kategori"
                               value={draft.category}
                               onChange={(value) => updateMissingMaterialDraft(key, 'category', value)}
                               options={categoryOptions}
@@ -765,7 +765,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                               required
                             />
                             <FormSelect
-                              label="Unit"
+                              label="Satuan"
                               value={draft.unit}
                               onChange={(value) => updateMissingMaterialDraft(key, 'unit', value)}
                               options={[
@@ -779,7 +779,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                               required
                             />
                             <FormNumber
-                              label={`Unit price (per 10 ${draft.unit || 'ml'})`}
+                              label={`Harga satuan (per 10 ${draft.unit || 'ml'})`}
                               value={draft.cost_per_unit}
                               onChange={(event) => updateMissingMaterialDraft(key, 'cost_per_unit', event.target.value)}
                               min="0"
@@ -797,16 +797,16 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isBusy}>
-              Cancel
+              Batal
             </Button>
             <Button type="submit" disabled={!parseResult || isBusy}>
               {isBusy ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Importing...
+                  Mengimpor...
                 </>
               ) : (
-                'Import formula'
+                'Impor formula'
               )}
             </Button>
           </DialogFooter>

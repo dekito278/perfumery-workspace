@@ -28,7 +28,7 @@ const helpers = {
 };
 assert.throws(
   () => validateMergeableRawMaterials({ id: 'a', name: 'X', unit: 'g' }, { id: 'b', name: 'X', unit: 'ml' }, helpers),
-  /different units/,
+  /satuan berbeda/,
 );
 // Same unit, or a row with no unit recorded, still merges
 assert.doesNotThrow(() => validateMergeableRawMaterials({ id: 'a', name: 'X', unit: 'g' }, { id: 'b', name: 'X', unit: 'g' }, helpers));

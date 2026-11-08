@@ -15,11 +15,11 @@ const FormulaCardMobile = ({ formula, metrics, pipeline = {}, onView, onDuplicat
     </div>
     <div className="mt-3 grid grid-cols-3 gap-2">
       <div className="rounded-lg bg-amber-50 p-2">
-        <div className="text-[10px] font-bold uppercase text-amber-700">Impact</div>
+        <div className="text-[10px] font-bold uppercase text-amber-700">Kekuatan</div>
         <div className="mt-0.5 truncate text-xs font-bold text-[#1f2937]">{metrics?.impactDisplay ?? '-'}</div>
       </div>
       <div className="rounded-lg bg-blue-50 p-2">
-        <div className="text-[10px] font-bold uppercase text-blue-700">Life</div>
+        <div className="text-[10px] font-bold uppercase text-blue-700">Ketahanan</div>
         <div className="mt-0.5 text-xs font-bold text-[#1f2937]">{metrics?.lifetimeDisplay ?? '-'}</div>
       </div>
       <div className="rounded-lg bg-slate-50 p-2">
@@ -29,22 +29,22 @@ const FormulaCardMobile = ({ formula, metrics, pipeline = {}, onView, onDuplicat
     </div>
     <div className="mt-3 flex flex-wrap gap-1.5">
       <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-bold text-[#6b7280]">
-        Standalone
+        Mandiri
       </span>
-      <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-bold text-[#6b7280]">Logs {pipeline.validationCount || 0}</span>
-      {pipeline.actionNeededCount ? <MobileStatusBadge status="action_needed">Action {pipeline.actionNeededCount}</MobileStatusBadge> : null}
+      <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-bold text-[#6b7280]">Catatan uji {pipeline.validationCount || 0}</span>
+      {pipeline.actionNeededCount ? <MobileStatusBadge status="action_needed">Perlu tindakan {pipeline.actionNeededCount}</MobileStatusBadge> : null}
       {metrics ? (
         <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-bold text-[#6b7280]">
-          Guidance {metrics.guidanceBackedCount || 0}/{metrics.itemCount || 0}
+          Panduan {metrics.guidanceBackedCount || 0}/{metrics.itemCount || 0}
         </span>
       ) : null}
     </div>
-    <div className="mt-3 text-[11px] font-medium text-[#6b7280]">Updated {formatDate(formula.updated || formula.created)}</div>
+    <div className="mt-3 text-[11px] font-medium text-[#6b7280]">Diperbarui {formatDate(formula.updated || formula.created)}</div>
     <div className="mt-3 grid grid-cols-4 gap-2">
-      <Button type="button" variant="outline" size="icon" onClick={onView} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="View formula"><Eye className="h-4 w-4" /></Button>
-      <Button type="button" variant="outline" size="icon" onClick={onDuplicate} disabled={duplicating} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="Duplicate formula"><Copy className="h-4 w-4" /></Button>
+      <Button type="button" variant="outline" size="icon" onClick={onView} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="Lihat formula"><Eye className="h-4 w-4" /></Button>
+      <Button type="button" variant="outline" size="icon" onClick={onDuplicate} disabled={duplicating} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="Duplikasi formula"><Copy className="h-4 w-4" /></Button>
       <Button type="button" variant="outline" size="icon" onClick={onEdit} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="Edit formula"><Pencil className="h-4 w-4" /></Button>
-      <Button type="button" variant="outline" size="icon" onClick={onDelete} className="mobile-interactive mobile-delete-action h-9 w-full rounded-xl border-rose-200 bg-rose-50 text-rose-700" aria-label="Delete formula"><Trash2 className="h-4 w-4" /></Button>
+      <Button type="button" variant="outline" size="icon" onClick={onDelete} className="mobile-interactive mobile-delete-action h-9 w-full rounded-xl border-rose-200 bg-rose-50 text-rose-700" aria-label="Hapus formula"><Trash2 className="h-4 w-4" /></Button>
     </div>
   </article>
 );

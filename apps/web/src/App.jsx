@@ -270,7 +270,7 @@ const RouteFallback = () => {
     );
   }
 
-  // The storefront gets the wordmark; the studio keeps "Loading workspace", which is honest there.
+  // The storefront gets the wordmark; the studio keeps "Memuat Studio", which is honest there.
   if (isMobileCommercePath(pathname)) {
     return <StorefrontSplash />;
   }
@@ -278,9 +278,9 @@ const RouteFallback = () => {
   if (pathname === '/mobile' || pathname.startsWith('/mobile/')) {
     return (
       <MobileLoadingState
-        eyebrow="App initialization"
-        title="Loading workspace..."
-        subtitle="Menyiapkan halaman dan data mobile."
+        eyebrow="Studio"
+        title="Memuat Studio..."
+        subtitle="Menyiapkan halaman dan data."
         className="min-h-screen"
       />
     );
@@ -288,7 +288,7 @@ const RouteFallback = () => {
 
   // Everything left on a desktop address is either the owner's door or an address nobody has: the
   // catch-all route renders NotFoundPage, which is a shop page, so it gets the shop's skeleton rather
-  // than "App initialization".
+  // than the studio's "Memuat Studio".
   if (!pathname.startsWith('/mobile') && !OWNER_DOOR_ROUTES.includes(pathname)) {
     return <StorefrontLoadingState mode="page" />;
   }
@@ -299,8 +299,8 @@ const RouteFallback = () => {
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-editorial-charcoal/15 border-t-editorial-charcoal" />
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">App initialization</p>
-            <h1 className="mt-1 text-xl font-bold text-editorial-charcoal">Loading workspace...</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Studio</p>
+            <h1 className="mt-1 text-xl font-bold text-editorial-charcoal">Memuat Studio...</h1>
           </div>
         </div>
         <div className="mt-5 space-y-3" aria-hidden="true">

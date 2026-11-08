@@ -25,12 +25,12 @@ const FormulaPlacementBlindSpotNotice = ({ blindSpot, className = '' }) => {
             {share > 0 ? ` (${share}% dari bobot aroma formula).` : '.'}
           </p>
           <p className="mt-2 text-xs font-semibold leading-relaxed text-sky-900">
-            Top / Middle / Base di bawah ini — dan skor Opening, Heart, Drydown, Tenacity yang dihitung
-            darinya — ikut bergantung pada tebakan itu.
+            Nada atas / tengah / dasar di bawah ini — dan skor Pembuka, Inti, Jejak akhir, Ketahanan yang
+            dihitung darinya — ikut bergantung pada tebakan itu.
           </p>
           {names ? (
             <p className="mt-2 text-xs font-semibold leading-relaxed text-sky-800">
-              {`Isi kolom Pyramid placement pada: ${names}${more > 0 ? `, dan ${more} bahan lain` : ''}.`}
+              {`Isi kolom Posisi piramida pada: ${names}${more > 0 ? `, dan ${more} bahan lain` : ''}.`}
             </p>
           ) : null}
         </div>

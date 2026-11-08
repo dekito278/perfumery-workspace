@@ -201,7 +201,7 @@ for (const path of ['/home', '/en/home', '/en/catalog/hug-n-1', '/cart']) {
   assert.equal(bootAt(path, { shop: true }).boot, 'SOLIVAGANT',
     `${path} must open on the shop's wordmark alone — no Studio words, nothing in the other shop's language`);
 }
-assert.match(bootAt('/studio', { shop: false }).boot, /Loading workspace/, 'the Studio keeps its own boot screen');
+assert.match(bootAt('/studio', { shop: false }).boot, /Memuat Studio/, 'the Studio keeps its own boot screen');
 assert.match(bootAt('/en/catalog', { shop: true }).recovery, /^The page did not load/, 'the English shop recovers in English');
 assert.doesNotMatch(bootAt('/en/catalog', { shop: true }).recovery, /Cache perlu|berhasil/, 'with no Indonesian in it');
 assert.match(bootAt('/catalog', { shop: true }).recovery, /^Cache perlu direset/, 'and the Indonesian shop in Indonesian');

@@ -79,10 +79,10 @@ export const validateComposerFields = ({ name, code, formulaItems, activeFormula
   const errors = {};
 
   if (!name.trim()) {
-    errors.name = 'Formula name is required';
+    errors.name = 'Nama formula wajib diisi';
   }
   if (!code.trim()) {
-    errors.code = 'Formula code is required';
+    errors.code = 'Kode formula wajib diisi';
   }
 
   const ingredientErrors = validateFormulaItems(activeFormulaItems);
@@ -112,7 +112,7 @@ export const duplicateMaterialErrors = (formulaItems = []) => {
   (formulaItems || []).forEach((item, index) => {
     if (!item?.item_id) return;
     if (materialIds.has(item.item_id)) {
-      errors[rowErrorKey(item.row_key || index)] = 'Duplicate material';
+      errors[rowErrorKey(item.row_key || index)] = 'Bahan ganda';
     } else {
       materialIds.add(item.item_id);
     }
@@ -488,7 +488,7 @@ export const useFormulaComposer = ({
     const simulationRow = simulationRowsByItemId.get(activeItem.item_id) || null;
 
     return {
-      name: guidanceDetails.rawMaterial?.name || 'Unknown material',
+      name: guidanceDetails.rawMaterial?.name || 'Bahan tidak dikenal',
       guidanceSource: simulationRow?.guidanceSource || (guidanceDetails.referenceProfile ? 'raw_material_fallback' : 'none'),
       referenceCode: guidanceDetails.referenceProfile?.reference_code || null,
       impact: simulationRow?.impact ?? guidanceDetails.resolvedValues.reference_impact ?? null,

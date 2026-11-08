@@ -55,11 +55,11 @@ const getCurrentUserId = async () => {
   } = await supabase.auth.getUser();
 
   if (error) {
-    throw new Error(error.message || 'Failed to read authenticated user');
+    throw new Error(error.message || 'Gagal membaca akun yang masuk');
   }
 
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error('Belum masuk. Silakan masuk lagi.');
   }
 
   return user.id;
@@ -74,7 +74,7 @@ export const getRawMaterialCategories = async () => {
 
   if (error) {
     console.error('Error fetching raw material categories:', error);
-    throw new Error('Failed to load categories');
+    throw new Error('Gagal memuat kategori');
   }
 
   const mappedCategories = (data || []).map(mapCategory);
@@ -120,6 +120,6 @@ export const deleteRawMaterialCategory = async (id) => {
 
   if (error) {
     console.error('Error deleting raw material category:', error);
-    throw new Error(error.message || 'Failed to delete category');
+    throw new Error(error.message || 'Gagal menghapus kategori');
   }
 };

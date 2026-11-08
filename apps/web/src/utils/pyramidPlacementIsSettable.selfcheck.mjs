@@ -110,9 +110,9 @@ assert.match(phone, /setField\('pyramid_placement', placement === 'auto' \? '' :
 const segmented = read('components', 'mobile-ui', 'MobileSegmentedControl.jsx');
 assert.match(segmented, /filter\(\(option\) => option\.value && option\.label\)/,
   "this rule exists because the control drops empty-valued options — if that changed, re-check the page");
-assert.ok(!/\{ value: '', label: 'Auto' \}/.test(phone),
+assert.ok(!/\{ value: '', label: 'Otomatis' \}/.test(phone),
   'an empty-valued Auto option would be filtered out of the control and never shown');
-assert.match(phone, /\{ value: 'auto', label: 'Auto' \}/, 'Auto must carry a value the control will render');
+assert.match(phone, /\{ value: 'auto', label: 'Otomatis' \}/, 'Auto ("Otomatis") must carry a value the control will render');
 
 const service = read('services', 'rawMaterialsService.js');
 assert.match(service, /pyramid_placement: normalizePyramidPlacement\(data\.pyramid_placement\),/,

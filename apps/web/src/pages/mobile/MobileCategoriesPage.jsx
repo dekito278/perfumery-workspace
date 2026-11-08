@@ -45,8 +45,8 @@ const MobileCategoriesPage = () => {
       <Helmet><title>Kategori Mobile - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Kategori" onBack={() => navigate('/mobile/raw-materials')} action={<Tag className="h-6 w-6 text-amber-600" />} />
-        {loading ? <MobileLoadingState eyebrow="Material" title="Memuat kategori..." subtitle="Menyiapkan data klasifikasi." className="min-h-[calc(100dvh-260px)]" /> : categories.length === 0 ? (
-          <MobileEmptyState icon={Tag} title="Belum ada kategori" description="Kategori akan muncul setelah library material tersedia." />
+        {loading ? <MobileLoadingState eyebrow="Bahan baku" title="Memuat kategori..." subtitle="Menyiapkan data klasifikasi." className="min-h-[calc(100dvh-260px)]" /> : categories.length === 0 ? (
+          <MobileEmptyState icon={Tag} title="Belum ada kategori" description="Kategori akan muncul setelah pustaka bahan tersedia." />
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {categories.map((category) => {

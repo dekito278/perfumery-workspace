@@ -42,7 +42,7 @@ assert.equal(Math.round(cost / 100), 1746, 'per gram of batch — the number the
 // Two screens, one rule. The mobile page and the desktop page had the same defect in different words,
 // which is this repo's most common way to half-fix something.
 for (const [page, tile] of [
-  ['pages/mobile/MobileBatchesPage.jsx', /<MetricTile\s+label="Weigh"[\s\S]{0,200}?\/>/],
+  ['pages/mobile/MobileBatchesPage.jsx', /<MetricTile\s+label="Timbang"[\s\S]{0,200}?\/>/],
   ['pages/BatchProductionPage.jsx', /<MetricCard label="Concentrate COGS"[\s\S]{0,300}?\/>/],
 ]) {
   const source = read(...page.split('/'));
@@ -57,6 +57,10 @@ const desktop = read('pages', 'BatchProductionPage.jsx');
 assert.doesNotMatch(desktop, /\$\{formatNumber\(targetValue, 1\)\} ml full concentrate/,
   'the helper may not call the finished batch "full concentrate" again');
 const mobile = read('pages', 'mobile', 'MobileBatchesPage.jsx');
+// The breakdown heading on the phone said "Diskalakan ke {targetValue} konsentrat penuh" over rows scaled to
+// concentrateBaseGrams — the same 1/ratio error in a sentence the tiles above had already been cured of.
+assert.doesNotMatch(mobile, /Diskalakan ke \{formatGramAmount\(targetValue\)\}/,
+  'the phone breakdown names the batch weight above rows scaled to the concentrate');
 assert.doesNotMatch(mobile, /label="Batch" value=\{formatGramAmount\(targetValue\)\}/,
   'the concentrate card may not headline the finished batch weight again');
 

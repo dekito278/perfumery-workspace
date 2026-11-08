@@ -278,10 +278,10 @@ const CreateFormulaPage = () => {
     const nextErrors = {};
 
     if (!name.trim()) {
-      nextErrors.name = 'Formula name is required';
+      nextErrors.name = 'Nama formula wajib diisi';
     }
     if (!code.trim()) {
-      nextErrors.code = 'Formula code is required';
+      nextErrors.code = 'Kode formula wajib diisi';
     }
 
     setValidationErrors((current) => {

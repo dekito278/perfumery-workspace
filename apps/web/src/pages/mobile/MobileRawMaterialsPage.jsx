@@ -35,21 +35,21 @@ import {
 import { enrichMaterialsWithGuidance, getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 
 const referenceOptions = [
-  { value: 'all', label: 'All' },
-  { value: 'has_guidance', label: 'Guided' },
-  { value: 'unmatched', label: 'Needs Guidance' },
-  { value: 'high_impact', label: 'High Impact' },
-  { value: 'missing_data', label: 'Missing Data' },
+  { value: 'all', label: 'Semua' },
+  { value: 'has_guidance', label: 'Ada panduan' },
+  { value: 'unmatched', label: 'Perlu panduan' },
+  { value: 'high_impact', label: 'Kekuatan tinggi' },
+  { value: 'missing_data', label: 'Data kurang' },
 ];
 
 const cleanupOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'needs_cleanup', label: 'Needs Cleanup' },
-  { value: 'archived', label: 'Archived' },
-  { value: 'all', label: 'All' },
+  { value: 'active', label: 'Aktif' },
+  { value: 'needs_cleanup', label: 'Perlu dirapikan' },
+  { value: 'archived', label: 'Diarsipkan' },
+  { value: 'all', label: 'Semua' },
 ];
 
-const runWithTimeout = (promise, timeoutMs = 4500, message = 'Request timed out') => Promise.race([
+const runWithTimeout = (promise, timeoutMs = 4500, message = 'Permintaan terlalu lama') => Promise.race([
   promise,
   new Promise((_, reject) => {
     window.setTimeout(() => reject(new Error(message)), timeoutMs);
@@ -59,13 +59,13 @@ const runWithTimeout = (promise, timeoutMs = 4500, message = 'Request timed out'
 const runMaterialLoadWithTimeout = (promise) => runWithTimeout(
   promise,
   15000,
-  'Material loading took too long. Please try again.',
+  'Memuat bahan baku terlalu lama. Coba lagi.',
 );
 
 const runGuidanceWithTimeout = (promise) => runWithTimeout(
   promise,
   1800,
-  'Material guidance timed out',
+  'Panduan bahan baku terlalu lama dimuat',
 );
 
 const shouldSkipGuidanceEnrichment = ({ cleanupFilter }) => (
@@ -76,7 +76,7 @@ const shouldSkipGuidanceEnrichment = ({ cleanupFilter }) => (
 const runDeleteWithTimeout = (promise, timeoutMs = 12000) => Promise.race([
   promise,
   new Promise((_, reject) => {
-    window.setTimeout(() => reject(new Error('Delete is taking longer than expected. Please try again in a moment.')), timeoutMs);
+    window.setTimeout(() => reject(new Error('Penghapusan makan waktu lebih lama dari biasanya. Coba lagi sebentar lagi.')), timeoutMs);
   }),
 ]);
 
@@ -192,8 +192,8 @@ const MobileRawMaterialsPage = () => {
       setTotal(debouncedQuery || ['has_guidance', 'high_impact'].includes(referenceFilter) ? filteredItems.length : result.total || filteredItems.length);
     } catch (error) {
       if (loadToken === loadTokenRef.current && !baseLoaded) {
-        toast.error(error.message || 'Failed to load materials');
-        setLoadError(error.message || 'Materials could not be loaded right now.');
+        toast.error(error.message || 'Gagal memuat bahan baku');
+        setLoadError(error.message || 'Bahan baku belum bisa dimuat sekarang.');
         setLoading(false);
       } else {
         console.warn('Material guidance enrichment delayed:', error);
@@ -251,10 +251,10 @@ const MobileRawMaterialsPage = () => {
       setMaterials((current) => current.map((material) => material.id === stockTarget.id ? nextMaterial : material));
       setStockTarget(nextMaterial);
       triggerMobileHaptic('success');
-      toast.success('Stock and price updated');
+      toast.success('Stok dan harga diperbarui');
       setStockTarget(null);
     } catch (error) {
-      toast.error(error.message || 'Failed to update stock');
+      toast.error(error.message || 'Gagal menyimpan stok');
     } finally {
       setStockSaving(false);
     }
@@ -268,10 +268,10 @@ const MobileRawMaterialsPage = () => {
       setMaterials((current) => current.filter((material) => material.id !== deleteTarget.id));
       setDeleteTarget(null);
       triggerMobileHaptic('success');
-      toast.success('Material dihapus');
+      toast.success('Bahan baku dihapus');
       await loadMaterials();
     } catch (error) {
-      toast.error(error.message || 'Failed to delete material');
+      toast.error(error.message || 'Gagal menghapus bahan baku');
     } finally {
       setDeleting(false);
     }
@@ -289,9 +289,9 @@ const MobileRawMaterialsPage = () => {
         .map((entry) => entry.id === material.id ? { ...entry, ...updated } : entry)
         .filter((entry) => cleanupFilter === 'all' || cleanupFilter === 'archived' || entry.data_status !== 'archived'));
       triggerMobileHaptic('success');
-      toast.success(shouldArchive ? 'Material archived' : 'Material restored');
+      toast.success(shouldArchive ? 'Bahan baku diarsipkan' : 'Bahan baku dipulihkan');
     } catch (error) {
-      toast.error(error.message || 'Failed to update material status');
+      toast.error(error.message || 'Gagal mengubah status bahan baku');
     }
   };
 
@@ -299,7 +299,7 @@ const MobileRawMaterialsPage = () => {
     if (!guidanceTarget) return;
     if (!/^https?:\/\//i.test(guidanceForm.url.trim())) {
       setGuidanceState('error');
-      toast.error('Unable to import guidance');
+      toast.error('Gagal mengimpor panduan');
       return;
     }
     setGuidanceState('loading');
@@ -316,56 +316,56 @@ const MobileRawMaterialsPage = () => {
       setGuidanceState('success');
       setGuidanceTarget(enrichedUpdated);
       triggerMobileHaptic('success');
-      toast.success(`${getGuidanceSourceLabel(guidanceForm.sourceType)} guidance imported`);
+      toast.success(`Panduan ${getGuidanceSourceLabel(guidanceForm.sourceType)} berhasil diimpor`);
       await loadMaterials();
     } catch (error) {
       setGuidanceState('error');
-      toast.error(error.message || 'Unable to import guidance');
+      toast.error(error.message || 'Gagal mengimpor panduan');
     }
   };
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Materials - Solivagant</title></Helmet>
+      <Helmet><title>Bahan baku - Solivagant</title></Helmet>
         <main className="mobile-page space-y-3">
         <MobileTopBar
-          title="Materials"
+          title="Bahan baku"
           subtitle={undefined}
-          action={<Button type="button" size="icon" aria-label="Tambah material" onClick={() => navigate('/mobile/raw-materials/new', { state: getMobileFromState(location) })} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
+          action={<Button type="button" size="icon" aria-label="Tambah bahan baku" onClick={() => navigate('/mobile/raw-materials/new', { state: getMobileFromState(location) })} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-material-search-panel">
-          <MobileSearchBar value={query} onChange={setQuery} placeholder="Search material, CAS, supplier..." disabled={loading} />
+          <MobileSearchBar value={query} onChange={setQuery} placeholder="Cari bahan, CAS, supplier..." disabled={loading} />
           <MobileFilterChips options={cleanupOptions} value={cleanupFilter} onChange={setCleanupFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
           <MobileFilterChips options={referenceOptions} value={referenceFilter} onChange={setReferenceFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
           {guidanceLoading && !loading ? (
             <MobileInlineNotice
               tone="loading"
-              title="Guidance sedang disinkronkan"
-              description="Material tetap bisa dipakai sambil data referensi diperbarui."
+              title="Panduan sedang disinkronkan"
+              description="Bahan baku tetap bisa dipakai sambil data referensi diperbarui."
               className="mt-2"
             />
           ) : null}
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button variant="outline" className="mobile-interactive mobile-pressable rounded-2xl bg-white" onClick={() => navigate('/mobile/raw-material-audit')}><SlidersHorizontal className="mr-2 h-4 w-4" />Audit</Button>
-            <Button variant="outline" className="mobile-interactive mobile-pressable rounded-2xl bg-white" onClick={() => navigate('/mobile/categories')}><FolderTree className="mr-2 h-4 w-4" />Categories</Button>
+            <Button variant="outline" className="mobile-interactive mobile-pressable rounded-2xl bg-white" onClick={() => navigate('/mobile/categories')}><FolderTree className="mr-2 h-4 w-4" />Kategori</Button>
           </div>
         </div>
-        {loading && !materials.length ? <MobileLoadingSkeleton count={4} title="Loading materials..." subtitle="Preparing stock, guidance, and cleanup status." /> : loadError ? (
+        {loading && !materials.length ? <MobileLoadingSkeleton count={4} title="Memuat bahan baku..." subtitle="Menyiapkan stok, panduan, dan status kerapian data." /> : loadError ? (
           <MobileStatePanel
             tone="error"
-            title="Couldn’t load materials"
+            title="Bahan baku gagal dimuat"
             description={loadError}
-            action="Try again"
+            action="Coba lagi"
             onAction={loadMaterials}
           />
         ) : materials.length === 0 ? (
           <MobileEmptyState
             icon={Package}
-            title={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active' ? 'No matching materials' : 'No materials yet'}
+            title={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active' ? 'Tidak ada bahan yang cocok' : 'Belum ada bahan baku'}
             description={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active'
-              ? 'Try another keyword or clear the current material filters.'
-              : 'Add your first material to start building stock, guidance, and costing data.'}
-            action={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active' ? 'Clear filters' : 'Add Material'}
+              ? 'Coba kata kunci lain, atau hapus saringan yang sedang aktif.'
+              : 'Tambahkan bahan baku pertama untuk mulai mengisi data stok, panduan, dan biaya.'}
+            action={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active' ? 'Hapus saringan' : 'Tambah bahan baku'}
             onAction={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active'
               ? () => {
                 setQuery('');
@@ -387,7 +387,7 @@ const MobileRawMaterialsPage = () => {
                   onDelete={() => setDeleteTarget(material)}
                   onOpenGuidance={() => openGuidance(material)}
                   addActionIcon={PackageCheck}
-                  addActionLabel="Stock"
+                  addActionLabel="Stok"
                 />
               ))}
             </div>
@@ -398,24 +398,24 @@ const MobileRawMaterialsPage = () => {
       <DeleteConfirmationDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        itemName={deleteTarget?.name || 'material'}
+        itemName={deleteTarget?.name || 'bahan baku'}
         onConfirm={handleDeleteMaterial}
         loading={deleting}
       />
       <MobileBottomSheet
         open={Boolean(stockTarget)}
         onOpenChange={(open) => !open && setStockTarget(null)}
-        title="Edit Stock"
+        title="Edit stok"
         description={stockTarget?.name}
-        footer={<Button type="button" onClick={handleSaveStock} disabled={stockSaving} className="h-12 w-full rounded-2xl">{stockSaving ? 'Saving...' : 'Update Stock & Price'}</Button>}
+        footer={<Button type="button" onClick={handleSaveStock} disabled={stockSaving} className="h-12 w-full rounded-2xl">{stockSaving ? 'Menyimpan...' : 'Simpan stok & harga'}</Button>}
       >
         <div className="grid gap-4 pb-2">
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
-            Current unit: {stockTarget?.unit || 'g'}
+            Satuan saat ini: {stockTarget?.unit || 'g'}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Stock on hand</Label>
+              <Label>Stok tersedia</Label>
               <LocalizedNumberInput as={Input}
                 value={stockForm.stock_quantity}
                 onChange={(value) => setStockForm((current) => ({ ...current, stock_quantity: value }))}
@@ -423,7 +423,7 @@ const MobileRawMaterialsPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Minimum stock</Label>
+              <Label>Stok minimum</Label>
               <LocalizedNumberInput as={Input}
                 value={stockForm.minimum_stock}
                 onChange={(value) => setStockForm((current) => ({ ...current, minimum_stock: value }))}
@@ -432,16 +432,16 @@ const MobileRawMaterialsPage = () => {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Low stock alert</Label>
+            <Label>Peringatan stok menipis</Label>
             <LocalizedNumberInput as={Input}
               value={stockForm.low_stock_threshold}
               onChange={(value) => setStockForm((current) => ({ ...current, low_stock_threshold: value }))}
               className="rounded-2xl bg-white"
-              placeholder="Optional"
+              placeholder="Opsional"
             />
           </div>
           <div className="space-y-2">
-            <Label>Unit price per 10 {stockTarget?.unit || 'g'}</Label>
+            <Label>Harga per 10 {stockTarget?.unit || 'g'}</Label>
             <LocalizedNumberInput as={Input}
               value={stockForm.cost_per_unit}
               onChange={(value) => setStockForm((current) => ({ ...current, cost_per_unit: value }))}
@@ -453,16 +453,16 @@ const MobileRawMaterialsPage = () => {
       <MobileBottomSheet
         open={Boolean(guidanceTarget)}
         onOpenChange={(open) => !open && setGuidanceTarget(null)}
-        title="Import Guidance URL"
+        title="Impor URL panduan"
         description={guidanceTarget?.name}
-        footer={<Button type="button" onClick={handleImportGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Importing guidance...' : 'Import Guidance'}</Button>}
+        footer={<Button type="button" onClick={handleImportGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Mengimpor panduan...' : 'Impor panduan'}</Button>}
       >
         <div className="grid gap-3 pb-2">
           <div className="space-y-1"><Label className="text-xs">URL</Label><Input value={guidanceForm.url} onChange={(event) => setGuidanceForm((current) => ({ ...current, url: event.target.value }))} className="h-10 rounded-xl bg-white text-xs" placeholder="https://..." /></div>
-          <div className="space-y-1"><Label className="text-xs">Source</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
-          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Guidance imported" description={guidanceSummary.slice(0, 6).join(' · ')} /> : null}
-          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Import failed" description="Check the URL and try again." /> : null}
-          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Insights updated" description="Material guidance is ready to use." /> : null}
+          <div className="space-y-1"><Label className="text-xs">Sumber</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
+          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Panduan berhasil diimpor" description={guidanceSummary.slice(0, 6).join(' · ')} /> : null}
+          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Impor gagal" description="Periksa URL-nya lalu coba lagi." /> : null}
+          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Data diperbarui" description="Panduan bahan baku siap dipakai." /> : null}
         </div>
       </MobileBottomSheet>
     </MobileAuthenticatedLayout>

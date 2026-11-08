@@ -89,7 +89,7 @@ const buildImportedSourceSnapshot = (sourceKey, imported, targetUrl) => ({
 const displayGuidanceNumber = (value, suffix = '') => {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue) || numericValue <= 0) {
-    return 'Not set';
+    return 'Belum diisi';
   }
 
   return `${numericValue}${suffix}`;
@@ -235,12 +235,12 @@ const RawMaterialGuidanceQuickEditDialog = ({
     }
 
     return [
-      guidanceStatus.missingGuidance ? 'Belum ada workbook/manual guidance.' : null,
-      guidanceStatus.missingImpact ? 'Nilai impact belum ada.' : null,
-      guidanceStatus.missingLife ? 'Nilai life belum ada.' : null,
-      guidanceStatus.missingClass ? 'Family/class workbook untuk pie-bar display belum ada.' : null,
-      guidanceStatus.missingCas ? 'CAS number belum ada.' : null,
-      guidanceStatus.missingIfra ? 'IFRA limit belum ada.' : null,
+      guidanceStatus.missingGuidance ? 'Belum ada panduan workbook/manual.' : null,
+      guidanceStatus.missingImpact ? 'Nilai kekuatan belum ada.' : null,
+      guidanceStatus.missingLife ? 'Nilai ketahanan belum ada.' : null,
+      guidanceStatus.missingClass ? 'Keluarga/kelas workbook untuk grafik pie dan bar belum ada.' : null,
+      guidanceStatus.missingCas ? 'Nomor CAS belum ada.' : null,
+      guidanceStatus.missingIfra ? 'Batas IFRA belum ada.' : null,
     ].filter(Boolean);
   }, [guidanceStatus]);
 
@@ -277,8 +277,8 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
       toast.success(
         workbookImportResult.syncedCount > 0
-          ? `Workbook guidance for ${material.name} updated. ${workbookImportResult.syncedCount} matching material(s) on workbook ${workbookImportResult.workbookCode} also synced.`
-          : `Workbook guidance for ${material.name} updated`
+          ? `Panduan workbook untuk ${material.name} diperbarui. ${workbookImportResult.syncedCount} bahan lain dengan workbook ${workbookImportResult.workbookCode} ikut disinkronkan.`
+          : `Panduan workbook untuk ${material.name} diperbarui`
       );
       onOpenChange(false);
       onSaved?.(updatedMaterial);
@@ -306,24 +306,24 @@ const RawMaterialGuidanceQuickEditDialog = ({
             ...current,
             workbook_code: material.workbook_code || '',
           }));
-          setWorkbookCodeNotice(error.message || 'Workbook code bentrok dengan raw material lain, jadi field ini tidak ikut disimpan.');
+          setWorkbookCodeNotice(error.message || 'Kode workbook bentrok dengan bahan lain, jadi kolom ini tidak ikut disimpan.');
             const workbookImportResult = pendingWorkbookBulkImport
               ? await applyWorkbookImportToMatchingMaterials(pendingWorkbookBulkImport)
               : { syncedCount: 0, workbookCode: null };
             toast.success(
               workbookImportResult.syncedCount > 0
-                ? `Workbook guidance for ${material.name} updated. Workbook code tidak diubah karena bentrok, tetapi ${workbookImportResult.syncedCount} matching material(s) on workbook ${workbookImportResult.workbookCode} also synced.`
-                : `Workbook guidance for ${material.name} updated. Workbook code tidak diubah karena bentrok.`
+                ? `Panduan workbook untuk ${material.name} diperbarui. Kode workbook tidak diubah karena bentrok, tetapi ${workbookImportResult.syncedCount} bahan lain dengan workbook ${workbookImportResult.workbookCode} ikut disinkronkan.`
+                : `Panduan workbook untuk ${material.name} diperbarui. Kode workbook tidak diubah karena bentrok.`
             );
           onSaved?.(updatedMaterial);
           return;
         } catch (retryError) {
-          toast.error(retryError.message || error.message || 'Failed to update workbook guidance');
+          toast.error(retryError.message || error.message || 'Gagal memperbarui panduan workbook');
           return;
         }
       }
 
-      toast.error(error.message || 'Failed to update workbook guidance');
+      toast.error(error.message || 'Gagal memperbarui panduan workbook');
     }
   };
 
@@ -369,15 +369,15 @@ const RawMaterialGuidanceQuickEditDialog = ({
       setSuggestedDescription(imported.description || material?.description || '');
       appendSourceSnapshot('scentree', buildImportedSourceSnapshot('scentree', imported, scentreeUrl.trim()));
       setInferenceLines([
-        imported.classification_path?.length ? `ScenTree path: ${imported.classification_path.join(' > ')}` : 'ScenTree path tidak tersedia.',
-        imported.volatility ? `Volatility: ${imported.volatility}` : 'Volatility tidak tersedia di ScenTree.',
-        imported.detection_threshold ? `Detection threshold: ${imported.detection_threshold}` : 'Detection threshold tidak tersedia di ScenTree.',
-        imported.uses_in_perfumery ? `Uses in perfumery: ${imported.uses_in_perfumery}` : 'Uses in perfumery tidak tersedia di ScenTree.',
-        imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'IFRA note tidak tersedia di ScenTree.',
+        imported.classification_path?.length ? `Jalur ScenTree: ${imported.classification_path.join(' > ')}` : 'Jalur ScenTree tidak tersedia.',
+        imported.volatility ? `Volatilitas: ${imported.volatility}` : 'Volatilitas tidak tersedia di ScenTree.',
+        imported.detection_threshold ? `Ambang deteksi: ${imported.detection_threshold}` : 'Ambang deteksi tidak tersedia di ScenTree.',
+        imported.uses_in_perfumery ? `Kegunaan di parfum: ${imported.uses_in_perfumery}` : 'Kegunaan di parfum tidak tersedia di ScenTree.',
+        imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'Catatan IFRA tidak tersedia di ScenTree.',
       ]);
-      toast.success('ScenTree URL imported');
+      toast.success('URL ScenTree berhasil diimpor');
     } catch (error) {
-      toast.error(error.message || 'Failed to import ScenTree URL');
+      toast.error(error.message || 'Gagal mengimpor URL ScenTree');
     } finally {
       setImportingUrl(false);
     }
@@ -426,18 +426,18 @@ const RawMaterialGuidanceQuickEditDialog = ({
       appendSourceSnapshot('perfumersworld', buildImportedSourceSnapshot('perfumersworld', imported, perfumersWorldUrl.trim()));
       setPendingWorkbookBulkImport(imported.workbook_code ? imported : null);
       setInferenceLines([
-        imported.workbook_code ? `Workbook code: ${imported.workbook_code}` : 'Workbook code tidak tersedia di PerfumersWorld.',
-        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di PerfumersWorld.',
-        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Life: ${imported.reference_life_hours} h` : 'Life tidak tersedia di PerfumersWorld.',
-        imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined ? `Typical use level: ${imported.reference_use_level_typical_percent}%` : 'Typical use level tidak tersedia di PerfumersWorld.',
-        imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined ? `Max use level: ${imported.reference_use_level_max_percent}%` : 'Max use level tidak tersedia di PerfumersWorld.',
-        imported.pw_price_label ? `PerfumersWorld price: ${imported.pw_price_label}` : 'Harga PerfumersWorld tidak tersedia.',
-        imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'IFRA numeric limit tidak tersedia langsung di halaman PerfumersWorld.',
-        imported.workbook_code ? `Saat disimpan, workbook ${imported.workbook_code} akan disinkronkan ke semua raw material dengan workbook code yang sama.` : 'Workbook code belum terbaca, jadi sinkronisasi massal tidak akan dijalankan.',
+        imported.workbook_code ? `Kode workbook: ${imported.workbook_code}` : 'Kode workbook tidak tersedia di PerfumersWorld.',
+        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Kekuatan: ${imported.reference_impact}` : 'Kekuatan tidak tersedia di PerfumersWorld.',
+        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Ketahanan: ${imported.reference_life_hours} jam` : 'Ketahanan tidak tersedia di PerfumersWorld.',
+        imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined ? `Takaran umum: ${imported.reference_use_level_typical_percent}%` : 'Takaran umum tidak tersedia di PerfumersWorld.',
+        imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined ? `Takaran maks: ${imported.reference_use_level_max_percent}%` : 'Takaran maks tidak tersedia di PerfumersWorld.',
+        imported.pw_price_label ? `Harga PerfumersWorld: ${imported.pw_price_label}` : 'Harga PerfumersWorld tidak tersedia.',
+        imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'Angka batas IFRA tidak tersedia langsung di halaman PerfumersWorld.',
+        imported.workbook_code ? `Saat disimpan, workbook ${imported.workbook_code} akan disinkronkan ke semua bahan dengan kode workbook yang sama.` : 'Kode workbook belum terbaca, jadi sinkronisasi massal tidak dijalankan.',
       ]);
-      toast.success('PerfumersWorld URL imported');
+      toast.success('URL PerfumersWorld berhasil diimpor');
     } catch (error) {
-      toast.error(error.message || 'Failed to import PerfumersWorld URL');
+      toast.error(error.message || 'Gagal mengimpor URL PerfumersWorld');
     } finally {
       setImportingUrl(false);
     }
@@ -482,14 +482,14 @@ const RawMaterialGuidanceQuickEditDialog = ({
       appendSourceSnapshot('tgsc', buildImportedSourceSnapshot('tgsc', imported, tgscUrl.trim()));
       setInferenceLines([
         imported.cas_number ? `CAS: ${imported.cas_number}` : 'CAS tidak tersedia di TGSC.',
-        imported.odor_type ? `Odor type: ${imported.odor_type}` : 'Odor type tidak tersedia di TGSC.',
-        imported.odor_strength ? `Odor strength: ${imported.odor_strength}` : 'Odor strength tidak tersedia di TGSC.',
-        imported.substantivity_hours !== null && imported.substantivity_hours !== undefined ? `Substantivity: ${imported.substantivity_hours} h` : 'Substantivity tidak tersedia di TGSC.',
-        imported.odor_description ? `Odor description: ${imported.odor_description}` : 'Odor description tidak tersedia di TGSC.',
+        imported.odor_type ? `Jenis aroma: ${imported.odor_type}` : 'Jenis aroma tidak tersedia di TGSC.',
+        imported.odor_strength ? `Kekuatan aroma: ${imported.odor_strength}` : 'Kekuatan aroma tidak tersedia di TGSC.',
+        imported.substantivity_hours !== null && imported.substantivity_hours !== undefined ? `Substantivitas: ${imported.substantivity_hours} jam` : 'Substantivitas tidak tersedia di TGSC.',
+        imported.odor_description ? `Deskripsi aroma: ${imported.odor_description}` : 'Deskripsi aroma tidak tersedia di TGSC.',
       ]);
-      toast.success('TGSC URL imported');
+      toast.success('URL TGSC berhasil diimpor');
     } catch (error) {
-      toast.error(error.message || 'Failed to import TGSC URL');
+      toast.error(error.message || 'Gagal mengimpor URL TGSC');
     } finally {
       setImportingUrl(false);
     }
@@ -499,9 +499,9 @@ const RawMaterialGuidanceQuickEditDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88vh] max-w-2xl overflow-y-auto rounded-[24px] border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(249,246,239,1)_100%)] p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl tracking-[-0.02em]">Workbook guidance</DialogTitle>
+          <DialogTitle className="text-xl tracking-[-0.02em]">Panduan workbook</DialogTitle>
           <DialogDescription>
-            Lengkapi data penting untuk {material?.name || 'material ini'} agar impact, life, pie, dan bar display lebih akurat.
+            Lengkapi data penting untuk {material?.name || 'bahan ini'} supaya kekuatan, ketahanan, serta grafik pie dan bar lebih akurat.
           </DialogDescription>
         </DialogHeader>
 
@@ -509,14 +509,14 @@ const RawMaterialGuidanceQuickEditDialog = ({
           <div className="rounded-2xl border border-[#e6deca] bg-white/80 px-4 py-4">
             <div className="mb-4 flex flex-col gap-1.5">
               <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                Current values
+                Nilai saat ini
               </div>
               <div className="text-lg font-semibold tracking-[-0.02em] text-[#433821]">
-                {material?.name || 'Unknown material'}
+                {material?.name || 'Bahan tanpa nama'}
               </div>
               {hasMeaningfulText(material?.guidance_resolved_values?.workbook_code) ? (
                 <div className="text-xs text-muted-foreground">
-                  Workbook code {material.guidance_resolved_values.workbook_code}
+                  Kode workbook {material.guidance_resolved_values.workbook_code}
                 </div>
               ) : null}
             </div>
@@ -524,7 +524,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
               <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">CAS</div>
                 <div className="mt-1.5 font-medium text-foreground">
-                  {material.guidance_resolved_values.cas_number || 'Not set'}
+                  {material.guidance_resolved_values.cas_number || 'Belum diisi'}
                 </div>
               </div>
               <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
@@ -534,31 +534,31 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 </div>
               </div>
               <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Family</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Keluarga aroma</div>
                 <div className="mt-1.5 font-medium text-foreground">
-                  {material.guidance_resolved_values.reference_abc_primary_family || 'No family selected'}
+                  {material.guidance_resolved_values.reference_abc_primary_family || 'Belum ada keluarga aroma'}
                 </div>
               </div>
               <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Impact</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Kekuatan</div>
                 <div className="mt-1.5 font-medium text-foreground">
                   {displayGuidanceNumber(material.guidance_resolved_values.reference_impact)}
                 </div>
               </div>
               <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Life</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Ketahanan</div>
                 <div className="mt-1.5 font-medium text-foreground">
-                  {displayGuidanceNumber(material.guidance_resolved_values.reference_life_hours, ' h')}
+                  {displayGuidanceNumber(material.guidance_resolved_values.reference_life_hours, ' jam')}
                 </div>
               </div>
               <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Typical use level</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Takaran umum</div>
                 <div className="mt-1.5 font-medium text-foreground">
                   {displayGuidanceNumber(material.guidance_resolved_values.reference_use_level_typical_percent, ' %')}
                 </div>
               </div>
               <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3 md:col-span-2 xl:col-span-1">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Max use level</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Takaran maks</div>
                 <div className="mt-1.5 font-medium text-foreground">
                   {displayGuidanceNumber(material.guidance_resolved_values.reference_use_level_max_percent, ' %')}
                 </div>
@@ -583,20 +583,20 @@ const RawMaterialGuidanceQuickEditDialog = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2 rounded-2xl border border-[#e6deca] bg-white/75 p-4">
             <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-              Import URL
+              Impor URL
             </div>
 
             <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3">
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div>
-                  <Label htmlFor="quick-guidance-perfumersworld-url">PerfumersWorld URL</Label>
+                  <Label htmlFor="quick-guidance-perfumersworld-url">URL PerfumersWorld</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Tempel link produk PerfumersWorld untuk import workbook code, impact, life, CAS, dan use level.
+                    Tempel link produk PerfumersWorld untuk mengimpor kode workbook, kekuatan, ketahanan, CAS, dan takaran.
                   </p>
                 </div>
                 <Button type="button" variant="outline" onClick={handleImportPerfumersWorldUrl} className="rounded-2xl" disabled={importingUrl}>
                   <Link2 className="mr-2 h-4 w-4" />
-                  {importingUrl ? 'Importing...' : 'Import URL'}
+                  {importingUrl ? 'Mengimpor...' : 'Impor URL'}
                 </Button>
               </div>
               <Input
@@ -611,14 +611,14 @@ const RawMaterialGuidanceQuickEditDialog = ({
             <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3">
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div>
-                  <Label htmlFor="quick-guidance-scentree-url">ScenTree URL</Label>
+                  <Label htmlFor="quick-guidance-scentree-url">URL ScenTree</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Tempel URL ingredient dari ScenTree untuk import family, CAS, IFRA, volatility, dan descriptor ringkas.
+                    Tempel URL bahan dari ScenTree untuk mengimpor keluarga aroma, CAS, IFRA, volatilitas, dan deskripsi singkat.
                   </p>
                 </div>
                 <Button type="button" variant="outline" onClick={handleImportScentreeUrl} className="rounded-2xl" disabled={importingUrl}>
                   <Link2 className="mr-2 h-4 w-4" />
-                  {importingUrl ? 'Importing...' : 'Import URL'}
+                  {importingUrl ? 'Mengimpor...' : 'Impor URL'}
                 </Button>
               </div>
               <Input
@@ -633,14 +633,14 @@ const RawMaterialGuidanceQuickEditDialog = ({
             <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3">
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div>
-                  <Label htmlFor="quick-guidance-tgsc-url">TGSC URL</Label>
+                  <Label htmlFor="quick-guidance-tgsc-url">URL TGSC</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Tempel URL The Good Scents Company untuk import CAS, odor profile, impact heuristic, dan life dari substantivity.
+                    Tempel URL The Good Scents Company untuk mengimpor CAS, profil aroma, perkiraan kekuatan, dan ketahanan dari substantivitas.
                   </p>
                 </div>
                 <Button type="button" variant="outline" onClick={handleImportTgscUrl} className="rounded-2xl" disabled={importingUrl}>
                   <Link2 className="mr-2 h-4 w-4" />
-                  {importingUrl ? 'Importing...' : 'Import URL'}
+                  {importingUrl ? 'Mengimpor...' : 'Impor URL'}
                 </Button>
               </div>
               <Input
@@ -655,7 +655,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
             {inferenceLines.length ? (
               <div className="rounded-xl border border-[#e7decb] bg-[#fcfaf4] px-3 py-3 text-xs text-[#5e5239]">
                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                  Suggestion notes
+                  Catatan saran
                 </div>
                 <div className="space-y-1">
                   {inferenceLines.map((line) => (
@@ -667,7 +667,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
             {suggestedDescription ? (
               <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3 text-xs text-[#5e5239]">
                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                  Workbook summary short
+                  Ringkasan workbook
                 </div>
                 <div>{suggestedDescription}</div>
               </div>
@@ -676,43 +676,43 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
           <div className="rounded-2xl border border-[#e6deca] bg-white/80 p-4">
             <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-              Editable result
+              Hasil yang bisa diubah
             </div>
 
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="quick-guidance-workbook-code">Workbook code</Label>
+                    <Label htmlFor="quick-guidance-workbook-code">Kode workbook</Label>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.workbook_code} onCheckedChange={(checked) => toggleFieldLock('workbook_code', checked)} />
-                      <span>Lock</span>
+                      <span>Kunci</span>
                     </div>
                   </div>
                   <Input
                     id="quick-guidance-workbook-code"
                     value={formData.workbook_code}
                     onChange={(event) => setFormData((current) => ({ ...current, workbook_code: event.target.value }))}
-                    placeholder="Optional workbook code"
+                    placeholder="Kode workbook (opsional)"
                     className="h-11 rounded-2xl"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Jika code bentrok dengan material lain, field lain tetap disimpan dan workbook code akan dikembalikan ke nilai sebelumnya.
+                    Kalau kodenya bentrok dengan bahan lain, kolom lain tetap disimpan dan kode workbook dikembalikan ke nilai sebelumnya.
                   </p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="quick-guidance-cas">CAS number</Label>
+                    <Label htmlFor="quick-guidance-cas">Nomor CAS</Label>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.cas_number} onCheckedChange={(checked) => toggleFieldLock('cas_number', checked)} />
-                      <span>Lock</span>
+                      <span>Kunci</span>
                     </div>
                   </div>
                   <Input
                     id="quick-guidance-cas"
                     value={formData.cas_number}
                     onChange={(event) => setFormData((current) => ({ ...current, cas_number: event.target.value }))}
-                    placeholder="e.g. 79-09-4"
+                    placeholder="mis. 79-09-4"
                     className="h-11 rounded-2xl"
                   />
                 </div>
@@ -721,17 +721,17 @@ const RawMaterialGuidanceQuickEditDialog = ({
               {workbookCodeNotice ? (
                 <Alert variant="default" className="border-amber-200 bg-amber-50 text-amber-950 [&>svg]:text-amber-700">
                   <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Workbook code tidak disimpan</AlertTitle>
+                  <AlertTitle>Kode workbook tidak disimpan</AlertTitle>
                   <AlertDescription>{workbookCodeNotice}</AlertDescription>
                 </Alert>
               ) : null}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="quick-guidance-family">Workbook family / class</Label>
+                  <Label htmlFor="quick-guidance-family">Keluarga aroma / kelas workbook</Label>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Checkbox checked={fieldLocks.reference_abc_primary_family} onCheckedChange={(checked) => toggleFieldLock('reference_abc_primary_family', checked)} />
-                    <span>Lock</span>
+                    <span>Kunci</span>
                   </div>
                 </div>
                 <Select
@@ -742,10 +742,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
                   }))}
                 >
                   <SelectTrigger id="quick-guidance-family" className="h-11 rounded-2xl">
-                    <SelectValue placeholder="Select workbook family" />
+                    <SelectValue placeholder="Pilih keluarga aroma" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">No family selected</SelectItem>
+                    <SelectItem value="__none__">Tanpa keluarga aroma</SelectItem>
                     {familyOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -758,10 +758,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="quick-guidance-impact">Impact</Label>
+                    <Label htmlFor="quick-guidance-impact">Kekuatan</Label>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.reference_impact} onCheckedChange={(checked) => toggleFieldLock('reference_impact', checked)} />
-                      <span>Lock</span>
+                      <span>Kunci</span>
                     </div>
                   </div>
                   <Input
@@ -778,10 +778,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="quick-guidance-life">Life (hours)</Label>
+                    <Label htmlFor="quick-guidance-life">Ketahanan di strip (jam)</Label>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.reference_life_hours} onCheckedChange={(checked) => toggleFieldLock('reference_life_hours', checked)} />
-                      <span>Lock</span>
+                      <span>Kunci</span>
                     </div>
                   </div>
                   <Input
@@ -800,10 +800,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="quick-guidance-typical-use">Typical use level (%)</Label>
+                    <Label htmlFor="quick-guidance-typical-use">Takaran umum (%)</Label>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.reference_use_level_typical_percent} onCheckedChange={(checked) => toggleFieldLock('reference_use_level_typical_percent', checked)} />
-                      <span>Lock</span>
+                      <span>Kunci</span>
                     </div>
                   </div>
                   <Input
@@ -821,10 +821,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="quick-guidance-max-use">Max use level (%)</Label>
+                    <Label htmlFor="quick-guidance-max-use">Takaran maks (%)</Label>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.reference_use_level_max_percent} onCheckedChange={(checked) => toggleFieldLock('reference_use_level_max_percent', checked)} />
-                      <span>Lock</span>
+                      <span>Kunci</span>
                     </div>
                   </div>
                   <Input
@@ -843,10 +843,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="quick-guidance-ifra">IFRA limit (%)</Label>
+                  <Label htmlFor="quick-guidance-ifra">Batas IFRA (%)</Label>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Checkbox checked={fieldLocks.ifra_limit} onCheckedChange={(checked) => toggleFieldLock('ifra_limit', checked)} />
-                    <span>Lock</span>
+                    <span>Kunci</span>
                   </div>
                 </div>
                 <Input
@@ -857,7 +857,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
                   step="any"
                   value={formData.ifra_limit}
                   onChange={(event) => setFormData((current) => ({ ...current, ifra_limit: event.target.value }))}
-                  placeholder="Optional IFRA limit"
+                  placeholder="Batas IFRA (opsional)"
                   className="h-11 rounded-2xl"
                 />
               </div>
@@ -866,10 +866,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
           <DialogFooter className="gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-2xl">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" disabled={loading} className="rounded-2xl">
-              {loading ? 'Saving...' : 'OK'}
+              {loading ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
         </form>

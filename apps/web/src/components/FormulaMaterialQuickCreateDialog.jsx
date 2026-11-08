@@ -119,41 +119,41 @@ const FormulaMaterialQuickCreateDialog = ({
                 <Sparkles className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-amber-700">Quick create</p>
-                <AlertDialogTitle className="text-lg font-bold text-[#1f2937]">Tambah raw material baru?</AlertDialogTitle>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-amber-700">Buat cepat</p>
+                <AlertDialogTitle className="text-lg font-bold text-[#1f2937]">Tambah bahan baku baru?</AlertDialogTitle>
               </div>
             </div>
             <AlertDialogDescription className="text-sm font-medium leading-relaxed text-[#6b7280]">
-              Material ini akan dibuat dari input yang kamu ketik, lalu langsung dipilih ke row formula aktif.
+              Bahan ini dibuat dari nama yang kamu ketik, lalu langsung dipilih di baris formula yang aktif.
             </AlertDialogDescription>
           </AlertDialogHeader>
         </div>
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
           <div className="rounded-2xl border border-[#e6deca] bg-white p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a7a5a]">Material name</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a7a5a]">Nama bahan</p>
             <p className="mt-1 break-words text-base font-bold text-[#1f2937]">{name || '-'}</p>
           </div>
           <div className="rounded-2xl border border-[#e6deca] bg-white p-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a7a5a]">Optional data</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a7a5a]">Data opsional</p>
                 <p className="mt-1 text-xs font-semibold text-[#6b7280]">Isi kalau sudah tahu. Kalau belum, boleh kosong.</p>
               </div>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <label className="space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a9099]">Category</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a9099]">Kategori</span>
                 <Select
                   disabled={loading}
                   value={details.category || NO_CATEGORY_VALUE}
                   onValueChange={(value) => updateDetail('category', value === NO_CATEGORY_VALUE ? '' : value)}
                 >
                   <SelectTrigger className="h-9 rounded-xl bg-white text-xs">
-                    <SelectValue placeholder={categoriesLoading ? 'Memuat...' : 'Pilih category'} />
+                    <SelectValue placeholder={categoriesLoading ? 'Memuat...' : 'Pilih kategori'} />
                   </SelectTrigger>
                   <SelectContent className="max-h-72 rounded-xl">
-                    <SelectItem value={NO_CATEGORY_VALUE}>Tanpa category dulu</SelectItem>
+                    <SelectItem value={NO_CATEGORY_VALUE}>Tanpa kategori dulu</SelectItem>
                     {resolvedCategoryOptions.map((category) => (
                       <SelectItem key={category.id || category.name} value={category.name}>
                         {category.name}
@@ -168,17 +168,17 @@ const FormulaMaterialQuickCreateDialog = ({
                   value={details.cas_number}
                   disabled={loading}
                   onChange={(event) => updateDetail('cas_number', event.target.value)}
-                  placeholder="optional"
+                  placeholder="opsional"
                   className="h-9 rounded-xl text-xs"
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a9099]">Workbook</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a9099]">Kode workbook</span>
                 <Input
                   value={details.workbook_code}
                   disabled={loading}
                   onChange={(event) => updateDetail('workbook_code', event.target.value)}
-                  placeholder="optional"
+                  placeholder="opsional"
                   className="h-9 rounded-xl text-xs"
                 />
               </label>
@@ -189,7 +189,7 @@ const FormulaMaterialQuickCreateDialog = ({
                   disabled={loading}
                   inputMode="decimal"
                   onChange={(event) => updateDetail('cost_per_unit', event.target.value)}
-                  placeholder="optional"
+                  placeholder="opsional"
                   className="h-9 rounded-xl text-xs"
                 />
               </label>
@@ -198,11 +198,11 @@ const FormulaMaterialQuickCreateDialog = ({
           <div className="grid gap-2 text-xs font-semibold text-[#4b5563]">
             <div className="flex items-start gap-2 rounded-2xl bg-emerald-50 p-3 text-emerald-800">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Dibuat sebagai <strong>raw_material</strong> dengan unit default <strong>ml</strong>. Harga disimpan per <strong>10 ml</strong>.</span>
+              <span>Dibuat sebagai <strong>bahan baku</strong> dengan satuan bawaan <strong>ml</strong>. Harga disimpan per <strong>10 ml</strong>.</span>
             </div>
             <div className="flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-amber-800">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Field yang kosong tetap ditandai belum lengkap supaya bisa dilengkapi nanti.</span>
+              <span>Kolom yang kosong ditandai belum lengkap, supaya bisa dilengkapi nanti.</span>
             </div>
           </div>
         </div>

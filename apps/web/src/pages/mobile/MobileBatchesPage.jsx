@@ -53,21 +53,27 @@ import FormulaCostBlindSpotNotice from '@/components/FormulaCostBlindSpotNotice.
 const DEFAULT_TARGET_GRAMS = '100';
 const BATCH_ROW_PAGE_SIZE = 8;
 const targetPresets = ['30', '100', '500', '1000'];
-const workflowStatuses = BATCH_STATUSES.filter((status) => ['planned', 'produced', 'qc', 'ready_for_product', 'converted_to_product'].includes(status.value));
+// Display labels only. The values are what the batches table stores and what every check on this page
+// compares.
+const BATCH_STATUS_LABELS = Object.fromEntries(BATCH_STATUSES.map(({ value, label }) => [value, label]));
+const workflowStatuses = BATCH_STATUSES
+  .filter((status) => ['planned', 'produced', 'qc', 'ready_for_product', 'converted_to_product'].includes(status.value));
+
 const STOCK_DEDUCTING_STATUSES = new Set(['produced', 'qc', 'ready_for_product', 'converted_to_product']);
 const batchSteps = [
-  { value: 'setup', label: 'Setup' },
-  { value: 'produce', label: 'Produce' },
+  { value: 'setup', label: 'Siapkan' },
+  { value: 'produce', label: 'Produksi' },
   { value: 'qc', label: 'QC' },
-  { value: 'stock', label: 'Stock' },
-  { value: 'review', label: 'Review' },
+  { value: 'stock', label: 'Stok' },
+  { value: 'review', label: 'Tinjau' },
 ];
 const QC_STATUS_OPTIONS = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'passed', label: 'Passed' },
-  { value: 'needs_adjustment', label: 'Needs adjustment' },
-  { value: 'failed', label: 'Failed' },
+  { value: 'pending', label: 'Menunggu' },
+  { value: 'passed', label: 'Lulus' },
+  { value: 'needs_adjustment', label: 'Perlu penyesuaian' },
+  { value: 'failed', label: 'Gagal' },
 ];
+const qcStatusLabel = (value) => QC_STATUS_OPTIONS.find((option) => option.value === value)?.label;
 const buildBatchProductKey = ({ bottleMl, concentration, formulaId, lossPercent = 0, targetMl }) => [
   formulaId || 'formula',
   `${formatQuantity(targetMl, 2)}ml`,
@@ -119,7 +125,7 @@ const CostRow = ({ helper, item, label, onDraftChange, onSave, saving, value }) 
         min="0"
         step="0.01"
         className="h-9 rounded-xl bg-[#f8f7f4] px-2 text-xs font-bold"
-        aria-label={`${label} price per 10 ml`}
+        aria-label={`Harga ${label} per 10 ml`}
       />
       <Button
         type="button"
@@ -128,7 +134,7 @@ const CostRow = ({ helper, item, label, onDraftChange, onSave, saving, value }) 
         onClick={() => onSave(item.item_id, item.priceDraft)}
         disabled={saving}
         className="h-9 rounded-xl bg-white"
-        aria-label={`Save ${label} price`}
+        aria-label={`Simpan harga ${label}`}
       >
         <Save className="h-4 w-4" />
       </Button>
@@ -141,10 +147,10 @@ const UsageLedgerRow = ({ record }) => (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <div className="truncate text-xs font-bold text-[#1f2937]">
-          {record.raw_material_name || record.raw_material_id || 'Material'}
+          {record.raw_material_name || record.raw_material_id || 'Bahan'}
         </div>
         <div className="mt-0.5 text-[10px] font-bold uppercase text-[#8b949e]">
-          {record.type === 'batch_solvent' ? 'Solvent' : 'Formula material'} / {record.movement || record.source || 'Batch usage'}
+          {record.type === 'batch_solvent' ? 'Pelarut' : 'Bahan formula'} / {record.movement || record.source || 'Pemakaian batch'}
         </div>
       </div>
       <div className="shrink-0 text-right">
@@ -153,8 +159,8 @@ const UsageLedgerRow = ({ record }) => (
       </div>
     </div>
     <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] font-semibold text-[#6b7280]">
-      <span>Before {formatQuantity(record.stock_before, 2)}</span>
-      <span className="text-right">After {formatQuantity(record.stock_after, 2)}</span>
+      <span>Sebelum {formatQuantity(record.stock_before, 2)}</span>
+      <span className="text-right">Sesudah {formatQuantity(record.stock_after, 2)}</span>
     </div>
   </div>
 );
@@ -162,29 +168,29 @@ const UsageLedgerRow = ({ record }) => (
 const BatchStepHero = ({ activeStep, batchStatus, savedBatch, selectedFormula }) => {
   const copy = {
     setup: {
-      eyebrow: 'Batch setup',
-      title: selectedFormula ? `Prepare ${selectedFormula.name}` : 'Choose a formula to batch',
-      description: 'Set formula, batch size, dilution, solvent, and quick costing before committing production.',
+      eyebrow: 'Persiapan batch',
+      title: selectedFormula ? `Siapkan ${selectedFormula.name}` : 'Pilih formula yang mau dibuat batch',
+      description: 'Atur formula, ukuran batch, pengenceran, pelarut, dan hitung biaya cepat sebelum produksi.',
     },
     produce: {
-      eyebrow: 'Production record',
-      title: savedBatch ? 'Update the saved batch' : 'Save this as a production batch',
-      description: 'Lock the working batch context, status, and material movement trigger in one clear step.',
+      eyebrow: 'Catatan produksi',
+      title: savedBatch ? 'Perbarui batch yang tersimpan' : 'Simpan sebagai batch produksi',
+      description: 'Kunci data batch, status, dan pemicu pemotongan stok bahan dalam satu langkah.',
     },
     qc: {
-      eyebrow: 'QC gate',
-      title: 'Approve or flag adjustment',
-      description: 'Capture the batch quality decision before creating product stock.',
+      eyebrow: 'Gerbang QC',
+      title: 'Loloskan atau tandai perlu penyesuaian',
+      description: 'Catat keputusan kualitas batch sebelum membuat stok produk.',
     },
     stock: {
-      eyebrow: 'Product stock',
-      title: 'Convert approved batch to inventory',
-      description: 'Review yield, bottle count, COGS, and price before drafting a linked product.',
+      eyebrow: 'Stok produk',
+      title: 'Jadikan batch yang lolos stok produk',
+      description: 'Periksa hasil, jumlah botol, HPP, dan harga sebelum membuat draf produk yang tertaut.',
     },
     review: {
-      eyebrow: 'Review',
-      title: 'Check history and material breakdown',
-      description: 'Use this final step for exports, formula handoff, validation, and detailed cost rows.',
+      eyebrow: 'Tinjau',
+      title: 'Cek riwayat dan rincian bahan',
+      description: 'Langkah terakhir untuk ekspor, membuka formula, validasi, dan rincian biaya per bahan.',
     },
   }[activeStep];
 
@@ -199,9 +205,9 @@ const BatchStepHero = ({ activeStep, batchStatus, savedBatch, selectedFormula })
           <h2 className="mt-0.5 text-lg font-bold leading-tight text-editorial-charcoal">{copy.title}</h2>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{copy.description}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <MobileStatusBadge status={batchStatus} className="h-6 px-2.5 text-[10px]" />
+            <MobileStatusBadge status={batchStatus} className="h-6 px-2.5 text-[10px]">{BATCH_STATUS_LABELS[batchStatus]}</MobileStatusBadge>
             <span className="rounded-full border border-[#ece8df] bg-white px-2.5 py-1 text-[10px] font-bold text-[#6b7280]">
-              {savedBatch?.batch_code || 'Unsaved batch'}
+              {savedBatch?.batch_code || 'Batch belum disimpan'}
             </span>
           </div>
         </div>
@@ -220,7 +226,7 @@ const SolventPriceEditor = ({ material, priceDraft, onDraftChange, onSave, savin
       min="0"
       step="0.01"
       className="h-10 rounded-xl bg-white text-xs font-bold"
-      aria-label="Solvent price per 10 ml"
+      aria-label="Harga pelarut per 10 ml"
       disabled={!material}
     />
     <Button
@@ -230,7 +236,7 @@ const SolventPriceEditor = ({ material, priceDraft, onDraftChange, onSave, savin
       onClick={() => onSave(material?.id, priceDraft)}
       disabled={!material || saving}
       className="h-10 rounded-xl bg-white"
-      aria-label="Save solvent price"
+      aria-label="Simpan harga pelarut"
     >
       <Save className="h-4 w-4" />
     </Button>
@@ -514,12 +520,12 @@ const MobileBatchesPage = () => {
 
   const saveProductionBatch = async (nextStatus = batchStatus, overrides = {}) => {
     if (!selectedFormula || targetValue <= 0 || concentration <= 0) {
-      toast.error('Set formula, batch size, and dilution first');
+      toast.error('Isi dulu: formula, ukuran batch, dan pengenceran');
       return null;
     }
 
     if (!selectedSolventId) {
-      toast.error('Choose solvent before saving batch');
+      toast.error('Pilih pelarut sebelum menyimpan batch');
       return null;
     }
 
@@ -542,10 +548,10 @@ const MobileBatchesPage = () => {
         await updateFormulaStatus(selectedFormula.id, 'ready_for_batch');
       }
 
-      toast.success(usageRecords.length ? 'Batch saved and material stock deducted' : 'Batch disimpan');
+      toast.success(usageRecords.length ? 'Batch disimpan dan stok bahan dipotong' : 'Batch disimpan');
       return batch;
     } catch (error) {
-      toast.error(error.message || 'Failed to save batch');
+      toast.error(error.message || 'Gagal menyimpan batch');
       return null;
     } finally {
       setSavingBatch(false);
@@ -586,9 +592,9 @@ const MobileBatchesPage = () => {
         return next;
       });
       setPriceDrafts((current) => ({ ...current, [materialId]: String(nextPrice || '') }));
-      toast.success('Raw material price updated');
+      toast.success('Harga bahan baku diperbarui');
     } catch (error) {
-      toast.error(error.message || 'Failed to update price');
+      toast.error(error.message || 'Gagal memperbarui harga');
     } finally {
       setSavingPriceId('');
     }
@@ -596,22 +602,22 @@ const MobileBatchesPage = () => {
 
   const openPublishConfirmation = () => {
     if (!selectedFormula || productBottleCount <= 0) {
-      toast.error('Set formula, batch size, and bottle size first');
+      toast.error('Isi dulu: formula, ukuran batch, dan ukuran botol');
       return;
     }
 
     if (productPriceNumber <= 0) {
-      toast.error('Set a selling price before drafting product stock');
+      toast.error('Isi harga jual sebelum membuat draf stok produk');
       return;
     }
 
     if (qcStatus !== 'passed') {
-      toast.error('QC must pass before drafting product stock');
+      toast.error('QC harus lulus sebelum membuat draf stok produk');
       return;
     }
 
     if (publishedProduct) {
-      toast.info('Batch ini sudah pernah dipublish. Buka produk untuk edit stok, foto, dan deskripsi.');
+      toast.info('Batch ini sudah pernah dijadikan produk. Buka produknya untuk mengubah stok, foto, dan deskripsi.');
       navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`);
       return;
     }
@@ -621,22 +627,22 @@ const MobileBatchesPage = () => {
 
   const publishBatchAsProduct = async () => {
     if (!selectedFormula || productBottleCount <= 0) {
-      toast.error('Set formula, batch size, and bottle size first');
+      toast.error('Isi dulu: formula, ukuran batch, dan ukuran botol');
       return;
     }
 
     if (productPriceNumber <= 0) {
-      toast.error('Set a selling price before drafting product stock');
+      toast.error('Isi harga jual sebelum membuat draf stok produk');
       return;
     }
 
     if (qcStatus !== 'passed') {
-      toast.error('QC must pass before drafting product stock');
+      toast.error('QC harus lulus sebelum membuat draf stok produk');
       return;
     }
 
     if (publishedProduct) {
-      toast.info('Batch ini sudah pernah dipublish. Buka produk untuk edit stok, foto, dan deskripsi.');
+      toast.info('Batch ini sudah pernah dijadikan produk. Buka produknya untuk mengubah stok, foto, dan deskripsi.');
       navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`);
       return;
     }
@@ -698,7 +704,7 @@ const MobileBatchesPage = () => {
         product_id: product.id,
       }));
       await updateFormulaStatus(selectedFormula.id, 'published_product');
-      toast.success(`${productBottleCount} bottles drafted in products`);
+      toast.success(`${productBottleCount} botol dibuat sebagai draf produk`);
       // Same as the desktop batch screen and both product forms: an automatic price that failed to
       // write is said out loud, not left for someone to notice in the catalogue.
       const tierMessage = autoTierPriceMessage(product.autoTierPrices);
@@ -706,7 +712,7 @@ const MobileBatchesPage = () => {
       setPublishConfirmOpen(false);
       navigate('/mobile/studio/products');
     } catch (error) {
-      toast.error(error.message || 'Failed to publish product');
+      toast.error(error.message || 'Gagal membuat draf produk');
     } finally {
       setPublishingProduct(false);
     }
@@ -714,7 +720,7 @@ const MobileBatchesPage = () => {
 
   const exportFormulaPdf = async () => {
     if (!selectedFormula || !concentrateRows.length) {
-      toast.error('Choose a costed formula first');
+      toast.error('Pilih formula yang biayanya sudah terhitung');
       return;
     }
 
@@ -739,9 +745,9 @@ const MobileBatchesPage = () => {
         }),
         `${selectedFormula.code || 'formula'}_${formatQuantity(targetValue, 0)}g_batch.pdf`
       );
-      toast.success('Formula PDF exported');
+      toast.success('PDF formula diekspor');
     } catch (error) {
-      toast.error(error.message || 'Failed to export formula PDF');
+      toast.error(error.message || 'Gagal mengekspor PDF formula');
     }
   };
 
@@ -760,7 +766,7 @@ const MobileBatchesPage = () => {
   const handleBatchPrimaryAction = async () => {
     if (batchStep === 'setup') {
       if (!selectedFormula || targetValue <= 0 || concentration <= 0 || !selectedSolventId) {
-        toast.error('Set formula, target, dilution, and solvent first');
+        toast.error('Isi dulu: formula, target, pengenceran, dan pelarut');
         return;
       }
       goToNextStep();
@@ -792,44 +798,44 @@ const MobileBatchesPage = () => {
   };
 
   const primaryActionLabel = {
-    setup: 'Continue to production',
-    produce: savingBatch ? 'Saving batch...' : savedBatch ? 'Update batch' : 'Save batch',
-    qc: savingBatch ? 'Saving QC...' : 'Save QC gate',
-    stock: publishedProduct ? 'Edit linked product' : publishingProduct ? 'Publishing...' : 'Draft product stock',
-    review: 'Export formula PDF',
+    setup: 'Lanjut ke produksi',
+    produce: savingBatch ? 'Menyimpan batch...' : savedBatch ? 'Perbarui batch' : 'Simpan batch',
+    qc: savingBatch ? 'Menyimpan QC...' : 'Simpan hasil QC',
+    stock: publishedProduct ? 'Ubah produk tertaut' : publishingProduct ? 'Membuat draf...' : 'Buat draf stok produk',
+    review: 'Ekspor PDF formula',
   }[batchStep];
 
   if (loading || (selectedFormulaId && !formulaProfile)) {
     return (
       <MobileAuthenticatedLayout>
-        <MobileLoadingState eyebrow="Batch" title="Loading batch calculator..." subtitle="Preparing formulas, solvent, and material pricing." />
+        <MobileLoadingState eyebrow="Batch" title="Memuat kalkulator batch..." subtitle="Menyiapkan formula, pelarut, dan harga bahan." />
       </MobileAuthenticatedLayout>
     );
   }
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Batch Calculator - Solivagant</title></Helmet>
+      <Helmet><title>Kalkulator Batch Mobile - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
           title="Batch"
-          subtitle="Concentrate and dilution COGS"
+          subtitle="HPP konsentrat dan pengenceran"
           onBack={() => navigate('/mobile/formulas')}
           action={<Calculator className="h-5 w-5 text-amber-700" />}
         />
 
         {profileLoading ? (
           <section className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-            Updating batch profile...
+            Memperbarui profil batch...
           </section>
         ) : null}
 
         {!formulas.length ? (
           <MobileEmptyState
             icon={FlaskConical}
-            title="No formula available"
-            description="Create or import a formula first, then this batch calculator will unlock concentrate, dilution, QC, and product stock controls."
-            action="New Formula"
+            title="Belum ada formula"
+            description="Buat atau impor formula dulu. Setelah itu kalkulator batch ini membuka pengaturan konsentrat, pengenceran, QC, dan stok produk."
+            action="Formula baru"
             onAction={() => navigate('/mobile/formulas/new')}
           />
         ) : (
@@ -843,7 +849,7 @@ const MobileBatchesPage = () => {
                   <Label className="text-xs font-bold text-[#6b7280]">Formula</Label>
                   <Select value={selectedFormulaId} onValueChange={setSelectedFormulaId}>
                     <SelectTrigger className="h-11 min-w-0 overflow-hidden rounded-2xl bg-white text-left text-xs [&>span]:min-w-0 [&>span]:truncate">
-                      <SelectValue placeholder="Select formula" />
+                      <SelectValue placeholder="Pilih formula" />
                     </SelectTrigger>
                     <SelectContent>
                       {formulas.map((formula) => (
@@ -861,16 +867,16 @@ const MobileBatchesPage = () => {
                     <Input value={targetGrams} onChange={(event) => setTargetGrams(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 min-w-0 rounded-2xl bg-white text-xs font-bold" />
                   </div>
                   <div className="min-w-0 space-y-2">
-                    <Label className="text-xs font-bold text-[#6b7280]">Dilution %</Label>
+                    <Label className="text-xs font-bold text-[#6b7280]">Pengenceran %</Label>
                     <Input value={retailInputs.formulaPercentage} onChange={(event) => updateRetailInput('formulaPercentage', normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 min-w-0 rounded-2xl bg-white text-xs font-bold" />
                   </div>
                 </div>
 
                 <div className="min-w-0 space-y-2">
-                  <Label className="text-xs font-bold text-[#6b7280]">Solvent</Label>
+                  <Label className="text-xs font-bold text-[#6b7280]">Pelarut</Label>
                   <Select value={selectedSolventId} onValueChange={setSelectedSolventId}>
                     <SelectTrigger className="h-11 min-w-0 overflow-hidden rounded-2xl bg-white text-left text-xs [&>span]:min-w-0 [&>span]:truncate">
-                      <SelectValue placeholder="Select solvent" />
+                      <SelectValue placeholder="Pilih pelarut" />
                     </SelectTrigger>
                     <SelectContent>
                       {solventOptions.map((material) => (
@@ -882,7 +888,7 @@ const MobileBatchesPage = () => {
                   </Select>
                 </div>
                 <div className="min-w-0 space-y-2">
-                  <Label className="text-xs font-bold text-[#6b7280]">Solvent price / 10 ml</Label>
+                  <Label className="text-xs font-bold text-[#6b7280]">Harga pelarut / 10 ml</Label>
                   <SolventPriceEditor
                     material={selectedSolvent}
                     priceDraft={solventPriceDraft}
@@ -897,24 +903,24 @@ const MobileBatchesPage = () => {
             {batchStep === 'produce' ? <section className="mobile-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-bold uppercase text-amber-700">Owner production flow</div>
-                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Save this as a production batch</h2>
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Alur produksi pemilik</div>
+                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Simpan sebagai batch produksi</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                    Formula yang sudah oke disimpan sebagai batch dulu, baru batch yang ready dikonversi menjadi draft product stock.
+                    Formula yang sudah oke disimpan sebagai batch dulu, baru batch yang siap diubah jadi draf stok produk.
                   </p>
                 </div>
-                <MobileStatusBadge status={batchStatus} className="shrink-0" />
+                <MobileStatusBadge status={batchStatus} className="shrink-0">{BATCH_STATUS_LABELS[batchStatus]}</MobileStatusBadge>
               </div>
               <div className="mt-3">
                 <MobileSegmentedControl options={workflowStatuses} value={batchStatus} onChange={setBatchStatus} className="mobile-compact-tabs" />
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <MetricTile label="Batch code" value={savedBatch?.batch_code || 'Not saved'} helper={savedBatch ? 'production record' : 'created on save'} />
-                <MetricTile label="History" value={`${batchHistory.length} batch`} helper="for this formula" tone={batchHistory.length ? 'emerald' : 'neutral'} />
+                <MetricTile label="Kode batch" value={savedBatch?.batch_code || 'Belum disimpan'} helper={savedBatch ? 'catatan produksi' : 'dibuat saat disimpan'} />
+                <MetricTile label="Riwayat" value={`${batchHistory.length} batch`} helper="untuk formula ini" tone={batchHistory.length ? 'emerald' : 'neutral'} />
                 <MetricTile
-                  label="Stock"
-                  value={savedBatch?.is_stock_deducted ? 'Deducted' : 'Pending'}
-                  helper={STOCK_DEDUCTING_STATUSES.has(batchStatus) ? 'material ledger' : 'after produced'}
+                  label="Stok"
+                  value={savedBatch?.is_stock_deducted ? 'Dipotong' : 'Menunggu'}
+                  helper={STOCK_DEDUCTING_STATUSES.has(batchStatus) ? 'catatan pemakaian' : 'setelah diproduksi'}
                   tone={savedBatch?.is_stock_deducted ? 'emerald' : 'neutral'}
                 />
               </div>
@@ -923,21 +929,23 @@ const MobileBatchesPage = () => {
             {batchStep === 'qc' ? <section className="mobile-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-bold uppercase text-amber-700">QC gate</div>
-                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Approve before product stock</h2>
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Gerbang QC</div>
+                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Loloskan sebelum jadi stok produk</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                    Product stock can only be drafted after QC passes.
+                    Draf stok produk baru bisa dibuat setelah QC lulus.
                   </p>
                 </div>
                 <MobileStatusBadge
                   status={qcStatus === 'passed' ? 'approved' : qcStatus}
                   tone={qcStatus === 'passed' ? 'approved' : qcStatus === 'failed' ? 'danger' : qcStatus === 'needs_adjustment' ? 'warning' : 'planned'}
                   className="shrink-0"
-                />
+                >
+                  {qcStatusLabel(qcStatus)}
+                </MobileStatusBadge>
               </div>
               <div className="mt-3 grid gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">QC status</Label>
+                  <Label className="text-xs">Status QC</Label>
                   <select
                     value={qcStatus}
                     onChange={(event) => setQcStatus(event.target.value)}
@@ -949,12 +957,12 @@ const MobileBatchesPage = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">QC notes</Label>
+                  <Label className="text-xs">Catatan QC</Label>
                   <textarea
                     value={qcNotes}
                     onChange={(event) => setQcNotes(event.target.value)}
                     rows={3}
-                    placeholder="Maceration, clarity, scent balance, adjustment notes..."
+                    placeholder="Maserasi, kejernihan, keseimbangan aroma, catatan penyesuaian..."
                     className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-xs font-semibold outline-none focus:border-amber-300"
                   />
                 </div>
@@ -964,10 +972,10 @@ const MobileBatchesPage = () => {
             {batchStep === 'qc' || batchStep === 'review' ? <section className="mobile-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-bold uppercase text-amber-700">Material usage ledger</div>
-                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Stock movements for this batch</h2>
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Catatan pemakaian bahan</div>
+                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Pergerakan stok untuk batch ini</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                    Deducted rows are locked by the batch record so material stock is only cut once.
+                    Baris yang sudah dipotong dikunci oleh catatan batch, jadi stok bahan hanya terpotong sekali.
                   </p>
                 </div>
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
@@ -975,11 +983,11 @@ const MobileBatchesPage = () => {
                 </span>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <MetricTile label="Rows" value={`${usageRecords.length}`} helper="usage records" tone={usageRecords.length ? 'emerald' : 'neutral'} />
+                <MetricTile label="Baris" value={`${usageRecords.length}`} helper="catatan pemakaian" tone={usageRecords.length ? 'emerald' : 'neutral'} />
                 <MetricTile
-                  label="Usage cost"
+                  label="Biaya pemakaian"
                   value={formatPrice(usageRecords.reduce((sum, record) => sum + Number(record.cost || 0), 0))}
-                  helper="material only"
+                  helper="bahan saja"
                   tone={usageRecords.length ? 'amber' : 'neutral'}
                 />
               </div>
@@ -988,8 +996,8 @@ const MobileBatchesPage = () => {
                   <UsageLedgerRow key={record.id || `${record.raw_material_id}-${record.type}`} record={record} />
                 )) : (
                   <div className="rounded-2xl border border-dashed border-[#e5e7eb] bg-white px-3 py-4 text-center">
-                    <div className="text-xs font-bold text-[#1f2937]">No material stock deducted yet</div>
-                    <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Move the batch to Produced, QC, or Ready for product to write the usage ledger.</p>
+                    <div className="text-xs font-bold text-[#1f2937]">Belum ada stok bahan yang dipotong</div>
+                    <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Pindahkan batch ke Diproduksi, QC, atau Siap produk untuk menulis catatan pemakaian.</p>
                   </div>
                 )}
               </div>
@@ -998,7 +1006,7 @@ const MobileBatchesPage = () => {
             {batchStep === 'review' ? <div className="grid grid-cols-2 gap-2">
               <Button type="button" variant="outline" onClick={exportFormulaPdf} className="h-11 rounded-2xl bg-white text-xs font-bold">
                 <Download className="mr-1 h-4 w-4" />
-                Formula PDF
+                PDF formula
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate(`/mobile/formulas/${selectedFormulaId}`)} className="h-11 rounded-2xl bg-white text-xs font-bold">
                 <FlaskConical className="mr-1 h-4 w-4" />
@@ -1006,21 +1014,21 @@ const MobileBatchesPage = () => {
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate('/mobile/production-costing')} className="h-11 rounded-2xl bg-white text-xs font-bold">
                 <Factory className="mr-1 h-4 w-4" />
-                Costing
+                Hitung biaya
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate(`/mobile/validation?formulaId=${selectedFormulaId}`)} className="h-11 rounded-2xl bg-white text-xs font-bold">
                 <ClipboardCheck className="mr-1 h-4 w-4" />
-                Validate
+                Validasi
               </Button>
             </div> : null}
 
             {batchStep === 'setup' ? <section className="mobile-card p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="truncate text-sm font-bold text-[#1f2937]">Batch presets</h2>
-                  <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">Tap a common trial or production size.</p>
+                  <h2 className="truncate text-sm font-bold text-[#1f2937]">Ukuran batch cepat</h2>
+                  <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">Ketuk ukuran uji coba atau produksi yang biasa dipakai.</p>
                 </div>
-                <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">{pricedRows}/{concentrateRows.length} priced</span>
+                <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">{pricedRows}/{concentrateRows.length} berharga</span>
               </div>
               <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
                 {targetPresets.map((preset) => {
@@ -1045,7 +1053,7 @@ const MobileBatchesPage = () => {
                   <PackageCheck className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-bold uppercase text-amber-700">Full concentrate</div>
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Konsentrat penuh</div>
                   <h2 className="mt-0.5 truncate text-base font-bold text-[#1f2937]">{selectedFormula?.name || 'Formula'}</h2>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {/* The weight this card's COGS is actually about. It used to show targetValue — the
@@ -1055,15 +1063,15 @@ const MobileBatchesPage = () => {
                         The batch it belongs to is named in the helper, where it cannot be mistaken for
                         the quantity being priced. */}
                     <MetricTile
-                      label="Weigh"
+                      label="Timbang"
                       value={formatGramAmount(concentrateBaseGrams)}
-                      helper={`${concentrateRows.length} materials · batch ${formatGramAmount(targetValue)}`}
+                      helper={`${concentrateRows.length} bahan · batch ${formatGramAmount(targetValue)}`}
                     />
-                    <MetricTile label="COGS" value={formatPrice(concentrateCost)} helper={`${formatCurrency(concentrateCostPerGram)} / g`} tone="amber" />
+                    <MetricTile label="HPP" value={formatPrice(concentrateCost)} helper={`${formatCurrency(concentrateCostPerGram)} / g`} tone="amber" />
                   </div>
                   {profileError ? (
                     <div role="alert" className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-xs font-semibold leading-relaxed text-rose-700">
-                      Biaya material formula gagal dimuat — COGS &amp; harga saran di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0), dan angka itu ikut TERSIMPAN ke catatan batch. Pilih ulang formula sebelum menyimpan.
+                      Biaya bahan formula gagal dimuat — HPP &amp; harga saran di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0), dan angka itu ikut TERSIMPAN ke catatan batch. Pilih ulang formula sebelum menyimpan.
                     </div>
                   ) : null}
                                     <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mt-3" />
@@ -1078,13 +1086,13 @@ const MobileBatchesPage = () => {
                   <Droplets className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-bold uppercase text-emerald-700">Dilution</div>
-                  <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">{formatPercentage(concentration, 1)} in {selectedSolvent?.name || 'solvent'}</h2>
+                  <div className="text-[10px] font-bold uppercase text-emerald-700">Pengenceran</div>
+                  <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">{formatPercentage(concentration, 1)} dalam {selectedSolvent?.name || 'pelarut'}</h2>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <MetricTile label="Concentrate" value={formatGramAmount(dilutionFormulaGrams)} helper={formatPrice(dilutionFormulaCost)} tone="emerald" />
-                    <MetricTile label="Solvent" value={formatGramAmount(dilutionSolventGrams)} helper={formatPrice(dilutionSolventCost)} />
-                    <MetricTile label="Total COGS" value={formatPrice(dilutionTotalCost)} helper={`${formatCurrency(dilutionCostPerGram)} / g`} tone="amber" />
-                    <MetricTile label="Bulk COGS" value={formatCurrency(localBulkCogsPerLiter || bulkComputed.allInBulkCogsPerLiter)} helper="per liter in website model" />
+                    <MetricTile label="Konsentrat" value={formatGramAmount(dilutionFormulaGrams)} helper={formatPrice(dilutionFormulaCost)} tone="emerald" />
+                    <MetricTile label="Pelarut" value={formatGramAmount(dilutionSolventGrams)} helper={formatPrice(dilutionSolventCost)} />
+                    <MetricTile label="Total HPP" value={formatPrice(dilutionTotalCost)} helper={`${formatCurrency(dilutionCostPerGram)} / g`} tone="amber" />
+                    <MetricTile label="HPP curah" value={formatCurrency(localBulkCogsPerLiter || bulkComputed.allInBulkCogsPerLiter)} helper="per liter, model website" />
                   </div>
                 </div>
               </div>
@@ -1096,32 +1104,32 @@ const MobileBatchesPage = () => {
                   <ShoppingBag className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-bold uppercase text-amber-700">Publish to product</div>
-                  <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">{publishedProduct ? 'Batch already has product stock' : 'Turn this batch into stock'}</h2>
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Jadikan produk</div>
+                  <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">{publishedProduct ? 'Batch ini sudah punya stok produk' : 'Jadikan batch ini stok'}</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
                     {publishedProduct
-                      ? `${publishedProduct.name} is linked to this formula, batch size, bottle size, dilution, and loss.`
-                      : `${formatQuantity(usableBatchVolume, 0)} ml usable / ${formatQuantity(bottleSizeValue || 0, 0)} ml bottle = ${productBottleCount} bottles${remainingBatchVolume > 0 ? `, ${formatQuantity(remainingBatchVolume, 1)} ml remainder` : ''}.`}
+                      ? `${publishedProduct.name} tertaut ke formula, ukuran batch, ukuran botol, pengenceran, dan susut ini.`
+                      : `${formatQuantity(usableBatchVolume, 0)} ml terpakai / botol ${formatQuantity(bottleSizeValue || 0, 0)} ml = ${productBottleCount} botol${remainingBatchVolume > 0 ? `, sisa ${formatQuantity(remainingBatchVolume, 1)} ml` : ''}.`}
                   </p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <div className="min-w-0 space-y-2">
-                      <Label className="text-xs font-bold text-[#6b7280]">Bottle ml</Label>
+                      <Label className="text-xs font-bold text-[#6b7280]">Botol ml</Label>
                       <Input value={bottleSizeMl} onChange={(event) => setBottleSizeMl(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
                     </div>
                     <div className="min-w-0 space-y-2">
-                      <Label className="text-xs font-bold text-[#6b7280]">Loss %</Label>
+                      <Label className="text-xs font-bold text-[#6b7280]">Susut %</Label>
                       <Input value={productLossPercent} onChange={(event) => setProductLossPercent(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-1 gap-2">
                     <div className="min-w-0 space-y-2">
-                      <Label className="text-xs font-bold text-[#6b7280]">Sell price</Label>
+                      <Label className="text-xs font-bold text-[#6b7280]">Harga jual</Label>
                       <Input value={productPrice} onChange={(event) => setProductPrice(normalizeLocalizedDecimalInput(event.target.value))} placeholder={formatPrice(productPriceSuggestion)} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <MetricTile label="Stock" value={`${publishedProduct?.stock ?? productBottleCount} bottles`} helper={publishedProduct ? 'linked product stock' : 'will become product stock'} tone="emerald" />
-                    <MetricTile label="COGS / bottle" value={formatPrice(productCogsPerBottle)} helper="material estimate" tone="amber" />
+                    <MetricTile label="Stok" value={`${publishedProduct?.stock ?? productBottleCount} botol`} helper={publishedProduct ? 'stok produk tertaut' : 'akan jadi stok produk'} tone="emerald" />
+                    <MetricTile label="HPP / botol" value={formatPrice(productCogsPerBottle)} helper="perkiraan bahan" tone="amber" />
                   </div>
                   <Button
                     type="button"
@@ -1131,7 +1139,7 @@ const MobileBatchesPage = () => {
                     className="mt-3 h-11 w-full rounded-2xl bg-white gap-2 text-xs font-bold"
                   >
                     <ShoppingBag className="h-4 w-4" />
-                    {publishedProduct ? 'Open linked product' : 'Review product draft'}
+                    {publishedProduct ? 'Buka produk tertaut' : 'Tinjau draf produk'}
                   </Button>
                 </div>
               </div>
@@ -1140,8 +1148,8 @@ const MobileBatchesPage = () => {
             {batchStep === 'review' ? <section className="mobile-card overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
                 <div>
-                  <h2 className="text-sm font-bold text-[#1f2937]">Batch history</h2>
-                  <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Saved production records for this formula.</p>
+                  <h2 className="text-sm font-bold text-[#1f2937]">Riwayat batch</h2>
+                  <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Catatan produksi yang tersimpan untuk formula ini.</p>
                 </div>
                 <History className="h-5 w-5 text-amber-700" />
               </div>
@@ -1159,28 +1167,28 @@ const MobileBatchesPage = () => {
                     <span className="min-w-0">
                       <span className="block truncate text-xs font-bold text-[#1f2937]">{batch.batch_code}</span>
                       <span className="mt-0.5 block text-[10px] font-semibold text-[#6b7280]">
-                        {formatQuantity(batch.target_quantity, 0)} ml / {formatQuantity(batch.bottle_ml, 0)} ml bottle / {batch.bottle_count} stock
+                        {formatQuantity(batch.target_quantity, 0)} ml / botol {formatQuantity(batch.bottle_ml, 0)} ml / stok {batch.bottle_count}
                       </span>
                     </span>
-                    <MobileStatusBadge status={batch.status} className="h-5 px-2 text-[10px]" />
+                    <MobileStatusBadge status={batch.status} className="h-5 px-2 text-[10px]">{BATCH_STATUS_LABELS[batch.status]}</MobileStatusBadge>
                   </button>
                 )) : (
-                  <div className="py-4 text-xs font-semibold text-[#6b7280]">No saved batch yet.</div>
+                  <div className="py-4 text-xs font-semibold text-[#6b7280]">Belum ada batch tersimpan.</div>
                 )}
               </div>
             </section> : null}
 
             {batchStep === 'review' ? <section className="mobile-card overflow-hidden">
               <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
-                <h2 className="text-sm font-bold text-[#1f2937]">Raw material breakdown</h2>
-                <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Scaled to {formatGramAmount(targetValue)} full concentrate.</p>
+                <h2 className="text-sm font-bold text-[#1f2937]">Rincian bahan baku</h2>
+                <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Diskalakan ke konsentrat {formatGramAmount(concentrateBaseGrams)} untuk batch {formatGramAmount(targetValue)}.</p>
               </div>
               <div className="px-4 py-1">
                 {concentrateRows.length ? visibleConcentrateRows.map((item) => (
                   <CostRow
                     key={item.rowKey}
                     item={item}
-                    label={item.name || item.item_name || 'Material'}
+                    label={item.name || item.item_name || 'Bahan'}
                     helper={`${formatQuantity(item.percentage, 2)}% / ${formatGramAmount(item.batchGram)} / ${formatPricePerUnit(item.unitPrice)}`}
                     onDraftChange={updatePriceDraft}
                     onSave={saveMaterialPrice}
@@ -1188,7 +1196,7 @@ const MobileBatchesPage = () => {
                     value={formatPrice(item.cost)}
                   />
                 )) : (
-                  <div className="py-4 text-xs font-semibold text-[#6b7280]">Formula has no costable material rows yet.</div>
+                  <div className="py-4 text-xs font-semibold text-[#6b7280]">Formula belum punya baris bahan yang bisa dihitung biayanya.</div>
                 )}
                 <PaginationOrLoadMore
                   visibleCount={visibleConcentrateRows.length}
@@ -1201,7 +1209,7 @@ const MobileBatchesPage = () => {
         )}
       </main>
       {formulas.length ? (
-        <StickyBottomActionBar fixed reserveSpace aria-label="Batch workflow actions">
+        <StickyBottomActionBar fixed reserveSpace aria-label="Aksi alur batch">
           <div className="grid grid-cols-[auto_1fr] gap-2">
             <Button
               type="button"
@@ -1210,7 +1218,7 @@ const MobileBatchesPage = () => {
               onClick={batchStep === 'setup' ? () => navigate('/mobile/formulas') : goToPreviousStep}
               disabled={savingBatch || publishingProduct}
             >
-              {batchStep === 'setup' ? 'Close' : 'Back'}
+              {batchStep === 'setup' ? 'Tutup' : 'Kembali'}
             </Button>
             <Button
               type="button"
@@ -1226,34 +1234,34 @@ const MobileBatchesPage = () => {
       <MobileBottomSheet
         open={publishConfirmOpen}
         onOpenChange={setPublishConfirmOpen}
-        title="Confirm product draft"
-        description="Review stock, yield, cost, and pricing before product stock is created."
+        title="Konfirmasi draf produk"
+        description="Periksa stok, hasil, biaya, dan harga sebelum stok produk dibuat."
         footer={(
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => setPublishConfirmOpen(false)}>
-              Review
+              Periksa lagi
             </Button>
             <Button type="button" className="h-11 rounded-2xl text-xs font-bold" onClick={publishBatchAsProduct} disabled={publishingProduct}>
-              {publishingProduct ? 'Publishing...' : 'Create draft'}
+              {publishingProduct ? 'Membuat draf...' : 'Buat draf'}
             </Button>
           </div>
         )}
       >
         <div className="space-y-3">
           <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
-            <div className="text-[10px] font-bold uppercase text-[#6b7280]">Auto SKU</div>
+            <div className="text-[10px] font-bold uppercase text-[#6b7280]">SKU otomatis</div>
             <div className="mt-1 break-all text-sm font-bold text-[#1f2937]">{productSku || '-'}</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <MetricTile label="Batch" value={`${formatQuantity(targetValue, 0)} ml`} helper={`${formatQuantity(productLossValue, 1)}% loss`} />
-            <MetricTile label="Usable" value={`${formatQuantity(usableBatchVolume, 0)} ml`} helper={`${formatQuantity(remainingBatchVolume, 1)} ml remainder`} tone="emerald" />
-            <MetricTile label="Stock" value={`${productBottleCount} bottles`} helper={`${formatQuantity(bottleSizeValue, 0)} ml each`} tone="emerald" />
-            <MetricTile label="COGS / bottle" value={formatPrice(productCogsPerBottle)} helper="batch cost allocated" tone="amber" />
-            <MetricTile label="Sell price" value={formatPrice(productPriceNumber)} helper={productPriceValue > 0 ? 'manual price' : 'suggested price'} />
+            <MetricTile label="Batch" value={`${formatQuantity(targetValue, 0)} ml`} helper={`susut ${formatQuantity(productLossValue, 1)}%`} />
+            <MetricTile label="Terpakai" value={`${formatQuantity(usableBatchVolume, 0)} ml`} helper={`sisa ${formatQuantity(remainingBatchVolume, 1)} ml`} tone="emerald" />
+            <MetricTile label="Stok" value={`${productBottleCount} botol`} helper={`${formatQuantity(bottleSizeValue, 0)} ml per botol`} tone="emerald" />
+            <MetricTile label="HPP / botol" value={formatPrice(productCogsPerBottle)} helper="biaya batch dibagi per botol" tone="amber" />
+            <MetricTile label="Harga jual" value={formatPrice(productPriceNumber)} helper={productPriceValue > 0 ? 'harga manual' : 'harga saran'} />
             <MetricTile label="Margin" value={formatPrice(productMarginPerBottle)} helper={`${formatQuantity(productMarginPercent, 1)}%`} tone={productMarginPerBottle >= 0 ? 'emerald' : 'amber'} />
           </div>
           <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-            Product akan dibuat sebagai draft tersembunyi dari katalog customer sampai kamu aktifkan di Studio Products.
+            Produk dibuat sebagai draf yang tersembunyi dari katalog pembeli sampai diaktifkan di Studio → Produk.
           </p>
         </div>
       </MobileBottomSheet>

@@ -3,21 +3,21 @@ export const PACE_PRIORITY_QUERY_KEY = 'pacePriority';
 export const PACE_PRIORITY_MODES = [
   {
     value: 'balance',
-    label: 'Balance first',
-    shortLabel: 'Balance',
-    helper: 'Stabilise bridge quality, harmony, and the middle structure first.',
+    label: 'Utamakan keseimbangan',
+    shortLabel: 'Keseimbangan',
+    helper: 'Rapikan dulu kualitas jembatan, harmoni, dan struktur nada tengah.',
   },
   {
     value: 'projection',
-    label: 'Projection first',
-    shortLabel: 'Projection',
-    helper: 'Prioritise opening lift and outward diffusion before other fixes.',
+    label: 'Utamakan pancaran',
+    shortLabel: 'Pancaran',
+    helper: 'Dahulukan angkatan pembuka dan sebaran keluar sebelum perbaikan lain.',
   },
   {
     value: 'longevity',
-    label: 'Longevity first',
-    shortLabel: 'Longevity',
-    helper: 'Protect drydown weight and long wear before other adjustments.',
+    label: 'Utamakan ketahanan',
+    shortLabel: 'Ketahanan',
+    helper: 'Jaga bobot jejak akhir dan ketahanan pakai sebelum penyesuaian lain.',
   },
 ];
 

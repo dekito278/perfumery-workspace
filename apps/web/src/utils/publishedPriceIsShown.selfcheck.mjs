@@ -82,11 +82,11 @@ for (const file of publishers) {
   // Shown OUTSIDE an input's placeholder. That is the whole defect: the desktop screen did mention the
   // figure, as a placeholder attribute, where it reads as an example of what to type.
   const outsidePlaceholders = text.replace(/placeholder=\{[^}]*\}/g, '');
-  assert.match(outsidePlaceholders, /label="Sell price"/,
+  assert.match(outsidePlaceholders, /label="(?:Sell price|Harga jual)"/,
     `${where} publishes a product at a price it never displays — the fallback figure reaches the product `
     + 'and the only sign of it on screen is a greyed placeholder, which is a form telling you what you '
     + 'MAY type, not what it WILL use');
-  assert.match(outsidePlaceholders, /(?:suggested price|manual price)/,
+  assert.match(outsidePlaceholders, /(?:suggested price|manual price|harga saran|harga manual)/,
     `${where} shows a price without saying whether anyone chose it`);
   assert.match(outsidePlaceholders, /label="Margin"/,
     `${where} shows a price with nothing to judge it against — the suggestion is COGS doubled and this `

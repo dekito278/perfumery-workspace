@@ -10,7 +10,7 @@ const MobileSearchableSelector = ({
   description,
   options = [],
   onSelect,
-  placeholder = 'Search options...',
+  placeholder = 'Cari pilihan...',
   getLabel = (option) => option.label || option.name,
   getMeta = (option) => option.meta || option.code || option.category,
 }) => {
@@ -51,7 +51,7 @@ const MobileSearchableSelector = ({
               <span className="block truncate text-sm font-bold text-[#1f2937]">{getLabel(option)}</span>
               {getMeta(option) ? <span className="mt-1 block truncate text-xs text-[#6b7280]">{getMeta(option)}</span> : null}
             </span>
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Select</span>
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Pilih</span>
           </button>
         ))}
       </div>

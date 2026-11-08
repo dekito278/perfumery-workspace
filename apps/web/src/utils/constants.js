@@ -9,29 +9,29 @@ export const UNIT_OPTIONS = [
 ];
 
 export const FORMULA_STATUSES = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'in_review', label: 'Review' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'ready_for_batch', label: 'Ready Batch' },
-  { value: 'batched', label: 'Batched' },
-  { value: 'published_product', label: 'Published' },
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' }
+  { value: 'draft', label: 'Draf' },
+  { value: 'in_review', label: 'Ditinjau' },
+  { value: 'approved', label: 'Disetujui' },
+  { value: 'ready_for_batch', label: 'Siap batch' },
+  { value: 'batched', label: 'Sudah di-batch' },
+  { value: 'published_product', label: 'Jadi produk' },
+  { value: 'active', label: 'Aktif' },
+  { value: 'archived', label: 'Diarsipkan' }
 ];
 
 export const BATCH_STATUSES = [
-  { value: 'planned', label: 'Planned' },
-  { value: 'produced', label: 'Produced' },
+  { value: 'planned', label: 'Rencana' },
+  { value: 'produced', label: 'Diproduksi' },
   { value: 'qc', label: 'QC' },
-  { value: 'ready_for_product', label: 'Ready Product' },
-  { value: 'converted_to_product', label: 'Converted' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' }
+  { value: 'ready_for_product', label: 'Siap produk' },
+  { value: 'converted_to_product', label: 'Jadi produk' },
+  { value: 'draft', label: 'Draf' },
+  { value: 'in_progress', label: 'Berjalan' },
+  { value: 'completed', label: 'Selesai' }
 ];
 
 export const FORMULA_CATEGORIES = [
-  { value: 'perfume', label: 'Perfume' }
+  { value: 'perfume', label: 'Parfum' }
 ];
 
 export const FIELD_CONSTRAINTS = {

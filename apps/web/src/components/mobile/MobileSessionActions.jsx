@@ -18,19 +18,19 @@ const MobileSessionActions = () => {
         <div className="mobile-session-panel">
           <div className="min-w-0 flex-1">
             <div className="truncate text-xs font-bold text-[#1f2937]">{currentUser?.email || 'Solivagant'}</div>
-            <div className="text-[10px] font-semibold text-[#6b7280]">Mobile session</div>
+            <div className="text-[10px] font-semibold text-[#6b7280]">Sesi HP</div>
           </div>
           <Button type="button" variant="outline" onClick={signOut} disabled={loggingOut} className="h-9 rounded-xl border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700">
             <LogOut className="mr-1 h-4 w-4" />
-            {loggingOut ? '...' : 'Logout'}
+            {loggingOut ? '...' : 'Keluar'}
           </Button>
           <Button type="button" variant="outline" onClick={() => navigate('/mobile/authenticator')} className="h-9 rounded-xl bg-white px-3 text-xs font-bold">
             <KeyRound className="mr-1 h-4 w-4" />
-            Auth
+            2FA
           </Button>
         </div>
       ) : null}
-      <Button type="button" size="icon" variant="outline" onClick={() => setOpen((current) => !current)} className="mobile-session-button" aria-label="Account and logout">
+      <Button type="button" size="icon" variant="outline" onClick={() => setOpen((current) => !current)} className="mobile-session-button" aria-label="Akun dan keluar">
         {open ? <LogOut className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}
       </Button>
     </div>
