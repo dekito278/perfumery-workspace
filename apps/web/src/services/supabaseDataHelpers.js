@@ -7,11 +7,11 @@ export const getCurrentUserId = async () => {
   } = await supabase.auth.getUser();
 
   if (error) {
-    throw new Error(error.message || 'Failed to read authenticated user');
+    throw new Error(error.message || 'Gagal membaca akun yang sedang masuk');
   }
 
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error('Sesi studio berakhir. Masuk lagi.');
   }
 
   return user.id;
@@ -35,7 +35,7 @@ export const fetchRawMaterialsMap = async (ids) => {
     .in('id', uniqueIds);
 
   if (error) {
-    throw new Error(error.message || 'Failed to load raw materials');
+    throw new Error(error.message || 'Gagal memuat bahan baku');
   }
 
   return new Map((data || []).map((row) => [row.id, toAppRecord(row)]));
@@ -53,7 +53,7 @@ export const fetchAccordsMap = async (ids) => {
     .in('id', uniqueIds);
 
   if (error) {
-    throw new Error(error.message || 'Failed to load accords');
+    throw new Error(error.message || 'Gagal memuat akord');
   }
 
   return new Map((data || []).map((row) => [row.id, toAppRecord(row)]));

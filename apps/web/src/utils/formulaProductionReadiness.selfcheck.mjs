@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { buildFormulaProductionReadiness } from './formulaProductionReadiness.js';
+import { UNKNOWN_MATERIAL_NAME, buildFormulaProductionReadiness } from './formulaProductionReadiness.js';
 
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -51,7 +51,7 @@ for (const emptyPrice of [0, null, undefined, '', 'abc', -5]) {
 // --- 3. A deleted material is the same failure wearing a different hat ---------------------------------
 // resolveFormulaItemReference renders an unresolvable row as "Unknown" and prices it at zero, so its
 // weight is missing from the total exactly like an unpriced one.
-const dangling = buildFormulaProductionReadiness([priced('Iso E Super', 70, 12000), { item_id: 'gone', name: 'Unknown', gram_amount: 30, unit_price: 0 }]);
+const dangling = buildFormulaProductionReadiness([priced('Iso E Super', 70, 12000), { item_id: 'gone', name: UNKNOWN_MATERIAL_NAME, gram_amount: 30, unit_price: 0 }]);
 assert.equal(dangling.unpricedCount, 1, 'a row whose material no longer exists is also unaccounted weight');
 assert.equal(dangling.unpricedShare, 0.3);
 assert.match(dangling.issues[0], /daftar bahan/, 'and must be reported as a missing material, not a missing price');

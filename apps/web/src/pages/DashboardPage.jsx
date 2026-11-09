@@ -56,8 +56,10 @@ const auditActionLabels = {
 // of it would make that line a lie.
 const AUDIT_ROWS_SHOWN = 8;
 
+// A service that rewords its error for the screen keeps the original as `cause`; the network's own words
+// ("Failed to fetch") are only there.
 const isTransientNetworkError = (error) => {
-  const message = String(error?.message || '').toLowerCase();
+  const message = `${error?.message || ''} ${error?.cause?.message || ''}`.toLowerCase();
   return message.includes('failed to fetch') || message.includes('network');
 };
 

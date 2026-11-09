@@ -325,7 +325,7 @@ export const duplicateFormula = async (formulaId) => {
       user_id: userId,
       ...normalizeFormulaPayload({
         ...original,
-        name: `Copy of ${original.name}`,
+        name: `Salinan ${original.name}`,
         code: `${original.code}-COPY-${Date.now()}`,
       }),
     })
@@ -345,7 +345,7 @@ export const duplicateFormula = async (formulaId) => {
     if (itemsError) {
       console.error('Error duplicating formula items:', itemsError);
       // Roll the copy back. createFormula learned this in audit round 8 — without it a failed copy left
-      // an item-less "Copy of ..." in the list, and the perfumer's retry made a second one. This is the
+      // an item-less "Salinan ..." in the list, and the perfumer's retry made a second one. This is the
       // same mirror, never done.
       const { data: rolledBack, error: rollbackError } = await supabase.from('formulas').delete().eq('id', duplicate.id).select('id');
       if (rollbackError || !(rolledBack || []).length) {

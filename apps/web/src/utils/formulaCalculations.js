@@ -32,19 +32,19 @@ export const validateFormulaItems = (items) => {
   const errors = [];
   
   if (!items || items.length === 0) {
-    errors.push('Formula must have at least one ingredient');
+    errors.push('Formula belum punya bahan');
     return errors;
   }
   
   items.forEach((item, index) => {
     if (!item.item_type) {
-      errors.push(`Item ${index + 1}: Item type is required`);
+      errors.push(`Baris ${index + 1}: jenis bahan wajib diisi`);
     }
     if (!item.item_id) {
-      errors.push(`Item ${index + 1}: Material selection is required`);
+      errors.push(`Baris ${index + 1}: bahannya belum dipilih`);
     }
     if (!item.gram_amount || parseFloat(item.gram_amount) <= 0) {
-      errors.push(`Item ${index + 1}: Gram amount must be greater than 0`);
+      errors.push(`Baris ${index + 1}: gram harus lebih dari 0`);
     }
     const percent = parseFloat(item.dilution_percent);
     const hasDilutionPercent = !Number.isNaN(percent) && percent > 0;
@@ -52,13 +52,13 @@ export const validateFormulaItems = (items) => {
 
     if (hasDilutionConfig) {
       if (!hasDilutionPercent) {
-        errors.push(`Item ${index + 1}: Dilution percentage must be between 0 and 100`);
+        errors.push(`Baris ${index + 1}: pengenceran harus antara 0 dan 100%`);
       }
       if (!item.dilution_solvent_id && hasDilutionPercent) {
-        errors.push(`Item ${index + 1}: Dilution solvent is required`);
+        errors.push(`Baris ${index + 1}: pelarut pengencer wajib dipilih`);
       }
       if (hasDilutionPercent && percent > 100) {
-        errors.push(`Item ${index + 1}: Dilution percentage must be between 0 and 100`);
+        errors.push(`Baris ${index + 1}: pengenceran harus antara 0 dan 100%`);
       }
     }
   });

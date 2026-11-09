@@ -5,22 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible.jsx';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
-
-const getScoreLabel = (value) => {
-  if (value >= 75) {
-    return 'Strong';
-  }
-
-  if (value >= 60) {
-    return 'Healthy';
-  }
-
-  if (value >= 40) {
-    return 'Needs work';
-  }
-
-  return 'Weak';
-};
+import { getScoreBand } from '@/utils/paceScoreBands.js';
 
 const FormulaComposerPacePanel = ({
   items,
@@ -67,12 +52,12 @@ const FormulaComposerPacePanel = ({
                 </Badge>
                 {weakestAxis ? (
                   <Badge variant="outline" className="rounded-full text-[10px]">
-                    Watch {weakestAxis.label}: {getScoreLabel(weakestAxis.value)}
+                    Watch {weakestAxis.label}: {getScoreBand(weakestAxis.value).label}
                   </Badge>
                 ) : null}
                 {strongestAxis ? (
                   <Badge variant="outline" className="rounded-full text-[10px]">
-                    Best {strongestAxis.label}: {getScoreLabel(strongestAxis.value)}
+                    Best {strongestAxis.label}: {getScoreBand(strongestAxis.value).label}
                   </Badge>
                 ) : null}
                 <Badge variant={simulation.pace.warningCount ? 'destructive' : 'outline'} className="rounded-full text-[10px]">

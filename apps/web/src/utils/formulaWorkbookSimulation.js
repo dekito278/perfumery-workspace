@@ -479,7 +479,7 @@ const buildPaceAnalysis = ({
         code: `ifra-${advisory.itemId}`,
         type: 'overload',
         severity: 'danger',
-        title: `${advisory.itemName} exceeds IFRA guidance`,
+        title: `${advisory.itemName} melewati batas IFRA`,
         message: advisory.message,
       });
     } else if (advisory.type === 'max') {
@@ -487,7 +487,7 @@ const buildPaceAnalysis = ({
         code: `max-${advisory.itemId}`,
         type: 'overload',
         severity: 'warning',
-        title: `${advisory.itemName} exceeds max guidance`,
+        title: `${advisory.itemName} melewati batas maksimum`,
         message: advisory.message,
       });
     }
@@ -498,8 +498,8 @@ const buildPaceAnalysis = ({
       code: 'dominant-contributor',
       type: 'overload',
       severity: 'warning',
-      title: `${topContributor.name} may dominate the formula`,
-      message: `One contributor is carrying ${topContributor.effectivePercentage.toFixed(1)}% effective load, which can flatten nuance and reduce blend flexibility.`,
+      title: `${topContributor.name} bisa mendominasi formula`,
+      message: `Satu bahan memikul ${topContributor.effectivePercentage.toFixed(1)}% beban efektif, sehingga nuansanya bisa rata dan campuran kurang lentur.`,
     });
   }
 
@@ -508,8 +508,8 @@ const buildPaceAnalysis = ({
       code: 'dominant-class',
       type: 'overload',
       severity: 'warning',
-      title: `${dominantClass.familyName} is over-represented`,
-      message: `${dominantClass.familyName} currently holds ${dominantClass.sharePercent.toFixed(1)}% of the odour-weighted class profile.`,
+      title: `${dominantClass.familyName} terlalu dominan`,
+      message: `${dominantClass.familyName} kini memegang ${dominantClass.sharePercent.toFixed(1)}% profil kelas berbobot aroma.`,
     });
   }
 
@@ -518,8 +518,8 @@ const buildPaceAnalysis = ({
       code: 'weak-bridge',
       type: 'conflict',
       severity: 'warning',
-      title: 'Bridge quality is weak',
-      message: 'Top, heart, and drydown sections share too little common material language, so the transition may feel abrupt.',
+      title: 'Transisi antarfase lemah',
+      message: 'Nada atas, tengah, dan dasar terlalu sedikit berbagi bahan, sehingga perpindahannya bisa terasa patah.',
     });
   }
 
@@ -528,8 +528,8 @@ const buildPaceAnalysis = ({
       code: 'thin-heart',
       type: 'conflict',
       severity: 'warning',
-      title: 'Heart development looks thin',
-      message: 'Middle structure is underweighted, so the formula may jump from opening to drydown without enough body.',
+      title: 'Nada tengah terlalu tipis',
+      message: 'Bagian tengah kurang berbobot, sehingga formula bisa melompat dari pembuka ke jejak akhir tanpa badan yang cukup.',
     });
   }
 
@@ -538,8 +538,8 @@ const buildPaceAnalysis = ({
       code: 'phase-imbalance',
       type: 'conflict',
       severity: 'warning',
-      title: 'Pyramid balance is stretched',
-      message: 'One phase is pulling too much load, which can reduce harmony and make the progression feel lopsided.',
+      title: 'Piramida tidak seimbang',
+      message: 'Satu fase memikul beban terlalu besar, sehingga harmoni turun dan perjalanannya terasa berat sebelah.',
     });
   }
 
@@ -548,8 +548,8 @@ const buildPaceAnalysis = ({
       code: 'missing-guidance',
       type: 'guidance',
       severity: 'info',
-      title: 'Some materials still need guidance',
-      message: `${missingGuidanceCount} of ${eligibleItemCount} materials are still running without normalized guidance, so PACE confidence is reduced.`,
+      title: 'Sebagian bahan belum punya panduan',
+      message: `${missingGuidanceCount} dari ${eligibleItemCount} bahan belum punya panduan baku, jadi keyakinan PACE berkurang.`,
     });
   }
 
@@ -558,14 +558,14 @@ const buildPaceAnalysis = ({
   const conflictWarnings = warnings.filter((warning) => warning.type === 'conflict');
   const guidanceWarnings = warnings.filter((warning) => warning.type === 'guidance');
   const scores = [
-    { key: 'opening', label: 'Opening', value: openingScore },
-    { key: 'heart', label: 'Heart', value: heartScore },
-    { key: 'drydown', label: 'Drydown', value: drydownScore },
-    { key: 'diffusion', label: 'Diffusion', value: diffusionScore },
-    { key: 'tenacity', label: 'Tenacity', value: tenacityScore },
-    { key: 'harmony', label: 'Harmony', value: harmonyScore },
-    { key: 'smoothness', label: 'Smoothness', value: smoothnessScore },
-    { key: 'bridgeQuality', label: 'Bridge Quality', value: bridgeQualityScore },
+    { key: 'opening', label: 'Pembuka', value: openingScore },
+    { key: 'heart', label: 'Inti', value: heartScore },
+    { key: 'drydown', label: 'Jejak akhir', value: drydownScore },
+    { key: 'diffusion', label: 'Pancaran', value: diffusionScore },
+    { key: 'tenacity', label: 'Ketahanan', value: tenacityScore },
+    { key: 'harmony', label: 'Harmoni', value: harmonyScore },
+    { key: 'smoothness', label: 'Kehalusan', value: smoothnessScore },
+    { key: 'bridgeQuality', label: 'Transisi', value: bridgeQualityScore },
   ];
   const strongestAxis = [...scores].sort((left, right) => right.value - left.value)[0] || null;
   const weakestAxis = [...scores].sort((left, right) => left.value - right.value)[0] || null;
@@ -634,7 +634,7 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
 
     return {
       ...item,
-      name: rawMaterial?.name || item.name || 'Unknown material',
+      name: rawMaterial?.name || item.name || 'Bahan tak dikenal',
       raw_material: rawMaterial,
       reference_link: referenceLink,
       reference_profile: referenceProfile,

@@ -6,7 +6,7 @@
 // money, silently, on the screen Dekito prices products from.
 //
 // A material that has been deleted from the library is the same failure wearing a different hat: the row
-// resolves to no source, renders as "Unknown", and costs zero.
+// resolves to no source, renders as "Bahan tak dikenal", and costs zero.
 //
 // So this does not score anything. It names what is missing and how much weight is unaccounted for, and
 // the pages that show a cost show this beside it.
@@ -17,7 +17,7 @@
 //
 // Import-free so the node guard can test the rules as behaviour.
 
-const UNKNOWN_MATERIAL_NAME = 'Unknown';
+export const UNKNOWN_MATERIAL_NAME = 'Bahan tak dikenal';
 
 const gramsOf = (item = {}) => Number(item.gram_amount ?? item.grams ?? 0) || 0;
 const priceOf = (item = {}) => Number(item.unit_price ?? item.cost_per_unit ?? 0) || 0;
@@ -60,7 +60,7 @@ export const buildFormulaProductionReadiness = (items = []) => {
   });
 
   if (!rows.length) {
-    issues.push('Formula ini belum punya baris material.');
+    issues.push('Formula ini belum punya baris bahan.');
   } else if (totalGrams <= 0) {
     issues.push('Total gram formula masih 0.');
   }

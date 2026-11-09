@@ -58,8 +58,8 @@ export const normalizeFormulaItemType = (item, itemDetails) => {
 
 export const getCompositionGroupLabel = (item) => {
   if (item?.item_type === 'solvent') {
-    return item.name || 'Solvent';
+    return item.name || 'Pelarut';
   }
 
-  return item?.component_family || item?.scent_family || item?.category || 'Material';
+  return item?.component_family || item?.scent_family || item?.category || 'Bahan';
 };

@@ -79,7 +79,7 @@ const FormulaDetailWorkbookTab = ({
                     <div key={stat.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 text-sm">
                       <div className="text-[#6c5f46]">{stat.label}</div>
                       <div className="font-mono font-semibold text-[#3f3524]">
-                        {stat.label === 'Material cost' ? formatPrice(stat.value) : stat.value}
+                        {stat.money ? formatPrice(stat.value) : stat.value}
                       </div>
                     </div>
                   ))}

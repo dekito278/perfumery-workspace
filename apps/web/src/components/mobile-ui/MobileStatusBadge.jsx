@@ -1,6 +1,11 @@
 import React from 'react';
 import { cn } from '@/lib/utils.js';
 import { formatStatus } from '@/utils/formatting.js';
+import { BATCH_STATUSES, FORMULA_STATUSES } from '@/utils/constants.js';
+
+// A badge given only a status says that status in Indonesian. formatStatus alone turned the stored value
+// into English on screen ("ready_for_batch" -> "Ready For Batch") beside filter chips that said "Siap batch".
+const STATUS_LABELS = Object.fromEntries([...FORMULA_STATUSES, ...BATCH_STATUSES].map(({ value, label }) => [value, label]));
 
 const toneByStatus = {
   active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -36,7 +41,7 @@ const MobileStatusBadge = ({ status = 'draft', children, className, tone }) => {
         className
       )}
     >
-      {children || formatStatus(status || 'draft')}
+      {children || STATUS_LABELS[status || 'draft'] || formatStatus(status || 'draft')}
     </span>
   );
 };

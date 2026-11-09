@@ -49,7 +49,7 @@ export const buildMobileFormulaMetrics = ({
     impactScore,
     impactDisplay: formatMetric(impactScore),
     lifetimeScore: lifetimeHours,
-    lifetimeDisplay: formatMetric(lifetimeHours, lifetimeHours === null ? '' : 'h'),
+    lifetimeDisplay: formatMetric(lifetimeHours, lifetimeHours === null ? '' : ' jam'),
     paceScore,
     coveragePercent: roundMetric(simulation.coveragePercent, 0),
     guidanceBackedCount: simulation.guidanceBackedCount || 0,

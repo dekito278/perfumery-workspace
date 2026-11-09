@@ -126,7 +126,7 @@ const buildSlashAliasCandidates = (materials) => {
         source: material,
         target,
         sourceAliases,
-        reason: 'Nama mengandung alias atau sinonim yang sudah ada sebagai raw material terpisah.',
+        reason: 'Nama mengandung alias atau sinonim yang sudah ada sebagai bahan baku terpisah.',
       });
     }
   }
@@ -157,11 +157,11 @@ const buildCasGroups = (materials) => {
       const dilutionKinds = new Set(sortedItems.map((item) => rawMaterialHasDilutionMarker(item.name)));
 
       let classification = 'keep-separate';
-      let reason = 'CAS sama, tetapi nama menunjukkan varian atau material berbeda.';
+      let reason = 'CAS sama, tetapi nama menunjukkan varian atau bahan berbeda.';
 
       if (collapsedNames.size === 1) {
         classification = 'worth-review';
-        reason = 'CAS dan nama ter-normalisasi sama. Kandidat merge manual paling kuat.';
+        reason = 'CAS dan nama ter-normalisasi sama. Kandidat gabung manual paling kuat.';
       } else if (dilutionKinds.size === 1 && sortedItems.length === 2) {
         const [left, right] = sortedItems;
         const leftTokens = new Set(normalizeRawMaterialLookupValue(left.name).split(' ').filter(Boolean));
@@ -170,7 +170,7 @@ const buildCasGroups = (materials) => {
 
         if (sharedTokenCount >= Math.min(leftTokens.size, rightTokens.size) - 1) {
           classification = 'worth-review';
-          reason = 'CAS sama dan nama sangat mirip. Perlu review manual apakah ini alias atau grade berbeda.';
+          reason = 'CAS sama dan nama sangat mirip. Perlu ditinjau manual: alias atau grade berbeda?';
         }
       }
 
@@ -196,7 +196,7 @@ const buildPracticalMergeCandidates = ({ collapsedNameGroups, slashAliasCandidat
       master: group.master,
       duplicate,
       reason: group.reason,
-      actionLabel: 'Merge now',
+      actionLabel: 'Gabung sekarang',
       synonymNames: uniqueNonEmpty(group.materials.map((material) => material.name)),
       note: 'Aman untuk merge karena nama hanya beda format penulisan.',
     }))),
@@ -207,7 +207,7 @@ const buildPracticalMergeCandidates = ({ collapsedNameGroups, slashAliasCandidat
       master: candidate.target,
       duplicate: candidate.source,
       reason: candidate.reason,
-      actionLabel: 'Review then merge',
+      actionLabel: 'Tinjau lalu gabung',
       synonymNames: uniqueNonEmpty([
         candidate.target.name,
         candidate.source.name,

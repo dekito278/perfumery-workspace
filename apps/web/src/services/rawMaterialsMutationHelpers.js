@@ -4,11 +4,11 @@ export const validateDilutionFields = (data) => {
   }
 
   if (!data.dilution_solvent_id) {
-    throw new Error('Dilution solvent is required for diluted materials');
+    throw new Error('Bahan yang diencerkan wajib punya pelarut pengencer');
   }
 
   if (!data.dilution_percentage || data.dilution_percentage <= 0 || data.dilution_percentage > 100) {
-    throw new Error('Dilution percentage must be between 0 and 100');
+    throw new Error('Persentase pengenceran harus antara 0 dan 100');
   }
 };
 
@@ -98,10 +98,10 @@ export const translateRawMaterialUniqueConstraintError = async ({
     }
 
     if (existingRecord) {
-      throw new Error(`Workbook code "${payload.workbook_code}" sudah dipakai oleh raw material "${existingRecord.name}".`);
+      throw new Error(`Kode workbook "${payload.workbook_code}" sudah dipakai oleh bahan baku "${existingRecord.name}".`);
     }
 
-    throw new Error(`Workbook code "${payload.workbook_code}" sudah dipakai oleh raw material lain.`);
+    throw new Error(`Kode workbook "${payload.workbook_code}" sudah dipakai oleh bahan baku lain.`);
   }
 
   if (error.code === '23505' && error.message?.includes('raw_materials_unique_name_per_user')) {
@@ -124,10 +124,10 @@ export const translateRawMaterialUniqueConstraintError = async ({
     }
 
     if (existingRecord) {
-      throw new Error(`Name "${payload.name}" sudah dipakai oleh raw material "${existingRecord.name}".`);
+      throw new Error(`Nama "${payload.name}" sudah dipakai oleh bahan baku "${existingRecord.name}".`);
     }
 
-    throw new Error(`Name "${payload.name}" sudah dipakai oleh raw material lain.`);
+    throw new Error(`Nama "${payload.name}" sudah dipakai oleh bahan baku lain.`);
   }
 
   throw error;
