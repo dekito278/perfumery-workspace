@@ -21,12 +21,14 @@ import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { updateFormulaStatus } from '@/services/formulasSupabaseService.js';
 import { validationTestTypeLabel } from '@/services/validationLogsSupabaseService.js';
 import { formatDate, formatGramAmount, formatStatus } from '@/utils/formatting.js';
+import { FORMULA_CATEGORIES } from '@/utils/constants.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { buildMobileFormulaMetrics } from '@/utils/mobileFormulaMetrics.js';
 import { MOBILE_ACTIVITY_LIMIT } from '@/pages/mobile/mobilePageUtils.js';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import { getMobileFromState, useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 
+const FORMULA_CATEGORY_LABELS = Object.fromEntries(FORMULA_CATEGORIES.map(({ value, label }) => [value, label]));
 const tabs = [
   { value: 'summary', label: 'Ringkasan' },
   { value: 'composition', label: 'Komposisi' },
@@ -195,7 +197,7 @@ const MobileFormulaDetailPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>{formula.name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title={formula.name} subtitle={`${formula.code} / ${formatStatus(formula.category || 'perfume')}`} onBack={handleBack} action={<MobileStatusBadge status={formula.status || 'draft'} />} />
+        <MobileTopBar title={formula.name} subtitle={`${formula.code} / ${FORMULA_CATEGORY_LABELS[formula.category || 'perfume'] || formatStatus(formula.category)}`} onBack={handleBack} action={<MobileStatusBadge status={formula.status || 'draft'} />} />
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />
         {tab === 'summary' ? (
           <section className="space-y-3">

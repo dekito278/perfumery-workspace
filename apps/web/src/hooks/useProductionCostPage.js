@@ -25,7 +25,7 @@ import {
   buildProductionQuotationExportConfig,
 } from '@/utils/productionCostingExports.js';
 import { runWithTimeout } from '@/utils/asyncTimeout.js';
-import { buildFormulaProductionReadiness } from '@/utils/formulaProductionReadiness.js';
+import { UNKNOWN_MATERIAL_NAME, buildFormulaProductionReadiness } from '@/utils/formulaProductionReadiness.js';
 
 // Sentinel so we can tell a genuine empty result apart from a timeout — costing must
 // never silently show Rp 0 because a slow request quietly resolved to an empty fallback.
@@ -208,7 +208,7 @@ export const useProductionCostPage = () => {
 
           return {
             ...item,
-            name: sourceItem?.name || 'Unknown',
+            name: sourceItem?.name || UNKNOWN_MATERIAL_NAME,
             gram_amount: gramAmount,
             unit_price: unitPrice,
             ingredient_cost: calculateIngredientCost(gramAmount, unitPrice),

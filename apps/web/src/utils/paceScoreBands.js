@@ -19,10 +19,10 @@
 // Import-free so the node guard can test the bands as behaviour.
 
 export const SCORE_BANDS = [
-  { label: 'Strong', helper: '75+', tone: 'success', className: 'border-emerald-200 bg-emerald-50 text-emerald-900', min: 75 },
-  { label: 'Healthy', helper: '60-74', tone: 'accent', className: 'border-primary/20 bg-primary/5 text-primary', min: 60 },
-  { label: 'Needs work', helper: '40-59', tone: 'default', className: 'border-border bg-background text-foreground', min: 40 },
-  { label: 'Weak', helper: '<40', tone: 'danger', className: 'border-destructive/25 bg-destructive/5 text-destructive', min: 0 },
+  { label: 'Kuat', helper: '75+', tone: 'success', className: 'border-emerald-200 bg-emerald-50 text-emerald-900', min: 75 },
+  { label: 'Baik', helper: '60-74', tone: 'accent', className: 'border-primary/20 bg-primary/5 text-primary', min: 60 },
+  { label: 'Perlu digarap', helper: '40-59', tone: 'default', className: 'border-border bg-background text-foreground', min: 40 },
+  { label: 'Lemah', helper: '<40', tone: 'danger', className: 'border-destructive/25 bg-destructive/5 text-destructive', min: 0 },
 ];
 
 export const PACE_TARGETS = {

@@ -347,7 +347,7 @@ const MobileCreateFormulaPage = () => {
                     <div className="text-[10px] font-bold uppercase text-emerald-700">Dari wizard</div>
                     <div className="mt-0.5 text-sm font-bold text-[#1f2937]">{seededCount} bahan siap</div>
                   </div>
-                  <MobileStatusBadge status="loaded" />
+                  <MobileStatusBadge status="loaded">Dimuat</MobileStatusBadge>
                 </div>
                 <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
                   Bahan pilihan sudah masuk papan komposisi. Atur gram dan pengenceran, lalu simpan formula.

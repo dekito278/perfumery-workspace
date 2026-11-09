@@ -42,8 +42,8 @@ const importBySource = async (source, url, fallbackMessage) => {
 	return parseImportResponse(response, fallbackMessage);
 };
 
-export const importScentreeByUrl = (url) => importBySource('scentree', url, 'Failed to import ScenTree data');
+export const importScentreeByUrl = (url) => importBySource('scentree', url, 'Gagal mengimpor data ScenTree');
 
-export const importPerfumersWorldByUrl = (url) => importBySource('perfumersworld', url, 'Failed to import PerfumersWorld data');
+export const importPerfumersWorldByUrl = (url) => importBySource('perfumersworld', url, 'Gagal mengimpor data PerfumersWorld');
 
-export const importTgscByUrl = (url) => importBySource('tgsc', url, 'Failed to import TGSC data');
+export const importTgscByUrl = (url) => importBySource('tgsc', url, 'Gagal mengimpor data TGSC');

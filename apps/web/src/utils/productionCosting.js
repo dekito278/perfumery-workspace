@@ -46,20 +46,20 @@ export const DEFAULT_QUOTATION_INPUTS = {
 };
 
 export const PACKAGING_FIELDS = [
-  { key: 'bottleCost', label: 'Bottle', kind: 'unit' },
+  { key: 'bottleCost', label: 'Botol', kind: 'unit' },
   { key: 'capCost', label: 'Cap', kind: 'unit' },
   { key: 'atomizerCost', label: 'Sprayer / atomizer', kind: 'unit' },
   { key: 'boxCost', label: 'Box', kind: 'unit' },
-  { key: 'labelCost', label: 'Label / sticker', kind: 'unit' },
-  { key: 'shrinkWrapCost', label: 'Seal / shrink', kind: 'unit' },
-  { key: 'printCost', label: 'Print / finishing', kind: 'unit' },
-  { key: 'insertCost', label: 'Insert / card', kind: 'unit' },
-  { key: 'packagingCost', label: 'Outer packaging', kind: 'unit' },
-  { key: 'otherUnitCost', label: 'Other per bottle', kind: 'unit' },
-  { key: 'laborCost', label: 'Labor', kind: 'batch' },
+  { key: 'labelCost', label: 'Label / stiker', kind: 'unit' },
+  { key: 'shrinkWrapCost', label: 'Segel / shrink', kind: 'unit' },
+  { key: 'printCost', label: 'Cetak / finishing', kind: 'unit' },
+  { key: 'insertCost', label: 'Kartu sisipan', kind: 'unit' },
+  { key: 'packagingCost', label: 'Kemasan luar', kind: 'unit' },
+  { key: 'otherUnitCost', label: 'Lain-lain per botol', kind: 'unit' },
+  { key: 'laborCost', label: 'Tenaga kerja', kind: 'batch' },
   { key: 'overheadCost', label: 'Overhead', kind: 'batch' },
-  { key: 'logisticsCost', label: 'Transport / handling', kind: 'batch' },
-  { key: 'miscBatchCost', label: 'Misc batch cost', kind: 'batch' },
+  { key: 'logisticsCost', label: 'Transport', kind: 'batch' },
+  { key: 'miscBatchCost', label: 'Biaya batch lain-lain', kind: 'batch' },
 ];
 
 const LOCAL_STORAGE_PREFIX = 'production-costing-v4';

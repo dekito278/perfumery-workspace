@@ -24,14 +24,14 @@ const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replac
 const read = (...parts) => stripComments(readFileSync(join(srcRoot, ...parts), 'utf8'));
 
 // --- 1. The boundaries, exactly where the printed labels say they are --------------------------------
-for (const [score, label] of [[100, 'Strong'], [75, 'Strong'], [74.9, 'Healthy'], [60, 'Healthy'],
-  [59.9, 'Needs work'], [40, 'Needs work'], [39.9, 'Weak'], [0, 'Weak']]) {
+for (const [score, label] of [[100, 'Kuat'], [75, 'Kuat'], [74.9, 'Baik'], [60, 'Baik'],
+  [59.9, 'Perlu digarap'], [40, 'Perlu digarap'], [39.9, 'Lemah'], [0, 'Lemah']]) {
   assert.equal(getScoreBand(score).label, label, `${score} must read as "${label}"`);
 }
 
 // The two scores that used to disagree between the screens.
-assert.equal(getScoreBand(72).label, 'Healthy', '72 is the case the phone used to call "Review"');
-assert.equal(getScoreBand(78).label, 'Strong', '78 is the case the phone used to call "Review"');
+assert.equal(getScoreBand(72).label, 'Baik', '72 is the case the phone used to call "Review"');
+assert.equal(getScoreBand(78).label, 'Kuat', '78 is the case the phone used to call "Review"');
 assert.equal(getScoreBadgeTone(72), 'active', 'and the phone must stop showing it as an amber warning');
 assert.equal(getScoreBadgeTone(78), 'active');
 assert.equal(getScoreBadgeTone(50), 'warning', 'a genuinely middling score still warns');
@@ -56,9 +56,9 @@ for (let i = 1; i < SCORE_BANDS.length; i += 1) {
 
 // --- 3. Nonsense in must not become a confident answer ------------------------------------------------
 for (const bad of [null, undefined, NaN, 'abc', {}]) {
-  assert.equal(getScoreBand(bad).label, 'Weak', `${JSON.stringify(bad)} is not a score and must not read as healthy`);
+  assert.equal(getScoreBand(bad).label, 'Lemah', `${JSON.stringify(bad)} is not a score and must not read as good`);
 }
-assert.equal(getScoreBand('72').label, 'Healthy', 'a numeric string is still a score');
+assert.equal(getScoreBand('72').label, 'Baik', 'a numeric string is still a score');
 
 // --- 4. Neither screen may define its own bands any more ----------------------------------------------
 const desktop = read('components', 'FormulaWorkbookSimulationPanel.jsx');

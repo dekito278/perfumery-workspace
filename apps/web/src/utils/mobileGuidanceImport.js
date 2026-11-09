@@ -8,7 +8,7 @@ export const GUIDANCE_SOURCE_OPTIONS = [
 ];
 
 export const getGuidanceSourceLabel = (sourceType) =>
-  GUIDANCE_SOURCE_OPTIONS.find((option) => option.value === sourceType)?.label || 'Guidance';
+  GUIDANCE_SOURCE_OPTIONS.find((option) => option.value === sourceType)?.label || 'Panduan';
 
 export const importGuidanceBySource = async ({ sourceType, url }) => {
   if (sourceType === 'scentree') {
@@ -105,14 +105,14 @@ export const buildGuidancePatch = ({ material = {}, sourceType, imported }) => {
 export const summarizeImportedGuidance = ({ sourceType, imported }) => {
   const sourceLabel = getGuidanceSourceLabel(sourceType);
   return [
-    `${sourceLabel} imported`,
+    `${sourceLabel} diimpor`,
     imported.workbook_code ? `Workbook ${imported.workbook_code}` : null,
     imported.cas_number ? `CAS ${imported.cas_number}` : null,
-    imported.pw_price_label ? `Price ${imported.pw_price_label}` : null,
-    hasPositiveNumber(imported.reference_impact) ? `Impact ${imported.reference_impact}` : null,
-    hasPositiveNumber(imported.reference_life_hours) ? `Life ${imported.reference_life_hours}h` : null,
-    hasPositiveNumber(imported.substantivity_hours) ? `Substantivity ${imported.substantivity_hours}h` : null,
-    hasPositiveNumber(imported.reference_use_level_typical_percent) ? `Typical ${imported.reference_use_level_typical_percent}%` : null,
-    hasPositiveNumber(imported.reference_use_level_max_percent) ? `Max ${imported.reference_use_level_max_percent}%` : null,
+    imported.pw_price_label ? `Harga ${imported.pw_price_label}` : null,
+    hasPositiveNumber(imported.reference_impact) ? `Kekuatan ${imported.reference_impact}` : null,
+    hasPositiveNumber(imported.reference_life_hours) ? `Ketahanan ${imported.reference_life_hours} jam` : null,
+    hasPositiveNumber(imported.substantivity_hours) ? `Substantivitas ${imported.substantivity_hours} jam` : null,
+    hasPositiveNumber(imported.reference_use_level_typical_percent) ? `Dosis umum ${imported.reference_use_level_typical_percent}%` : null,
+    hasPositiveNumber(imported.reference_use_level_max_percent) ? `Dosis maks ${imported.reference_use_level_max_percent}%` : null,
   ].filter(Boolean);
 };

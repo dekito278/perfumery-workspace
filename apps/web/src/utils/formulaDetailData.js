@@ -9,7 +9,7 @@ import { calculateIngredientCost } from '@/utils/pricingUtils.js';
 const buildUnknownFormulaItem = (item, isDiluted, dilutionPercentage) => ({
   ...item,
   item_type: normalizeFormulaItemType(item, null),
-  name: 'Unknown',
+  name: 'Bahan tak dikenal',
   workbook_code: null,
   unit: 'g',
   gram_amount: item.grams || item.percentage || 0,
@@ -63,7 +63,7 @@ const enrichFormulaItem = ({ item, rawMaterialsById, referenceLinksMap, referenc
   return {
     ...item,
     item_type: normalizedItemType,
-    name: itemDetails?.name || 'Unknown',
+    name: itemDetails?.name || 'Bahan tak dikenal',
     workbook_code: itemDetails?.workbook_code || null,
     unit: itemDetails?.unit || 'g',
     gram_amount: gramAmount,
@@ -167,11 +167,11 @@ export const buildWorkbookBoardStats = ({
   totalReferenceAlertCount,
   workbookSimulation,
 }) => ([
-  { label: 'Guidance-backed', value: `${workbookSimulation.guidanceBackedCount}/${workbookSimulation.eligibleItemCount}` },
+  { label: 'Berpanduan', value: `${workbookSimulation.guidanceBackedCount}/${workbookSimulation.eligibleItemCount}` },
   { label: 'PerfumersWorld', value: workbookSimulation.perfumersWorldGuidanceCount || 0 },
   { label: 'TGSC / ScenTree', value: (workbookSimulation.tgscGuidanceCount || 0) + (workbookSimulation.scentreeGuidanceCount || 0) },
-  { label: 'Manual guidance', value: (workbookSimulation.manualGuidanceCount || 0) + (workbookSimulation.referenceGuidanceCount || 0) },
-  { label: 'Missing', value: workbookSimulation.missingGuidanceCount },
-  { label: 'Reference alerts', value: totalReferenceAlertCount },
-  { label: 'Material cost', value: totalCost },
+  { label: 'Panduan manual', value: (workbookSimulation.manualGuidanceCount || 0) + (workbookSimulation.referenceGuidanceCount || 0) },
+  { label: 'Tanpa panduan', value: workbookSimulation.missingGuidanceCount },
+  { label: 'Peringatan acuan', value: totalReferenceAlertCount },
+  { label: 'Biaya bahan', value: totalCost, money: true },
 ]);

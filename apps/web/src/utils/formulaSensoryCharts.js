@@ -103,7 +103,7 @@ const buildFacetAndFamilyData = (rows) => {
         const normalizedWeight = odourWeight * (facetStrength / 100);
         accumulate(
           facetTotals,
-          normalizeLabel(facet.letter, normalizeLabel(facet.family, 'Facet')),
+          normalizeLabel(facet.letter, normalizeLabel(facet.family, 'Nuansa')),
           normalizedWeight
         );
         accumulate(
@@ -215,7 +215,7 @@ const buildDecayPoint = (rows, hour) => {
 
   return {
     hour,
-    label: hour === 0 ? '0h' : `${hour}h`,
+    label: `${hour} jam`,
     top: bucketValues.top,
     middle: bucketValues.middle,
     base: bucketValues.base,
@@ -243,7 +243,7 @@ const buildDecayData = (rows, maxElapsedHour) => {
 const buildClassDistributionTimeline = (rows, maxElapsedHour) => (
   Array.from({ length: maxElapsedHour + 1 }, (_, hour) => ({
     hour,
-    label: hour === 0 ? '0h' : `${hour}h`,
+    label: `${hour} jam`,
     classes: buildWorkbookClassDataAtHour(rows, hour),
   }))
 );

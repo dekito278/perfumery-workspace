@@ -302,7 +302,7 @@ const MobileEditFormulaPage = () => {
                 <div className="text-[10px] font-bold uppercase text-emerald-700">Dari wizard</div>
                 <div className="mt-0.5 text-sm font-bold text-[#1f2937]">{seededCount} bahan baru ditambahkan</div>
               </div>
-              <MobileStatusBadge status="unsaved" />
+              <MobileStatusBadge status="unsaved">Belum disimpan</MobileStatusBadge>
             </div>
             <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
               Periksa gram dan pengenceran bahan baru, lalu ketuk Simpan revisi untuk menyimpannya ke formula ini.

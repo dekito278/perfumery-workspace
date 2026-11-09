@@ -685,8 +685,8 @@ export const getRawMaterialsSummary = async () => {
     }));
   } catch (error) {
     console.error('Error fetching raw material summary:', error);
-    // Stays English: DashboardPage retries a loader only when its message includes 'failed to fetch'.
-    throw new Error('Failed to fetch raw material summary');
+    // The network error rides along as `cause`: DashboardPage retries only a transient one, and reads it there.
+    throw new Error('Gagal mengambil ringkasan bahan baku', { cause: error });
   }
 };
 
@@ -808,8 +808,8 @@ export const getRawMaterialsReferenceSummary = async () => {
     };
   } catch (error) {
     console.error('Error fetching raw material reference summary:', error);
-    // Stays English: DashboardPage retries a loader only when its message includes 'failed to fetch'.
-    throw new Error('Failed to fetch raw material reference summary');
+    // The network error rides along as `cause`: DashboardPage retries only a transient one, and reads it there.
+    throw new Error('Gagal mengambil ringkasan acuan bahan baku', { cause: error });
   }
 };
 

@@ -204,7 +204,7 @@ export const saveBatch = async (input) => {
     // and moves on, while the batch — and the stock deduction keyed to its id — exists only in this
     // browser and vanishes on reload (audit round 8).
     saveLocalBatch(batch);
-    throw new Error(`Batch gagal tersimpan ke server: ${error.message || error}. Draft lokal disimpan, coba lagi sebelum melanjutkan produksi.`);
+    throw new Error(`Batch gagal tersimpan ke server: ${error.message || error}. Draf lokal disimpan, coba lagi sebelum melanjutkan produksi.`);
   }
 };
 
@@ -238,7 +238,7 @@ export const deductBatchMaterialStock = async (batchId) => {
   });
 
   if (error) {
-    throw new Error(error.message || 'Failed to deduct batch material stock');
+    throw new Error(error.message || 'Gagal memotong stok bahan untuk batch');
   }
 
   const usageRecords = Array.isArray(data) ? data.map((record) => normalizeUsageRecord(toAppRecord(record))) : [];
