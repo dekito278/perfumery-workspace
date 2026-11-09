@@ -113,8 +113,8 @@ const main = async () => {
     }
   }
   await page.waitForLoadState('networkidle');
-  await page.waitForSelector('text=Graphic odour display', { timeout: 20000 });
-  await page.locator('text=Graphic odour display').scrollIntoViewIfNeeded();
+  await page.waitForSelector('text=Tampilan grafik aroma', { timeout: 20000 });
+  await page.locator('text=Tampilan grafik aroma').scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(outputDir, 'formula-composer-loaded.png'), fullPage: true });
 
   const slider = page.locator('input[type="range"]').first();

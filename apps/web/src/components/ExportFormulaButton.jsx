@@ -25,16 +25,16 @@ const ExportFormulaButton = ({ formula, items }) => {
         `${formula.code || 'formula'}_${formula.name.replace(/\s+/g, '_')}.pdf`
       );
 
-      toast.success('Formula exported successfully');
+      toast.success('Formula diekspor');
     } catch (error) {
-      toast.error(error.message || 'Failed to export formula');
+      toast.error(error.message || 'Gagal mengekspor formula');
     }
   };
 
   return (
     <Button variant="outline" onClick={handleExport} className="gap-2 h-9">
       <Download className="w-4 h-4" />
-      Export PDF
+      Ekspor PDF
     </Button>
   );
 };

@@ -39,8 +39,8 @@ const RawMaterialsPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Materials - Solivagant</title>
-        <meta name="description" content="Browse your material library, guidance coverage, and dilution readiness from one formulation workspace." />
+        <title>Bahan baku - Solivagant</title>
+        <meta name="description" content="Lihat pustaka bahan baku, kelengkapan panduan, dan kesiapan pengenceran dari satu ruang kerja formulasi." />
       </Helmet>
       <div className="page-container">
         <div className="mb-6">
@@ -50,14 +50,14 @@ const RawMaterialsPage = () => {
             className="gap-2 mb-4 h-9"
           >
             <Home className="w-4 h-4" />
-            Back to dashboard
+            Kembali ke dashboard
           </Button>
         </div>
 
         <PageHeader
-          title="Materials"
-          description="Review material coverage, vendor metadata, dilution readiness, and workbook reference guidance from one master library."
-          action="Add material"
+          title="Bahan baku"
+          description="Tinjau kelengkapan bahan baku, data supplier, kesiapan pengenceran, dan panduan acuan workbook dari satu pustaka induk."
+          action="Tambah bahan baku"
           actionIcon={Plus}
           onAction={() => page.setAddModalOpen(true)}
         />
@@ -78,9 +78,9 @@ const RawMaterialsPage = () => {
           <div className="mb-5 grid gap-3">
             <StateBlock
               tone="error"
-              title="Material summary could not be refreshed"
+              title="Ringkasan bahan baku gagal dimuat ulang"
               description={page.summaryError}
-              action={page.summaryLoading ? '' : 'Retry summary'}
+              action={page.summaryLoading ? '' : 'Muat ulang ringkasan'}
               onAction={page.summaryLoading ? null : page.loadSummary}
               className="bg-rose-50/80 p-5"
             />
@@ -108,9 +108,9 @@ const RawMaterialsPage = () => {
           <div className="mb-5">
             <StateBlock
               tone="error"
-              title="Materials data may be stale"
+              title="Data bahan baku mungkin sudah usang"
               description={page.loadError}
-              action={page.loading ? '' : 'Retry materials'}
+              action={page.loading ? '' : 'Coba lagi'}
               onAction={page.loading ? null : page.loadMaterials}
               className="bg-rose-50/80 p-5"
             />
@@ -119,24 +119,24 @@ const RawMaterialsPage = () => {
 
         {page.showInitialLoading ? (
           <StudioLoadingState
-            eyebrow="Loading materials"
-            title="Preparing material library"
-            description="Mengambil stok, guidance workbook, dan status cleanup material."
+            eyebrow="Memuat bahan baku"
+            title="Menyiapkan pustaka bahan baku"
+            description="Mengambil stok, panduan workbook, dan status kerapian bahan baku."
           />
         ) : page.loadError && page.materials.length === 0 ? (
           <StateBlock
             tone="error"
-            title="Materials could not be loaded"
+            title="Bahan baku gagal dimuat"
             description={page.loadError}
-            action="Retry materials"
+            action="Coba lagi"
             onAction={page.loadMaterials}
           />
         ) : !page.summaryLoading && !page.summaryError && page.summaryMaterials.length === 0 ? (
           <EmptyState
             icon={Package}
-            title="No materials yet"
-            description="Add your first material to start building your formulation library."
-            action="Add material"
+            title="Belum ada bahan baku"
+            description="Tambahkan bahan baku pertama untuk mulai mengisi pustaka formulasi."
+            action="Tambah bahan baku"
             actionIcon={Plus}
             onAction={() => page.setAddModalOpen(true)}
           />
@@ -174,7 +174,7 @@ const RawMaterialsPage = () => {
               currentPage={page.currentPage}
               pageSize={page.pageSize}
               totalItems={page.totalMaterials}
-              itemLabel="materials"
+              itemLabel="bahan baku"
               onPageChange={page.setCurrentPage}
             />
           </>
@@ -227,11 +227,12 @@ const RawMaterialsPage = () => {
         open={page.deleteDialogOpen}
         onOpenChange={page.setDeleteDialogOpen}
         onConfirm={page.confirmDelete}
-        title={page.selectedMaterial ? 'Delete material' : 'Delete selected materials'}
+        title={page.selectedMaterial ? 'Hapus bahan baku' : 'Hapus bahan baku terpilih'}
         description={page.selectedMaterial
-          ? `Are you sure you want to delete "${page.selectedMaterial.name}"? This action cannot be undone, and linked workbook/reference artifacts will be removed too.`
-          : `Are you sure you want to delete ${page.selectedMaterials.length} selected materials? This action cannot be undone, and each linked workbook/reference artifact will be removed too.`}
-        confirmText={page.deletingId ? 'Deleting...' : 'Delete'}
+          ? `Yakin hapus "${page.selectedMaterial.name}"? Tindakan ini tidak bisa dibatalkan, dan data workbook/acuan yang tertaut ikut dihapus.`
+          : `Yakin hapus ${page.selectedMaterials.length} bahan baku terpilih? Tindakan ini tidak bisa dibatalkan, dan data workbook/acuan yang tertaut pada tiap bahan ikut dihapus.`}
+        confirmText={page.deletingId ? 'Menghapus...' : 'Hapus'}
+        cancelText="Batal"
         confirmDisabled={Boolean(page.deletingId)}
         destructive
       >

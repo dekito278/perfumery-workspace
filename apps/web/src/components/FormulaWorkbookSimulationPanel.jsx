@@ -26,22 +26,23 @@ const formatHours = (value) => {
     return '-';
   }
 
-  return `${formatQuantity(value, 1)} h`;
+  return `${formatQuantity(value, 1)} jam`;
 };
 
+// Keyed by the card label, which is the engine's own axis name (formulaWorkbookSimulation.js `scores`).
 const PACE_METRIC_HELP = {
-  Opening: 'How alive and noticeable the first impression feels.',
-  Heart: 'How much body and identity remains after the opening settles.',
-  Drydown: 'How convincing and present the late-stage impression stays.',
-  Diffusion: 'How well the formula projects beyond the skin or blotter.',
-  Tenacity: 'How well the formula holds over time.',
-  Harmony: 'How well the materials feel blended instead of colliding.',
-  Smoothness: 'How soft and seamless the phase movement feels.',
-  'Bridge Quality': 'How naturally the formula transitions between top, heart, and base.',
-  'Top -> Heart': 'How well the opening hands off into the middle.',
-  'Heart -> Base': 'How well the heart continues into the drydown.',
-  'Contributor Diversity': 'How evenly the formula is supported instead of leaning on one dominant material.',
-  'Pyramid Balance': 'How close the formula is to a balanced top / middle / base structure.',
+  Pembuka: 'Seberapa hidup dan terasa kesan pertamanya.',
+  Inti: 'Seberapa banyak badan dan karakter yang tersisa setelah pembuka mereda.',
+  'Jejak akhir': 'Seberapa meyakinkan dan hadir kesan tahap akhirnya.',
+  Pancaran: 'Seberapa jauh formula memancar dari kulit atau blotter.',
+  Ketahanan: 'Seberapa lama formula bertahan.',
+  Harmoni: 'Seberapa menyatu bahan-bahannya, bukan saling bertabrakan.',
+  Kehalusan: 'Seberapa lembut dan mulus perpindahan antarfasenya.',
+  Transisi: 'Seberapa alami formula berpindah dari nada atas ke tengah lalu ke dasar.',
+  'Atas -> Inti': 'Seberapa mulus pembuka berpindah ke bagian tengah.',
+  'Inti -> Dasar': 'Seberapa mulus inti berlanjut ke jejak akhir.',
+  'Ragam penyumbang': 'Seberapa merata formula ditopang, bukan bertumpu pada satu bahan dominan.',
+  'Keseimbangan piramida': 'Seberapa dekat formula ke struktur nada atas / tengah / dasar yang seimbang.',
 };
 
 
@@ -81,7 +82,7 @@ const MetricCard = ({ label, value, tone = 'default', score = null }) => (
     <div className="mt-1.5 text-[1.05rem] font-semibold">{value}</div>
     {score !== null ? (
       <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
-        <span className="text-muted-foreground">Interpretation</span>
+        <span className="text-muted-foreground">Penilaian</span>
         <Badge variant="outline" className={`rounded-full px-2 py-0.5 text-[10px] ${getScoreBand(score).className}`}>
           {getScoreBand(score).label}
         </Badge>
@@ -108,7 +109,7 @@ const BalanceBar = ({ label, percentage, amount, toneClass }) => (
         style={{ width: `${Math.min(Math.max(percentage, 0), 100)}%` }}
       />
     </div>
-    <div className="text-[11px] text-muted-foreground">{formatQuantity(amount, 2)} odour-weight load</div>
+    <div className="text-[11px] text-muted-foreground">{formatQuantity(amount, 2)} beban berbobot aroma</div>
   </div>
 );
 
@@ -137,12 +138,12 @@ const ContributorList = ({ title, rows, emptyLabel }) => (
           <div className="min-w-0">
             <div className="truncate font-medium">{row.name}</div>
             <div className="text-[11px] text-muted-foreground">
-              {row.referenceCode || 'manual guidance'}
+              {row.referenceCode || 'panduan manual'}
             </div>
           </div>
           <div className="text-right">
             <div className="font-mono font-semibold">{formatPercentage(row.effectivePercentage, 1)}</div>
-            <div className="text-[11px] text-muted-foreground">effective</div>
+            <div className="text-[11px] text-muted-foreground">efektif</div>
           </div>
         </div>
       )) : (
@@ -156,7 +157,7 @@ const FormulaWorkbookSimulationPanel = ({
   items,
   rawMaterialsById,
   referenceLinksMap,
-  title = 'PACE analysis',
+  title = 'Analisis PACE',
   description = '',
   onApplyRecommendation = null,
   onCreatePacedRevision = null,
@@ -209,7 +210,7 @@ const FormulaWorkbookSimulationPanel = ({
           <FlaskConical className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-semibold">{title}</h3>
           <Badge variant="outline" className="ml-auto rounded-full px-2.5 text-[10px]">
-            {simulation.guidanceBackedCount}/{simulation.eligibleItemCount} with guidance
+            {simulation.guidanceBackedCount}/{simulation.eligibleItemCount} berpanduan
           </Badge>
         </div>
         {description ? (
@@ -237,38 +238,38 @@ const FormulaWorkbookSimulationPanel = ({
             toneClass="border-amber-200 bg-amber-50 text-amber-950"
           />
           <SourceBadge
-            label="Missing"
+            label="Belum ada"
             value={simulation.missingGuidanceCount}
             toneClass="border-slate-200 bg-slate-50 text-slate-700"
           />
           {/* Where the panel used to print "Prohibited by IFRA" over materials whose profile simply had
               no limit recorded (bergamot among them). The gap stays visible; the accusation is gone. */}
           <SourceBadge
-            label="IFRA not recorded"
+            label="IFRA belum tercatat"
             value={simulation.unknownIfraLimitCount || 0}
             toneClass={simulation.unknownIfraLimitCount ? 'border-slate-300 bg-slate-100 text-slate-700' : 'border-emerald-200 bg-emerald-50 text-emerald-900'}
           />
           <SourceBadge
-            label="PACE warnings"
+            label="Peringatan PACE"
             value={simulation.pace.warningCount}
             toneClass={simulation.pace.warningCount ? 'border-amber-200 bg-amber-50 text-amber-950' : 'border-emerald-200 bg-emerald-50 text-emerald-900'}
           />
         </div>
         <div className="mt-3 grid gap-2.5 md:grid-cols-3">
           <MetricCard
-            label="Balance"
+            label="Keseimbangan"
             value={formatQuantity(objectives.balance, 0)}
             tone={scoreTone(objectives.balance)}
             score={objectives.balance}
           />
           <MetricCard
-            label="Projection"
+            label="Pancaran"
             value={formatQuantity(objectives.projection, 0)}
             tone={scoreTone(objectives.projection)}
             score={objectives.projection}
           />
           <MetricCard
-            label="Longevity"
+            label="Ketahanan"
             value={formatQuantity(objectives.longevity, 0)}
             tone={scoreTone(objectives.longevity)}
             score={objectives.longevity}
@@ -278,10 +279,10 @@ const FormulaWorkbookSimulationPanel = ({
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7e6c42]">
-                Recommendation priority
+                Prioritas rekomendasi
               </div>
               <div className="mt-1 text-sm text-[#5f5239]">
-                PACE suggestions are currently tuned for <span className="font-semibold">{activePriorityMode.label.toLowerCase()}</span>.
+                Saran PACE saat ini mengutamakan <span className="font-semibold">{activePriorityMode.shortLabel.toLowerCase()}</span>.
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -309,11 +310,11 @@ const FormulaWorkbookSimulationPanel = ({
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <Sparkles className="h-4 w-4 text-primary" />
-            PACE performance board
+            Papan PACE
           </div>
           {simulation.pace.strongestAxis ? (
             <Badge variant="secondary" className="rounded-full px-2.5 text-[10px]">
-              Strongest: {simulation.pace.strongestAxis.label}
+              Terkuat: {simulation.pace.strongestAxis.label}
             </Badge>
           ) : null}
         </div>
@@ -328,49 +329,49 @@ const FormulaWorkbookSimulationPanel = ({
 
         <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            label="Opening"
+            label="Pembuka"
             value={formatQuantity(simulation.pace.openingScore, 0)}
             tone={scoreTone(simulation.pace.openingScore)}
             score={simulation.pace.openingScore}
           />
           <MetricCard
-            label="Heart"
+            label="Inti"
             value={formatQuantity(simulation.pace.heartScore, 0)}
             tone={scoreTone(simulation.pace.heartScore)}
             score={simulation.pace.heartScore}
           />
           <MetricCard
-            label="Drydown"
+            label="Jejak akhir"
             value={formatQuantity(simulation.pace.drydownScore, 0)}
             tone={scoreTone(simulation.pace.drydownScore)}
             score={simulation.pace.drydownScore}
           />
           <MetricCard
-            label="Diffusion"
+            label="Pancaran"
             value={formatQuantity(simulation.pace.diffusionScore, 0)}
             tone={scoreTone(simulation.pace.diffusionScore)}
             score={simulation.pace.diffusionScore}
           />
           <MetricCard
-            label="Tenacity"
+            label="Ketahanan"
             value={formatQuantity(simulation.pace.tenacityScore, 0)}
             tone={scoreTone(simulation.pace.tenacityScore)}
             score={simulation.pace.tenacityScore}
           />
           <MetricCard
-            label="Harmony"
+            label="Harmoni"
             value={formatQuantity(simulation.pace.harmonyScore, 0)}
             tone={scoreTone(simulation.pace.harmonyScore)}
             score={simulation.pace.harmonyScore}
           />
           <MetricCard
-            label="Smoothness"
+            label="Kehalusan"
             value={formatQuantity(simulation.pace.smoothnessScore, 0)}
             tone={scoreTone(simulation.pace.smoothnessScore)}
             score={simulation.pace.smoothnessScore}
           />
           <MetricCard
-            label="Bridge Quality"
+            label="Transisi"
             value={formatQuantity(simulation.pace.bridgeQualityScore, 0)}
             tone={scoreTone(simulation.pace.bridgeQualityScore)}
             score={simulation.pace.bridgeQualityScore}
@@ -383,35 +384,35 @@ const FormulaWorkbookSimulationPanel = ({
           <div className="mb-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <GitBranch className="h-4 w-4 text-muted-foreground" />
-              Transition diagnostics
+              Diagnosis transisi
             </div>
             {simulation.pace.weakestAxis ? (
               <Badge variant="outline" className="rounded-full px-2.5 text-[10px]">
-                Watch: {simulation.pace.weakestAxis.label}
+                Pantau: {simulation.pace.weakestAxis.label}
               </Badge>
             ) : null}
           </div>
           <div className="grid gap-2.5 md:grid-cols-2">
             <MetricCard
-              label="Top -> Heart"
+              label="Atas -> Inti"
               value={formatQuantity(simulation.pace.topMiddleBridgeScore, 0)}
               tone={scoreTone(simulation.pace.topMiddleBridgeScore)}
               score={simulation.pace.topMiddleBridgeScore}
             />
             <MetricCard
-              label="Heart -> Base"
+              label="Inti -> Dasar"
               value={formatQuantity(simulation.pace.middleBaseBridgeScore, 0)}
               tone={scoreTone(simulation.pace.middleBaseBridgeScore)}
               score={simulation.pace.middleBaseBridgeScore}
             />
             <MetricCard
-              label="Contributor Diversity"
+              label="Ragam penyumbang"
               value={formatQuantity(simulation.pace.contributorDiversityScore, 0)}
               tone={scoreTone(simulation.pace.contributorDiversityScore)}
               score={simulation.pace.contributorDiversityScore}
             />
             <MetricCard
-              label="Pyramid Balance"
+              label="Keseimbangan piramida"
               value={formatQuantity(simulation.pace.balanceScore, 0)}
               tone={scoreTone(simulation.pace.balanceScore)}
               score={simulation.pace.balanceScore}
@@ -419,8 +420,8 @@ const FormulaWorkbookSimulationPanel = ({
           </div>
           {simulation.pace.dominantClass ? (
             <p className="mt-3 text-xs text-muted-foreground">
-              Dominant class now: <span className="font-medium text-foreground">{simulation.pace.dominantClass.familyName}</span>{' '}
-              at {formatPercentage(simulation.pace.dominantClass.sharePercent, 1)} of odour-weighted class load.
+              Kelas dominan saat ini: <span className="font-medium text-foreground">{simulation.pace.dominantClass.familyName}</span>,{' '}
+              {formatPercentage(simulation.pace.dominantClass.sharePercent, 1)} dari beban kelas berbobot aroma.
             </p>
           ) : null}
         </div>
@@ -429,27 +430,27 @@ const FormulaWorkbookSimulationPanel = ({
           <div className="mb-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <Radio className="h-4 w-4 text-muted-foreground" />
-              Phase anchors
+              Jangkar fase
             </div>
             <Badge variant="outline" className="rounded-full px-2.5 text-[10px]">
-              Structured from guidance rows
+              Disusun dari baris berpanduan
             </Badge>
           </div>
           <div className="space-y-3">
             <ContributorList
-              title="Opening anchors"
+              title="Jangkar pembuka"
               rows={simulation.pace.openingContributors}
-              emptyLabel="No top-phase contributors detected yet."
+              emptyLabel="Belum ada penyumbang nada atas."
             />
             <ContributorList
-              title="Heart anchors"
+              title="Jangkar inti"
               rows={simulation.pace.heartContributors}
-              emptyLabel="No middle-phase contributors detected yet."
+              emptyLabel="Belum ada penyumbang nada tengah."
             />
             <ContributorList
-              title="Drydown anchors"
+              title="Jangkar jejak akhir"
               rows={simulation.pace.drydownContributors}
-              emptyLabel="No base-phase contributors detected yet."
+              emptyLabel="Belum ada penyumbang nada dasar."
             />
           </div>
         </div>
@@ -458,13 +459,13 @@ const FormulaWorkbookSimulationPanel = ({
       {paceRecommendations.length ? (
         <div className="rounded-[1.2rem] border bg-background/70 p-3.5">
           <div className="mb-2.5 flex items-center justify-between gap-3">
-            <div className="text-sm font-semibold">Revision suggestions</div>
+            <div className="text-sm font-semibold">Saran revisi</div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="rounded-full px-2.5 text-[10px]">
-                Test-sized gram moves
+                Perubahan gram skala uji
               </Badge>
               <Badge variant="secondary" className="rounded-full px-2.5 text-[10px]">
-                {activePriorityMode.shortLabel} priority
+                Prioritas {activePriorityMode.shortLabel.toLowerCase()}
               </Badge>
               {onCreatePacedRevision ? (
                 <Button
@@ -474,13 +475,13 @@ const FormulaWorkbookSimulationPanel = ({
                   onClick={() => onCreatePacedRevision(paceRecommendations, resolvedPriorityMode)}
                   disabled={isCreatingPacedRevision}
                 >
-                  {isCreatingPacedRevision ? 'Creating PACED revision...' : 'Create PACED revision'}
+                  {isCreatingPacedRevision ? 'Membuat revisi PACED...' : 'Buat revisi PACED'}
                 </Button>
               ) : null}
             </div>
           </div>
           <p className="mb-3 text-[12px] leading-relaxed text-muted-foreground">
-            These are first-pass gram suggestions for the next trial batch. Apply one or two changes at a time, then re-check PACE and your validation notes.
+            Ini saran gram tahap awal untuk batch uji berikutnya. Terapkan satu atau dua perubahan sekaligus, lalu cek ulang PACE dan catatan uji.
           </p>
           <div className="grid gap-2.5 md:grid-cols-2">
             {paceRecommendations.map((recommendation) => (
@@ -503,11 +504,11 @@ const FormulaWorkbookSimulationPanel = ({
                           : 'border-emerald-200 bg-emerald-50 text-emerald-900'
                       }`}
                     >
-                      {recommendation.recommendationKind === 'cleanup_move' ? 'Cleanup move' : 'Safe increase'}
+                      {recommendation.recommendationKind === 'cleanup_move' ? 'Langkah perapian' : 'Penambahan aman'}
                     </Badge>
                     {recommendation.objective ? (
-                      <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px] capitalize">
-                        {recommendation.objective}
+                      <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px]">
+                        {getPacePriorityModeMeta(recommendation.objective).shortLabel}
                       </Badge>
                     ) : null}
                     <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px]">
@@ -520,12 +521,12 @@ const FormulaWorkbookSimulationPanel = ({
                 </p>
                 {recommendation.strategyLabel ? (
                   <div className="mt-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                    Strategy: {recommendation.strategyLabel}
+                    Strategi: {recommendation.strategyLabel}
                   </div>
                 ) : null}
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   <div className="rounded-[0.85rem] border bg-background/80 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Current</div>
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Saat ini</div>
                     <div className="mt-1 text-sm font-semibold">{formatRecommendationValue(recommendation.currentGrams)}</div>
                   </div>
                   <div className="rounded-[0.85rem] border bg-background/80 px-3 py-2">
@@ -552,7 +553,7 @@ const FormulaWorkbookSimulationPanel = ({
                       className="rounded-full px-3"
                       onClick={() => onApplyRecommendation(recommendation)}
                     >
-                      Apply
+                      Terapkan
                     </Button>
                   </div>
                 ) : null}
@@ -562,12 +563,12 @@ const FormulaWorkbookSimulationPanel = ({
         </div>
       ) : (
         <div className="rounded-[1.2rem] border bg-background/70 p-3.5">
-          <div className="mb-2 text-sm font-semibold">Revision suggestions</div>
+          <div className="mb-2 text-sm font-semibold">Saran revisi</div>
           <Alert className="rounded-[1rem] border-border/80 bg-background/85 px-3.5 py-3 text-[13px] [&>svg]:left-3.5 [&>svg]:top-3.5 [&>svg~*]:pl-6">
             <Info className="h-3.5 w-3.5" />
-            <AlertTitle className="mb-1 text-[13px] font-semibold">PACE is stable enough to pause revisions</AlertTitle>
+            <AlertTitle className="mb-1 text-[13px] font-semibold">PACE cukup stabil, revisi bisa ditunda</AlertTitle>
             <AlertDescription className="text-[12px] leading-relaxed text-muted-foreground">
-              The current formula is already in a healthy PACE range, so the board is intentionally not pushing more gram changes right now. At this point, validation on blotter or skin is more useful than chasing extra score movement.
+              Formula ini sudah di rentang PACE yang sehat, jadi papan ini sengaja tidak mendorong perubahan gram lagi. Sekarang uji di blotter atau kulit lebih berguna daripada mengejar kenaikan skor.
             </AlertDescription>
           </Alert>
         </div>
@@ -575,34 +576,34 @@ const FormulaWorkbookSimulationPanel = ({
 
       <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Reference Coverage"
+          label="Cakupan acuan"
           value={formatPercentage(simulation.coveragePercent, 0)}
         />
         <MetricCard
-          label="Impact Estimate"
+          label="Perkiraan kekuatan"
           value={simulation.hasImpactData ? formatQuantity(simulation.impactEstimate, 1) : '-'}
           tone="accent"
         />
         <MetricCard
-          label="Simple Lifetime"
+          label="Ketahanan sederhana"
           value={simulation.hasLifeData ? formatHours(simulation.simpleLifeHours) : '-'}
         />
         <MetricCard
-          label="Odour-Weighted Life"
+          label="Ketahanan berbobot aroma"
           value={formatHours(simulation.odourWeightedLifeHours)}
         />
       </div>
 
       <div className="rounded-[1.2rem] border bg-background/70 p-3.5">
         <div className="mb-2.5 flex items-center justify-between gap-3">
-          <div className="text-sm font-semibold">Top / middle / base balance</div>
+          <div className="text-sm font-semibold">Keseimbangan nada atas / tengah / dasar</div>
           <TimerReset className="h-4 w-4 text-muted-foreground" />
         </div>
         <FormulaPlacementBlindSpotNotice blindSpot={placementBlindSpot} className="mb-3" />
         <div className="grid gap-3 md:grid-cols-3">
-          <BalanceBar label="Top" percentage={simulation.topPercent} amount={simulation.topAmount} toneClass="bg-sky-500" />
-          <BalanceBar label="Middle" percentage={simulation.middlePercent} amount={simulation.middleAmount} toneClass="bg-amber-500" />
-          <BalanceBar label="Base" percentage={simulation.basePercent} amount={simulation.baseAmount} toneClass="bg-emerald-600" />
+          <BalanceBar label="Nada atas" percentage={simulation.topPercent} amount={simulation.topAmount} toneClass="bg-sky-500" />
+          <BalanceBar label="Nada tengah" percentage={simulation.middlePercent} amount={simulation.middleAmount} toneClass="bg-amber-500" />
+          <BalanceBar label="Nada dasar" percentage={simulation.basePercent} amount={simulation.baseAmount} toneClass="bg-emerald-600" />
         </div>
       </div>
 
@@ -615,9 +616,9 @@ const FormulaWorkbookSimulationPanel = ({
       <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-[1.2rem] border bg-background/70 p-3.5">
           <div className="mb-2.5 flex items-center justify-between gap-3">
-            <div className="text-sm font-semibold">Warnings and guidance friction</div>
+            <div className="text-sm font-semibold">Peringatan dan kendala panduan</div>
             <Badge variant={simulation.pace.warningCount ? 'destructive' : 'secondary'} className="rounded-full px-2.5 text-[10px]">
-              {simulation.pace.warningCount} flag{simulation.pace.warningCount === 1 ? '' : 's'}
+              {simulation.pace.warningCount} peringatan
             </Badge>
           </div>
 
@@ -641,9 +642,9 @@ const FormulaWorkbookSimulationPanel = ({
             )) : (
               <Alert className="rounded-[1rem] border-border/80 bg-background/85 px-3.5 py-3 text-[13px] [&>svg]:left-3.5 [&>svg]:top-3.5 [&>svg~*]:pl-6">
                 <Info className="h-3.5 w-3.5" />
-                <AlertTitle className="mb-1 text-[13px] font-semibold">No major PACE friction detected</AlertTitle>
+                <AlertTitle className="mb-1 text-[13px] font-semibold">Tidak ada kendala PACE yang berarti</AlertTitle>
                 <AlertDescription className="text-[12px] leading-relaxed text-muted-foreground">
-                  The current formula looks reasonably connected across phases with no major overload or conflict warning from the guidance-backed rows.
+                  Formula ini cukup tersambung antarfase, tanpa peringatan beban berlebih atau bentrokan dari baris berpanduan.
                 </AlertDescription>
               </Alert>
             )}
@@ -651,7 +652,7 @@ const FormulaWorkbookSimulationPanel = ({
         </div>
 
         <div className="rounded-[1.2rem] border bg-background/70 p-3.5">
-          <div className="mb-2.5 text-sm font-semibold">Main impact contributors</div>
+          <div className="mb-2.5 text-sm font-semibold">Penyumbang kekuatan utama</div>
           <div className="space-y-3">
             {simulation.topImpactContributors.length ? simulation.topImpactContributors.map((row) => (
               <div key={`${row.item_id}-${row.reference_profile?.reference_code || row.name}`} className="space-y-1">
@@ -659,14 +660,14 @@ const FormulaWorkbookSimulationPanel = ({
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{row.name}</div>
                     <div className="text-[11px] text-muted-foreground">
-                      {row.reference_profile?.reference_code || 'linked profile'}
+                      {row.reference_profile?.reference_code || 'profil terhubung'}
                       {' / '}
-                      {row.guidanceSource === 'raw_material_fallback' ? 'manual guidance' : 'workbook linked'}
+                      {row.guidanceSource === 'raw_material_fallback' ? 'panduan manual' : 'terhubung ke workbook'}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-semibold">{formatQuantity(row.impactContribution, 1)}</div>
-                    <div className="text-[11px] text-muted-foreground">{formatPercentage(row.effectivePercentage, 2)} effective</div>
+                    <div className="text-[11px] text-muted-foreground">{formatPercentage(row.effectivePercentage, 2)} efektif</div>
                   </div>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -678,7 +679,7 @@ const FormulaWorkbookSimulationPanel = ({
               </div>
             )) : (
               <div className="text-sm text-muted-foreground">
-                No impact contributors available yet. Link workbook reference profiles to the selected materials first.
+                Belum ada penyumbang kekuatan. Hubungkan profil acuan workbook ke bahan yang dipilih dulu.
               </div>
             )}
           </div>

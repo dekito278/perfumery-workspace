@@ -31,44 +31,44 @@ const FormulaDetailOverviewTab = ({
   workbookSimulation,
 }) => (
   <div className="space-y-5">
-    <DetailSection title="Overview">
+    <DetailSection title="Ringkasan">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <OverviewStat label="Items" value={items.length} />
-        <OverviewStat label="Legacy accord items" value={legacyAccordCount} />
-        <OverviewStat label="Diluted" value={items.filter((item) => item.is_diluted && item.dilution_percentage).length} />
-        <OverviewStat label="Guidance-backed" value={referenceCoverageCount} />
-        <OverviewStat label="Reference alerts" value={totalReferenceAlertCount} valueClassName={totalReferenceAlertCount > 0 ? 'text-amber-600' : ''} />
-        <OverviewStat label="Material cost" value={formatPrice(totalCost)} valueClassName="font-mono text-primary" />
+        <OverviewStat label="Baris" value={items.length} />
+        <OverviewStat label="Baris akord lama" value={legacyAccordCount} />
+        <OverviewStat label="Diencerkan" value={items.filter((item) => item.is_diluted && item.dilution_percentage).length} />
+        <OverviewStat label="Berpanduan" value={referenceCoverageCount} />
+        <OverviewStat label="Peringatan acuan" value={totalReferenceAlertCount} valueClassName={totalReferenceAlertCount > 0 ? 'text-amber-600' : ''} />
+        <OverviewStat label="Biaya bahan" value={formatPrice(totalCost)} valueClassName="font-mono text-primary" />
       </div>
     </DetailSection>
 
-    <DetailSection title="Reference guidance">
+    <DetailSection title="Panduan acuan">
       {hasFormulaItems ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <OverviewStat label="PerfumersWorld" value={workbookSimulation.perfumersWorldGuidanceCount || 0} />
             <OverviewStat label="TGSC / ScenTree" value={(workbookSimulation.tgscGuidanceCount || 0) + (workbookSimulation.scentreeGuidanceCount || 0)} />
-            <OverviewStat label="Manual guidance" value={(workbookSimulation.manualGuidanceCount || 0) + (workbookSimulation.referenceGuidanceCount || 0)} />
-            <OverviewStat label="Missing guidance" value={workbookSimulation.missingGuidanceCount} />
-            <OverviewStat label="IFRA alerts" value={ifraAdvisoryCount} valueClassName={ifraAdvisoryCount > 0 ? 'text-destructive' : ''} />
+            <OverviewStat label="Panduan manual" value={(workbookSimulation.manualGuidanceCount || 0) + (workbookSimulation.referenceGuidanceCount || 0)} />
+            <OverviewStat label="Tanpa panduan" value={workbookSimulation.missingGuidanceCount} />
+            <OverviewStat label="Peringatan IFRA" value={ifraAdvisoryCount} valueClassName={ifraAdvisoryCount > 0 ? 'text-destructive' : ''} />
             {/* Beside the alert count on purpose: zero alerts does not mean every material was checked.
                 76 of the studio's reference profiles state no IFRA limit at all. */}
-            <OverviewStat label="IFRA not recorded" value={workbookSimulation.unknownIfraLimitCount || 0} />
-            <OverviewStat label="Max use alerts" value={maxUseAdvisoryCount} valueClassName={maxUseAdvisoryCount > 0 ? 'text-amber-600' : ''} />
-            <OverviewStat label="Typical nudges" value={typicalUseAdvisoryCount} valueClassName={typicalUseAdvisoryCount > 0 ? 'text-blue-600' : ''} />
+            <OverviewStat label="IFRA belum tercatat" value={workbookSimulation.unknownIfraLimitCount || 0} />
+            <OverviewStat label="Peringatan kadar maksimum" value={maxUseAdvisoryCount} valueClassName={maxUseAdvisoryCount > 0 ? 'text-amber-600' : ''} />
+            <OverviewStat label="Di atas kadar umum" value={typicalUseAdvisoryCount} valueClassName={typicalUseAdvisoryCount > 0 ? 'text-blue-600' : ''} />
           </div>
 
           <p className="mt-3 text-sm text-muted-foreground">
-            Untuk bahan diluted, advisory dihitung dari effective active percentage, bukan sekadar persen diluted yang tertulis.
+            Untuk bahan yang diencerkan, peringatan dihitung dari persentase aktif efektif, bukan dari persen tertulis sebelum pengenceran.
           </p>
 
           <div className="mt-4 space-y-3">
             {!hasReferenceCoverage ? (
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertTitle>No guidance-backed materials yet</AlertTitle>
+                <AlertTitle>Belum ada bahan berpanduan</AlertTitle>
                 <AlertDescription>
-                  Add raw materials that already have workbook reference links or manual guidance to unlock IFRA guidance, odour facets, and lifetime-based charting for this formula.
+                  Tambahkan bahan baku yang sudah punya tautan acuan workbook atau panduan manual agar panduan IFRA, nuansa aroma, dan grafik ketahanan formula ini terbuka.
                 </AlertDescription>
               </Alert>
             ) : formulaReferenceAdvisories.length ? visibleReferenceAdvisories.map((advisory) => (
@@ -86,17 +86,17 @@ const FormulaDetailOverviewTab = ({
                 <AlertDescription>
                   <p>{advisory.message}</p>
                   <p className="mt-1 text-xs opacity-80">
-                    Reference {advisory.referenceCode || 'profile linked'}
-                    {advisory.dilutionPercentage ? ` / diluted ${formatPercentage(advisory.dilutionPercentage, 1)}` : ''}
+                    Acuan {advisory.referenceCode || 'profil terhubung'}
+                    {advisory.dilutionPercentage ? ` / diencerkan ${formatPercentage(advisory.dilutionPercentage, 1)}` : ''}
                   </p>
                 </AlertDescription>
               </Alert>
             )) : (
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertTitle>No reference alerts in this formula</AlertTitle>
+                <AlertTitle>Tidak ada peringatan acuan di formula ini</AlertTitle>
                 <AlertDescription>
-                  Linked raw materials are currently within their typical guidance, max use level, and IFRA reference limit where that data is available.
+                  Bahan baku yang terhubung masih di bawah kadar pakai umum, kadar maksimum, dan batas IFRA acuan, sejauh datanya tersedia.
                 </AlertDescription>
               </Alert>
             )}
@@ -109,8 +109,8 @@ const FormulaDetailOverviewTab = ({
                 className="rounded-xl"
               >
                 {showAllReferenceAlerts
-                  ? 'Show fewer alerts'
-                  : `Show ${formulaReferenceAdvisories.length - 4} more alerts`}
+                  ? 'Tampilkan lebih sedikit'
+                  : `Tampilkan ${formulaReferenceAdvisories.length - 4} peringatan lagi`}
               </Button>
             ) : null}
           </div>
@@ -118,9 +118,9 @@ const FormulaDetailOverviewTab = ({
       ) : (
         <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle>This formula does not have any ingredients yet</AlertTitle>
+          <AlertTitle>Formula ini belum punya bahan</AlertTitle>
           <AlertDescription>
-            Add at least one raw material to start reference guidance, workbook charting, and concentration alerts for this formula.
+            Tambahkan minimal satu bahan baku untuk memulai panduan acuan, grafik workbook, dan peringatan konsentrasi formula ini.
           </AlertDescription>
         </Alert>
       )}

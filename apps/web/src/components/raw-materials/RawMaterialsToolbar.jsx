@@ -26,12 +26,12 @@ const RawMaterialsToolbar = ({
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
       <div className="space-y-2">
         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Search material library or reference data
+          Cari di pustaka bahan atau data acuan
         </div>
         <SearchBar
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Search by name, vendor, CAS, workbook code, reference code, or family..."
+          placeholder="Cari nama, supplier, CAS, kode workbook, kode acuan, atau keluarga aroma..."
         />
       </div>
       <div className="flex items-end">
@@ -53,12 +53,12 @@ const RawMaterialsToolbar = ({
     {selectedMaterialIds.length > 0 ? (
       <div className="mt-3 flex flex-col gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold">{selectedMaterialIds.length} material selected on this page</p>
-          <p className="text-sm text-muted-foreground">Use bulk delete to clean up duplicate or unused materials faster.</p>
+          <p className="text-sm font-semibold">{selectedMaterialIds.length} bahan dipilih di halaman ini</p>
+          <p className="text-sm text-muted-foreground">Hapus sekaligus untuk merapikan bahan duplikat atau yang tidak terpakai.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={clearSelection} className="rounded-xl">
-            Clear selection
+            Batalkan pilihan
           </Button>
           <Button
             variant="destructive"
@@ -66,7 +66,7 @@ const RawMaterialsToolbar = ({
             className="gap-2 rounded-xl"
           >
             <Trash2 className="h-4 w-4" />
-            Delete selected
+            Hapus yang dipilih
           </Button>
         </div>
       </div>
@@ -74,9 +74,9 @@ const RawMaterialsToolbar = ({
 
     {!loading && totalMaterials > 0 ? (
       <div className="results-count">
-        Showing {materialsCount} of {totalMaterials} materials
-        {hasActiveFilters ? ' with active filters applied' : ''}
-        {referenceFilter !== 'all' ? ' on this page' : ''}
+        Menampilkan {materialsCount} dari {totalMaterials} bahan baku
+        {hasActiveFilters ? ' dengan saringan aktif' : ''}
+        {referenceFilter !== 'all' ? ' di halaman ini' : ''}
       </div>
     ) : null}
   </div>

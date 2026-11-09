@@ -23,11 +23,15 @@ const hasPositiveReferenceValue = (value) => {
 
 export const REFERENCE_STATUS_LABELS = {
   approved_pw: 'PW',
-  approved_external: 'External approved',
-  provisional_external: 'Provisional',
-  conflict_review: 'Conflict',
-  fallback_manual: 'Manual fallback',
+  approved_external: 'Sumber luar disetujui',
+  provisional_external: 'Sementara',
+  conflict_review: 'Bentrok',
+  fallback_manual: 'Cadangan manual',
 };
+
+// Display labels only: the stored values stay `material`/`solvent` and `active`/`needs_review`/`archived`.
+export const TYPE_LABELS = { material: 'Bahan', solvent: 'Pelarut' };
+export const DATA_STATUS_LABELS = { active: 'Aktif', needs_review: 'Perlu ditinjau', archived: 'Diarsipkan' };
 
 export const getReferenceStatusBadgeClassName = (status) => {
   switch (status) {
@@ -117,8 +121,8 @@ export const useRawMaterialsPage = ({ navigate }) => {
       setTotalMaterials(total);
       await refreshReferenceStatusMap(items);
     } catch (error) {
-      setLoadError(error.message || 'Materials could not be loaded. Check the connection and retry.');
-      toast.error('Failed to load materials');
+      setLoadError(error.message || 'Bahan baku gagal dimuat. Periksa koneksi lalu coba lagi.');
+      toast.error('Gagal memuat bahan baku');
     } finally {
       setLoading(false);
     }
@@ -139,7 +143,7 @@ export const useRawMaterialsPage = ({ navigate }) => {
       setIfraReferenceCount(referenceSummary.ifraReferenceCount || 0);
     } catch (error) {
       console.error('Failed to load raw material summary:', error);
-      setSummaryError(error.message || 'Material summary could not be loaded.');
+      setSummaryError(error.message || 'Ringkasan bahan baku gagal dimuat.');
       setSummaryMaterials([]);
       setAuditMaterials([]);
       setMatchedReferenceCount(0);
@@ -381,7 +385,7 @@ export const useRawMaterialsPage = ({ navigate }) => {
   const openFormulaWizard = useCallback((materialIds) => {
     const uniqueIds = [...new Set((materialIds || []).filter(Boolean))];
     if (!uniqueIds.length) {
-      toast.error('Select materials first');
+      toast.error('Pilih bahan dulu');
       return;
     }
 
@@ -404,8 +408,8 @@ export const useRawMaterialsPage = ({ navigate }) => {
 
       toast.success(
         materialsToDelete.length === 1
-          ? 'Material deleted successfully'
-          : `${materialsToDelete.length} materials deleted successfully`
+          ? 'Bahan baku dihapus'
+          : `${materialsToDelete.length} bahan baku dihapus`
       );
 
       setDeleteDialogOpen(false);
@@ -413,7 +417,7 @@ export const useRawMaterialsPage = ({ navigate }) => {
       clearSelection();
       await Promise.all([loadMaterials(), loadSummary()]);
     } catch (error) {
-      toast.error(error.message || 'Failed to delete material');
+      toast.error(error.message || 'Gagal menghapus bahan baku');
     } finally {
       setDeletingId(null);
     }
@@ -423,21 +427,21 @@ export const useRawMaterialsPage = ({ navigate }) => {
     {
       id: 'type',
       value: typeFilter,
-      placeholder: 'All types',
+      placeholder: 'Semua jenis',
       icon: Droplets,
       options: [
-        { value: 'all', label: 'All types' },
-        { value: 'material', label: 'Material' },
-        { value: 'solvent', label: 'Solvent' },
+        { value: 'all', label: 'Semua jenis' },
+        { value: 'material', label: 'Bahan' },
+        { value: 'solvent', label: 'Pelarut' },
       ],
     },
     {
       id: 'category',
       value: categoryFilter,
-      placeholder: 'All categories',
+      placeholder: 'Semua kategori',
       icon: FolderTree,
       options: [
-        { value: 'all', label: 'All categories' },
+        { value: 'all', label: 'Semua kategori' },
         ...categories.map((category) => ({
           value: category.name.toLowerCase(),
           label: findPerfumersWorldCategoryByValue(category.name)?.description
@@ -449,19 +453,19 @@ export const useRawMaterialsPage = ({ navigate }) => {
     {
       id: 'reference',
       value: referenceFilter,
-      placeholder: 'All reference states',
+      placeholder: 'Semua status acuan',
       icon: Link2,
       options: [
-        { value: 'all', label: 'All reference states' },
-        { value: 'matched', label: 'Matched' },
-        { value: 'unmatched', label: 'Unmatched' },
-        { value: 'missing_data', label: 'Missing data' },
-        { value: 'ifra_limited', label: 'Has IFRA reference' },
-        { value: 'has_guidance', label: 'Has reference guidance' },
-        { value: 'approved_pw', label: 'PW approved' },
-        { value: 'approved_external', label: 'External approved' },
-        { value: 'provisional_review', label: 'Needs review' },
-        { value: 'conflict_review', label: 'Conflict review' },
+        { value: 'all', label: 'Semua status acuan' },
+        { value: 'matched', label: 'Sudah cocok' },
+        { value: 'unmatched', label: 'Belum cocok' },
+        { value: 'missing_data', label: 'Data kurang' },
+        { value: 'ifra_limited', label: 'Ada acuan IFRA' },
+        { value: 'has_guidance', label: 'Ada panduan' },
+        { value: 'approved_pw', label: 'Disetujui PW' },
+        { value: 'approved_external', label: 'Sumber luar disetujui' },
+        { value: 'provisional_review', label: 'Perlu ditinjau' },
+        { value: 'conflict_review', label: 'Tinjau bentrok' },
       ],
     },
   ], [categories, categoryFilter, referenceFilter, typeFilter]);

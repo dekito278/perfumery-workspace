@@ -14,10 +14,10 @@ const FormSelect = ({
   error,
   helperText,
   required = false,
-  placeholder = 'Select option',
+  placeholder = 'Pilih opsi',
   disabled = false,
   searchable = false,
-  searchPlaceholder = 'Search options...',
+  searchPlaceholder = 'Cari opsi...',
   id,
   onBlur,
   ...props
@@ -162,7 +162,7 @@ const FormSelect = ({
               <div className="max-h-72 overflow-y-auto">
                 {filteredOptions.length === 0 ? (
                   <div className="py-6 text-center text-sm text-muted-foreground">
-                    No matching options
+                    Tidak ada opsi yang cocok
                   </div>
                 ) : (
                   filteredOptions.map((option, index) => (

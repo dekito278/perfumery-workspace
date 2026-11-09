@@ -8,8 +8,8 @@ const summaryCards = Array.from({ length: 4 }, (_, index) => `loading-card-${ind
 
 const StudioLoadingState = ({
   className,
-  eyebrow = 'Loading workspace',
-  title = 'Preparing your studio',
+  eyebrow = 'Memuat studio',
+  title = 'Menyiapkan studio',
   description = 'Mengambil data terbaru dan menyiapkan tampilan desktop.',
   variant = 'list',
 }) => {

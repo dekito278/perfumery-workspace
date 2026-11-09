@@ -26,44 +26,44 @@ const ProductionRetailTab = ({
       <div className="rounded-xl border bg-card p-5">
         <div className="mb-5 flex items-center gap-2">
           <Calculator className="h-4 w-4 text-primary" />
-          <h2 className="text-lg font-semibold">Bottle costing setup</h2>
+          <h2 className="text-lg font-semibold">Pengaturan biaya botol</h2>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-2">
-            <Label>Target fill volume (ml)</Label>
+            <Label>Volume batch (ml)</Label>
             <Input value={retailInputs.totalBatchVolume} onChange={(event) => updateRetailInput('totalBatchVolume', event.target.value)} type="number" min="0" step="0.01" />
           </div>
           <div className="space-y-2">
-            <Label>Bottle size (ml)</Label>
+            <Label>Ukuran botol (ml)</Label>
             <Input value={retailInputs.bottleSize} onChange={(event) => updateRetailInput('bottleSize', event.target.value)} type="number" min="0" step="0.01" />
           </div>
           <div className="space-y-2">
-            <Label>Production loss %</Label>
+            <Label>Susut produksi %</Label>
             <Input value={retailInputs.productionLossPercent} onChange={(event) => updateRetailInput('productionLossPercent', event.target.value)} type="number" min="0" max="100" step="0.01" />
           </div>
           <div className="space-y-2">
-            <Label>COGS / ml</Label>
+            <Label>HPP / ml</Label>
             <Input value={formatQuantity(retailComputed.cogsPerMl, 2)} readOnly />
           </div>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className={summaryCardClassName}>
-            <div className="text-xs text-muted-foreground">Required production</div>
+            <div className="text-xs text-muted-foreground">Produksi dibutuhkan</div>
             <div className="mt-1 text-lg font-semibold font-mono">{formatQuantity(retailComputed.requiredProductionVolume)} ml</div>
           </div>
           <div className={summaryCardClassName}>
-            <div className="text-xs text-muted-foreground">Formula needed</div>
+            <div className="text-xs text-muted-foreground">Formula dibutuhkan</div>
             <div className="mt-1 text-lg font-semibold font-mono">{formatQuantity(retailComputed.formulaVolumeNeeded)} ml</div>
           </div>
           <div className={summaryCardClassName}>
-            <div className="text-xs text-muted-foreground">Solvent needed</div>
+            <div className="text-xs text-muted-foreground">Pelarut dibutuhkan</div>
             <div className="mt-1 text-lg font-semibold font-mono">{formatQuantity(retailComputed.solventVolumeNeeded)} ml</div>
           </div>
           <div className={summaryCardClassName}>
-            <div className="text-xs text-muted-foreground">Bottle output</div>
-            <div className="mt-1 text-lg font-semibold font-mono">{retailComputed.bottleCount} bottles</div>
+            <div className="text-xs text-muted-foreground">Hasil botol</div>
+            <div className="mt-1 text-lg font-semibold font-mono">{retailComputed.bottleCount} botol</div>
           </div>
         </div>
 
@@ -75,13 +75,13 @@ const ProductionRetailTab = ({
                   <div className="flex items-center gap-2">
                     <Package2 className="h-4 w-4 text-primary" />
                     <div className="text-left">
-                      <div className="text-lg font-semibold">Packaging and overhead</div>
+                      <div className="text-lg font-semibold">Kemasan dan overhead</div>
                       <div className="text-xs text-muted-foreground">Buka saat perlu edit komponen biaya.</div>
                     </div>
                   </div>
                   <div className="hidden gap-2 md:flex">
-                    <Badge variant="outline">/ bottle {formatCurrency(retailComputed.perBottlePackagingCost)}</Badge>
-                    <Badge variant="outline">packaging {formatPrice(retailComputed.totalPackagingCost)}</Badge>
+                    <Badge variant="outline">/ botol {formatCurrency(retailComputed.perBottlePackagingCost)}</Badge>
+                    <Badge variant="outline">kemasan {formatPrice(retailComputed.totalPackagingCost)}</Badge>
                     <Badge variant="outline">overhead {formatPrice(retailComputed.totalBatchOverhead)}</Badge>
                   </div>
                 </div>
@@ -93,7 +93,7 @@ const ProductionRetailTab = ({
                       <Label>
                         {field.label}
                         <span className="ml-1 text-xs text-muted-foreground">
-                          {field.kind === 'unit' ? '/ bottle' : '/ batch'}
+                          {field.kind === 'unit' ? '/ botol' : '/ batch'}
                         </span>
                       </Label>
                       <Input value={retailInputs[field.key]} onChange={(event) => updateRetailInput(field.key, event.target.value)} type="number" min="0" step="0.01" />
@@ -103,15 +103,15 @@ const ProductionRetailTab = ({
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   <div className={summaryCardClassName}>
-                    <div className="text-xs text-muted-foreground">Packaging / bottle</div>
+                    <div className="text-xs text-muted-foreground">Kemasan / botol</div>
                     <div className="mt-1 text-lg font-semibold font-mono">{formatCurrency(retailComputed.perBottlePackagingCost)}</div>
                   </div>
                   <div className={summaryCardClassName}>
-                    <div className="text-xs text-muted-foreground">Total packaging</div>
+                    <div className="text-xs text-muted-foreground">Total kemasan</div>
                     <div className="mt-1 text-lg font-semibold font-mono">{formatPrice(retailComputed.totalPackagingCost)}</div>
                   </div>
                   <div className={summaryCardClassName}>
-                    <div className="text-xs text-muted-foreground">Batch overhead</div>
+                    <div className="text-xs text-muted-foreground">Overhead batch</div>
                     <div className="mt-1 text-lg font-semibold font-mono">{formatPrice(retailComputed.totalBatchOverhead)}</div>
                   </div>
                 </div>
@@ -127,52 +127,52 @@ const ProductionRetailTab = ({
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Calculator className="h-4 w-4 text-primary" />
-            <h2 className="text-lg font-semibold">Retail summary</h2>
+            <h2 className="text-lg font-semibold">Ringkasan retail</h2>
           </div>
           <Button variant="outline" size="sm" onClick={onPrint} className="h-9 gap-2">
             <Printer className="h-4 w-4" />
-            Print
+            Cetak
           </Button>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className={summaryCardClassName}>
-            <div className="text-xs text-muted-foreground">COGS / bottle</div>
+            <div className="text-xs text-muted-foreground">HPP / botol</div>
             <div className="mt-1 text-2xl font-bold font-mono text-primary">{formatCurrency(retailComputed.costPerBottle)}</div>
-            <div className="mt-2 text-xs text-muted-foreground">All-in finished bottle cost.</div>
+            <div className="mt-2 text-xs text-muted-foreground">Semua biaya per botol jadi.</div>
           </div>
           <div className={summaryCardClassName}>
-            <div className="text-xs text-muted-foreground">COGS per ml</div>
+            <div className="text-xs text-muted-foreground">HPP per ml</div>
             <div className="mt-1 text-2xl font-bold font-mono">{formatCurrency(retailComputed.cogsPerMl)}</div>
-            <div className="mt-2 text-xs text-muted-foreground">Based on target finished stock volume.</div>
+            <div className="mt-2 text-xs text-muted-foreground">Dari target volume stok jadi.</div>
           </div>
           <div className={summaryCardClassName}>
-            <div className="text-xs text-muted-foreground">Bottle output</div>
+            <div className="text-xs text-muted-foreground">Hasil botol</div>
             <div className="mt-1 text-2xl font-bold">{retailComputed.bottleCount}</div>
-            <div className="mt-2 text-xs text-muted-foreground">Remaining {formatQuantity(retailComputed.remainingVolume)} ml.</div>
+            <div className="mt-2 text-xs text-muted-foreground">Sisa {formatQuantity(retailComputed.remainingVolume)} ml.</div>
           </div>
           <div className={summaryCardClassName}>
-            <div className="text-xs text-muted-foreground">Total production cost</div>
+            <div className="text-xs text-muted-foreground">Total biaya produksi</div>
             <div className="mt-1 text-2xl font-bold font-mono">{formatPrice(retailComputed.totalProductionCost)}</div>
-            <div className="mt-2 text-xs text-muted-foreground">Material, packaging, and batch overhead.</div>
+            <div className="mt-2 text-xs text-muted-foreground">Bahan, kemasan, dan overhead batch.</div>
           </div>
         </div>
 
         <div className="mt-4 space-y-3 rounded-lg border p-4 text-sm">
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Formula material cost</span>
+            <span className="text-muted-foreground">Biaya bahan formula</span>
             <span className="font-mono">{formatPrice(retailComputed.formulaMaterialCost)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Solvent cost</span>
+            <span className="text-muted-foreground">Biaya pelarut</span>
             <span className="font-mono">{formatPrice(retailComputed.solventMaterialCost)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Total packaging</span>
+            <span className="text-muted-foreground">Total kemasan</span>
             <span className="font-mono">{formatPrice(retailComputed.totalPackagingCost)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Batch overhead</span>
+            <span className="text-muted-foreground">Overhead batch</span>
             <span className="font-mono">{formatPrice(retailComputed.totalBatchOverhead)}</span>
           </div>
         </div>
@@ -181,7 +181,7 @@ const ProductionRetailTab = ({
       <div className="rounded-xl border bg-card p-5">
         <div className="mb-4 flex items-center gap-2">
           <Store className="h-4 w-4 text-primary" />
-          <h2 className="text-lg font-semibold">Manual pricing</h2>
+          <h2 className="text-lg font-semibold">Harga manual</h2>
         </div>
 
         {retailScenarios.map((scenario) => {
@@ -190,7 +190,7 @@ const ProductionRetailTab = ({
             <div key={scenario.id} className="space-y-4">
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-1.5">
-                  <Label>Channel name</Label>
+                  <Label>Nama kanal</Label>
                   <Input value={scenario.label} onChange={(event) => updateRetailScenario(scenario.id, 'label', event.target.value)} placeholder="Isi manual" />
                 </div>
                 <div className="space-y-1.5">
@@ -200,8 +200,8 @@ const ProductionRetailTab = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="markup">Markup from COGS</SelectItem>
-                      <SelectItem value="margin">Target net margin</SelectItem>
+                      <SelectItem value="markup">Markup dari HPP</SelectItem>
+                      <SelectItem value="margin">Target margin bersih</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -213,26 +213,26 @@ const ProductionRetailTab = ({
 
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label>Channel fee %</Label>
+                  <Label>Biaya kanal %</Label>
                   <Input value={scenario.feePercent} onChange={(event) => updateRetailScenario(scenario.id, 'feePercent', event.target.value)} type="number" min="0" max="100" step="0.01" />
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div className={statCardClassName}>
-                  <div className="text-xs text-muted-foreground">Sell price / bottle</div>
+                  <div className="text-xs text-muted-foreground">Harga jual / botol</div>
                   <div className="mt-1 font-mono text-lg font-semibold text-primary">{formatCurrency(scenarioResult?.salePrice || 0)}</div>
                 </div>
                 <div className={statCardClassName}>
-                  <div className="text-xs text-muted-foreground">Net profit / bottle</div>
+                  <div className="text-xs text-muted-foreground">Laba bersih / botol</div>
                   <div className="mt-1 font-mono text-lg font-semibold">{formatCurrency(scenarioResult?.profitPerBottle || 0)}</div>
                 </div>
                 <div className={statCardClassName}>
-                  <div className="text-xs text-muted-foreground">Batch profit</div>
+                  <div className="text-xs text-muted-foreground">Laba batch</div>
                   <div className="mt-1 font-mono text-lg font-semibold">{formatPrice(scenarioResult?.batchProfit || 0)}</div>
                 </div>
                 <div className={statCardClassName}>
-                  <div className="text-xs text-muted-foreground">Net margin</div>
+                  <div className="text-xs text-muted-foreground">Margin bersih</div>
                   <div className="mt-1 font-mono text-lg font-semibold">{formatPercentage(scenarioResult?.profitMargin || 0)}</div>
                 </div>
               </div>

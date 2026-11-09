@@ -12,7 +12,7 @@ const DataTable = ({
   onEdit,
   onDelete,
   actions,
-  emptyMessage = 'No items found',
+  emptyMessage = 'Tidak ada data',
   mobileCard,
   selectable = false,
   selectedRowIds = [],
@@ -58,7 +58,7 @@ const DataTable = ({
                 <Checkbox
                   checked={allSelected ? true : (partiallySelected ? 'indeterminate' : false)}
                   onCheckedChange={() => onToggleAll?.(data)}
-                  aria-label="Select all rows"
+                  aria-label="Pilih semua baris"
                 />
               </TableHead>
             )}
@@ -71,7 +71,7 @@ const DataTable = ({
               </TableHead>
             ))}
             {hasActions && (
-              <TableHead className="table-action-head py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Actions</TableHead>
+              <TableHead className="table-action-head py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Aksi</TableHead>
             )}
           </TableRow>
         </TableHeader>
@@ -90,7 +90,7 @@ const DataTable = ({
                     <Checkbox
                       checked={selectedIdSet.has(getRowId(row))}
                       onCheckedChange={() => onToggleRow?.(row)}
-                      aria-label={`Select ${row.name || row.code || 'item'}`}
+                      aria-label={`Pilih ${row.name || row.code || 'baris'}`}
                     />
                   </TableCell>
                 )}
@@ -113,7 +113,7 @@ const DataTable = ({
                           onClick={() => onEdit(row)}
                           className="table-action-button"
                           title="Edit"
-                          aria-label={`Edit ${row.name || row.code || 'item'}`}
+                          aria-label={`Edit ${row.name || row.code || 'baris'}`}
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -124,8 +124,8 @@ const DataTable = ({
                           size="sm"
                           onClick={() => onDelete(row)}
                           className="table-action-button text-destructive hover:text-destructive hover:bg-destructive/10"
-                          title="Delete"
-                          aria-label={`Delete ${row.name || row.code || 'item'}`}
+                          title="Hapus"
+                          aria-label={`Hapus ${row.name || row.code || 'baris'}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

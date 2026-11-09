@@ -144,14 +144,14 @@ const picks = buildPaceRecommendations({
   maxUseAdvisories: [],
   referenceLinksMap: new Map(),
 }, 'longevity');
-const longevityPick = picks.find((pick) => ['Drydown', 'Tenacity'].includes(pick.axisLabel));
+const longevityPick = picks.find((pick) => ['Jejak akhir', 'Ketahanan'].includes(pick.axisLabel));
 assert.ok(longevityPick, 'drydown at 20 against a target of 62 must produce a suggestion');
 assert.equal(longevityPick.itemId, 'plain-fixative',
   `longevity picked ${longevityPick.itemId}; a declared solvent must not collect a fixative's bonus and `
   + 'outrank a real fixative for making a perfume last');
 // --- 4. And when a solvent IS the only candidate, the card names it for what it is -------------------
 // It can still be picked -- the guardrails look at impact and use levels, not at role -- so the suggestion
-// has to read "diluent" rather than "body support", which is what the placement fallback would have said.
+// has to read "pelarut" (diluent) rather than "penopang badan" (body support), which is what the placement fallback would have said.
 const solventOnly = buildPaceRecommendations({
   rows: [baseRow('only-solvent', {
     raw_material: { id: 'only-solvent', name: 'DPG', notes: 'Carrier for dilutions.', type: 'solvent' },
@@ -165,10 +165,10 @@ const solventOnly = buildPaceRecommendations({
   maxUseAdvisories: [],
   referenceLinksMap: new Map(),
 }, 'longevity');
-const solventPick = solventOnly.find((pick) => ['Drydown', 'Tenacity'].includes(pick.axisLabel));
+const solventPick = solventOnly.find((pick) => ['Jejak akhir', 'Ketahanan'].includes(pick.axisLabel));
 assert.ok(solventPick, 'with one safe base row and drydown at 20, there must be a suggestion');
 assert.equal(solventPick.itemId, 'only-solvent');
-assert.equal(solventPick.strategyLabel, 'diluent',
+assert.equal(solventPick.strategyLabel, 'pelarut',
   `the card calls the solvent "${solventPick.strategyLabel}" — a diluent must not be offered as body support`);
 
 // --- 5. Nothing in here is unreachable ----------------------------------------------------------------

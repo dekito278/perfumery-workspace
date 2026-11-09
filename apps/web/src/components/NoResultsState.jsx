@@ -9,10 +9,10 @@ const NoResultsState = ({ onClearFilters }) => {
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] bg-muted/70">
         <SearchX className="w-8 h-8 text-muted-foreground" />
       </div>
-      <h3 className="empty-state-title">Nothing matches yet</h3>
+      <h3 className="empty-state-title">Tidak ada yang cocok</h3>
       {onClearFilters && (
         <Button onClick={onClearFilters} variant="outline" className="h-11 rounded-2xl border-white/70 bg-white/80 px-5">
-          Clear filters
+          Hapus saringan
         </Button>
       )}
     </div>

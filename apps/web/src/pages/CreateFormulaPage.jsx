@@ -36,6 +36,7 @@ import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pace
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
 import { hasBlockingErrors } from '@/utils/formulaValidationErrors.js';
+import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 
 const CreateFormulaPage = () => {
   const navigate = useNavigate();
@@ -122,7 +123,7 @@ const CreateFormulaPage = () => {
           }
         }
       } catch (error) {
-        toast.error('Failed to load raw materials');
+        toast.error('Gagal memuat bahan baku');
       } finally {
         if (active) {
           setLoadingData(false);
@@ -164,7 +165,7 @@ const CreateFormulaPage = () => {
   const handleApplyPaceRecommendation = (recommendation) => {
     const updatedIndex = applyPaceRecommendation(recommendation);
     if (updatedIndex >= 0) {
-      toast.success(`${recommendation.title} applied`);
+      toast.success(`${recommendation.title} diterapkan`);
     }
   };
 
@@ -207,7 +208,7 @@ const CreateFormulaPage = () => {
     setActiveRowIndex(rowIndex);
     setFocusRowIndex(rowIndex);
     setQuickCreateIntent(null);
-    toast.success(`Using existing material: ${material.name}`);
+    toast.success(`Memakai bahan yang sudah ada: ${material.name}`);
   };
 
   const handleConfirmQuickCreateMaterial = async (details = {}) => {
@@ -226,9 +227,9 @@ const CreateFormulaPage = () => {
         setNeedsGuidanceMaterialId(createdMaterial.id);
       }
       setQuickCreateIntent(null);
-      toast.success(createdMaterial?._creationResolution ? `Using existing material: ${createdMaterial.name}` : `Raw material added: ${createdMaterial.name}`);
+      toast.success(createdMaterial?._creationResolution ? `Memakai bahan yang sudah ada: ${createdMaterial.name}` : `Bahan baku ditambahkan: ${createdMaterial.name}`);
     } catch (error) {
-      toast.error(error.message || 'Failed to add raw material');
+      toast.error(error.message || 'Gagal menambah bahan baku');
     } finally {
       setQuickCreateLoading(false);
     }
@@ -244,7 +245,7 @@ const CreateFormulaPage = () => {
     event.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Please fix validation errors');
+      toast.error('Perbaiki dulu isian yang ditandai');
       return;
     }
 
@@ -264,13 +265,16 @@ const CreateFormulaPage = () => {
       setFormulaCreated(true);
       navigate(`/formulas/${createdFormula.id}`);
     } catch (error) {
-      toast.error(error.message || 'Failed to create formula');
+      toast.error(error.message || 'Gagal membuat formula');
     }
   };
 
   // Orphans do not block. An error left behind by a row that no longer exists renders nowhere, so
   // counting it greys out the save button with nothing on screen to explain why.
   const hasErrors = hasBlockingErrors(validationErrors, formulaItems);
+  // The stored values ('ready_for_batch', 'perfume') are not words; the chips below print their labels.
+  const statusLabel = FORMULA_STATUSES.find((option) => option.value === status)?.label || status;
+  const categoryLabel = FORMULA_CATEGORIES.find((option) => option.value === category)?.label || category;
   const handleMetadataConfirm = () => {
     const nextErrors = {};
 
@@ -316,19 +320,19 @@ const CreateFormulaPage = () => {
 
   const isStandaloneFormula = seedMaterialIds.length === 0;
   const compositionModeTitle = seedMaterialIds.length
-    ? 'Compose from selected materials'
-    : 'Standalone formula';
+    ? 'Susun dari bahan pilihan'
+    : 'Formula mandiri';
   const compositionModeDescription = seedMaterialIds.length
-    ? 'This formula starts from materials chosen in the library workspace. Use the composer below to refine the structure.'
-    : 'Name the formula, choose materials from the library, set grams, and save it as an independent formula.';
+    ? 'Formula ini dimulai dari bahan yang dipilih di pustaka bahan. Rapikan susunannya dengan komposer di bawah.'
+    : 'Beri nama formula, pilih bahan dari pustaka, atur gram, lalu simpan sebagai formula mandiri.';
 
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Create Formula - Solivagant</title>
+        <title>Formula baru - Solivagant</title>
         <meta
           name="description"
-          content="Build a formula on a dedicated page with ingredient composition on the left and a live workbook odour display on the right."
+          content="Susun formula di halaman khusus: komposisi bahan di kiri, tampilan aroma workbook langsung di kanan."
         />
       </Helmet>
 
@@ -336,7 +340,7 @@ const CreateFormulaPage = () => {
         <FormulaMetadataDialog
           open={metadataDialogOpen}
           onOpenChange={handleMetadataDialogChange}
-          title={isStandaloneFormula ? 'Create standalone formula' : 'Create formula'}
+          title={isStandaloneFormula ? 'Buat formula mandiri' : 'Buat formula'}
           description="Isi identitas formula dulu sebelum mulai menyusun komposisinya."
           name={name}
           code={code}
@@ -361,7 +365,7 @@ const CreateFormulaPage = () => {
             className="gap-2 mb-4 h-9"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back to formulas
+            Kembali ke daftar formula
           </Button>
         </div>
 
@@ -369,10 +373,10 @@ const CreateFormulaPage = () => {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Formula Composer
+                Komposer formula
               </div>
               <h1 className="mt-1 text-xl font-bold tracking-[-0.02em] sm:text-2xl">
-                {metadataConfirmed ? name || 'Create formula' : 'Create formula'}
+                {metadataConfirmed ? name || 'Formula baru' : 'Formula baru'}
               </h1>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -382,7 +386,7 @@ const CreateFormulaPage = () => {
                 onClick={() => setMetadataDialogOpen(true)}
                 className="h-10 w-full rounded-2xl px-4 sm:w-auto"
               >
-                Edit formula info
+                Ubah data formula
               </Button>
               <Button
                 type="submit"
@@ -391,50 +395,50 @@ const CreateFormulaPage = () => {
                 className="h-10 w-full rounded-2xl gap-2 px-5 sm:w-auto"
               >
                 <Save className="h-4 w-4" />
-                {loading ? 'Creating...' : 'Create formula'}
+                {loading ? 'Membuat...' : 'Buat formula'}
               </Button>
             </div>
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2 md:hidden">
             <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
-              {code || 'Code not set'}
+              {code || 'Tanpa kode'}
             </div>
-            <div className="rounded-full border border-[#ddd3bf] bg-[#fbf8f0] px-3 py-1.5 text-xs font-semibold capitalize text-[#433821]">
-              {status}
+            <div className="rounded-full border border-[#ddd3bf] bg-[#fbf8f0] px-3 py-1.5 text-xs font-semibold text-[#433821]">
+              {statusLabel}
             </div>
-            <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold capitalize text-[#31451f]">
-              {category}
+            <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold text-[#31451f]">
+              {categoryLabel}
             </div>
           </div>
 
           <div className="mt-3 hidden gap-2 md:grid md:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-[16px] border border-[#e5dcc7] bg-[linear-gradient(135deg,#fff9ec_0%,#f8f1dc_100%)] px-3 py-2">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8b7650]">Name</div>
-              <div className="mt-1 text-sm font-semibold text-[#443822]">{name || 'Untitled formula'}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8b7650]">Nama</div>
+              <div className="mt-1 text-sm font-semibold text-[#443822]">{name || 'Formula tanpa nama'}</div>
             </div>
             <div className="rounded-[16px] border border-[#d9def0] bg-[linear-gradient(135deg,#f6f8ff_0%,#edf2ff_100%)] px-3 py-2">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#61709a]">Code</div>
-              <div className="mt-1 text-sm font-semibold text-[#26314e]">{code || 'Code not set'}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#61709a]">Kode</div>
+              <div className="mt-1 text-sm font-semibold text-[#26314e]">{code || 'Tanpa kode'}</div>
             </div>
             <div className="rounded-[16px] border border-[#dce6d1] bg-[linear-gradient(135deg,#f4f9ee_0%,#edf6e3_100%)] px-3 py-2">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6f8454]">Category</div>
-              <div className="mt-1 text-sm font-semibold capitalize text-[#31451f]">{category}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6f8454]">Kategori</div>
+              <div className="mt-1 text-sm font-semibold text-[#31451f]">{categoryLabel}</div>
             </div>
             <div className="rounded-[16px] border border-[#ead7cf] bg-[linear-gradient(135deg,#fff6f2_0%,#fcedea_100%)] px-3 py-2">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9a6d5d]">Version</div>
-              <div className="mt-1 text-sm font-semibold text-[#4e2c26]">{version || 'Not set'}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9a6d5d]">Versi</div>
+              <div className="mt-1 text-sm font-semibold text-[#4e2c26]">{version || 'Belum diisi'}</div>
             </div>
             <div className="rounded-[16px] border border-[#ddd3bf] bg-[linear-gradient(135deg,#fbf8f0_0%,#f4ede0_100%)] px-3 py-2">
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Status</div>
-              <div className="mt-1 text-sm font-semibold capitalize text-[#433821]">{status}</div>
+              <div className="mt-1 text-sm font-semibold text-[#433821]">{statusLabel}</div>
             </div>
           </div>
 
           <div className="mt-3 hidden rounded-[16px] border border-[#ddd3bf] bg-white px-4 py-3 md:block">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Notes</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Catatan</div>
             <div className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-              {notes || 'No notes yet'}
+              {notes || 'Belum ada catatan'}
             </div>
           </div>
         </div>
@@ -443,7 +447,7 @@ const CreateFormulaPage = () => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Composition context
+                  Konteks komposisi
                 </div>
                 <h2 className="mt-2 text-lg font-semibold">
                   {compositionModeTitle}
@@ -456,15 +460,15 @@ const CreateFormulaPage = () => {
 
             <div className="rounded-[22px] border bg-white/85 p-4">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="text-sm font-semibold">Formula source</div>
+                <div className="text-sm font-semibold">Sumber formula</div>
                 <Badge variant="outline" className="rounded-full">
-                  {seedMaterialIds.length ? 'Material preload' : 'Standalone'}
+                  {seedMaterialIds.length ? 'Dari bahan pilihan' : 'Mandiri'}
                 </Badge>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {seedMaterialIds.length
-                  ? `${seedMaterialIds.length} materials were loaded into the composer as a starting structure.`
-                  : 'This formula will be saved as a standalone composition.'}
+                  ? `${seedMaterialIds.length} bahan dimuat ke komposer sebagai susunan awal.`
+                  : 'Formula ini akan disimpan sebagai komposisi mandiri.'}
               </p>
             </div>
           </div>
@@ -483,21 +487,21 @@ const CreateFormulaPage = () => {
                 <form id="create-formula-form" onSubmit={handleSubmit} className="space-y-4">
                   <Tabs value={mobileComposerTab} onValueChange={setMobileComposerTab} className="space-y-4">
                     <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-[#f3ecdd] p-1">
-                      <TabsTrigger value="compose" className="rounded-xl py-2 text-xs">Compose</TabsTrigger>
+                      <TabsTrigger value="compose" className="rounded-xl py-2 text-xs">Komposisi</TabsTrigger>
                       <TabsTrigger value="workbook" className="rounded-xl py-2 text-xs">Workbook</TabsTrigger>
                       <TabsTrigger value="info" className="rounded-xl py-2 text-xs">Info</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="compose" className="mt-0">
                       <section className={composerSectionClass}>
-                        <h2 className="text-lg font-semibold">Formula composition</h2>
+                        <h2 className="text-lg font-semibold">Komposisi formula</h2>
 
                         <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                           <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
-                            Rows {activeFormulaItems.length}
+                            Baris {activeFormulaItems.length}
                           </div>
                           <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold text-[#31451f]">
-                            Reference links {referenceLinksMap.size}
+                            Tautan acuan {referenceLinksMap.size}
                           </div>
                           <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
                             Total {formatGramAmount(totalGrams)}
@@ -513,10 +517,10 @@ const CreateFormulaPage = () => {
 
                         <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4] px-4 py-3">
                           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                            Material library
+                            Pustaka bahan
                           </div>
                           <Button type="button" className="rounded-xl" onClick={() => setMobileLibraryOpen(true)}>
-                            Add material
+                            Tambah bahan
                           </Button>
                         </div>
 
@@ -573,33 +577,33 @@ const CreateFormulaPage = () => {
 
                     <TabsContent value="info" className="mt-0">
                       <section className={composerSectionClass}>
-                        <h2 className="text-lg font-semibold">Formula info</h2>
+                        <h2 className="text-lg font-semibold">Data formula</h2>
 
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                           <div className="rounded-[16px] border border-[#e5dcc7] bg-[linear-gradient(135deg,#fff9ec_0%,#f8f1dc_100%)] px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8b7650]">Name</div>
-                            <div className="mt-1 text-sm font-semibold text-[#443822]">{name || 'Untitled formula'}</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8b7650]">Nama</div>
+                            <div className="mt-1 text-sm font-semibold text-[#443822]">{name || 'Formula tanpa nama'}</div>
                           </div>
                           <div className="rounded-[16px] border border-[#d9def0] bg-[linear-gradient(135deg,#f6f8ff_0%,#edf2ff_100%)] px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#61709a]">Code</div>
-                            <div className="mt-1 text-sm font-semibold text-[#26314e]">{code || 'Code not set'}</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#61709a]">Kode</div>
+                            <div className="mt-1 text-sm font-semibold text-[#26314e]">{code || 'Tanpa kode'}</div>
                           </div>
                           <div className="rounded-[16px] border border-[#dce6d1] bg-[linear-gradient(135deg,#f4f9ee_0%,#edf6e3_100%)] px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6f8454]">Category</div>
-                            <div className="mt-1 text-sm font-semibold capitalize text-[#31451f]">{category}</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6f8454]">Kategori</div>
+                            <div className="mt-1 text-sm font-semibold text-[#31451f]">{categoryLabel}</div>
                           </div>
                           <div className="rounded-[16px] border border-[#ead7cf] bg-[linear-gradient(135deg,#fff6f2_0%,#fcedea_100%)] px-3 py-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9a6d5d]">Version</div>
-                            <div className="mt-1 text-sm font-semibold text-[#4e2c26]">{version || 'Not set'}</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9a6d5d]">Versi</div>
+                            <div className="mt-1 text-sm font-semibold text-[#4e2c26]">{version || 'Belum diisi'}</div>
                           </div>
                           <div className="rounded-[16px] border border-[#ddd3bf] bg-[linear-gradient(135deg,#fbf8f0_0%,#f4ede0_100%)] px-3 py-2 sm:col-span-2">
                             <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Status</div>
-                            <div className="mt-1 text-sm font-semibold capitalize text-[#433821]">{status}</div>
+                            <div className="mt-1 text-sm font-semibold text-[#433821]">{statusLabel}</div>
                           </div>
                           <div className="rounded-[16px] border border-[#ddd3bf] bg-white px-3 py-3 sm:col-span-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Notes</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Catatan</div>
                             <div className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                              {notes || 'No notes yet'}
+                              {notes || 'Belum ada catatan'}
                             </div>
                           </div>
                         </div>
@@ -615,16 +619,16 @@ const CreateFormulaPage = () => {
                 <Drawer open={mobileLibraryOpen} onOpenChange={setMobileLibraryOpen}>
                   <DrawerContent className="max-h-[85vh] rounded-t-[24px] border-[#ddd3bf] bg-[#fcfaf4]">
                     <DrawerHeader className="text-left">
-                      <DrawerTitle>Material library</DrawerTitle>
+                      <DrawerTitle>Pustaka bahan</DrawerTitle>
                       <DrawerDescription>
-                        Tap sekali untuk langsung menambahkan material ke formula dan pindah ke row berikutnya.
+                        Ketuk sekali untuk langsung menambahkan bahan ke formula dan pindah ke baris berikutnya.
                       </DrawerDescription>
                     </DrawerHeader>
                     <div className="border-b border-[#e7decb] px-4 pb-3">
                       <Input
                         value={materialLibraryQuery}
                         onChange={(event) => setMaterialLibraryQuery(event.target.value)}
-                        placeholder="Find raw material..."
+                        placeholder="Cari bahan baku..."
                         className="h-10 rounded-xl border-[#ddd3bf] bg-white text-sm"
                       />
                     </div>
@@ -643,12 +647,12 @@ const CreateFormulaPage = () => {
                           const selectedInFormula = selectedIds.has(material.id);
                           const selectedInActiveRow = currentRowItemId === material.id;
                           if (selectedInActiveRow) {
-                            return 'Selected';
+                            return 'Dipilih';
                           }
                           if (selectedInFormula) {
-                            return 'Added';
+                            return 'Sudah masuk';
                           }
-                          return mobile ? 'Tap to add' : `Row ${activeRowIndex + 1}`;
+                          return mobile ? 'Ketuk untuk tambah' : `Baris ${activeRowIndex + 1}`;
                         }}
                       />
                     </div>
@@ -667,7 +671,7 @@ const CreateFormulaPage = () => {
                         }}
                         className="h-11 rounded-2xl"
                       >
-                        Edit info
+                        Ubah data
                       </Button>
                       <Button
                         type="submit"
@@ -676,7 +680,7 @@ const CreateFormulaPage = () => {
                         className="h-11 rounded-2xl gap-2"
                       >
                         <Save className="h-4 w-4" />
-                        {loading ? 'Creating...' : 'Create'}
+                        {loading ? 'Membuat...' : 'Buat'}
                       </Button>
                     </div>
                   </div>
@@ -686,14 +690,14 @@ const CreateFormulaPage = () => {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
             <form id="create-formula-form" onSubmit={handleSubmit} className="space-y-4">
               <section className={composerSectionClass}>
-                        <h2 className="text-lg font-semibold">Formula composition</h2>
+                        <h2 className="text-lg font-semibold">Komposisi formula</h2>
 
                 <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                   <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
-                    Rows {activeFormulaItems.length}
+                    Baris {activeFormulaItems.length}
                   </div>
                   <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold text-[#31451f]">
-                    Reference links {referenceLinksMap.size}
+                    Tautan acuan {referenceLinksMap.size}
                   </div>
                   <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
                     Total {formatGramAmount(totalGrams)}
@@ -710,10 +714,10 @@ const CreateFormulaPage = () => {
                 <div className="mt-4 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4]">
                   <div className="flex flex-col gap-3 border-b border-[#e7decb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                          Material library
+                          Pustaka bahan
                     </div>
                     <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-xs font-semibold text-[#5e5239]">
-                      Active row {activeRowIndex + 1}
+                      Baris aktif {activeRowIndex + 1}
                     </div>
                   </div>
 
@@ -721,7 +725,7 @@ const CreateFormulaPage = () => {
                     <Input
                       value={materialLibraryQuery}
                       onChange={(event) => setMaterialLibraryQuery(event.target.value)}
-                      placeholder="Find raw material..."
+                      placeholder="Cari bahan baku..."
                       className="h-9 rounded-xl border-[#ddd3bf] bg-white text-sm"
                     />
                   </div>
@@ -740,12 +744,12 @@ const CreateFormulaPage = () => {
                         const selectedInFormula = selectedIds.has(material.id);
                         const selectedInActiveRow = currentRowItemId === material.id;
                         if (selectedInActiveRow) {
-                          return 'Selected';
+                          return 'Dipilih';
                         }
                         if (selectedInFormula) {
-                          return 'Added';
+                          return 'Sudah masuk';
                         }
-                        return mobile ? 'Tap to add' : `Row ${activeRowIndex + 1}`;
+                        return mobile ? 'Ketuk untuk tambah' : `Baris ${activeRowIndex + 1}`;
                       }}
                     />
                   </div>

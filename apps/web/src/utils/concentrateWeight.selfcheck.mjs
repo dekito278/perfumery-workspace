@@ -43,7 +43,7 @@ assert.equal(Math.round(cost / 100), 1746, 'per gram of batch — the number the
 // which is this repo's most common way to half-fix something.
 for (const [page, tile] of [
   ['pages/mobile/MobileBatchesPage.jsx', /<MetricTile\s+label="Timbang"[\s\S]{0,200}?\/>/],
-  ['pages/BatchProductionPage.jsx', /<MetricCard label="Concentrate COGS"[\s\S]{0,300}?\/>/],
+  ['pages/BatchProductionPage.jsx', /<MetricCard label="HPP konsentrat"[\s\S]{0,300}?\/>/],
 ]) {
   const source = read(...page.split('/'));
   const match = source.match(tile);

@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
-import { REFERENCE_STATUS_LABELS, getReferenceStatusBadgeClassName } from '@/hooks/useRawMaterialsPage.js';
+import { DATA_STATUS_LABELS, REFERENCE_STATUS_LABELS, TYPE_LABELS, getReferenceStatusBadgeClassName } from '@/hooks/useRawMaterialsPage.js';
 
 const hasCustomSolventCalibration = (row) => (
   row.type === 'solvent'
@@ -28,7 +28,7 @@ export const createRawMaterialsColumns = ({
 }) => [
   {
     key: 'name',
-    label: 'Name',
+    label: 'Nama',
     render: (row) => {
       const guidance = getMaterialGuidanceDetails(row);
       const linkedReference = guidance.resolvedReference;
@@ -38,7 +38,7 @@ export const createRawMaterialsColumns = ({
           <div className="text-sm font-semibold text-primary transition hover:underline">{row.name}</div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className="text-[11px] text-muted-foreground">
-              {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+              {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Keluarga aroma belum diisi'}
             </span>
             {linkedReference ? (
               <>
@@ -46,17 +46,17 @@ export const createRawMaterialsColumns = ({
                   Ref {linkedReference.reference_code}
                 </Badge>
                 <Badge variant="outline" className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getReferenceStatusBadgeClassName(guidance.reviewStatus)}`}>
-                  {REFERENCE_STATUS_LABELS[guidance.reviewStatus] || 'Reference'}
+                  {REFERENCE_STATUS_LABELS[guidance.reviewStatus] || 'Acuan'}
                 </Badge>
               </>
             ) : (
               <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
-                Unmatched
+                Belum cocok
               </Badge>
             )}
             {row.data_status && row.data_status !== 'active' ? (
               <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
-                {row.data_status.replace('_', ' ')}
+                {DATA_STATUS_LABELS[row.data_status] || row.data_status.replace('_', ' ')}
               </Badge>
             ) : null}
           </div>
@@ -66,11 +66,11 @@ export const createRawMaterialsColumns = ({
   },
   {
     key: 'type',
-    label: 'Type',
+    label: 'Jenis',
     render: (row) => (
       <div className="min-w-[132px]">
         <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] font-medium capitalize">
-          {row.type}
+          {TYPE_LABELS[row.type] || row.type}
         </Badge>
         {row.type === 'solvent' ? (
           <div className="mt-2">
@@ -82,7 +82,7 @@ export const createRawMaterialsColumns = ({
                   : 'border-amber-200 bg-amber-50 text-amber-900'
               }`}
             >
-              {hasCustomSolventCalibration(row) ? 'Custom calibration' : 'Preset solvent'}
+              {hasCustomSolventCalibration(row) ? 'Kalibrasi sendiri' : 'Preset pelarut'}
             </Badge>
           </div>
         ) : null}
@@ -91,14 +91,14 @@ export const createRawMaterialsColumns = ({
             className="h-2.5 w-2.5 rounded-full border border-border/60"
             style={{ backgroundColor: categoryColorMap.get(String(row.category || '').toLowerCase()) || '#CBD5E1' }}
           />
-          <span className="truncate">{row.category || 'Uncategorized'}</span>
+          <span className="truncate">{row.category || 'Tanpa kategori'}</span>
         </div>
       </div>
     ),
   },
   {
     key: 'guidance',
-    label: 'Guidance',
+    label: 'Panduan',
     render: (row) => {
       const guidance = getMaterialGuidanceDetails(row);
       const linkedReference = guidance.resolvedReference || null;
@@ -120,38 +120,38 @@ export const createRawMaterialsColumns = ({
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
             )}
             {guidance.hasWarning
-              ? (guidance.hasCoreGuidance ? 'Guidance partial' : 'Needs guidance')
-              : 'Guidance ready'}
+              ? (guidance.hasCoreGuidance ? 'Panduan sebagian' : 'Perlu panduan')
+              : 'Panduan siap'}
           </button>
           <div className="mt-1.5 text-[11px] leading-5 text-muted-foreground">
             {guidance.hasWarning
-              ? [
-                  guidance.missingClass ? 'family' : null,
-                  guidance.missingImpact ? 'impact' : null,
-                  guidance.missingLife ? 'life' : null,
+              ? 'Belum ada: ' + [
+                  guidance.missingClass ? 'keluarga aroma' : null,
+                  guidance.missingImpact ? 'kekuatan' : null,
+                  guidance.missingLife ? 'ketahanan' : null,
                   guidance.missingCas ? 'CAS' : null,
                   guidance.missingIfra ? 'IFRA' : null,
                 ].filter(Boolean).join(', ')
-              : 'Impact, life, CAS, dan IFRA sudah ada.'}
+              : 'Kekuatan, ketahanan, CAS, dan IFRA sudah ada.'}
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge variant="outline" className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getReferenceStatusBadgeClassName(guidance.reviewStatus)}`}>
-              {REFERENCE_STATUS_LABELS[guidance.reviewStatus] || 'Reference'}
+              {REFERENCE_STATUS_LABELS[guidance.reviewStatus] || 'Acuan'}
             </Badge>
             {guidance.confidenceScore !== null ? (
               <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
-                Confidence {guidance.confidenceScore}
+                Keyakinan {guidance.confidenceScore}
               </Badge>
             ) : null}
           </div>
           <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
-            <div>{row.workbook_code ? `Workbook ${row.workbook_code}` : 'No workbook code'}</div>
-            <div>{linkedReference?.reference_code ? `Reference ${linkedReference.reference_code}` : 'No linked reference profile'}</div>
-            <div>{guidance.resolvedClass ? `Family ${guidance.resolvedClass}` : 'Family not set'}</div>
+            <div>{row.workbook_code ? `Workbook ${row.workbook_code}` : 'Belum ada kode workbook'}</div>
+            <div>{linkedReference?.reference_code ? `Acuan ${linkedReference.reference_code}` : 'Belum ada profil acuan tertaut'}</div>
+            <div>{guidance.resolvedClass ? `Keluarga aroma ${guidance.resolvedClass}` : 'Keluarga aroma belum diisi'}</div>
             <div>
               {guidance.resolvedImpact || guidance.resolvedLife
-                ? `Impact ${guidance.resolvedImpact ?? '-'} | Life ${guidance.resolvedLife ?? '-'}h`
-                : 'Impact/life not set'}
+                ? `Kekuatan ${guidance.resolvedImpact ?? '-'} | Ketahanan ${guidance.resolvedLife ?? '-'} jam`
+                : 'Kekuatan/ketahanan belum diisi'}
             </div>
           </div>
         </div>
@@ -160,7 +160,7 @@ export const createRawMaterialsColumns = ({
   },
   {
     key: 'stock_quantity',
-    label: 'Stock',
+    label: 'Stok',
     align: 'right',
     render: (row) => {
       const stock = Number(row.stock_quantity || 0);
@@ -171,11 +171,11 @@ export const createRawMaterialsColumns = ({
             {stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })} {row.unit || ''}
           </div>
           <div className="mt-1 text-[11px] text-muted-foreground">
-            {threshold > 0 ? `Alert <= ${threshold.toLocaleString('id-ID', { maximumFractionDigits: 3 })}` : 'No alert set'}
+            {threshold > 0 ? `Peringatan <= ${threshold.toLocaleString('id-ID', { maximumFractionDigits: 3 })}` : 'Belum ada batas peringatan'}
           </div>
           {isLowStock(row) ? (
             <Badge variant="outline" className="mt-2 rounded-full border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700">
-              Low stock
+              Stok menipis
             </Badge>
           ) : null}
         </div>
@@ -184,13 +184,13 @@ export const createRawMaterialsColumns = ({
   },
   {
     key: 'cost_per_unit',
-    label: 'Price',
+    label: 'Harga',
     align: 'right',
     render: (row) => (
       <div className="text-right">
         <div className="font-mono text-sm font-medium text-foreground">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
         <div className="mt-1 text-[11px] text-muted-foreground">
-          {row.workbook_code ? `Workbook ${row.workbook_code}` : 'No workbook code'}
+          {row.workbook_code ? `Workbook ${row.workbook_code}` : 'Belum ada kode workbook'}
         </div>
       </div>
     ),

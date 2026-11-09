@@ -359,29 +359,29 @@ const getFunctionStrategyLabel = (row, referenceLinksMap) => {
 
   switch (primaryFunction) {
     case 'bridge':
-      return 'bridge support';
+      return 'penopang transisi';
     case 'fixative':
-      return 'fixative support';
+      return 'penopang fiksatif';
     case 'diffuser':
-      return 'diffusion lift';
+      return 'pengangkat pancaran';
     case 'blender':
-      return 'blend smoother';
+      return 'penghalus campuran';
     case 'modifier':
-      return 'modifier accent';
+      return 'aksen pengubah';
     case 'hero':
-      return 'hero anchor';
+      return 'jangkar utama';
     case 'support':
-      return 'body support';
+      return 'penopang badan';
     // Named for what it is. A solvent collects no objective bonus (it is in none of the priority tables),
     // but if one is ever suggested the card must not call it body support.
     case 'solvent':
-      return 'diluent';
+      return 'pelarut';
     default:
       return row.pyramidPlacement === 'base'
-        ? 'drydown support'
+        ? 'penopang jejak akhir'
         : row.pyramidPlacement === 'top'
-          ? 'opening lift'
-          : 'middle support';
+          ? 'pengangkat pembuka'
+          : 'penopang nada tengah';
   }
 };
 
@@ -403,13 +403,13 @@ const buildIncreaseRecommendation = ({ axisLabel, objective, reason, row, score,
     objective,
     strategyLabel,
     axisLabel,
-    title: `${axisLabel}: lift ${row.name}`,
+    title: `${axisLabel}: naikkan ${row.name}`,
     reason,
-    actionLabel: 'Increase',
+    actionLabel: 'Tambah',
     currentGrams,
     delta,
     target,
-    helper: `Try moving ${row.name} from ${formatRecommendationValue(currentGrams)} to ${formatRecommendationValue(target)} (+${formatRecommendationValue(delta)}) in the next test revision.`,
+    helper: `Coba ubah ${row.name} dari ${formatRecommendationValue(currentGrams)} ke ${formatRecommendationValue(target)} (+${formatRecommendationValue(delta)}) di revisi uji berikutnya.`,
   };
 };
 
@@ -436,13 +436,13 @@ const buildDecreaseRecommendation = ({ axisLabel, objective, reason, row, score,
     objective,
     strategyLabel,
     axisLabel,
-    title: `${axisLabel}: reduce ${row.name}`,
+    title: `${axisLabel}: kurangi ${row.name}`,
     reason,
-    actionLabel: 'Decrease',
+    actionLabel: 'Kurangi',
     currentGrams,
     delta,
     target,
-    helper: `Try moving ${row.name} from ${formatRecommendationValue(currentGrams)} to ${formatRecommendationValue(target)} (-${formatRecommendationValue(delta)}) to soften dominance or conflict.`,
+    helper: `Coba ubah ${row.name} dari ${formatRecommendationValue(currentGrams)} ke ${formatRecommendationValue(target)} (-${formatRecommendationValue(delta)}) untuk meredam dominasi atau bentrokan.`,
   };
 };
 
@@ -490,9 +490,9 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
     candidates.push({
       priority: getTargetGap(simulation.pace.openingScore, PACE_TARGETS.opening) + 4,
       recommendation: buildIncreaseRecommendation({
-      axisLabel: 'Opening',
+      axisLabel: 'Pembuka',
       objective: 'projection',
-      reason: 'Projection and first lift are under target, so the formula needs a controlled top-phase push from a top note that is less likely to over-dominate the accord.',
+      reason: 'Pancaran dan angkatan awal di bawah target. Formula butuh dorongan nada atas yang terkendali, dari bahan yang tidak mudah menguasai akord.',
       row: preferredTopRow,
       score: simulation.pace.openingScore,
       strategyLabel: getFunctionStrategyLabel(preferredTopRow, simulation.referenceLinksMap),
@@ -500,13 +500,13 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
     });
   } else if (simulation.pace.openingScore < PACE_TARGETS.opening && simulation.topPercent < 34) {
     const cleanupRecommendation = buildDominantCleanupRecommendation({
-      axisLabel: 'Opening',
+      axisLabel: 'Pembuka',
       objective: 'projection',
       row: dominantRow,
       score: simulation.pace.openingScore,
       simulation,
       referenceLinksMap: simulation.referenceLinksMap,
-      reason: 'Opening is weak, but no safe top-phase increase candidate passed the guardrails, so reducing the current dominant driver is safer than forcing another high-impact addition.',
+      reason: 'Pembuka lemah, tetapi tidak ada bahan nada atas yang lolos batas aman untuk dinaikkan. Mengurangi bahan paling dominan lebih aman daripada memaksa tambahan berdampak tinggi.',
     });
 
     if (cleanupRecommendation) {
@@ -521,9 +521,9 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
     candidates.push({
       priority: getTargetGap(simulation.pace.heartScore, PACE_TARGETS.heart) + 6,
       recommendation: buildIncreaseRecommendation({
-      axisLabel: 'Heart',
+      axisLabel: 'Inti',
       objective: 'balance',
-      reason: 'Balance is weak in the body of the formula, so the middle structure needs more support from a bridge or body material instead of only pushing the strongest lever.',
+      reason: 'Keseimbangan di badan formula lemah. Bagian tengah perlu topangan dari bahan penghubung atau pemberi badan, bukan sekadar menaikkan bahan terkuat.',
       row: preferredMiddleBalanceRow,
       score: simulation.pace.heartScore,
       strategyLabel: getFunctionStrategyLabel(preferredMiddleBalanceRow, simulation.referenceLinksMap),
@@ -531,13 +531,13 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
     });
   } else if (simulation.pace.heartScore < PACE_TARGETS.heart && simulation.middlePercent < 38) {
     const cleanupRecommendation = buildDominantCleanupRecommendation({
-      axisLabel: 'Heart',
+      axisLabel: 'Inti',
       objective: 'balance',
       row: dominantRow,
       score: simulation.pace.heartScore,
       simulation,
       referenceLinksMap: simulation.referenceLinksMap,
-      reason: 'Heart balance is weak, but no safe middle support candidate passed the guardrails, so trimming the dominant material is safer than forcing another heavy increase.',
+      reason: 'Keseimbangan inti lemah, tetapi tidak ada bahan nada tengah yang lolos batas aman. Memangkas bahan dominan lebih aman daripada memaksa tambahan yang berat.',
     });
 
     if (cleanupRecommendation) {
@@ -555,9 +555,9 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
         getTargetGap(simulation.pace.tenacityScore, PACE_TARGETS.tenacity),
       ) + 8,
       recommendation: buildIncreaseRecommendation({
-      axisLabel: simulation.pace.tenacityScore < simulation.pace.drydownScore ? 'Tenacity' : 'Drydown',
+      axisLabel: simulation.pace.tenacityScore < simulation.pace.drydownScore ? 'Ketahanan' : 'Jejak akhir',
       objective: 'longevity',
-      reason: 'Longevity is under target, so the late-stage support needs more hold and drydown weight from a base support that stays aligned with the formula.',
+      reason: 'Ketahanan di bawah target. Tahap akhir butuh daya tahan dan bobot jejak akhir dari bahan nada dasar yang selaras dengan formula.',
       row: preferredBaseRow,
       score: Math.min(simulation.pace.drydownScore, simulation.pace.tenacityScore),
       strategyLabel: getFunctionStrategyLabel(preferredBaseRow, simulation.referenceLinksMap),
@@ -565,13 +565,13 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
     });
   } else if ((simulation.pace.drydownScore < PACE_TARGETS.drydown || simulation.pace.tenacityScore < PACE_TARGETS.tenacity) && simulation.basePercent < 48) {
     const cleanupRecommendation = buildDominantCleanupRecommendation({
-      axisLabel: simulation.pace.tenacityScore < simulation.pace.drydownScore ? 'Tenacity' : 'Drydown',
+      axisLabel: simulation.pace.tenacityScore < simulation.pace.drydownScore ? 'Ketahanan' : 'Jejak akhir',
       objective: 'longevity',
       row: dominantRow,
       score: Math.min(simulation.pace.drydownScore, simulation.pace.tenacityScore),
       simulation,
       referenceLinksMap: simulation.referenceLinksMap,
-      reason: 'Longevity is under target, but no safe base-support increase candidate passed the guardrails, so removing excess dominance is safer than forcing a heavier late-stage addition.',
+      reason: 'Ketahanan di bawah target, tetapi tidak ada bahan nada dasar yang lolos batas aman. Mengurangi dominasi berlebih lebih aman daripada memaksa tambahan nada dasar yang lebih berat.',
     });
 
     if (cleanupRecommendation) {
@@ -589,9 +589,9 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
     candidates.push({
       priority: getTargetGap(simulation.pace.bridgeQualityScore, PACE_TARGETS.bridgeQuality) + 5,
       recommendation: buildIncreaseRecommendation({
-      axisLabel: 'Bridge Quality',
+      axisLabel: 'Transisi',
       objective: 'balance',
-      reason: 'Balance is being hurt by abrupt transitions, so the formula needs more middle-phase connection from a bridging material, not simply the loudest contributor.',
+      reason: 'Keseimbangan terganggu oleh transisi yang patah. Formula butuh sambungan di nada tengah dari bahan penghubung, bukan sekadar bahan paling lantang.',
       row: preferredMiddleBalanceRow,
       score: simulation.pace.bridgeQualityScore,
       strategyLabel: getFunctionStrategyLabel(preferredMiddleBalanceRow, simulation.referenceLinksMap),
@@ -599,13 +599,13 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
     });
   } else if (simulation.pace.bridgeQualityScore < PACE_TARGETS.bridgeQuality && simulation.middlePercent < 40) {
     const cleanupRecommendation = buildDominantCleanupRecommendation({
-      axisLabel: 'Bridge Quality',
+      axisLabel: 'Transisi',
       objective: 'balance',
       row: dominantRow,
       score: simulation.pace.bridgeQualityScore,
       simulation,
       referenceLinksMap: simulation.referenceLinksMap,
-      reason: 'Bridge quality is weak, but no safe bridging increase candidate passed the guardrails, so reducing the material that dominates the transition is the safer next move.',
+      reason: 'Transisi lemah, tetapi tidak ada bahan penghubung yang lolos batas aman. Langkah yang lebih aman: kurangi bahan yang menguasai transisi.',
     });
 
     if (cleanupRecommendation) {
@@ -622,9 +622,9 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
       candidates.push({
         priority: getTargetGap(simulation.pace.diffusionScore, PACE_TARGETS.diffusion) + 3,
         recommendation: buildIncreaseRecommendation({
-          axisLabel: 'Diffusion',
+          axisLabel: 'Pancaran',
           objective: 'projection',
-          reason: 'Projection is lagging, so the formula needs more outward lift from a material that improves throw without pushing an already dominant high-impact note too hard.',
+          reason: 'Pancaran tertinggal. Formula butuh angkatan keluar dari bahan yang menambah sebaran, tanpa terlalu mendorong nada berdampak tinggi yang sudah dominan.',
           row: diffusionRow,
           score: simulation.pace.diffusionScore,
           strategyLabel: getFunctionStrategyLabel(diffusionRow, simulation.referenceLinksMap),
@@ -641,9 +641,9 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
           getTargetGap(simulation.pace.smoothnessScore, PACE_TARGETS.smoothness),
         ) + 7,
         recommendation: buildIncreaseRecommendation({
-          axisLabel: simulation.pace.harmonyScore < simulation.pace.smoothnessScore ? 'Harmony' : 'Smoothness',
+          axisLabel: simulation.pace.harmonyScore < simulation.pace.smoothnessScore ? 'Harmoni' : 'Kehalusan',
           objective: 'balance',
-          reason: 'Harmony is weak because the structure is thin, so adding bridge/body support is safer than pushing another extreme-impact material.',
+          reason: 'Harmoni lemah karena strukturnya tipis. Menambah bahan penghubung atau pemberi badan lebih aman daripada menaikkan bahan berdampak ekstrem lagi.',
           row: preferredMiddleBalanceRow,
           score: Math.min(simulation.pace.harmonyScore, simulation.pace.smoothnessScore),
           strategyLabel: getFunctionStrategyLabel(preferredMiddleBalanceRow, simulation.referenceLinksMap),
@@ -656,9 +656,9 @@ export const buildPaceRecommendations = (simulation, priorityMode = 'balance') =
           getTargetGap(simulation.pace.smoothnessScore, PACE_TARGETS.smoothness),
         ) + 2,
         recommendation: buildDecreaseRecommendation({
-          axisLabel: simulation.pace.harmonyScore < simulation.pace.smoothnessScore ? 'Harmony' : 'Smoothness',
+          axisLabel: simulation.pace.harmonyScore < simulation.pace.smoothnessScore ? 'Harmoni' : 'Kehalusan',
           objective: 'balance',
-          reason: 'Blend quality looks stressed and one material is carrying too much weight, so trimming that dominant driver is the safer cleanup step.',
+          reason: 'Campuran terlihat tertekan dan satu bahan memikul beban terlalu besar. Memangkas bahan dominan itu adalah langkah perapian yang lebih aman.',
           row: dominantRow,
           score: Math.min(simulation.pace.harmonyScore, simulation.pace.smoothnessScore),
           strategyLabel: getFunctionStrategyLabel(dominantRow, simulation.referenceLinksMap),

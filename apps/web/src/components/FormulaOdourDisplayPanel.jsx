@@ -9,7 +9,7 @@ import { formatPercentage, formatQuantity } from '@/utils/formatting.js';
 
 const CHART_CONFIG = {
   weight: {
-    label: 'Weighted load',
+    label: 'Beban berbobot',
     color: '#b8691d',
   },
 };
@@ -19,7 +19,7 @@ const formatHours = (value) => {
     return '-';
   }
 
-  return `${formatQuantity(value, 1)} h`;
+  return `${formatQuantity(value, 1)} jam`;
 };
 
 const formatDisplayQuantity = (value, decimals = null) => {
@@ -197,9 +197,9 @@ const WorkbookPieChart = ({
         </g>
 
         {!compact ? <g transform={`translate(20 ${height - 24})`}>
-          <text fontSize="10.5" fill="#5a5140">Impact: {hasImpactData ? formatQuantity(impactEstimate || 0, 0) : '-'}</text>
-          <text x="126" fontSize="10.5" fill="#5a5140">Life: {hasLifeData ? `${formatQuantity(simpleLifeHours || 0, 0)} hours` : '-'}</text>
-          <text x="282" fontSize="10.5" fill="#5a5140">AutoElapse: {formatQuantity(elapsedHour, 2)}</text>
+          <text fontSize="10.5" fill="#5a5140">Kekuatan: {hasImpactData ? formatQuantity(impactEstimate || 0, 0) : '-'}</text>
+          <text x="126" fontSize="10.5" fill="#5a5140">Ketahanan: {hasLifeData ? `${formatQuantity(simpleLifeHours || 0, 0)} jam` : '-'}</text>
+          <text x="282" fontSize="10.5" fill="#5a5140">Waktu: {formatQuantity(elapsedHour, 2)} jam</text>
         </g> : null}
       </svg>
     </div>
@@ -286,7 +286,7 @@ const FormulaOdourDisplayPanel = ({
       : closest;
   }, null);
   const hasGuidanceChartData = charts.simulation.guidanceBackedCount > 0;
-  const leadFacetLabel = 'Lead class';
+  const leadFacetLabel = 'Kelas utama';
   const elapsedTotalLoad = odourData.reduce((sum, entry) => sum + Number(entry.weight || 0), 0);
   const elapsedStageShares = elapsedDecayPoint && elapsedDecayPoint.total > 0
     ? {
@@ -296,10 +296,10 @@ const FormulaOdourDisplayPanel = ({
       }
     : { top: 0, middle: 0, base: 0 };
   const elapsedStageLabel = elapsedStageShares.top >= elapsedStageShares.middle && elapsedStageShares.top >= elapsedStageShares.base
-    ? 'Top'
+    ? 'nada atas'
     : elapsedStageShares.base >= elapsedStageShares.middle
-      ? 'Base'
-      : 'Middle';
+      ? 'nada dasar'
+      : 'nada tengah';
   const workbookWarningSummary = useMemo(() => {
     const eligibleRows = charts.simulation.rows || [];
     const missingGuidanceRows = eligibleRows.filter((row) => !row.reference_profile);
@@ -323,12 +323,12 @@ const FormulaOdourDisplayPanel = ({
   const metricCards = [
     {
       key: 'life',
-      label: 'Life',
+      label: 'Ketahanan',
       value: charts.simulation.hasLifeData ? formatHours(charts.simulation.simpleLifeHours) : '-',
     },
     {
       key: 'impact',
-      label: 'Impact',
+      label: 'Kekuatan',
       value: charts.simulation.hasImpactData ? formatQuantity(charts.simulation.impactEstimate, 1) : '-',
     },
   ];
@@ -342,10 +342,10 @@ const FormulaOdourDisplayPanel = ({
               <div className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} font-semibold uppercase tracking-[0.16em] text-[#7e6c42]`}>
                 Workbook
               </div>
-              <h2 className={`${isMobile ? 'mt-0.5 text-lg leading-tight' : 'mt-1 text-xl'} font-semibold text-[#3d3422]`}>Graphic odour display</h2>
+              <h2 className={`${isMobile ? 'mt-0.5 text-lg leading-tight' : 'mt-1 text-xl'} font-semibold text-[#3d3422]`}>Tampilan grafik aroma</h2>
             </div>
             <Badge variant="outline" className={`shrink-0 whitespace-normal border-[#c9bb94] bg-white/80 text-[#6c5d36] ${isMobile ? 'max-w-[116px] px-2 py-1 text-[9px] leading-tight' : 'text-[10px]'}`}>
-              {charts.simulation.guidanceBackedCount}/{charts.simulation.eligibleItemCount} guidance-backed materials
+              {charts.simulation.guidanceBackedCount}/{charts.simulation.eligibleItemCount} bahan berpanduan
             </Badge>
           </div>
         </div>
@@ -356,14 +356,14 @@ const FormulaOdourDisplayPanel = ({
               <DisplayToggle
                 active={displayMode === 'pie'}
                 icon={PieChartIcon}
-                label="Pie"
+                label="Lingkaran"
                 onClick={() => setDisplayMode('pie')}
                 compact={isMobile}
               />
               <DisplayToggle
                 active={displayMode === 'bar'}
                 icon={BarChart3}
-                label="Bar"
+                label="Batang"
                 onClick={() => setDisplayMode('bar')}
                 compact={isMobile}
               />
@@ -397,7 +397,7 @@ const FormulaOdourDisplayPanel = ({
                 compact={isMobile}
               />
               <SourcePill
-                label="Missing"
+                label="Belum ada"
                 value={charts.simulation.missingGuidanceCount}
                 className="border-slate-200 bg-slate-50 text-slate-700"
                 compact={isMobile}
@@ -409,7 +409,7 @@ const FormulaOdourDisplayPanel = ({
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
                   <span>
-                    Beberapa material masih kurang data workbook. Impact, life, pie, dan bar bisa belum akurat.
+                    Beberapa bahan masih kurang data workbook. Kekuatan, ketahanan, dan diagramnya bisa belum akurat.
                   </span>
                 </div>
               </div>
@@ -426,13 +426,13 @@ const FormulaOdourDisplayPanel = ({
                       data-elapsed-hour={roundedElapsedHour}
                       className={`rounded-full border border-[#ded3be] bg-[#f8f3e7] px-2 py-1 text-center font-medium text-[#6d6043] ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}
                     >
-                      AutoElapse {formatDisplayQuantity(roundedElapsedHour, 0)} h
+                      Waktu {formatDisplayQuantity(roundedElapsedHour, 0)} jam
                     </div>
                     <div className={`rounded-full border border-[#d7e1cd] bg-[#f3f8ee] px-2 py-1 text-center font-medium text-[#496033] ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}>
-                      Stage {elapsedStageLabel}
+                      Fase {elapsedStageLabel}
                     </div>
                     <div className={`rounded-full border border-[#d6ddee] bg-[#f4f7fd] px-2 py-1 text-center font-medium text-[#49587b] ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}>
-                      Load {formatQuantity(elapsedTotalLoad, 2)}
+                      Beban {formatQuantity(elapsedTotalLoad, 2)}
                     </div>
                     <Button
                       type="button"
@@ -447,7 +447,7 @@ const FormulaOdourDisplayPanel = ({
                       }}
                     >
                       {isAutoPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                      {isAutoPlaying ? 'Pause' : 'Play'}
+                      {isAutoPlaying ? 'Jeda' : 'Putar'}
                     </Button>
                   </div>
                   <div className="mt-3">
@@ -465,19 +465,19 @@ const FormulaOdourDisplayPanel = ({
                       className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#e8deca]"
                     />
                     <div className="mt-2 flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] text-[#7f7257]">
-                      <span>0h</span>
-                    <span>{formatDisplayQuantity(charts.maxElapsedHour || 0, 0)}h</span>
+                      <span>0 jam</span>
+                    <span>{formatDisplayQuantity(charts.maxElapsedHour || 0, 0)} jam</span>
                     </div>
                   </div>
                   <div className={`mt-3 grid gap-2 ${isMobile ? 'grid-cols-3' : 'sm:grid-cols-3'}`}>
                     <div className="rounded-xl bg-sky-500/10 px-3 py-2 text-[11px] text-sky-950">
-                      Top {formatPercentage(elapsedStageShares.top, 1)}
+                      Atas {formatPercentage(elapsedStageShares.top, 1)}
                     </div>
                     <div className="rounded-xl bg-amber-500/10 px-3 py-2 text-[11px] text-amber-950">
-                      Middle {formatPercentage(elapsedStageShares.middle, 1)}
+                      Tengah {formatPercentage(elapsedStageShares.middle, 1)}
                     </div>
                     <div className="rounded-xl bg-emerald-600/10 px-3 py-2 text-[11px] text-emerald-950">
-                      Base {formatPercentage(elapsedStageShares.base, 1)}
+                      Dasar {formatPercentage(elapsedStageShares.base, 1)}
                     </div>
                   </div>
                 </div>
@@ -539,7 +539,7 @@ const FormulaOdourDisplayPanel = ({
                     className="flex w-full items-center justify-between gap-3 text-left"
                   >
                     <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-semibold uppercase tracking-[0.12em] text-[#7a6a4a]`}>
-                      Workbook class distribution
+                      Sebaran kelas workbook
                     </div>
                     <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${legendExpanded ? 'rotate-180' : ''}`} />
                   </button>
@@ -591,31 +591,31 @@ const FormulaOdourDisplayPanel = ({
               <div className={`mt-3 grid rounded-2xl border border-[#ddd3bf] bg-white/72 ${isMobile ? 'grid-cols-2 gap-2 p-2.5' : 'gap-3 p-3 sm:grid-cols-2'}`}>
                   <div className="rounded-xl bg-[#faf3dd] px-3 py-2" data-testid="dominant-class-card">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#88734a]">
-                    Dominant class
+                    Kelas dominan
                     </div>
                     <div className="mt-1 text-sm font-semibold text-[#433821]">
                     {dominantElapsedClass?.familyName || charts.dominantClass?.familyName || '-'}
                     </div>
                     <div className="mt-1 text-[11px] text-[#7f7157]">
-                    {dominantElapsedClass?.description || charts.dominantClass?.description || 'No workbook class data yet'}
+                    {dominantElapsedClass?.description || charts.dominantClass?.description || 'Belum ada data kelas workbook'}
                     </div>
                   </div>
                   <div className="rounded-xl bg-[#f1f6ea] px-3 py-2" data-testid="elapsed-load-card">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5d7542]">
-                    Elapsed load
+                    Beban saat ini
                     </div>
                     <div className="mt-1 text-sm font-semibold text-[#31451f]" data-testid="elapsed-load-value">
                     {formatQuantity(elapsedTotalLoad, 2)}
                     </div>
                     <div className="mt-1 text-[11px] text-[#607350]" data-testid="elapsed-load-hint">
-                    AutoElapse {formatDisplayQuantity(roundedElapsedHour, 0)} h of {formatDisplayQuantity(charts.maxElapsedHour || 0, 0)} h
+                    Jam ke-{formatDisplayQuantity(roundedElapsedHour, 0)} dari {formatDisplayQuantity(charts.maxElapsedHour || 0, 0)} jam
                     </div>
                   </div>
               </div>
             </div>
           ) : (
             <div className="mt-5 rounded-2xl border border-dashed bg-background/70 px-4 py-8 text-sm text-muted-foreground">
-              No guidance data yet.
+              Belum ada data panduan.
             </div>
           )}
 
@@ -640,10 +640,10 @@ const FormulaOdourDisplayPanel = ({
             onClick={() => setBalanceExpanded((current) => !current)}
             className="flex w-full items-center justify-between gap-3 text-left"
           >
-            <div className="text-sm font-semibold text-[#3c3222]">Balance preview</div>
+            <div className="text-sm font-semibold text-[#3c3222]">Pratinjau keseimbangan</div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="border border-[#ded3be] bg-[#f5efde] text-[10px] text-[#6f623f]">
-                {charts.dominantClass?.familyName || charts.dominantFamily?.family || 'No class'}
+                {charts.dominantClass?.familyName || charts.dominantFamily?.family || 'Tanpa kelas'}
               </Badge>
               <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${balanceExpanded ? 'rotate-180' : ''}`} />
             </div>
@@ -652,9 +652,9 @@ const FormulaOdourDisplayPanel = ({
           {balanceExpanded ? (
             <>
               <div className="mt-4 space-y-3">
-                <BalanceRow label="Top" value={charts.simulation.topPercent} toneClass="bg-sky-500" />
-                <BalanceRow label="Middle" value={charts.simulation.middlePercent} toneClass="bg-amber-500" />
-                <BalanceRow label="Base" value={charts.simulation.basePercent} toneClass="bg-emerald-600" />
+                <BalanceRow label="Nada atas" value={charts.simulation.topPercent} toneClass="bg-sky-500" />
+                <BalanceRow label="Nada tengah" value={charts.simulation.middlePercent} toneClass="bg-amber-500" />
+                <BalanceRow label="Nada dasar" value={charts.simulation.basePercent} toneClass="bg-emerald-600" />
               </div>
             </>
           ) : null}

@@ -112,7 +112,7 @@ await page.goto(`${BASE_URL}/formulas`, { waitUntil: 'networkidle' });
 await waitForSettled();
 await screenshot('formulas-page');
 
-const importPdfButton = page.getByRole('button', { name: /import pdf/i }).first();
+const importPdfButton = page.getByRole('button', { name: /impor(?:t)? pdf/i }).first();
 if (await importPdfButton.isVisible().catch(() => false)) {
   await importPdfButton.click();
   await page.waitForTimeout(800);

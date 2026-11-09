@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { PlusCircle } from 'lucide-react';
 import { materialIsLockedForRow } from '@/utils/materialLibraryLock.js';
+import { DATA_STATUS_LABELS } from '@/hooks/useRawMaterialsPage.js';
 
 const FormulaMaterialLibrary = ({
   materials,
@@ -34,10 +35,10 @@ const FormulaMaterialLibrary = ({
   }, [filterMode, materials, selectedRawMaterialIdsSet]);
 
   const filterOptions = [
-    { id: 'all', label: 'All', count: materials.length },
-    { id: 'unused', label: 'Unused', count: materials.filter((material) => !selectedRawMaterialIdsSet.has(material.id)).length },
-    { id: 'selected', label: 'In formula', count: materials.filter((material) => selectedRawMaterialIdsSet.has(material.id)).length },
-    { id: 'solvents', label: 'Solvents', count: materials.filter((material) => material.type === 'solvent').length },
+    { id: 'all', label: 'Semua', count: materials.length },
+    { id: 'unused', label: 'Belum dipakai', count: materials.filter((material) => !selectedRawMaterialIdsSet.has(material.id)).length },
+    { id: 'selected', label: 'Di formula', count: materials.filter((material) => selectedRawMaterialIdsSet.has(material.id)).length },
+    { id: 'solvents', label: 'Pelarut', count: materials.filter((material) => material.type === 'solvent').length },
   ];
 
   return (
@@ -45,7 +46,7 @@ const FormulaMaterialLibrary = ({
       <div className="sticky top-0 z-10 -mx-1 bg-[#fcfaf4]/95 px-1 pb-2 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <div className="text-[11px] font-semibold text-muted-foreground">
-            {filteredMaterials.length} of {materials.length} shown
+            {filteredMaterials.length} dari {materials.length} ditampilkan
           </div>
           {trimmedSearchQuery ? (
             <div className="max-w-[52%] truncate rounded-full border border-[#e4d8c0] bg-white px-2.5 py-1 text-[10px] font-semibold text-[#6f603d]">
@@ -95,9 +96,9 @@ const FormulaMaterialLibrary = ({
           <div className="min-w-0 w-full">
             <div className="truncate text-sm font-medium leading-snug">{material.name}</div>
             <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
-              {material.type === 'solvent' ? 'Solvent' : 'Raw material'}
+              {material.type === 'solvent' ? 'Pelarut' : 'Bahan baku'}
               {material.unit ? ` - ${material.unit}` : ''}
-              {material.data_status ? ` - ${material.data_status}` : ''}
+              {material.data_status ? ` - ${DATA_STATUS_LABELS[material.data_status] || material.data_status}` : ''}
             </div>
           </div>
           <div className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${
@@ -119,7 +120,7 @@ const FormulaMaterialLibrary = ({
       {filteredMaterials.length === 0 ? (
         <div className="space-y-2">
           <div className="rounded-xl bg-white px-3 py-4 text-sm text-muted-foreground">
-            {materials.length === 0 ? 'No raw materials found.' : 'No materials in this filter.'}
+            {materials.length === 0 ? 'Bahan baku tidak ditemukan.' : 'Tidak ada bahan di saringan ini.'}
           </div>
           {canCreateMissing ? (
             <button
@@ -128,8 +129,8 @@ const FormulaMaterialLibrary = ({
               className="flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-3 py-3 text-left text-amber-950 transition-colors hover:bg-amber-100"
             >
               <span className="min-w-0">
-                <span className="block text-sm font-semibold">Tambah raw material baru</span>
-                <span className="block truncate text-[11px] text-amber-800">"{trimmedSearchQuery}" akan dibuat sebagai raw material.</span>
+                <span className="block text-sm font-semibold">Tambah bahan baku baru</span>
+                <span className="block truncate text-[11px] text-amber-800">"{trimmedSearchQuery}" akan dibuat sebagai bahan baku.</span>
               </span>
               <PlusCircle className="h-4 w-4 shrink-0" />
             </button>

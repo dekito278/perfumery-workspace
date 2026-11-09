@@ -44,7 +44,7 @@ const FilterBar = ({ filters, onFilterChange, onClearAll, compact = false, disab
           className={compact ? 'h-11 w-full gap-2 rounded-2xl border-white/70 bg-white/88 px-4 xl:w-auto' : 'mt-[22px] h-11 w-full gap-2 rounded-2xl border-white/70 bg-white/88 px-4 sm:w-auto'}
         >
           <X className="w-4 h-4" />
-          {!compact ? 'Clear filters' : 'Clear'}
+          {!compact ? 'Hapus saringan' : 'Hapus'}
           <Badge variant="secondary" className="ml-1 rounded-full">
             {activeFilterCount}
           </Badge>
