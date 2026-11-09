@@ -684,10 +684,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor="quick-guidance-workbook-code">Kode workbook</Label>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.workbook_code} onCheckedChange={(checked) => toggleFieldLock('workbook_code', checked)} />
                       <span>Kunci</span>
-                    </div>
+                    </label>
                   </div>
                   <Input
                     id="quick-guidance-workbook-code"
@@ -703,10 +703,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor="quick-guidance-cas">Nomor CAS</Label>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.cas_number} onCheckedChange={(checked) => toggleFieldLock('cas_number', checked)} />
                       <span>Kunci</span>
-                    </div>
+                    </label>
                   </div>
                   <Input
                     id="quick-guidance-cas"
@@ -729,10 +729,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <Label htmlFor="quick-guidance-family">Keluarga aroma / kelas workbook</Label>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                     <Checkbox checked={fieldLocks.reference_abc_primary_family} onCheckedChange={(checked) => toggleFieldLock('reference_abc_primary_family', checked)} />
                     <span>Kunci</span>
-                  </div>
+                  </label>
                 </div>
                 <Select
                   value={formData.reference_abc_primary_family || '__none__'}
@@ -759,10 +759,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor="quick-guidance-impact">Kekuatan</Label>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.reference_impact} onCheckedChange={(checked) => toggleFieldLock('reference_impact', checked)} />
                       <span>Kunci</span>
-                    </div>
+                    </label>
                   </div>
                   <Input
                     id="quick-guidance-impact"
@@ -779,10 +779,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor="quick-guidance-life">Ketahanan di strip (jam)</Label>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.reference_life_hours} onCheckedChange={(checked) => toggleFieldLock('reference_life_hours', checked)} />
                       <span>Kunci</span>
-                    </div>
+                    </label>
                   </div>
                   <Input
                     id="quick-guidance-life"
@@ -801,10 +801,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor="quick-guidance-typical-use">Takaran umum (%)</Label>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.reference_use_level_typical_percent} onCheckedChange={(checked) => toggleFieldLock('reference_use_level_typical_percent', checked)} />
                       <span>Kunci</span>
-                    </div>
+                    </label>
                   </div>
                   <Input
                     id="quick-guidance-typical-use"
@@ -822,10 +822,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor="quick-guidance-max-use">Takaran maks (%)</Label>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox checked={fieldLocks.reference_use_level_max_percent} onCheckedChange={(checked) => toggleFieldLock('reference_use_level_max_percent', checked)} />
                       <span>Kunci</span>
-                    </div>
+                    </label>
                   </div>
                   <Input
                     id="quick-guidance-max-use"
@@ -844,10 +844,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <Label htmlFor="quick-guidance-ifra">Batas IFRA (%)</Label>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                     <Checkbox checked={fieldLocks.ifra_limit} onCheckedChange={(checked) => toggleFieldLock('ifra_limit', checked)} />
                     <span>Kunci</span>
-                  </div>
+                  </label>
                 </div>
                 <Input
                   id="quick-guidance-ifra"

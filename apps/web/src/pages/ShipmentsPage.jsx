@@ -523,7 +523,7 @@ const ShipmentsPage = () => {
                   <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Checkbox checked={selected} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
+                        <Checkbox aria-label={`Pilih order ${order.orderNumber}`} checked={selected} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
                         <h3 className="text-lg font-bold">{order.orderNumber}</h3>
                         <StatusChip icon={PackageCheck} tone={getPaymentStatusTone(order.paymentStatus)}>
                           {paid ? 'Sudah dibayar' : 'Menunggu bayar'}
