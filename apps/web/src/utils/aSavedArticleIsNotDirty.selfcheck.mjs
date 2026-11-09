@@ -26,7 +26,7 @@ const dirtyLine = source.split('\n').find((line) => line.includes('const isDirty
 assert.ok(dirtyLine, 'the editor no longer has an isDirty flag — this guard is checking a thing that is gone');
 assert.ok(dirtyLine.includes('savedSnapshot'),
   `isDirty is computed from something other than savedSnapshot now: ${dirtyLine.trim()}`);
-assert.match(source, /addEventListener\('beforeunload'/,
+assert.match(source, /useUnsavedChangesWarning\(isDirty\b/,
   'nothing warns on leaving any more, so there is no false warning to prevent and this guard is stale');
 
 /** The body of the brace-delimited block that starts at `from`, balanced rather than regexed. */

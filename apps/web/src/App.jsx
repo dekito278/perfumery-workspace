@@ -1,7 +1,7 @@
 
 import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from 'react';
-import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
+import { Route, Routes, Navigate, RouterProvider, createBrowserRouter, useLocation, useNavigationType, useParams, useRouteError } from 'react-router-dom';
 import { routerBasename } from '@/utils/storefrontRegion.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -476,7 +476,7 @@ function AppRoutes() {
   // The shop facts set in Studio (Fakta toko): loaded once here, and the tree re-renders when they land.
   useSiteFacts();
   return (
-    <Router basename={ROUTER_BASENAME}>
+    <>
       <ScrollToTop />
       <ScrollRevealEffects />
       <MobileBrowserRedirect />
@@ -1013,15 +1013,29 @@ function AppRoutes() {
         <PwaOfflineBanner />
       <Toaster />
       <ConfirmHost />
-    </Router>
+    </>
   );
 }
+
+// A data router, though nothing here loads data: it is the only kind that can hold a navigation, which
+// is how a form with unsaved work asks before the sidebar or the back gesture takes it away
+// (useUnsavedChangesWarning). The whole app stays one splat route around the <Routes> above, so every
+// path matches exactly as it did under <BrowserRouter>.
+//
+// A data router also catches render errors itself and shows its own bare page. Thrown on instead, so a
+// crash still reaches AppErrorBoundary and its phone diagnostics, as it did before.
+const RethrowRouteError = () => { throw useRouteError(); };
+
+const router = createBrowserRouter(
+  [{ path: '*', element: <AppRoutes />, ErrorBoundary: RethrowRouteError }],
+  { basename: ROUTER_BASENAME },
+);
 
 function App() {
   return (
     <AppErrorBoundary>
       <AuthProvider>
-        <AppRoutes />
+        <RouterProvider router={router} />
       </AuthProvider>
     </AppErrorBoundary>
   );

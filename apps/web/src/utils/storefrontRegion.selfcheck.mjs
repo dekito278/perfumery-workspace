@@ -125,7 +125,7 @@ assert.equal(barePathname('/catalog/english-oak'), '/catalog/english-oak', 'and 
   const app = read('App.jsx');
   assert.match(app, /const ROUTER_BASENAME = routerBasename\(\);/,
     'the basename is read once at module scope, not per render');
-  assert.match(app, /<Router basename=\{ROUTER_BASENAME\}>/,
+  assert.match(app, /createBrowserRouter\([\s\S]{0,200}?\{ basename: ROUTER_BASENAME \}/,
     'and handed to the router, or every /en address renders the 404 page');
 }
 

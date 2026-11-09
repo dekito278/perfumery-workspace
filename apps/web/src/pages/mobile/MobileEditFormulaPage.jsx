@@ -271,6 +271,8 @@ const MobileEditFormulaPage = () => {
         }))],
       );
       toast.success('Revisi disimpan');
+      // Saved now, so the way out below is not "leaving unsaved work".
+      setSavedSnapshot(currentSnapshot);
       navigate(`/mobile/formulas/${id}`);
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan revisi');

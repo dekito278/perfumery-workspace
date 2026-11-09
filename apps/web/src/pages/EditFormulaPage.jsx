@@ -317,6 +317,8 @@ const EditFormulaPage = () => {
       }, itemsForSubmit);
 
       toast.success('Formula diperbarui');
+      // Saved now, so the way out below is not "leaving unsaved work".
+      setSavedSnapshot(currentSnapshot);
       navigate(`/formulas/${id}`);
     } catch (error) {
       toast.error(error.message || 'Failed to update formula');

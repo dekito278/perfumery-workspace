@@ -9,9 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
-import { confirmAction } from '@/utils/confirmAction.js';
 import { fromDateInputValue, toDateInputValue } from '@/utils/publishedDate.js';
 import {
   JOURNAL_CATEGORIES,
@@ -120,20 +120,10 @@ const JournalEditorPage = () => {
     }));
   };
 
-  useEffect(() => {
-    if (!isDirty) return undefined;
-    const handleBeforeUnload = (event) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
+  // Every way out asks while the article differs from what was saved: back button, sidebar, tab close.
+  useUnsavedChangesWarning(isDirty, 'Ada tulisan yang belum disimpan. Tinggalkan halaman ini dan buang perubahannya?');
 
-  const handleBack = async () => {
-    if (isDirty && !await confirmAction({ title: 'Buang perubahan?', message: 'Ada tulisan yang belum disimpan. Lanjut dan buang perubahan?', confirmText: 'Buang', destructive: true })) {
-      return;
-    }
+  const handleBack = () => {
     if (location.state?.from) {
       navigate(location.state.from, { state: { restoreScroll: true } });
       return;

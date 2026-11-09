@@ -27,7 +27,6 @@ import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
 import { enrichMaterialsWithGuidance, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
-import { confirmAction } from '@/utils/confirmAction.js';
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
 
 const createItem = (material, gramAmount = '1') => ({
@@ -96,15 +95,12 @@ const MobileCreateFormulaPage = () => {
   const hasUnsavedComposition = items.some((item) => item.item_id || Number(item.gram_amount || 0) > 0)
     || Boolean(name.trim())
     || Boolean(code.trim());
-  // Closing the tab or reloading used to take the whole composition with it.
-  useUnsavedChangesWarning(hasUnsavedComposition);
+  // Every way out asks while a composition is in progress — closing the tab, the bottom nav, the back gesture.
+  // Not once it is created: the composer still holds it on the way to the new formula's page.
+  const [formulaCreated, setFormulaCreated] = useState(false);
+  useUnsavedChangesWarning(hasUnsavedComposition && !formulaCreated, 'Formula ini belum disimpan. Tinggalkan halaman ini dan buang komposisinya?');
 
-  const handleBack = async () => {
-    if (hasUnsavedComposition && !await confirmAction({ title: 'Buang perubahan?', message: 'Formula ini belum disimpan. Tinggalkan dan buang perubahan?', confirmText: 'Buang', destructive: true })) {
-      return;
-    }
-    navigate('/mobile/formulas');
-  };
+  const handleBack = () => navigate('/mobile/formulas');
 
   const itemsRef = useRef(items);
   const metadataRef = useRef(null);
@@ -311,6 +307,7 @@ const MobileCreateFormulaPage = () => {
         await updateOrderBespokeProductionStatus(orderContext.id || orderContext.orderNumber, 'formula');
       }
       toast.success('Formula dibuat');
+      setFormulaCreated(true);
       navigate(`/mobile/formulas/${created.id}`);
     } catch (error) {
       toast.error(error.message || 'Gagal membuat formula');
