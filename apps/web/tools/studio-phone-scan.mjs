@@ -67,7 +67,7 @@ const posts = [
   { id: '99999990-9999-4999-8999-999999999990', user_id: user.id, title: 'Vanila itu buah dari bunga anggrek, dan butuh sembilan bulan untuk jadi aroma', category: 'bahan', status: 'published', slug: 'vanila-itu-buah', related_formula_id: null, excerpt: 'Panjang ceritanya.', content: 'Paragraf satu.\n\nParagraf dua.', seo_title: '', cover_image_url: '', tags: ['vanila'], published_at: now, created_at: now, updated_at: now, related_product_slug: '', seo_description: '', cover_alt: '' },
   { id: '99999991-9999-4999-8999-999999999991', user_id: user.id, title: 'Draft: kenapa musk tidak selalu bau sabun', category: 'cerita', status: 'draft', slug: 'musk', related_formula_id: null, excerpt: '', content: '', seo_title: '', cover_image_url: '', tags: [], published_at: null, created_at: now, updated_at: now, related_product_slug: '', seo_description: '', cover_alt: '' },
 ];
-const vouchers = [{ id: 'aaaaaaa0-aaaa-4aaa-8aaa-aaaaaaaaaaa0', code: 'WELCOME10', discount_type: 'percentage', discount_value: 10, minimum_order: 300000, expires_at: '2026-12-31T16:59:59Z', active: true, usage_limit_total: 100, usage_count: 12, eligible_product_slugs: [], eligible_categories: [], created_at: now, updated_at: now, minimum_quantity: 1, usage_limit_per_account: 1 },
+const vouchers = [{ id: 'aaaaaaa0-aaaa-4aaa-8aaa-aaaaaaaaaaa0', code: 'WELCOME10', discount_type: 'percent', discount_value: 10, minimum_order: 300000, expires_at: '2026-12-31T16:59:59Z', active: true, usage_limit_total: 100, usage_count: 12, eligible_product_slugs: [], eligible_categories: [], created_at: now, updated_at: now, minimum_quantity: 1, usage_limit_per_account: 1 },
   { id: 'aaaaaaa1-aaaa-4aaa-8aaa-aaaaaaaaaaa1', code: 'KARTUPAKETNOVEMBER2026', discount_type: 'fixed', discount_value: 50000, minimum_order: 0, expires_at: null, active: false, usage_limit_total: null, usage_count: 0, eligible_product_slugs: [P.slug], eligible_categories: [], created_at: now, updated_at: now, minimum_quantity: 1, usage_limit_per_account: null }];
 const FIX = {
   storefront_products: products, storefront_products_public: products, storefront_product_prices: prices,
@@ -152,7 +152,8 @@ for (const route of routes) {
   if (process.env.SHOTS) await page.screenshot({ path: `${OUT}${slug}-${W}.png`, fullPage: true });
   const res = await page.evaluate(async ({ H, DESK }) => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-    const vis = (el) => { const r = el.getBoundingClientRect(); if (r.width < 1 || r.height < 1) return false; const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none') return false; if (el.closest('[aria-hidden="true"],[hidden],[data-state="inactive"],[inert],.mobile-accordion-content[data-open="false"]')) return false;
+    const vis = (el) => { const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return false; // < 2: sr-only text is 1px on purpose
+      const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none') return false; if (el.closest('[aria-hidden="true"],[hidden],[data-state="inactive"],[inert],.mobile-accordion-content[data-open="false"]')) return false;
       for (let p = el; p && p !== document.body; p = p.parentElement) { const pc = getComputedStyle(p); if (Number(pc.opacity) === 0) return false; if (p !== el && /(hidden|clip)/.test(pc.overflowX + pc.overflowY)) { const pr = p.getBoundingClientRect(); if (r.bottom <= pr.top + 1 || r.top >= pr.bottom - 1 || r.right <= pr.left + 1 || r.left >= pr.right - 1) return false; } }
       return true; };
     const name = (el) => { const t = (el.getAttribute('aria-label') || el.innerText || el.value || el.placeholder || '').trim().replace(/\s+/g, ' '); return `${el.tagName.toLowerCase()}${t ? ` "${t.slice(0, 38)}"` : ''}`; };
@@ -194,7 +195,9 @@ for (const route of routes) {
     return { overflow, clipped, overlaps, small, hiddenEnd, underSession, rawKeys, path: location.pathname, h1: document.querySelector('h1')?.textContent?.trim().slice(0, 40) || '' };
   }, { H, DESK });
   // keyboard: focus up to 6 fields, shrink the viewport the way a resizing keyboard does
-  const fieldHandles = await page.$$('.mobile-app-shell input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([readonly]):not([disabled]), .mobile-app-shell textarea:not([readonly]), .mobile-app-shell select');
+  // select:not([aria-hidden]): Radix Select keeps a hidden native <select> for forms; nobody types into it,
+  // and it reported three phone journal fields as "covered" by whatever sits on top of it.
+  const fieldHandles = await page.$$('.mobile-app-shell input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([readonly]):not([disabled]), .mobile-app-shell textarea:not([readonly]), .mobile-app-shell select:not([aria-hidden="true"])');
   const visibleFields = [];
   for (const h of fieldHandles) if (await h.isVisible()) visibleFields.push(h);
   const pick = process.env.ALLFIELDS || visibleFields.length <= 6 ? visibleFields : [0, 1, Math.floor(visibleFields.length / 2), visibleFields.length - 2, visibleFields.length - 1].map((i) => visibleFields[i]);

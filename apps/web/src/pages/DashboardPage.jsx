@@ -531,9 +531,11 @@ const DashboardPage = () => {
                   </div>
                   <h2 className="mt-4 text-base font-bold text-editorial-charcoal">{item.label}</h2>
                   <p className="mt-1 min-h-[40px] text-xs font-semibold leading-relaxed opacity-80">{item.helper}</p>
-                  <div className="mt-3 grid gap-2">
+                  {/* grid-cols-1 (minmax(0,1fr)), not an implicit auto track: an auto track grows to the longest
+                      customer name and pushed it into the next card at 1280px. */}
+                  <div className="mt-3 grid grid-cols-1 gap-2">
                     {item.rows.map((row) => (
-                      <button key={row.id} type="button" onClick={row.onClick} className="rounded-2xl bg-white/85 px-3 py-2 text-left transition hover:bg-white">
+                      <button key={row.id} type="button" onClick={row.onClick} className="min-w-0 rounded-2xl bg-white/85 px-3 py-2 text-left transition hover:bg-white">
                         <div className="truncate text-xs font-bold text-editorial-charcoal">{row.title}</div>
                         <div className="mt-0.5 truncate text-[11px] font-semibold opacity-75">{row.helper}</div>
                       </button>
@@ -572,7 +574,7 @@ const DashboardPage = () => {
                   <div className="text-2xl font-bold">{activeOrderCount}</div>
                 </div>
               </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/studio/products')}>
                   <PackagePlus className="h-4 w-4" />
                   Product management
@@ -770,9 +772,10 @@ const DashboardPage = () => {
         </DashboardSection>
 
         <DashboardSection title="Production health" subtitle="Payment, shipping, dan local fallback dibuat terlihat supaya order kritis tidak diam-diam tersimpan lokal.">
-          <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
             <section className={`rounded-2xl border p-5 shadow-sm ${opsHealth.hasCriticalIssues ? 'border-rose-200 bg-rose-50' : 'border-emerald-100 bg-emerald-50'}`}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              {/* Side by side only from 2xl: in a half-width card at 1280px "Check API" and "Retry sync" overlapped. */}
+              <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
                 <div className="flex items-start gap-3">
                   <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${opsHealth.hasCriticalIssues ? 'bg-white text-rose-700' : 'bg-white text-emerald-700'}`}>
                     {opsHealth.hasCriticalIssues ? <WifiOff className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}

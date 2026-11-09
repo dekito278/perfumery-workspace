@@ -516,7 +516,7 @@ const OrdersPage = () => {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-lg font-bold">{order.orderNumber}</h3>
-                      <Checkbox checked={selectedOrderSet.has(order.id || order.orderNumber)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
+                      <Checkbox aria-label={`Pilih order ${order.orderNumber}`} checked={selectedOrderSet.has(order.id || order.orderNumber)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
                       {bespoke ? <StatusChip className="border-editorial-charcoal/20 bg-editorial-ivory text-editorial-charcoal">Bespoke</StatusChip> : null}
                       {bespoke ? <StatusChip className="border-editorial-charcoal/10 bg-editorial-paper text-editorial-charcoal">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip> : null}
                       {(statusLabels[order.status] || order.status) !== (paymentStatusLabels[order.paymentStatus] || order.paymentStatus) ? (

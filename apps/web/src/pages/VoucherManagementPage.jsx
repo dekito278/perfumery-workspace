@@ -226,7 +226,11 @@ const VoucherManagementPage = () => {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
+        {/* Form and list side by side only from 2xl. Below that they did not both fit: at 1280px the list ran
+            past the screen with its search box and Salin/Edit/Off cut off, and squeezing both columns
+            (minmax(0, …)) pushed the form's fields under the list instead: each field kept its intrinsic
+            width, so the field labels below are one-column grids and the fields min-w-0. */}
+        <div className="mt-6 grid gap-5 2xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
           <form onSubmit={submitVoucher} className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -247,50 +251,50 @@ const VoucherManagementPage = () => {
               </TabsList>
 
               <TabsContent value="rules" className="mt-5 grid gap-4">
-                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                   Kode voucher
                   <input
                     value={draft.code}
                     onChange={(event) => updateDraft('code', event.target.value)}
                     placeholder="SOLI10"
-                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-amber-300"
+                    className="h-12 w-full min-w-0 rounded-2xl border bg-white px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-amber-300"
                   />
                 </label>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Tipe diskon
                     <select
                       value={draft.discountType}
                       onChange={(event) => updateDraft('discountType', event.target.value)}
-                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                      className="h-12 w-full min-w-0 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     >
                       <option value={VOUCHER_DISCOUNT_TYPES.PERCENT}>Percent</option>
                       <option value={VOUCHER_DISCOUNT_TYPES.FIXED}>Fixed</option>
                     </select>
                   </label>
-                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Nilai diskon
                     <LocalizedNumberInput
                       value={draft.discountValue}
                       onChange={(value) => updateDraft('discountValue', value)}
                       placeholder={draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? '10' : '25000'}
-                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                      className="h-12 w-full min-w-0 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
                   </label>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Minimum order
                     <LocalizedNumberInput
                       value={draft.minimumOrder}
                       onChange={(value) => updateDraft('minimumOrder', value)}
                       placeholder="0"
-                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                      className="h-12 w-full min-w-0 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
                   </label>
-                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Minimum quantity
                     <input
                       value={draft.minimumQuantity}
@@ -299,13 +303,13 @@ const VoucherManagementPage = () => {
                       min="0"
                       step="1"
                       placeholder="0 = tanpa minimum"
-                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                      className="h-12 w-full min-w-0 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
                   </label>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                  <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Usage limit total
                     <input
                       value={draft.usageLimitTotal}
@@ -314,10 +318,10 @@ const VoucherManagementPage = () => {
                       min="0"
                       step="1"
                       placeholder="0 = tanpa limit"
-                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                      className="h-12 w-full min-w-0 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
                   </label>
-                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Limit per akun
                     <input
                       value={draft.usageLimitPerAccount}
@@ -326,19 +330,19 @@ const VoucherManagementPage = () => {
                       min="0"
                       step="1"
                       placeholder="0 = tanpa limit"
-                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                      className="h-12 w-full min-w-0 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
                     <span className="text-[10px] font-semibold normal-case text-muted-foreground">
                       Di atas 0, kode ini wajib login dan hanya bisa dipakai sebanyak itu per akun.
                     </span>
                   </label>
-                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Expiry date
                     <input
                       value={draft.expiresAt}
                       onChange={(event) => updateDraft('expiresAt', event.target.value)}
                       type="date"
-                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                      className="h-12 w-full min-w-0 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
                   </label>
                   <button
@@ -353,7 +357,7 @@ const VoucherManagementPage = () => {
               </TabsContent>
 
               <TabsContent value="eligibility" className="mt-5 grid gap-3">
-                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                   Produk tertentu
                   <textarea
                     value={draft.eligibleProductSlugs}
@@ -363,7 +367,7 @@ const VoucherManagementPage = () => {
                     className="rounded-2xl border bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300"
                   />
                 </label>
-                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                <label className="grid min-w-0 grid-cols-1 gap-1 text-xs font-bold uppercase text-muted-foreground">
                   Kategori tertentu
                   <textarea
                     value={draft.eligibleCategories}
@@ -419,7 +423,7 @@ const VoucherManagementPage = () => {
                   : `${voucher.usageCount || 0} dipakai`;
                 return (
                   <article key={voucher.id || voucher.code} className="rounded-2xl border bg-[#fbfaf7] p-4">
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="flex flex-col gap-4">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-lg font-bold tracking-[0.08em] text-editorial-charcoal">{voucher.code}</h3>
@@ -457,7 +461,7 @@ const VoucherManagementPage = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-4 gap-2 xl:w-96">
+                      <div className="grid grid-cols-4 gap-2">
                         <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => copyVoucherCode(voucher)}>
                           <Copy className="h-4 w-4" />
                           Salin
