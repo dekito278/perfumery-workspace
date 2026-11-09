@@ -12,6 +12,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getScheduledPricesForProduct } from '@/services/priceScheduleService.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
 import {
   buildStockCorrection,
   formatRupiah,
@@ -168,15 +169,8 @@ const ProductForm = ({ product = null, onSaved, backTo = '' }) => {
     variants: current.variants.filter((_, variantIndex) => variantIndex !== index),
   }));
 
-  useEffect(() => {
-    if (!hasUnsavedChanges) return undefined;
-    const handleBeforeUnload = (event) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges]);
+  // Every way out asks while the form differs from what was saved: back button, sidebar, back gesture, tab close.
+  useUnsavedChangesWarning(hasUnsavedChanges, 'Ada perubahan produk yang belum disimpan. Tinggalkan halaman ini dan buang perubahannya?');
 
   const confirmDiscardChanges = async () => (
     !hasUnsavedChanges || confirmAction({
@@ -193,9 +187,7 @@ const ProductForm = ({ product = null, onSaved, backTo = '' }) => {
     setSavedFormSnapshot(snapshotProductForm(initialForm));
   };
 
-  const leaveForm = async () => {
-    if (await confirmDiscardChanges()) navigate(backTo);
-  };
+  const leaveForm = () => navigate(backTo);
 
   const updateImagesFromText = (value) => {
     const images = value.split('\n').map((item) => item.trim()).filter(Boolean);
@@ -280,14 +272,9 @@ const ProductForm = ({ product = null, onSaved, backTo = '' }) => {
     }
   };
 
-  const previewCurrentProduct = async () => {
-    if (hasUnsavedChanges && !await confirmAction({
-      title: 'Preview tanpa menyimpan?',
-      message: 'Preview akan membuka halaman produk memakai data form saat ini. Perubahan belum tersimpan tetap belum masuk katalog. Lanjut preview?',
-      confirmText: 'Preview',
-    })) {
-      return;
-    }
+  // Leaving for the preview drops unsaved edits like any other way out (the page reloads from the saved
+  // row on return), so the shared prompt asks — it used to promise the edits were merely "not in the catalogue yet".
+  const previewCurrentProduct = () => {
     const preview = normalizeProduct({
       ...form,
       tags: getTagsForVisibility(form.tags, form.catalogVisible),

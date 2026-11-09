@@ -834,7 +834,10 @@ const walk = (dir, out = []) => {
 // this check on the commit that mounts it.
 {
   const app = read('App.jsx');
-  const shell = app.slice(app.lastIndexOf('</Routes>'), app.indexOf('</Router>'));
+  // Up to the end of the shell's fragment: past it is the router setup, which mounts AppRoutes itself.
+  const shellEnd = app.indexOf('</>', app.lastIndexOf('</Routes>'));
+  assert.notEqual(shellEnd, -1, 'the App shell no longer ends in a fragment — find where it ends now');
+  const shell = app.slice(app.lastIndexOf('</Routes>'), shellEnd);
   const mounted = [...new Set((shell.match(/<([A-Z]\w+)\s*\/>/g) || []).map((tag) => tag.slice(1, -2).trim()))];
   assert.ok(mounted.length >= 3,
     `expected the App shell to mount components outside <Routes>; found ${mounted.length} — has the shell moved?`);

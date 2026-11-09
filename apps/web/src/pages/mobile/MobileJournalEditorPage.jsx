@@ -16,7 +16,7 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
-import { confirmAction } from '@/utils/confirmAction.js';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
 import { fromDateInputValue, toDateInputValue } from '@/utils/publishedDate.js';
 import {
   JOURNAL_CATEGORIES,
@@ -123,15 +123,8 @@ const MobileJournalEditorPage = () => {
     [isEditMode]
   );
 
-  useEffect(() => {
-    if (!isDirty) return undefined;
-    const handleBeforeUnload = (event) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
+  // Every way out asks while the article differs from what was saved: back button, bottom nav, back gesture.
+  useUnsavedChangesWarning(isDirty, 'Ada tulisan yang belum disimpan. Tinggalkan halaman ini dan buang perubahannya?');
 
   const handleChange = (field, value) => {
     setFormState((current) => ({
@@ -140,10 +133,7 @@ const MobileJournalEditorPage = () => {
     }));
   };
 
-  const handleBack = async () => {
-    if (isDirty && !await confirmAction({ title: 'Buang perubahan?', message: 'Ada tulisan yang belum disimpan. Lanjut dan buang perubahan?', confirmText: 'Buang', destructive: true })) {
-      return;
-    }
+  const handleBack = () => {
     if (location.state?.from) {
       navigate(location.state.from, { state: { restoreScroll: true } });
       return;

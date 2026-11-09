@@ -65,9 +65,9 @@ for (const page of ['pages/OrderDetailPage.jsx', 'pages/mobile/MobileOrderDetail
 for (const page of ['pages/CreateFormulaPage.jsx', 'pages/mobile/MobileCreateFormulaPage.jsx']) {
   const source = read(page);
   assert.match(source, /hasUnsavedComposition/, `${page} must know whether the composition is unsaved`);
-  // The mechanism moved from window.confirm to confirmAction() (PR #121); the invariant did not — both
-  // composers still have to ask, and both still have to await the answer.
-  assert.match(source, /hasUnsavedComposition && !await confirmAction\(/,
+  // The mechanism moved from window.confirm to confirmAction() (PR #121), then from the back button alone
+  // to every way out (useUnsavedChangesWarning, 2026-11-10); the invariant did not — both composers ask.
+  assert.match(source, /useUnsavedChangesWarning\(hasUnsavedComposition\b/,
     `${page} must ask before discarding a composition in progress`);
 }
 

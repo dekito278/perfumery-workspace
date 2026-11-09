@@ -19,6 +19,7 @@ import {
   sweepUnreferencedStoryMedia,
 } from '@/services/productStoryService.js';
 import { invalidateStoryCache } from '@/hooks/useProductStory.js';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
 import { confirmAction } from '@/utils/confirmAction.js';
 
 const SECTION_TYPES = [
@@ -269,15 +270,9 @@ const StoryEditorPage = () => {
   // replaces `story` wholesale, so an unsaved story used to vanish without a word (audit round 8).
   const isDirty = Boolean(story) && savedSnapshot !== '' && JSON.stringify(story) !== savedSnapshot;
 
-  useEffect(() => {
-    if (!isDirty) return undefined;
-    const handleBeforeUnload = (event) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
+  // Leaving the page asks through the shared hook. Switching product stays on this page (query string
+  // only), so it asks for itself below.
+  useUnsavedChangesWarning(isDirty, 'Story ini belum disimpan. Tinggalkan halaman ini dan buang perubahannya?');
 
   const selectProduct = async (slug) => {
     if (isDirty && !await confirmAction({ title: 'Buang perubahan?', message: 'Story ini belum disimpan. Pindah produk dan buang perubahan?', confirmText: 'Buang', destructive: true })) {
