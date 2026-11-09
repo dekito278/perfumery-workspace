@@ -27,13 +27,14 @@ import {
   resetReferenceCandidateToProvisional,
 } from '@/services/materialReferenceService.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
+import { DATA_STATUS_LABELS, TYPE_LABELS } from '@/hooks/useRawMaterialsPage.js';
 
 const REFERENCE_STATUS_LABELS = {
   approved_pw: 'Perfumer\'s World',
-  approved_external: 'External approved',
-  provisional_external: 'Needs review',
-  conflict_review: 'Conflict review',
-  fallback_manual: 'Manual fallback',
+  approved_external: 'Sumber luar disetujui',
+  provisional_external: 'Perlu ditinjau',
+  conflict_review: 'Tinjau bentrok',
+  fallback_manual: 'Cadangan manual',
 };
 
 const getReferenceStatusBadgeClassName = (status) => {
@@ -55,7 +56,7 @@ const renderDeleteDependencySummary = (dependencies, loading, checkFailed) => {
   if (loading) {
     return (
       <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        Checking where this material is still used...
+        Memeriksa di mana bahan ini masih dipakai...
       </div>
     );
   }
@@ -65,7 +66,7 @@ const renderDeleteDependencySummary = (dependencies, loading, checkFailed) => {
   if (checkFailed) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        Gagal memeriksa di mana material ini masih dipakai. Coba lagi sebentar; jangan hapus sebelum hasilnya keluar.
+        Gagal memeriksa di mana bahan ini masih dipakai. Coba lagi sebentar; jangan hapus sebelum hasilnya keluar.
       </div>
     );
   }
@@ -73,7 +74,7 @@ const renderDeleteDependencySummary = (dependencies, loading, checkFailed) => {
   if (dependencies.length) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        <div className="font-medium">This material is still referenced in:</div>
+        <div className="font-medium">Bahan ini masih dipakai di:</div>
         <ul className="mt-2 list-disc pl-5">
           {dependencies.map((entry) => (
             <li key={entry.label}>
@@ -87,7 +88,7 @@ const renderDeleteDependencySummary = (dependencies, loading, checkFailed) => {
 
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-      No blocking references found. This material is ready to delete, and its linked workbook/reference artifacts will be removed too.
+      Tidak ada yang menahan. Bahan ini siap dihapus, dan data workbook/acuan yang tertaut ikut dihapus.
     </div>
   );
 };
@@ -151,7 +152,7 @@ const RawMaterialDetailPage = () => {
       const data = await getRawMaterialById(id);
       setMaterial(data);
     } catch (error) {
-      toast.error('Failed to load material details');
+      toast.error('Gagal memuat detail bahan baku');
       navigate('/raw-materials');
     } finally {
       setLoading(false);
@@ -180,10 +181,10 @@ const RawMaterialDetailPage = () => {
     setDeleting(true);
     try {
       await deleteMaterial(id);
-      toast.success('Material dihapus');
+      toast.success('Bahan baku dihapus');
       navigate('/raw-materials');
     } catch (error) {
-      toast.error(error.message || 'Failed to delete material');
+      toast.error(error.message || 'Gagal menghapus bahan baku');
       setDeleting(false);
     }
   };
@@ -195,30 +196,30 @@ const RawMaterialDetailPage = () => {
   const handleApproveReference = async () => {
     try {
       await approveReferenceCandidateForRawMaterial(id);
-      toast.success('Reference candidate approved');
+      toast.success('Kandidat acuan disetujui');
       await refreshReferenceContext();
     } catch (error) {
-      toast.error(error.message || 'Failed to approve reference candidate');
+      toast.error(error.message || 'Gagal menyetujui kandidat acuan');
     }
   };
 
   const handleMarkConflict = async () => {
     try {
       await markReferenceConflictForRawMaterial(id);
-      toast.success('Reference marked for conflict review');
+      toast.success('Acuan ditandai untuk tinjauan bentrok');
       await refreshReferenceContext();
     } catch (error) {
-      toast.error(error.message || 'Failed to mark conflict');
+      toast.error(error.message || 'Gagal menandai bentrok');
     }
   };
 
   const handleResetToProvisional = async () => {
     try {
       await resetReferenceCandidateToProvisional(id);
-      toast.success('Reference returned to provisional review');
+      toast.success('Acuan dikembalikan ke tinjauan sementara');
       await refreshReferenceContext();
     } catch (error) {
-      toast.error(error.message || 'Failed to reset review state');
+      toast.error(error.message || 'Gagal mengatur ulang status tinjauan');
     }
   };
 
@@ -236,9 +237,9 @@ const RawMaterialDetailPage = () => {
       <DetailPageLayout>
         <StudioLoadingState
           variant="detail"
-          eyebrow="Loading material"
-          title="Preparing material detail"
-          description="Mengambil profil bahan, status stock, dan reference guidance."
+          eyebrow="Memuat bahan baku"
+          title="Menyiapkan detail bahan baku"
+          description="Mengambil profil bahan, status stok, dan panduan acuan."
         />
       </DetailPageLayout>
     );
@@ -260,52 +261,52 @@ const RawMaterialDetailPage = () => {
     <>
       <Helmet>
         <title>{`${material.name} - Solivagant`}</title>
-        <meta name="description" content={`Detailed view of ${material.name} material with guidance and reference data.`} />
+        <meta name="description" content={`Detail bahan baku ${material.name} beserta panduan dan data acuan.`} />
       </Helmet>
 
       <DetailPageLayout>
         <DetailPageHeader
-          eyebrow="Material"
+          eyebrow="Bahan baku"
           title={material.name}
           subtitle={[
-            material.category ? formatStatus(material.category) : 'Uncategorized material',
+            material.category ? formatStatus(material.category) : 'Bahan tanpa kategori',
             scentFamily || null,
           ].filter(Boolean).join(' / ')}
           badge={(
             <Badge variant="outline" className="capitalize text-xs">
-              {formatStatus(material.type)}
+              {TYPE_LABELS[material.type] || formatStatus(material.type)}
             </Badge>
           )}
           onBack={handleBack}
-          backLabel={location.state?.from ? 'Back to materials' : 'Back to home'}
+          backLabel={location.state?.from ? 'Kembali ke bahan baku' : 'Kembali ke beranda'}
           meta={(
             <>
               {referenceProfile ? (
                 <div className="detail-page-meta-chip">
-                  <span className="detail-page-meta-label">Reference</span>
+                  <span className="detail-page-meta-label">Acuan</span>
                   <span className="detail-page-meta-value">{referenceProfile.reference_code}</span>
                 </div>
               ) : null}
               {referenceProfile ? (
                 <div className="detail-page-meta-chip">
                   <span className="detail-page-meta-label">Status</span>
-                  <span className="detail-page-meta-value">{REFERENCE_STATUS_LABELS[referenceStatus] || 'Reference'}</span>
+                  <span className="detail-page-meta-value">{REFERENCE_STATUS_LABELS[referenceStatus] || 'Acuan'}</span>
                 </div>
               ) : null}
               <div className="detail-page-meta-chip">
-                <span className="detail-page-meta-label">Workbook code</span>
+                <span className="detail-page-meta-label">Kode workbook</span>
                 <span className="detail-page-meta-value">{formatNullable(material.workbook_code, '-')}</span>
               </div>
               <div className="detail-page-meta-chip">
-                <span className="detail-page-meta-label">Unit</span>
+                <span className="detail-page-meta-label">Satuan</span>
                 <span className="detail-page-meta-value">{material.unit || '-'}</span>
               </div>
               <div className={`detail-page-meta-chip ${lowStock ? 'border-rose-200 bg-rose-50 text-rose-900' : ''}`}>
-                <span className="detail-page-meta-label">{lowStock ? 'Low stock' : 'Stock'}</span>
+                <span className="detail-page-meta-label">{lowStock ? 'Stok menipis' : 'Stok'}</span>
                 <span className="detail-page-meta-value">{formatStock(stockQuantity)}</span>
               </div>
               <div className="detail-page-meta-chip">
-                <span className="detail-page-meta-label">Unit price</span>
+                <span className="detail-page-meta-label">Harga satuan</span>
                 <span className="detail-page-meta-value">{formatPricePerUnit(material.cost_per_unit, material.unit)}</span>
               </div>
             </>
@@ -314,7 +315,7 @@ const RawMaterialDetailPage = () => {
             <>
               <Button variant="outline" onClick={() => navigate('/home')} className="gap-2 h-9">
                 <Home className="w-4 h-4" />
-                Home
+                Beranda
               </Button>
               <Button variant="outline" onClick={() => setEditModalOpen(true)} className="gap-2 h-9">
                 <Pencil className="w-4 h-4" />
@@ -322,90 +323,90 @@ const RawMaterialDetailPage = () => {
               </Button>
               <Button variant="outline" onClick={() => setMatchModalOpen(true)} className="gap-2 h-9">
                 <LinkIcon className="w-4 h-4" />
-                {referenceProfile ? 'Update reference' : 'Match reference'}
+                {referenceProfile ? 'Perbarui acuan' : 'Cocokkan acuan'}
               </Button>
               <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)} className="gap-2 h-9">
                 <Trash2 className="w-4 h-4" />
-                Delete
+                Hapus
               </Button>
             </>
           )}
         />
 
         <div className="space-y-5">
-          <DetailSection title="Snapshot">
+          <DetailSection title="Sekilas">
             <div className="grid gap-3 md:grid-cols-4">
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">{lowStock ? 'Low stock' : 'Stock on hand'}</div>
+                <div className="text-xs text-muted-foreground mb-1">{lowStock ? 'Stok menipis' : 'Stok tersedia'}</div>
                 <div className={`text-lg font-semibold font-mono ${lowStock ? 'text-rose-700' : ''}`}>{formatStock(stockQuantity)}</div>
               </div>
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">IFRA limit</div>
-                <div className="text-lg font-semibold">{material.ifra_limit ? formatPercentage(material.ifra_limit) : 'N/A'}</div>
+                <div className="text-xs text-muted-foreground mb-1">Batas IFRA</div>
+                <div className="text-lg font-semibold">{material.ifra_limit ? formatPercentage(material.ifra_limit) : '-'}</div>
               </div>
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Impact</div>
-                <div className="text-lg font-semibold">{material.reference_impact ? formatQuantity(material.reference_impact) : 'N/A'}</div>
+                <div className="text-xs text-muted-foreground mb-1">Kekuatan</div>
+                <div className="text-lg font-semibold">{material.reference_impact ? formatQuantity(material.reference_impact) : '-'}</div>
               </div>
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Life hours</div>
-                <div className="text-lg font-semibold">{material.reference_life_hours ? formatQuantity(material.reference_life_hours) : 'N/A'}</div>
+                <div className="text-xs text-muted-foreground mb-1">Ketahanan di strip (jam)</div>
+                <div className="text-lg font-semibold">{material.reference_life_hours ? formatQuantity(material.reference_life_hours) : '-'}</div>
               </div>
             </div>
           </DetailSection>
 
-          <DetailSection title="Summary">
+          <DetailSection title="Ringkasan">
             <DetailFieldGroup columns={4}>
-              <DetailField label="Name" value={material.name} />
-              <DetailField label="Type" value={formatStatus(material.type)} />
-              <DetailField label="Category" value={formatStatus(material.category)} />
-              <DetailField label="Vendor" value={formatNullable(material.vendor)} />
+              <DetailField label="Nama" value={material.name} />
+              <DetailField label="Jenis" value={TYPE_LABELS[material.type] || formatStatus(material.type)} />
+              <DetailField label="Kategori" value={formatStatus(material.category)} />
+              <DetailField label="Supplier" value={formatNullable(material.vendor, '-')} />
             </DetailFieldGroup>
             <div className="mt-3">
               <DetailFieldGroup columns={4}>
-                <DetailField label="Cleanup status" value={formatStatus(material.data_status || 'active')} />
-                <DetailField label="Review note" value={formatNullable(material.review_notes)} />
-                <DetailField label="Archived at" value={formatNullable(material.archived_at)} />
-                <DetailField label="Created" value={formatNullable(material.created_at)} />
+                <DetailField label="Status kerapian" value={DATA_STATUS_LABELS[material.data_status || 'active'] || formatStatus(material.data_status)} />
+                <DetailField label="Catatan tinjauan" value={formatNullable(material.review_notes, '-')} />
+                <DetailField label="Diarsipkan" value={formatNullable(material.archived_at, '-')} />
+                <DetailField label="Dibuat" value={formatNullable(material.created_at, '-')} />
               </DetailFieldGroup>
             </div>
             <div className="mt-3">
               <DetailFieldGroup columns={4}>
-                <DetailField label="Workbook code" value={formatNullable(material.workbook_code)} />
-                <DetailField label="CAS number" value={formatNullable(material.cas_number)} />
-                <DetailField label="Reference family" value={formatNullable(material.reference_abc_primary_family || scentFamily)} />
-                <DetailField label="Unit price" value={formatPricePerUnit(material.cost_per_unit, material.unit)} />
+                <DetailField label="Kode workbook" value={formatNullable(material.workbook_code, '-')} />
+                <DetailField label="Nomor CAS" value={formatNullable(material.cas_number, '-')} />
+                <DetailField label="Keluarga aroma acuan" value={formatNullable(material.reference_abc_primary_family || scentFamily, '-')} />
+                <DetailField label="Harga satuan" value={formatPricePerUnit(material.cost_per_unit, material.unit)} />
               </DetailFieldGroup>
             </div>
             <div className="mt-3">
               <DetailFieldGroup columns={4}>
-                <DetailField label="Stock on hand" value={formatStock(stockQuantity)} />
-                <DetailField label="Minimum stock" value={formatStock(material.minimum_stock)} />
-                <DetailField label="Low alert" value={stockThreshold > 0 ? formatStock(stockThreshold) : 'N/A'} />
-                <DetailField label="Stock status" value={lowStock ? 'Low stock' : 'Available'} />
+                <DetailField label="Stok tersedia" value={formatStock(stockQuantity)} />
+                <DetailField label="Stok minimum" value={formatStock(material.minimum_stock)} />
+                <DetailField label="Batas stok menipis" value={stockThreshold > 0 ? formatStock(stockThreshold) : '-'} />
+                <DetailField label="Status stok" value={lowStock ? 'Stok menipis' : 'Tersedia'} />
               </DetailFieldGroup>
             </div>
             <div className="mt-3">
               <DetailFieldGroup columns={4}>
-                <DetailField label="IFRA limit" value={material.ifra_limit ? formatPercentage(material.ifra_limit) : 'N/A'} />
+                <DetailField label="Batas IFRA" value={material.ifra_limit ? formatPercentage(material.ifra_limit) : '-'} />
                 <DetailField
-                  label="Typical use"
+                  label="Takaran umum"
                   value={material.reference_use_level_typical_percent !== null && material.reference_use_level_typical_percent !== undefined
                     ? formatPercentage(material.reference_use_level_typical_percent, 2)
-                    : 'N/A'}
+                    : '-'}
                 />
                 <DetailField
-                  label="Max use"
+                  label="Takaran maks"
                   value={material.reference_use_level_max_percent !== null && material.reference_use_level_max_percent !== undefined
                     ? formatPercentage(material.reference_use_level_max_percent, 2)
-                    : 'N/A'}
+                    : '-'}
                 />
-                <DetailField label="Family" value={formatNullable(scentFamily)} />
+                <DetailField label="Keluarga aroma" value={formatNullable(scentFamily, '-')} />
               </DetailFieldGroup>
             </div>
           </DetailSection>
 
-          <DetailSection title="Reference profile">
+          <DetailSection title="Profil acuan">
             {referenceLoading ? (
               <div className="grid gap-3 md:grid-cols-3">
                 <Skeleton className="h-20 w-full" />
@@ -417,16 +418,16 @@ const RawMaterialDetailPage = () => {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className={getReferenceStatusBadgeClassName(referenceStatus)}>
-                      {REFERENCE_STATUS_LABELS[referenceStatus] || 'Reference'}
+                      {REFERENCE_STATUS_LABELS[referenceStatus] || 'Acuan'}
                     </Badge>
                     {referenceProfile.confidence_score !== null ? (
                       <Badge variant="outline">
-                        Confidence {referenceProfile.confidence_score}
+                        Keyakinan {referenceProfile.confidence_score}
                       </Badge>
                     ) : null}
                     {referenceProfile.provenance_summary?.primary_source_kind ? (
                       <Badge variant="outline" className="capitalize">
-                        Winner {referenceProfile.provenance_summary.primary_source_kind}
+                        Sumber utama {referenceProfile.provenance_summary.primary_source_kind}
                       </Badge>
                     ) : null}
                   </div>
@@ -434,61 +435,61 @@ const RawMaterialDetailPage = () => {
                     {referenceStatus === 'provisional_external' ? (
                       <Button variant="outline" size="sm" onClick={handleApproveReference} className="gap-2">
                         <CheckCircle2 className="w-4 h-4" />
-                        Approve external
+                        Setujui sumber luar
                       </Button>
                     ) : null}
                     {referenceStatus !== 'conflict_review' ? (
                       <Button variant="outline" size="sm" onClick={handleMarkConflict} className="gap-2">
                         <AlertTriangle className="w-4 h-4" />
-                        Mark conflict
+                        Tandai bentrok
                       </Button>
                     ) : (
                       <Button variant="outline" size="sm" onClick={handleResetToProvisional} className="gap-2">
                         <CheckCircle2 className="w-4 h-4" />
-                        Return to review
+                        Kembalikan ke tinjauan
                       </Button>
                     )}
                     <Button variant="outline" size="sm" onClick={() => setMatchModalOpen(true)} className="gap-2">
                       <LinkIcon className="w-4 h-4" />
-                      Change linked profile
+                      Ganti profil tertaut
                     </Button>
                   </div>
                 </div>
                 <DetailFieldGroup columns={4}>
-                  <DetailField label="Reference code" value={referenceProfile.reference_code} />
-                  <DetailField label="ABC code" value={formatNullable(referenceProfile.abc_code)} />
-                  <DetailField label="Primary family" value={formatNullable(referenceProfile.abc_primary_family)} />
-                  <DetailField label="Secondary family" value={formatNullable(referenceProfile.abc_secondary_family)} />
+                  <DetailField label="Kode acuan" value={referenceProfile.reference_code} />
+                  <DetailField label="Kode ABC" value={formatNullable(referenceProfile.abc_code, '-')} />
+                  <DetailField label="Keluarga aroma utama" value={formatNullable(referenceProfile.abc_primary_family, '-')} />
+                  <DetailField label="Keluarga aroma kedua" value={formatNullable(referenceProfile.abc_secondary_family, '-')} />
                 </DetailFieldGroup>
 
                 <DetailFieldGroup columns={4}>
-                  <DetailField label="Impact" value={referenceProfile.impact !== null ? formatQuantity(referenceProfile.impact) : 'N/A'} />
-                  <DetailField label="Life hours" value={referenceProfile.life_hours !== null ? formatQuantity(referenceProfile.life_hours) : 'N/A'} />
-                  <DetailField label="Typical use level" value={referenceProfile.use_level_typical_percent !== null ? formatPercentage(referenceProfile.use_level_typical_percent, 2) : 'N/A'} />
-                  <DetailField label="Use level max" value={referenceProfile.use_level_max_percent !== null ? formatPercentage(referenceProfile.use_level_max_percent, 2) : 'N/A'} />
+                  <DetailField label="Kekuatan" value={referenceProfile.impact !== null ? formatQuantity(referenceProfile.impact) : '-'} />
+                  <DetailField label="Ketahanan di strip (jam)" value={referenceProfile.life_hours !== null ? formatQuantity(referenceProfile.life_hours) : '-'} />
+                  <DetailField label="Takaran umum" value={referenceProfile.use_level_typical_percent !== null ? formatPercentage(referenceProfile.use_level_typical_percent, 2) : '-'} />
+                  <DetailField label="Takaran maks" value={referenceProfile.use_level_max_percent !== null ? formatPercentage(referenceProfile.use_level_max_percent, 2) : '-'} />
                 </DetailFieldGroup>
 
                 <DetailFieldGroup columns={4}>
-                  <DetailField label="IFRA reference limit" value={referenceProfile.ifra_limit_percent !== null ? formatPercentage(referenceProfile.ifra_limit_percent, 2) : 'N/A'} />
-                  <DetailField label="Supplier" value={formatNullable(referenceProfile.supplier)} />
-                  <DetailField label="Catalog unit" value={formatNullable(referenceProfile.catalog_unit)} />
-                  <DetailField label="Catalog price" value={referenceProfile.catalog_price !== null ? formatPrice(referenceProfile.catalog_price) : 'N/A'} />
+                  <DetailField label="Batas IFRA acuan" value={referenceProfile.ifra_limit_percent !== null ? formatPercentage(referenceProfile.ifra_limit_percent, 2) : '-'} />
+                  <DetailField label="Supplier" value={formatNullable(referenceProfile.supplier, '-')} />
+                  <DetailField label="Satuan katalog" value={formatNullable(referenceProfile.catalog_unit, '-')} />
+                  <DetailField label="Harga katalog" value={referenceProfile.catalog_price !== null ? formatPrice(referenceProfile.catalog_price) : '-'} />
                 </DetailFieldGroup>
 
                 <div className="rounded-2xl border bg-muted/20 p-4">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-semibold">Reference provenance</div>
+                    <div className="text-sm font-semibold">Asal data acuan</div>
                     {referenceProfile.provenance_summary?.conflict_fields?.length ? (
                       <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-900">
-                        Conflict on {referenceProfile.provenance_summary.conflict_fields.join(', ')}
+                        Bentrok di {referenceProfile.provenance_summary.conflict_fields.join(', ')}
                       </Badge>
                     ) : null}
                   </div>
                   <DetailFieldGroup columns={4}>
-                    <DetailField label="Primary source" value={formatNullable(referenceProfile.provenance_summary?.primary_source_kind)} />
-                    <DetailField label="Total sources" value={formatNullable(referenceProfile.provenance_summary?.total_sources)} />
-                    <DetailField label="Pending review" value={formatNullable(referenceProfile.provenance_summary?.pending_review_sources)} />
-                    <DetailField label="Approved external" value={formatNullable(referenceProfile.provenance_summary?.approved_external_sources)} />
+                    <DetailField label="Sumber utama" value={formatNullable(referenceProfile.provenance_summary?.primary_source_kind, '-')} />
+                    <DetailField label="Jumlah sumber" value={formatNullable(referenceProfile.provenance_summary?.total_sources, '-')} />
+                    <DetailField label="Menunggu tinjauan" value={formatNullable(referenceProfile.provenance_summary?.pending_review_sources, '-')} />
+                    <DetailField label="Sumber luar disetujui" value={formatNullable(referenceProfile.provenance_summary?.approved_external_sources, '-')} />
                   </DetailFieldGroup>
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     {Object.entries(referenceProfile.source_snapshots || {}).map(([snapshotKey, snapshot]) => (
@@ -496,21 +497,21 @@ const RawMaterialDetailPage = () => {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium capitalize">{snapshot.source_kind || snapshotKey}</span>
                           <Badge variant="outline" className={getReferenceStatusBadgeClassName(snapshot.review_status)}>
-                            {REFERENCE_STATUS_LABELS[snapshot.review_status] || snapshot.review_status || 'Snapshot'}
+                            {REFERENCE_STATUS_LABELS[snapshot.review_status] || snapshot.review_status || 'Cuplikan'}
                           </Badge>
                         </div>
                         <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                          <div>{snapshot.reference_code || snapshot.workbook_code ? `Reference ${snapshot.reference_code || snapshot.workbook_code}` : 'No reference code'}</div>
-                          <div>{snapshot.cas_number ? `CAS ${snapshot.cas_number}` : 'No CAS'}</div>
-                          <div>{snapshot.reference_abc_primary_family ? `Family ${snapshot.reference_abc_primary_family}` : 'No family mapping'}</div>
+                          <div>{snapshot.reference_code || snapshot.workbook_code ? `Acuan ${snapshot.reference_code || snapshot.workbook_code}` : 'Belum ada kode acuan'}</div>
+                          <div>{snapshot.cas_number ? `CAS ${snapshot.cas_number}` : 'Belum ada CAS'}</div>
+                          <div>{snapshot.reference_abc_primary_family ? `Keluarga aroma ${snapshot.reference_abc_primary_family}` : 'Belum ada keluarga aroma'}</div>
                           <div>
                             {snapshot.reference_impact !== null && snapshot.reference_impact !== undefined
-                              ? `Impact ${snapshot.reference_impact}`
-                              : 'No impact'}
+                              ? `Kekuatan ${snapshot.reference_impact}`
+                              : 'Belum ada kekuatan'}
                             {' | '}
                             {snapshot.reference_life_hours !== null && snapshot.reference_life_hours !== undefined
-                              ? `Life ${snapshot.reference_life_hours}h`
-                              : 'No life'}
+                              ? `Ketahanan ${snapshot.reference_life_hours} jam`
+                              : 'Belum ada ketahanan'}
                           </div>
                           {snapshot.source_url ? (
                             <div className="break-all">{snapshot.source_url}</div>
@@ -523,11 +524,11 @@ const RawMaterialDetailPage = () => {
 
                 {referenceProfile.odour_facets?.length ? (
                   <div className="space-y-3">
-                    <div className="text-sm font-semibold">Odour profile</div>
+                    <div className="text-sm font-semibold">Profil bau</div>
                     <div className="flex flex-wrap gap-2">
                       {referenceProfile.odour_facets.map((facet) => (
                         <Badge key={facet.id} variant="outline" className="rounded-full px-3 py-1 text-xs">
-                          {facet.letter} / {facet.family || 'Family'} / {formatQuantity(facet.value)}%
+                          {facet.letter} / {facet.family || 'Keluarga'} / {formatQuantity(facet.value)}%
                         </Badge>
                       ))}
                     </div>
@@ -535,75 +536,75 @@ const RawMaterialDetailPage = () => {
                 ) : null}
 
                 <DetailFieldGroup columns={4}>
-                  <DetailField label="Function labels" value={formatNullable(referenceProfile.function_labels)} />
-                  <DetailField label="Reference category" value={formatNullable(referenceProfile.category)} />
-                  <DetailField label="Classification" value={formatNullable(referenceProfile.classification)} />
-                  <DetailField label="Order no." value={formatNullable(referenceProfile.order_no)} />
+                  <DetailField label="Label fungsi" value={formatNullable(referenceProfile.function_labels, '-')} />
+                  <DetailField label="Kategori acuan" value={formatNullable(referenceProfile.category, '-')} />
+                  <DetailField label="Klasifikasi" value={formatNullable(referenceProfile.classification, '-')} />
+                  <DetailField label="No. pesanan" value={formatNullable(referenceProfile.order_no, '-')} />
                 </DetailFieldGroup>
 
                 <DetailFieldGroup columns={4}>
-                  <DetailField label="Physical state" value={formatNullable(referenceProfile.physical_state)} />
-                  <DetailField label="Molecular formula" value={formatNullable(referenceProfile.mol_formula)} />
-                  <DetailField label="Molecular weight" value={referenceProfile.molecular_weight !== null ? formatQuantity(referenceProfile.molecular_weight, 2) : 'N/A'} />
-                  <DetailField label="Safety note" value={formatNullable(referenceProfile.safety)} />
+                  <DetailField label="Wujud fisik" value={formatNullable(referenceProfile.physical_state, '-')} />
+                  <DetailField label="Rumus molekul" value={formatNullable(referenceProfile.mol_formula, '-')} />
+                  <DetailField label="Berat molekul" value={referenceProfile.molecular_weight !== null ? formatQuantity(referenceProfile.molecular_weight, 2) : '-'} />
+                  <DetailField label="Catatan keamanan" value={formatNullable(referenceProfile.safety, '-')} />
                 </DetailFieldGroup>
               </div>
             ) : (
               <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                <p>No linked reference profile yet.</p>
+                <p>Belum ada profil acuan yang tertaut.</p>
                 <Button variant="outline" size="sm" onClick={() => setMatchModalOpen(true)} className="mt-4 gap-2">
                   <LinkIcon className="w-4 h-4" />
-                  Match reference profile
+                  Cocokkan profil acuan
                 </Button>
               </div>
             )}
           </DetailSection>
 
           {material.is_diluted && (
-            <DetailSection title="Dilution setup">
+            <DetailSection title="Pengaturan pengenceran">
               <DetailFieldGroup columns={3}>
                 <DetailField
-                  label="Diluted material"
+                  label="Bahan diencerkan"
                   value={(
                     <Badge variant="outline" className="text-xs">
-                      Yes
+                      Ya
                     </Badge>
                   )}
                 />
                 <DetailField
-                  label="Dilution percentage"
+                  label="Persentase pengenceran"
                   value={formatPercentage(material.dilution_percentage || 0)}
                 />
                 <DetailField
-                  label="Dilution solvent"
-                  value={formatNullable(dilutionSolventName)}
+                  label="Pelarut pengencer"
+                  value={formatNullable(dilutionSolventName, '-')}
                 />
               </DetailFieldGroup>
             </DetailSection>
           )}
 
           {material.type === 'solvent' && (
-            <DetailSection title="Solvent calibration">
+            <DetailSection title="Kalibrasi pelarut">
               <DetailFieldGroup columns={3}>
                 <DetailField
-                  label="Impact shift"
+                  label="Geser kekuatan"
                   value={material.solvent_impact_shift_percent !== null && material.solvent_impact_shift_percent !== undefined
                     ? formatPercentage(material.solvent_impact_shift_percent, 2)
-                    : 'Default preset'}
+                    : 'Preset bawaan'}
                 />
                 <DetailField
-                  label="Life shift"
+                  label="Geser ketahanan"
                   value={material.solvent_life_shift_percent !== null && material.solvent_life_shift_percent !== undefined
                     ? formatPercentage(material.solvent_life_shift_percent, 2)
-                    : 'Default preset'}
+                    : 'Preset bawaan'}
                 />
                 <DetailField
-                  label="Runtime behavior"
+                  label="Perilaku saat dipakai"
                   value={
                     material.solvent_impact_shift_percent !== null
                     || material.solvent_life_shift_percent !== null
-                      ? 'Custom calibration'
-                      : 'Fallback preset'
+                      ? 'Kalibrasi sendiri'
+                      : 'Preset cadangan'
                   }
                 />
               </DetailFieldGroup>
@@ -611,7 +612,7 @@ const RawMaterialDetailPage = () => {
           )}
 
           {material.notes && (
-            <DetailSection title="Notes">
+            <DetailSection title="Catatan">
               <p className="text-muted-foreground whitespace-pre-wrap text-sm">{material.notes}</p>
             </DetailSection>
           )}
@@ -639,9 +640,10 @@ const RawMaterialDetailPage = () => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
-        title="Delete material"
-        description={`Are you sure you want to delete "${material.name}"? This action cannot be undone, and linked workbook/reference artifacts will be removed too.`}
-        confirmText={deleting ? 'Deleting...' : 'Delete'}
+        title="Hapus bahan baku"
+        description={`Yakin hapus "${material.name}"? Tindakan ini tidak bisa dibatalkan, dan data workbook/acuan yang tertaut ikut dihapus.`}
+        confirmText={deleting ? 'Menghapus...' : 'Hapus'}
+        cancelText="Batal"
         confirmDisabled={deleting}
       >
         {renderDeleteDependencySummary(deleteDependencies, deleteDependencyLoading, deleteDependencyFailed)}
@@ -654,7 +656,7 @@ const RawMaterialDetailPage = () => {
         currentLink={referenceLink}
         onSuccess={async () => {
           await loadReferenceProfile();
-          toast.success('Reference profile updated');
+          toast.success('Profil acuan diperbarui');
         }}
       />
     </>

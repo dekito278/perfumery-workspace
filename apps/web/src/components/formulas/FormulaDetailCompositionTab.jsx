@@ -6,6 +6,9 @@ import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
 import { formatGramAmount, formatPercentage, formatStatus } from '@/utils/formatting.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 
+const ITEM_TYPE_LABELS = { raw_material: 'Bahan baku', solvent: 'Pelarut', accord: 'Akord' };
+const itemTypeLabel = (type) => ITEM_TYPE_LABELS[type] || formatStatus(type);
+
 const FormulaDetailCompositionTab = ({
   hasFormulaItems,
   items,
@@ -15,20 +18,20 @@ const FormulaDetailCompositionTab = ({
   totalPercentage,
 }) => (
   <div className="space-y-5">
-    <DetailSection title="Composition">
+    <DetailSection title="Komposisi">
       {hasFormulaItems ? (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border bg-card p-4">
-              <div className="text-xs text-muted-foreground mb-1">Total amount</div>
+              <div className="text-xs text-muted-foreground mb-1">Jumlah total</div>
               <div className="text-lg font-semibold font-mono">{formatGramAmount(totalGrams)}</div>
             </div>
             <div className="rounded-xl border bg-card p-4">
-              <div className="text-xs text-muted-foreground mb-1">Total percentage</div>
+              <div className="text-xs text-muted-foreground mb-1">Total persentase</div>
               <div className="text-lg font-semibold font-mono">{formatPercentage(totalPercentage)}</div>
             </div>
             <div className="rounded-xl border bg-card p-4">
-              <div className="text-xs text-muted-foreground mb-1">Material cost</div>
+              <div className="text-xs text-muted-foreground mb-1">Biaya bahan</div>
               <div className="text-lg font-semibold font-mono text-primary">{formatPrice(totalCost)}</div>
             </div>
           </div>
@@ -59,19 +62,19 @@ const FormulaDetailCompositionTab = ({
                       </div>
                       {isDiluted ? (
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {item.dilution_percentage}% in {item.dilution_solvent_name || '-'}
+                          {item.dilution_percentage}% dalam {item.dilution_solvent_name || '-'}
                         </div>
                       ) : null}
                     </div>
                     <Badge variant="outline" className="shrink-0 capitalize text-[10px]">
-                      {formatStatus(item.item_type)}
+                      {itemTypeLabel(item.item_type)}
                     </Badge>
                   </div>
 
                   {item.reference_profile ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Badge variant="secondary" className="text-[10px]">
-                        Ref {item.reference_profile.reference_code}
+                        Acuan {item.reference_profile.reference_code}
                       </Badge>
                       {item.advisories?.map((advisory) => (
                         <Badge
@@ -87,26 +90,26 @@ const FormulaDetailCompositionTab = ({
 
                   <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
                     <div>
-                      <div className="text-muted-foreground">Amount</div>
+                      <div className="text-muted-foreground">Jumlah</div>
                       <div className="mt-1 font-mono text-sm">{formatGramAmount(item.gram_amount)}</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Percentage</div>
+                      <div className="text-muted-foreground">Persentase</div>
                       <div className="mt-1 font-mono text-sm">{formatPercentage(item.percentage)}</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Cost</div>
+                      <div className="text-muted-foreground">Biaya</div>
                       <div className="mt-1 font-mono">{formatPrice(ingredientCost)}</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Unit price</div>
+                      <div className="text-muted-foreground">Harga satuan</div>
                       <div className="mt-1 font-mono">{formatPricePerUnit(item.unit_price, item.unit)}</div>
                     </div>
                   </div>
 
                   {isDiluted && composition ? (
                     <div className="mt-3 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                      Active: {formatGramAmount(composition.activeAmount)} + Solvent: {formatGramAmount(composition.solventAmount)}
+                      Aktif: {formatGramAmount(composition.activeAmount)} + Pelarut: {formatGramAmount(composition.solventAmount)}
                     </div>
                   ) : null}
                 </div>
@@ -119,10 +122,10 @@ const FormulaDetailCompositionTab = ({
               <Table>
                 <TableHeader>
                   <TableRow className="border-[#e6dcc8]">
-                    <TableHead className="min-w-[230px] pl-5">Material</TableHead>
-                    <TableHead className="min-w-[220px]">Guidance</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Usage</TableHead>
-                    <TableHead className="text-right min-w-[140px] pr-5">Cost</TableHead>
+                    <TableHead className="min-w-[230px] pl-5">Bahan</TableHead>
+                    <TableHead className="min-w-[220px]">Panduan</TableHead>
+                    <TableHead className="text-right min-w-[120px]">Pemakaian</TableHead>
+                    <TableHead className="text-right min-w-[140px] pr-5">Biaya</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -147,12 +150,12 @@ const FormulaDetailCompositionTab = ({
                                 </button>
                                 <div className="flex flex-wrap gap-1.5">
                                   <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] capitalize">
-                                    {formatStatus(item.item_type)}
+                                    {itemTypeLabel(item.item_type)}
                                   </Badge>
                                 </div>
                                 {isDiluted ? (
                                   <div className="text-xs text-muted-foreground">
-                                    {item.dilution_percentage}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''}
+                                    {item.dilution_percentage}%{item.dilution_solvent_name ? ` dalam ${item.dilution_solvent_name}` : ''}
                                   </div>
                                 ) : null}
                               </div>
@@ -160,7 +163,7 @@ const FormulaDetailCompositionTab = ({
                               <div className="space-y-1.5">
                                 <div className="font-semibold text-sm text-[#3f3524]">{item.name}</div>
                                 <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] capitalize">
-                                  {formatStatus(item.item_type)}
+                                  {itemTypeLabel(item.item_type)}
                                 </Badge>
                               </div>
                             )}
@@ -169,11 +172,11 @@ const FormulaDetailCompositionTab = ({
                             <div className="flex flex-wrap gap-1.5">
                               {item.reference_profile ? (
                                 <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px]">
-                                  Ref {item.reference_profile.reference_code}
+                                  Acuan {item.reference_profile.reference_code}
                                 </Badge>
                               ) : (
                                 <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px]">
-                                  No workbook ref
+                                  Tanpa acuan workbook
                                 </Badge>
                               )}
                               {item.advisories?.slice(0, 2).map((advisory) => (
@@ -187,7 +190,7 @@ const FormulaDetailCompositionTab = ({
                               ))}
                               {item.advisories?.length > 2 ? (
                                 <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px]">
-                                  +{item.advisories.length - 2} more
+                                  +{item.advisories.length - 2} lagi
                                 </Badge>
                               ) : null}
                             </div>
@@ -213,7 +216,7 @@ const FormulaDetailCompositionTab = ({
                           <TableRow className="bg-[#f7f2e8]">
                             <TableCell colSpan={4} className="px-5 py-2.5">
                               <div className="text-xs text-muted-foreground">
-                                Active: {formatGramAmount(composition.activeAmount)} + Solvent: {formatGramAmount(composition.solventAmount)}
+                                Aktif: {formatGramAmount(composition.activeAmount)} + Pelarut: {formatGramAmount(composition.solventAmount)}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -223,7 +226,7 @@ const FormulaDetailCompositionTab = ({
                   })}
                   <TableRow className="border-[#e0d6c1] bg-[#f6efe2] font-semibold">
                     <TableCell className="pl-5 text-sm text-[#3f3524]">Total</TableCell>
-                    <TableCell className="text-sm text-[#6b5d41]">{items.length} rows</TableCell>
+                    <TableCell className="text-sm text-[#6b5d41]">{items.length} baris</TableCell>
                     <TableCell className="text-right font-mono text-sm text-[#3f3524]">
                       <div>{formatGramAmount(totalGrams)}</div>
                       <div className="mt-1 text-xs text-muted-foreground">{formatPercentage(totalPercentage)}</div>
@@ -237,12 +240,12 @@ const FormulaDetailCompositionTab = ({
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Percentages are calculated from gram amounts. Formula detail stays focused on raw materials and solvent-related costs only.
+            Persentase dihitung dari jumlah gram. Detail formula hanya menghitung biaya bahan baku dan pelarut.
           </p>
         </>
       ) : (
         <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-          This formula does not have any composition rows yet. Add ingredients from the edit flow to unlock percentages, cost breakdown, and workbook charting.
+          Formula ini belum punya baris komposisi. Tambahkan bahan lewat tombol Ubah agar persentase, rincian biaya, dan grafik workbook muncul.
         </div>
       )}
     </DetailSection>

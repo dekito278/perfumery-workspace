@@ -7,13 +7,13 @@ const DetailMetadata = ({ created, updated, additionalFields = [] }) => {
     <div className="detail-metadata">
       {created && (
         <div className="detail-metadata-item">
-          <div className="detail-metadata-label">Created</div>
+          <div className="detail-metadata-label">Dibuat</div>
           <div className="detail-metadata-value">{formatDate(created)}</div>
         </div>
       )}
       {updated && (
         <div className="detail-metadata-item">
-          <div className="detail-metadata-label">Last modified</div>
+          <div className="detail-metadata-label">Terakhir diubah</div>
           <div className="detail-metadata-value">{formatDate(updated)}</div>
         </div>
       )}

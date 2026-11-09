@@ -19,29 +19,29 @@ import { Badge } from '@/components/ui/badge';
 
 const ODOUR_CHART_CONFIG = {
   weight: {
-    label: 'Weighted load',
+    label: 'Beban berbobot',
     color: '#c77d24',
   },
 };
 
 const FAMILY_CHART_CONFIG = {
   weight: {
-    label: 'Weighted load',
+    label: 'Beban berbobot',
     color: '#166534',
   },
 };
 
 const DECAY_CHART_CONFIG = {
   top: {
-    label: 'Top',
+    label: 'Nada atas',
     color: '#0ea5e9',
   },
   middle: {
-    label: 'Middle',
+    label: 'Nada tengah',
     color: '#f59e0b',
   },
   base: {
-    label: 'Base',
+    label: 'Nada dasar',
     color: '#10b981',
   },
 };
@@ -64,7 +64,7 @@ const FormulaSensoryChartLayer = ({
     return null;
   }
 
-  const facetHeading = charts.hasWorkbookFacetData ? 'Lead Facet' : 'Lead Family';
+  const facetHeading = charts.hasWorkbookFacetData ? 'Nuansa utama' : 'Keluarga utama';
   return (
     <div className={`grid gap-3 lg:grid-cols-2 ${className}`.trim()}>
       <div className="grid gap-3 sm:grid-cols-2 lg:col-span-2 xl:grid-cols-4">
@@ -81,7 +81,7 @@ const FormulaSensoryChartLayer = ({
         </div>
 
         <div className="rounded-2xl border bg-background/70 p-4">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Lead Family</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Keluarga utama</div>
           <div className="mt-2 flex items-center gap-2">
             <div className="text-lg font-semibold">{charts.dominantFamily?.family || '-'}</div>
             {charts.dominantFamily ? (
@@ -93,14 +93,14 @@ const FormulaSensoryChartLayer = ({
         </div>
 
         <div className="rounded-2xl border bg-background/70 p-4">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Opening Load</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Beban pembuka</div>
           <div className="mt-2 text-lg font-semibold">
             {formatWeightedLoad(charts.openingProfile?.total || 0)}
           </div>
         </div>
 
         <div className="rounded-2xl border bg-background/70 p-4">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Late Drydown</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Beban jejak akhir</div>
           <div className="mt-2 text-lg font-semibold">
             {formatWeightedLoad(charts.finishProfile?.base || 0)}
           </div>
@@ -108,7 +108,7 @@ const FormulaSensoryChartLayer = ({
       </div>
 
       <div className="rounded-2xl border bg-background/70 p-4">
-        <div className="mb-3 text-sm font-semibold">Odour facet chart</div>
+        <div className="mb-3 text-sm font-semibold">Grafik nuansa aroma</div>
 
         {charts.fallbackFacetData.length ? (
           <ChartContainer config={ODOUR_CHART_CONFIG} className="h-[250px] w-full">
@@ -139,13 +139,13 @@ const FormulaSensoryChartLayer = ({
           </ChartContainer>
         ) : (
           <div className="rounded-xl border border-dashed px-4 py-8 text-sm text-muted-foreground">
-            No chart data yet.
+            Belum ada data grafik.
           </div>
         )}
       </div>
 
       <div className="rounded-2xl border bg-background/70 p-4">
-        <div className="mb-3 text-sm font-semibold">Family chart</div>
+        <div className="mb-3 text-sm font-semibold">Grafik keluarga aroma</div>
 
         {charts.familyData.length ? (
           <ChartContainer config={FAMILY_CHART_CONFIG} className="h-[250px] w-full">
@@ -178,13 +178,13 @@ const FormulaSensoryChartLayer = ({
           </ChartContainer>
         ) : (
           <div className="rounded-xl border border-dashed px-4 py-8 text-sm text-muted-foreground">
-            No family data yet.
+            Belum ada data keluarga aroma.
           </div>
         )}
       </div>
 
       <div className="rounded-2xl border bg-background/70 p-4 lg:col-span-2">
-        <div className="mb-3 text-sm font-semibold">Top / middle / base decay</div>
+        <div className="mb-3 text-sm font-semibold">Penguapan nada atas / tengah / dasar</div>
 
         <ChartContainer config={DECAY_CHART_CONFIG} className="h-[280px] w-full">
           <AreaChart data={charts.decayData} margin={{ left: 8, right: 8 }}>
@@ -201,7 +201,7 @@ const FormulaSensoryChartLayer = ({
                   labelKey="label"
                   formatter={(value, name) => (
                     <div className="flex min-w-[10rem] items-center justify-between gap-3">
-                      <span className="text-muted-foreground capitalize">{name}</span>
+                      <span className="text-muted-foreground">{DECAY_CHART_CONFIG[name]?.label || name}</span>
                       <span className="font-mono">{formatWeightedLoad(Number(value || 0))}</span>
                     </div>
                   )}

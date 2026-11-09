@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
+import { TYPE_LABELS } from '@/hooks/useRawMaterialsPage.js';
 
 const hasCustomSolventCalibration = (row) => (
   row.type === 'solvent'
@@ -26,33 +27,33 @@ const RawMaterialMobileCard = ({
         <Checkbox
           checked={selected}
           onCheckedChange={onToggle}
-          aria-label={`Select ${row.name}`}
+          aria-label={`Pilih ${row.name}`}
           className="mt-1"
         />
         <button onClick={onView} className="min-w-0 flex-1 text-left">
           <div className="truncate text-base font-semibold text-primary">{row.name}</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+            {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Keluarga aroma belum diisi'}
           </div>
         </button>
       </div>
       <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] capitalize">
-        {row.type}
+        {TYPE_LABELS[row.type] || row.type}
       </Badge>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl bg-muted/45 px-3 py-2">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Category</div>
-        <div className="mt-1 text-sm">{row.category || 'Uncategorized'}</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Kategori</div>
+        <div className="mt-1 text-sm">{row.category || 'Tanpa kategori'}</div>
       </div>
       <div className="rounded-xl bg-muted/45 px-3 py-2">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Price</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Harga</div>
         <div className="mt-1 text-sm">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
       </div>
     </div>
     <div className="mt-4 flex flex-wrap gap-2">
       <Badge variant={guidance.hasWarning ? 'outline' : 'secondary'} className="rounded-full px-2.5 py-1 text-[10px]">
-        {guidance.hasWarning ? 'Needs guidance' : 'Guidance ready'}
+        {guidance.hasWarning ? 'Perlu panduan' : 'Panduan siap'}
       </Badge>
       {row.type === 'solvent' ? (
         <Badge
@@ -63,7 +64,7 @@ const RawMaterialMobileCard = ({
               : 'border-amber-200 bg-amber-50 text-amber-900'
           }`}
         >
-          {hasCustomSolventCalibration(row) ? 'Custom calibration' : 'Preset solvent'}
+          {hasCustomSolventCalibration(row) ? 'Kalibrasi sendiri' : 'Preset pelarut'}
         </Badge>
       ) : null}
       {referenceStatusMap.get(row.id)?.reference_profile ? (

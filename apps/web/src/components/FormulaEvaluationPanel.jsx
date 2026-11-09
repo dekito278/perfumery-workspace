@@ -2,13 +2,17 @@ import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, FlaskConical, History, NotebookPen, ShieldAlert } from 'lucide-react';
-import { formatDate, formatStatus } from '@/utils/formatting.js';
+import { formatDate } from '@/utils/formatting.js';
+import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
+import { validationStatusLabel, validationTestTypeLabel } from '@/services/validationLogsSupabaseService.js';
+
+const optionLabel = (options, value) => options.find((option) => option.value === value)?.label || value;
 
 const CHECKLIST_ITEMS = [
-  'Blotter test note',
-  'Skin test note',
-  'Stability note',
-  'Revision summary',
+  'Catatan uji blotter',
+  'Catatan uji kulit',
+  'Catatan stabilitas',
+  'Ringkasan revisi',
 ];
 
 const FormulaEvaluationPanel = ({
@@ -39,31 +43,31 @@ const FormulaEvaluationPanel = ({
         <div className="rounded-[24px] border bg-white/90 p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <ClipboardCheck className="h-4 w-4 text-primary" />
-            Evaluation backlog
+            Antrean evaluasi
           </div>
           <div className="mt-3 text-3xl font-bold">{backlog.length}</div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Draft formulas waiting for blotter, skin, or revision logging.
+            Formula draf yang menunggu catatan blotter, kulit, atau revisi.
           </p>
         </div>
         <div className="rounded-[24px] border bg-white/90 p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <FlaskConical className="h-4 w-4 text-emerald-600" />
-            Active revisions
+            Revisi aktif
           </div>
           <div className="mt-3 text-3xl font-bold">{active.length}</div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Formulas already in motion and worth keeping tightly logged.
+            Formula yang sedang berjalan dan perlu dicatat dengan rapi.
           </p>
         </div>
         <div className="rounded-[24px] border bg-white/90 p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <History className="h-4 w-4 text-amber-600" />
-            Logged notes
+            Catatan uji
           </div>
           <div className="mt-3 text-3xl font-bold">{validationLogs.length}</div>
           <p className="mt-2 text-sm text-muted-foreground">
-            {actionNeededCount} action-needed and {approvedCount} approved observations in the current scope.
+            {actionNeededCount} perlu aksi dan {approvedCount} disetujui di cakupan ini.
           </p>
         </div>
       </div>
@@ -72,13 +76,13 @@ const FormulaEvaluationPanel = ({
         <div className="rounded-[28px] border bg-white/90 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold">Validation queue</div>
+              <div className="text-sm font-semibold">Antrean uji</div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Use this queue to decide what gets tested next and where revision energy should go.
+                Pakai antrean ini untuk memutuskan apa yang diuji berikutnya dan revisi mana yang didahulukan.
               </p>
             </div>
             <Badge variant="outline" className="rounded-full px-2.5 text-[10px]">
-              {priorityQueue.length} ready now
+              {priorityQueue.length} siap sekarang
             </Badge>
           </div>
 
@@ -88,25 +92,25 @@ const FormulaEvaluationPanel = ({
                 <div>
                   <div className="text-sm font-semibold">{formula.name}</div>
                   <div className="mt-1 flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="capitalize text-[10px]">
-                      {formula.status || 'draft'}
+                    <Badge variant="secondary" className="text-[10px]">
+                      {optionLabel(FORMULA_STATUSES, formula.status || 'draft')}
                     </Badge>
                     {formula.category ? (
-                      <Badge variant="outline" className="capitalize text-[10px]">
-                        {formula.category}
+                      <Badge variant="outline" className="text-[10px]">
+                        {optionLabel(FORMULA_CATEGORIES, formula.category)}
                       </Badge>
                     ) : null}
                   </div>
                 </div>
                 {onOpenFormula ? (
                   <Button variant="outline" className="rounded-xl" onClick={() => onOpenFormula(formula)}>
-                    Open formula
+                    Buka formula
                   </Button>
                 ) : null}
               </div>
             )) : (
               <div className="rounded-[22px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                No formulas are waiting in the validation queue yet.
+                Belum ada formula di antrean uji.
               </div>
             )}
           </div>
@@ -116,10 +120,10 @@ const FormulaEvaluationPanel = ({
           <div className="rounded-[28px] border bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(246,241,232,0.96)_100%)] p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <ShieldAlert className="h-4 w-4 text-amber-700" />
-              Validation checklist
+              Daftar periksa uji
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Suggested minimum log so every revision has enough context to compare and learn from.
+              Catatan minimum yang disarankan agar setiap revisi punya cukup konteks untuk dibandingkan dan dipelajari.
             </p>
             <div className="mt-4 space-y-3">
               {CHECKLIST_ITEMS.map((item) => (
@@ -129,11 +133,11 @@ const FormulaEvaluationPanel = ({
               ))}
             </div>
             <div className="mt-4 rounded-[20px] border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-950">
-              Keep one note per formula revision for opening, heart, drydown, and any stability surprise. Tiny notes beat missing notes every time.
+              Simpan satu catatan per revisi formula untuk pembuka, inti, jejak akhir, dan kejutan stabilitas. Catatan singkat selalu lebih baik daripada tidak ada catatan.
             </div>
             {onOpenValidationWorkspace ? (
               <Button className="mt-4 w-full rounded-2xl" onClick={onOpenValidationWorkspace}>
-                Open validation workspace
+                Buka halaman validasi
               </Button>
             ) : null}
           </div>
@@ -141,17 +145,17 @@ const FormulaEvaluationPanel = ({
           <div className="rounded-[28px] border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <NotebookPen className="h-4 w-4 text-primary" />
-              Recent notes
+              Catatan terbaru
             </div>
             <div className="mt-4 space-y-3">
               {visibleLogs.length ? visibleLogs.map((log) => (
                 <div key={log.id} className="rounded-[18px] border bg-background/80 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary" className="text-[10px]">
-                      {formatStatus(log.test_type)}
+                      {validationTestTypeLabel(log.test_type)}
                     </Badge>
                     <Badge variant={log.status === 'action_needed' ? 'destructive' : 'outline'} className="text-[10px]">
-                      {formatStatus(log.status)}
+                      {validationStatusLabel(log.status)}
                     </Badge>
                     <span className="text-xs text-muted-foreground">{formatDate(log.tested_at)}</span>
                   </div>
@@ -163,13 +167,13 @@ const FormulaEvaluationPanel = ({
                   <div className="mt-2 text-sm">{log.note}</div>
                   {log.next_action ? (
                     <div className="mt-2 text-xs text-muted-foreground">
-                      Next: {log.next_action}
+                      Berikutnya: {log.next_action}
                     </div>
                   ) : null}
                 </div>
               )) : (
                 <div className="rounded-[18px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                  No validation notes saved yet for this scope.
+                  Belum ada catatan uji di cakupan ini.
                 </div>
               )}
             </div>

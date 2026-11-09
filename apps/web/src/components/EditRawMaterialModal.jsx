@@ -17,7 +17,7 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
     }
 
     if (!form.validateForm()) {
-      toast.error('Please fix all errors before submitting');
+      toast.error('Perbaiki dulu isian yang masih salah sebelum menyimpan');
       return;
     }
 
@@ -27,11 +27,11 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         name: formatName(form.formData.name),
       });
 
-      toast.success('Material diperbarui');
+      toast.success('Bahan baku diperbarui');
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      toast.error(error.message || 'Failed to update material');
+      toast.error(error.message || 'Gagal menyimpan bahan baku');
     }
   };
 

@@ -25,32 +25,32 @@ const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
 // the 551 materials that have one -- 46%. Before this select existed the column could not be set from
 // anywhere in the app, so the remaining 223 materials had no way to stop being guessed (#445).
 const pyramidPlacementOptions = [
-  { value: '', label: 'Not set (let the workbook infer it)' },
-  { value: 'top', label: 'Top' },
-  { value: 'middle', label: 'Middle' },
-  { value: 'base', label: 'Base' },
+  { value: '', label: 'Otomatis (ditebak workbook)' },
+  { value: 'top', label: 'Atas' },
+  { value: 'middle', label: 'Tengah' },
+  { value: 'base', label: 'Dasar' },
 ];
 
 const dataStatusOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'needs_review', label: 'Needs review' },
-  { value: 'archived', label: 'Archived' },
+  { value: 'active', label: 'Aktif' },
+  { value: 'needs_review', label: 'Perlu ditinjau' },
+  { value: 'archived', label: 'Diarsipkan' },
 ];
 
 const modeCopy = {
   create: {
-    title: 'Add new material',
-    description: 'Capture a material profile, guidance, and dilution setup for the formulation library.',
-    submitLabel: 'Add material',
-    workbookGuidanceDescription: 'Import workbook-style guidance to enrich impact, life, CAS, IFRA, and use-level data.',
-    manualGuidanceDescription: 'Optional. Fill this if the material is not linked to workbook reference data yet.',
+    title: 'Bahan baku baru',
+    description: 'Catat profil bahan, panduan, dan pengaturan pengenceran untuk pustaka formulasi.',
+    submitLabel: 'Simpan bahan baku',
+    workbookGuidanceDescription: 'Impor panduan ala workbook untuk melengkapi kekuatan, ketahanan, CAS, IFRA, dan takaran pakai.',
+    manualGuidanceDescription: 'Opsional. Isi bila bahan ini belum tertaut ke data acuan workbook.',
   },
   edit: {
-    title: 'Edit material',
-    description: 'Update library metadata, guidance, and dilution setup for this material.',
-    submitLabel: 'Save changes',
-    workbookGuidanceDescription: 'Import workbook guidance for CAS, family, impact, life, and use-level enrichment.',
-    manualGuidanceDescription: 'Optional. These values keep a manual reference profile in sync when workbook data is not yet linked.',
+    title: 'Edit bahan baku',
+    description: 'Perbarui data pustaka, panduan, dan pengaturan pengenceran bahan ini.',
+    submitLabel: 'Simpan perubahan',
+    workbookGuidanceDescription: 'Impor panduan workbook untuk melengkapi CAS, keluarga aroma, kekuatan, ketahanan, dan takaran pakai.',
+    manualGuidanceDescription: 'Opsional. Nilai ini menjaga profil acuan manual tetap sinkron selama data workbook belum tertaut.',
   },
 };
 
@@ -75,28 +75,28 @@ const RawMaterialFormDialog = ({
         <form onSubmit={onSubmit} className="space-y-3.5">
           <div className="space-y-3">
             <FormField
-              label="Name"
+              label="Nama bahan"
               value={form.formData.name}
               onChange={(event) => form.handleChange('name', event.target.value)}
               onBlur={() => form.handleBlur('name')}
               error={form.errors.name}
               required
-              placeholder="e.g., Bergamot Essential Oil"
+              placeholder="mis. Bergamot Essential Oil"
               maxLength={160}
             />
 
             <FormField
-              label="Workbook code"
+              label="Kode workbook"
               value={form.formData.workbook_code}
               onChange={(event) => form.handleChange('workbook_code', event.target.value)}
               onBlur={() => form.handleBlur('workbook_code')}
               error={form.errors.workbook_code}
-              placeholder="e.g., 3JJ00005"
+              placeholder="mis. 3JJ00005"
               maxLength={40}
             />
 
             <FormSelect
-              label="Category"
+              label="Kategori"
               value={form.formData.category}
               onChange={(value) => form.handleChange('category', value)}
               onBlur={() => form.handleBlur('category')}
@@ -104,8 +104,8 @@ const RawMaterialFormDialog = ({
               error={form.errors.category}
               required
               searchable
-              searchPlaceholder="Find category..."
-              placeholder={form.categoryOptions.length ? 'Select category' : 'Create category first'}
+              searchPlaceholder="Cari kategori..."
+              placeholder={form.categoryOptions.length ? 'Pilih kategori' : 'Buat kategori dulu'}
               disabled={!form.categoryOptions.length}
             />
           </div>
@@ -119,31 +119,31 @@ const RawMaterialFormDialog = ({
                   onCheckedChange={(checked) => form.handleChange('is_diluted', checked)}
                 />
                 <Label htmlFor={`${idPrefix}-is-diluted`} className="text-sm font-medium cursor-pointer">
-                  This material is diluted
+                  Bahan ini diencerkan
                 </Label>
               </div>
 
               {form.formData.is_diluted ? (
                 <div className="space-y-3 pl-6 border-l-2 border-primary/20">
                   <FormSelect
-                    label="Dilution solvent"
+                    label="Pelarut pengencer"
                     value={form.formData.dilution_solvent_id}
                     onChange={(value) => form.handleChange('dilution_solvent_id', value)}
                     onBlur={() => form.handleBlur('dilution_solvent_id')}
                     options={form.solvents}
                     error={form.errors.dilution_solvent_id}
                     required
-                    placeholder="Select solvent"
+                    placeholder="Pilih pelarut"
                   />
 
                   <FormNumber
-                    label="Dilution percentage"
+                    label="Persentase pengenceran"
                     value={form.formData.dilution_percentage}
                     onChange={(event) => form.handleChange('dilution_percentage', event.target.value)}
                     onBlur={() => form.handleBlur('dilution_percentage')}
                     error={form.errors.dilution_percentage}
                     required
-                    placeholder="e.g., 50"
+                    placeholder="mis. 50"
                     min="0"
                     max="100"
                     step="0.1"
@@ -166,7 +166,7 @@ const RawMaterialFormDialog = ({
             <div className="border-t pt-3 space-y-3">
               <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
                 <div>
-                  <p className="text-sm font-medium">Workbook guidance import</p>
+                  <p className="text-sm font-medium">Impor panduan workbook</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {copy.workbookGuidanceDescription}
                   </p>
@@ -177,12 +177,12 @@ const RawMaterialFormDialog = ({
                     <div>
                       <Label htmlFor={`${idPrefix}-perfumersworld-url`}>PerfumersWorld URL</Label>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Tempel link produk PerfumersWorld untuk import workbook code, impact, life, CAS, dan use level.
+                        Tempel link produk PerfumersWorld untuk mengimpor kode workbook, kekuatan, ketahanan, CAS, dan takaran pakai.
                       </p>
                     </div>
                     <Button type="button" variant="outline" onClick={form.handleImportPerfumersWorldUrl} className="rounded-2xl" disabled={form.importingUrl}>
                       <Link2 className="mr-2 h-4 w-4" />
-                      {form.importingUrl ? 'Importing...' : 'Import URL'}
+                      {form.importingUrl ? 'Mengimpor...' : 'Impor URL'}
                     </Button>
                   </div>
                   <Input
@@ -199,12 +199,12 @@ const RawMaterialFormDialog = ({
                     <div>
                       <Label htmlFor={`${idPrefix}-scentree-url`}>ScenTree URL</Label>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Tempel URL ingredient dari ScenTree untuk import family, CAS, IFRA, volatility, dan descriptor ringkas.
+                        Tempel URL bahan dari ScenTree untuk mengimpor keluarga aroma, CAS, IFRA, volatilitas, dan deskriptor ringkas.
                       </p>
                     </div>
                     <Button type="button" variant="outline" onClick={form.handleImportScentreeUrl} className="rounded-2xl" disabled={form.importingUrl}>
                       <Link2 className="mr-2 h-4 w-4" />
-                      {form.importingUrl ? 'Importing...' : 'Import URL'}
+                      {form.importingUrl ? 'Mengimpor...' : 'Impor URL'}
                     </Button>
                   </div>
                   <Input
@@ -221,12 +221,12 @@ const RawMaterialFormDialog = ({
                     <div>
                       <Label htmlFor={`${idPrefix}-tgsc-url`}>TGSC URL</Label>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Tempel URL The Good Scents Company untuk import CAS, odor profile, impact heuristic, dan life dari substantivity.
+                        Tempel URL The Good Scents Company untuk mengimpor CAS, profil bau, perkiraan kekuatan, dan ketahanan dari substantivitas.
                       </p>
                     </div>
                     <Button type="button" variant="outline" onClick={form.handleImportTgscUrl} className="rounded-2xl" disabled={form.importingUrl}>
                       <Link2 className="mr-2 h-4 w-4" />
-                      {form.importingUrl ? 'Importing...' : 'Import URL'}
+                      {form.importingUrl ? 'Mengimpor...' : 'Impor URL'}
                     </Button>
                   </div>
                   <Input
@@ -241,7 +241,7 @@ const RawMaterialFormDialog = ({
                 {form.inferenceLines.length > 0 ? (
                   <div className="rounded-xl border border-border/60 bg-background px-3 py-3 text-xs text-muted-foreground">
                     <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
-                      Import notes
+                      Catatan impor
                     </div>
                     <div className="space-y-1">
                       {form.inferenceLines.map((line) => (
@@ -260,11 +260,11 @@ const RawMaterialFormDialog = ({
               value={form.formData.pyramid_placement || ''}
               onChange={(value) => form.handleChange('pyramid_placement', value)}
               options={pyramidPlacementOptions}
-              helperText="Decides this material's share of the Top / Middle / Base balance, and the Opening, Heart, Drydown and Tenacity scores built on it. Left unset, the workbook infers it."
+              helperText="Menentukan porsi bahan ini di keseimbangan Atas / Tengah / Dasar, dan skor Pembuka, Inti, Jejak akhir, serta Ketahanan yang dibangun di atasnya. Kalau dibiarkan Otomatis, workbook yang menebak."
             />
             <div className="grid grid-cols-2 gap-3">
               <FormSelect
-                label="Unit"
+                label="Satuan"
                 value={form.formData.unit}
                 onChange={(value) => form.handleChange('unit', value)}
                 onBlur={() => form.handleBlur('unit')}
@@ -274,13 +274,13 @@ const RawMaterialFormDialog = ({
               />
               <div className="space-y-1.5">
                 <FormNumber
-                  label={`Unit price (per 10 ${form.formData.unit || 'ml'})`}
+                  label={`Harga per 10 ${form.formData.unit || 'ml'}`}
                   value={form.formData.cost_per_unit}
                   onChange={(value) => form.handleChange('cost_per_unit', value === '' ? '' : String(value))}
                   localized
                   onBlur={() => form.handleBlur('cost_per_unit')}
                   error={form.errors.cost_per_unit}
-                  placeholder="e.g., 25000"
+                  placeholder="mis. 25000"
                   min="0"
                   step="0.01"
                 />
@@ -293,7 +293,7 @@ const RawMaterialFormDialog = ({
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <FormNumber
-                label="Stock on hand"
+                label="Stok tersedia"
                 value={form.formData.stock_quantity}
                 onChange={(value) => form.handleChange('stock_quantity', value === '' ? '' : String(value))}
                 localized
@@ -305,7 +305,7 @@ const RawMaterialFormDialog = ({
                 unit={form.formData.unit || 'ml'}
               />
               <FormNumber
-                label="Minimum stock"
+                label="Stok minimum"
                 value={form.formData.minimum_stock}
                 onChange={(value) => form.handleChange('minimum_stock', value === '' ? '' : String(value))}
                 localized
@@ -317,13 +317,13 @@ const RawMaterialFormDialog = ({
                 unit={form.formData.unit || 'ml'}
               />
               <FormNumber
-                label="Low alert"
+                label="Peringatan stok menipis"
                 value={form.formData.low_stock_threshold}
                 onChange={(value) => form.handleChange('low_stock_threshold', value === '' ? '' : String(value))}
                 localized
                 onBlur={() => form.handleBlur('low_stock_threshold')}
                 error={form.errors.low_stock_threshold}
-                placeholder="Optional"
+                placeholder="Opsional"
                 min="0"
                 step="0.001"
                 unit={form.formData.unit || 'ml'}
@@ -331,7 +331,7 @@ const RawMaterialFormDialog = ({
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
               <div className="space-y-2">
-                <Label htmlFor={`${idPrefix}-data-status`}>Cleanup status</Label>
+                <Label htmlFor={`${idPrefix}-data-status`}>Status kerapian</Label>
                 <Select
                   value={form.formData.data_status || 'active'}
                   onValueChange={(value) => form.handleChange('data_status', value)}
@@ -347,10 +347,10 @@ const RawMaterialFormDialog = ({
                 </Select>
               </div>
               <FormField
-                label="Review note"
+                label="Catatan tinjauan"
                 value={form.formData.review_notes}
                 onChange={(event) => form.handleChange('review_notes', event.target.value)}
-                placeholder="Why this material needs cleanup, review, or archive"
+                placeholder="Kenapa bahan ini perlu dirapikan, ditinjau, atau diarsipkan"
               />
             </div>
           </div>
@@ -359,9 +359,9 @@ const RawMaterialFormDialog = ({
             <div className="border-t pt-3 space-y-3">
               <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
                 <div>
-                  <p className="text-sm font-medium">Solvent calibration</p>
+                  <p className="text-sm font-medium">Kalibrasi pelarut</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Atur bagaimana carrier ini menggeser impact dan life saat dipakai sebagai dilution solvent. Nilai positif menaikkan, nilai negatif menurunkan.
+                    Atur seberapa jauh pembawa ini menggeser kekuatan dan ketahanan saat dipakai sebagai pelarut pengencer. Nilai positif menaikkan, nilai negatif menurunkan.
                   </p>
                 </div>
 
@@ -383,30 +383,30 @@ const RawMaterialFormDialog = ({
                     className="rounded-full px-3 py-1 text-[11px]"
                     onClick={form.clearSolventCalibrationPreset}
                   >
-                    Clear
+                    Kosongkan
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <FormNumber
-                    label="Impact shift"
+                    label="Geser kekuatan"
                     value={form.formData.solvent_impact_shift_percent}
                     onChange={(event) => form.handleChange('solvent_impact_shift_percent', event.target.value)}
                     onBlur={() => form.handleBlur('solvent_impact_shift_percent')}
                     error={form.errors.solvent_impact_shift_percent}
-                    placeholder="e.g., -12"
+                    placeholder="mis. -12"
                     min="-100"
                     max="100"
                     step="0.1"
                     unit="%"
                   />
                   <FormNumber
-                    label="Life shift"
+                    label="Geser ketahanan"
                     value={form.formData.solvent_life_shift_percent}
                     onChange={(event) => form.handleChange('solvent_life_shift_percent', event.target.value)}
                     onBlur={() => form.handleBlur('solvent_life_shift_percent')}
                     error={form.errors.solvent_life_shift_percent}
-                    placeholder="e.g., 5"
+                    placeholder="mis. 5"
                     min="-100"
                     max="100"
                     step="0.1"
@@ -415,7 +415,7 @@ const RawMaterialFormDialog = ({
                 </div>
 
                 <div className="rounded-xl border border-dashed border-border/70 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
-                  Preset ini dipakai sebagai starting point. Anda tetap bisa koreksi angkanya agar sesuai karakter solvent aktual di lab.
+                  Preset ini hanya titik awal. Angkanya tetap bisa dikoreksi agar sesuai karakter pelarut yang sebenarnya di lab.
                 </div>
               </div>
             </div>
@@ -423,23 +423,23 @@ const RawMaterialFormDialog = ({
 
           <div className="border-t pt-3 space-y-3">
             <FormField
-              label="Vendor"
+              label="Supplier"
               value={form.formData.vendor}
               onChange={(event) => form.handleChange('vendor', event.target.value)}
-              placeholder="e.g., PerfumersWorld"
+              placeholder="mis. PerfumersWorld"
             />
 
             <FormField
-              label="CAS number"
+              label="Nomor CAS"
               value={form.formData.cas_number}
               onChange={(event) => form.handleChange('cas_number', event.target.value)}
               onBlur={() => form.handleBlur('cas_number')}
               error={form.errors.cas_number}
-              placeholder="e.g., 8007-75-8"
+              placeholder="mis. 8007-75-8"
             />
 
             <FormNumber
-              label="IFRA limit"
+              label="Batas IFRA"
               value={form.formData.ifra_limit}
               onChange={(event) => form.handleChange('ifra_limit', event.target.value)}
               onBlur={() => form.handleBlur('ifra_limit')}
@@ -453,23 +453,23 @@ const RawMaterialFormDialog = ({
 
             <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
               <div>
-                <p className="text-sm font-medium">Manual reference guidance</p>
+                <p className="text-sm font-medium">Panduan acuan manual</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {copy.manualGuidanceDescription}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`${idPrefix}-workbook-family`}>Workbook family / class</Label>
+                <Label htmlFor={`${idPrefix}-workbook-family`}>Keluarga aroma / kelas workbook</Label>
                 <Select
                   value={form.formData.reference_abc_primary_family || '__none__'}
                   onValueChange={(value) => form.handleChange('reference_abc_primary_family', value === '__none__' ? '' : value)}
                 >
                   <SelectTrigger id={`${idPrefix}-workbook-family`} className="h-10 rounded-xl">
-                    <SelectValue placeholder="Select workbook family" />
+                    <SelectValue placeholder="Pilih keluarga aroma" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">No family selected</SelectItem>
+                    <SelectItem value="__none__">Tanpa keluarga aroma</SelectItem>
                     {familyOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -481,7 +481,7 @@ const RawMaterialFormDialog = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <FormNumber
-                  label="Impact"
+                  label="Kekuatan"
                   value={form.formData.reference_impact}
                   onChange={(event) => form.handleChange('reference_impact', event.target.value)}
                   onBlur={() => form.handleBlur('reference_impact')}
@@ -490,7 +490,7 @@ const RawMaterialFormDialog = ({
                   step="0.1"
                 />
                 <FormNumber
-                  label="Life hours"
+                  label="Ketahanan di strip (jam)"
                   value={form.formData.reference_life_hours}
                   onChange={(event) => form.handleChange('reference_life_hours', event.target.value)}
                   onBlur={() => form.handleBlur('reference_life_hours')}
@@ -502,7 +502,7 @@ const RawMaterialFormDialog = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <FormNumber
-                  label="Typical use level"
+                  label="Takaran umum"
                   value={form.formData.reference_use_level_typical_percent}
                   onChange={(event) => form.handleChange('reference_use_level_typical_percent', event.target.value)}
                   onBlur={() => form.handleBlur('reference_use_level_typical_percent')}
@@ -513,7 +513,7 @@ const RawMaterialFormDialog = ({
                   unit="%"
                 />
                 <FormNumber
-                  label="Max use level"
+                  label="Takaran maks"
                   value={form.formData.reference_use_level_max_percent}
                   onChange={(event) => form.handleChange('reference_use_level_max_percent', event.target.value)}
                   onBlur={() => form.handleBlur('reference_use_level_max_percent')}
@@ -527,24 +527,24 @@ const RawMaterialFormDialog = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`${idPrefix}-description`}>Description</Label>
+              <Label htmlFor={`${idPrefix}-description`}>Deskripsi</Label>
               <Textarea
                 id={`${idPrefix}-description`}
                 value={form.formData.description}
                 onChange={(event) => form.handleChange('description', event.target.value)}
                 rows={3}
-                placeholder="Short description or odour profile"
+                placeholder="Deskripsi singkat atau profil bau"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`${idPrefix}-notes`}>Notes</Label>
+              <Label htmlFor={`${idPrefix}-notes`}>Catatan</Label>
               <Textarea
                 id={`${idPrefix}-notes`}
                 value={form.formData.notes}
                 onChange={(event) => form.handleChange('notes', event.target.value)}
                 rows={3}
-                placeholder="Optional notes, source context, or evaluation remarks"
+                placeholder="Catatan opsional, asal sumber, atau hasil evaluasi"
               />
             </div>
           </div>
@@ -564,10 +564,10 @@ const RawMaterialFormDialog = ({
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-              Cancel
+              Batal
             </Button>
             <Button type="submit" disabled={loading || form.hasErrors}>
-              {loading ? 'Saving...' : copy.submitLabel}
+              {loading ? 'Menyimpan...' : copy.submitLabel}
             </Button>
           </DialogFooter>
         </form>

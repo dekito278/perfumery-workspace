@@ -14,7 +14,7 @@ export const SOLVENT_CALIBRATION_PRESETS = [
   { key: 'tec', label: 'TEC / TC', impactShiftPercent: -12, lifeShiftPercent: 5 },
   { key: 'dpg', label: 'DPG', impactShiftPercent: -18, lifeShiftPercent: 12 },
   { key: 'dep', label: 'DEP', impactShiftPercent: -9, lifeShiftPercent: 8 },
-  { key: 'volatile', label: 'Volatile alcohol / IPM', impactShiftPercent: 14, lifeShiftPercent: -16 },
+  { key: 'volatile', label: 'Alkohol volatil / IPM', impactShiftPercent: 14, lifeShiftPercent: -16 },
 ];
 
 export const createInitialRawMaterialFormData = () => ({
@@ -176,31 +176,31 @@ export const useRawMaterialForm = ({ open, material = null }) => {
 
     switch (name) {
       case 'name':
-        error = validateRequired(value, 'Name') || validateMaxLength(value, FIELD_CONSTRAINTS.name.maxLength, 'Name');
+        error = validateRequired(value, 'Nama') || validateMaxLength(value, FIELD_CONSTRAINTS.name.maxLength, 'Nama');
         break;
       case 'category':
-        error = validateRequired(value, 'Category');
+        error = validateRequired(value, 'Kategori');
         break;
       case 'scent_family':
-        error = validateMaxLength(value, FIELD_CONSTRAINTS.scentFamily.maxLength, 'Scent family');
+        error = validateMaxLength(value, FIELD_CONSTRAINTS.scentFamily.maxLength, 'Keluarga aroma');
         break;
       case 'workbook_code':
-        error = validateMaxLength(value, FIELD_CONSTRAINTS.code.maxLength, 'Workbook code');
+        error = validateMaxLength(value, FIELD_CONSTRAINTS.code.maxLength, 'Kode workbook');
         break;
       case 'unit':
-        error = validateRequired(value, 'Unit');
+        error = validateRequired(value, 'Satuan');
         break;
       case 'cost_per_unit':
-        error = validateNonNegativeNumber(value, 'Purchase price');
+        error = validateNonNegativeNumber(value, 'Harga beli');
         break;
       case 'stock_quantity':
-        error = value !== '' ? validateNonNegativeNumber(value, 'Stock on hand') : '';
+        error = value !== '' ? validateNonNegativeNumber(value, 'Stok tersedia') : '';
         break;
       case 'minimum_stock':
-        error = value !== '' ? validateNonNegativeNumber(value, 'Minimum stock') : '';
+        error = value !== '' ? validateNonNegativeNumber(value, 'Stok minimum') : '';
         break;
       case 'low_stock_threshold':
-        error = value !== '' ? validateNonNegativeNumber(value, 'Low stock threshold') : '';
+        error = value !== '' ? validateNonNegativeNumber(value, 'Peringatan stok menipis') : '';
         break;
       case 'ifra_limit':
       case 'reference_use_level_typical_percent':
@@ -208,53 +208,53 @@ export const useRawMaterialForm = ({ open, material = null }) => {
         if (value !== '') {
           const numValue = Number(value);
           if (Number.isNaN(numValue)) {
-            error = 'Reference percentage must be a valid number';
+            error = 'Persentase acuan harus berupa angka';
           } else if (numValue < 0 || numValue > 100) {
-            error = 'Reference percentage must be between 0 and 100';
+            error = 'Persentase acuan harus antara 0 dan 100';
           }
         }
         break;
       case 'reference_impact':
-        error = value !== '' ? validateNonNegativeNumber(value, 'Impact') : '';
+        error = value !== '' ? validateNonNegativeNumber(value, 'Kekuatan') : '';
         break;
       case 'reference_life_hours':
-        error = value !== '' ? validateNonNegativeNumber(value, 'Lifetime') : '';
+        error = value !== '' ? validateNonNegativeNumber(value, 'Ketahanan') : '';
         break;
       case 'solvent_impact_shift_percent':
       case 'solvent_life_shift_percent':
         if (value !== '') {
           const numValue = Number(value);
           if (Number.isNaN(numValue)) {
-            error = 'Calibration must be a valid number';
+            error = 'Kalibrasi harus berupa angka';
           } else if (numValue < -100 || numValue > 100) {
-            error = 'Calibration must be between -100 and 100';
+            error = 'Kalibrasi harus antara -100 dan 100';
           }
         }
         break;
       case 'dilution_solvent_id':
         if (formData.is_diluted && !value) {
-          error = 'Solvent is required for diluted materials';
+          error = 'Bahan yang diencerkan wajib punya pelarut';
         }
         break;
       case 'dilution_percentage':
         if (formData.is_diluted) {
           if (!value) {
-            error = 'Dilution percentage is required';
+            error = 'Persentase pengenceran wajib diisi';
           } else {
             const numValue = Number(value);
             if (Number.isNaN(numValue)) {
-              error = 'Dilution percentage must be a valid number';
+              error = 'Persentase pengenceran harus berupa angka';
             } else if (numValue <= 0 || numValue > 100) {
-              error = 'Dilution percentage must be between 0 and 100';
+              error = 'Persentase pengenceran harus lebih dari 0 dan paling tinggi 100';
             }
           }
         }
         break;
       case 'cas_number':
-        error = validateMaxLength(value, 100, 'CAS number');
+        error = validateMaxLength(value, 100, 'Nomor CAS');
         break;
       case 'reference_abc_primary_family':
-        error = validateMaxLength(value, 120, 'ABC family');
+        error = validateMaxLength(value, 120, 'Keluarga ABC');
         break;
       default:
         break;
@@ -267,7 +267,7 @@ export const useRawMaterialForm = ({ open, material = null }) => {
     const nextWarnings = {};
 
     if (formData.cost_per_unit && parseFloat(formData.cost_per_unit) === 0) {
-      nextWarnings.cost_per_unit = 'Purchase price is 0 - this may affect formula calculations';
+      nextWarnings.cost_per_unit = 'Harga beli 0 - ini bisa memengaruhi hitungan formula';
     }
 
     setWarnings(nextWarnings);
@@ -396,12 +396,12 @@ export const useRawMaterialForm = ({ open, material = null }) => {
       appendSourceSnapshot('perfumersworld', buildImportedSourceSnapshot('perfumersworld', imported, nextUrl));
       setInferenceLines([
         imported.cas_number ? `CAS: ${imported.cas_number}` : 'CAS tidak tersedia di PerfumersWorld.',
-        imported.uses_in_perfumery ? `Uses in perfumery: ${imported.uses_in_perfumery}` : 'Uses in perfumery tidak tersedia.',
+        imported.uses_in_perfumery ? `Kegunaan di parfum: ${imported.uses_in_perfumery}` : 'Kegunaan di parfum tidak tersedia di PerfumersWorld.',
       ]);
       checkWarnings();
       return imported;
     } catch (error) {
-      toast.error(error.message || 'Gagal import data PerfumersWorld');
+      toast.error(error.message || 'Gagal mengimpor data PerfumersWorld');
       return null;
     } finally {
       setImportingUrl(false);
@@ -445,17 +445,17 @@ export const useRawMaterialForm = ({ open, material = null }) => {
 
       appendSourceSnapshot('scentree', buildImportedSourceSnapshot('scentree', imported, nextUrl));
       setInferenceLines([
-        imported.reference_abc_primary_family ? `Family: ${imported.reference_abc_primary_family}` : 'Family tidak tersedia di ScenTree.',
-        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di ScenTree.',
-        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Life: ${imported.reference_life_hours} h` : 'Life tidak tersedia di ScenTree.',
+        imported.reference_abc_primary_family ? `Keluarga aroma: ${imported.reference_abc_primary_family}` : 'Keluarga aroma tidak tersedia di ScenTree.',
+        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Kekuatan: ${imported.reference_impact}` : 'Kekuatan tidak tersedia di ScenTree.',
+        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Ketahanan: ${imported.reference_life_hours} jam` : 'Ketahanan tidak tersedia di ScenTree.',
         imported.ifra_limit !== null && imported.ifra_limit !== undefined
-          ? `IFRA limit: ${imported.ifra_limit}%`
-          : 'IFRA limit tidak tersedia di ScenTree.',
+          ? `Batas IFRA: ${imported.ifra_limit}%`
+          : 'Batas IFRA tidak tersedia di ScenTree.',
       ]);
       checkWarnings();
       return imported;
     } catch (error) {
-      toast.error(error.message || 'Gagal import data ScenTree');
+      toast.error(error.message || 'Gagal mengimpor data ScenTree');
       return null;
     } finally {
       setImportingUrl(false);
@@ -490,15 +490,15 @@ export const useRawMaterialForm = ({ open, material = null }) => {
 
       appendSourceSnapshot('tgsc', buildImportedSourceSnapshot('tgsc', imported, nextUrl));
       setInferenceLines([
-        imported.reference_abc_primary_family ? `Family: ${imported.reference_abc_primary_family}` : 'Family tidak tersedia di TGSC.',
-        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di TGSC.',
-        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Life: ${imported.reference_life_hours} h` : 'Life tidak tersedia di TGSC.',
-        imported.odor_description ? `Odour profile: ${imported.odor_description}` : 'Odour profile tidak tersedia di TGSC.',
+        imported.reference_abc_primary_family ? `Keluarga aroma: ${imported.reference_abc_primary_family}` : 'Keluarga aroma tidak tersedia di TGSC.',
+        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Kekuatan: ${imported.reference_impact}` : 'Kekuatan tidak tersedia di TGSC.',
+        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Ketahanan: ${imported.reference_life_hours} jam` : 'Ketahanan tidak tersedia di TGSC.',
+        imported.odor_description ? `Profil bau: ${imported.odor_description}` : 'Profil bau tidak tersedia di TGSC.',
       ]);
       checkWarnings();
       return imported;
     } catch (error) {
-      toast.error(error.message || 'Gagal import data TGSC');
+      toast.error(error.message || 'Gagal mengimpor data TGSC');
       return null;
     } finally {
       setImportingUrl(false);

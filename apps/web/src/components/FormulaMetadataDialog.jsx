@@ -10,7 +10,7 @@ import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 const FormulaMetadataDialog = ({
   open,
   onOpenChange,
-  title = 'Create formula',
+  title = 'Buat formula',
   description = 'Isi identitas formula dulu sebelum mulai menyusun komposisinya.',
   name,
   code,
@@ -26,7 +26,7 @@ const FormulaMetadataDialog = ({
   onNotesChange = () => {},
   validationErrors = {},
   onConfirm,
-  confirmLabel = 'OK',
+  confirmLabel = 'Lanjut',
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -38,31 +38,31 @@ const FormulaMetadataDialog = ({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="formula-meta-name">Formula name *</Label>
+            <Label htmlFor="formula-meta-name">Nama formula *</Label>
             <Input
               id="formula-meta-name"
               value={name}
               onChange={(event) => onNameChange(event.target.value)}
-              placeholder="e.g., Summer Breeze"
+              placeholder="mis. Summer Breeze"
               className="h-11 rounded-2xl"
             />
             {validationErrors.name ? <p className="text-xs text-destructive">{validationErrors.name}</p> : null}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="formula-meta-code">Formula code *</Label>
+            <Label htmlFor="formula-meta-code">Kode formula *</Label>
             <Input
               id="formula-meta-code"
               value={code}
               onChange={(event) => onCodeChange(event.target.value)}
-              placeholder="e.g., SB-001"
+              placeholder="mis. SB-001"
               className="h-11 rounded-2xl"
             />
             {validationErrors.code ? <p className="text-xs text-destructive">{validationErrors.code}</p> : null}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="formula-meta-category">Category</Label>
+            <Label htmlFor="formula-meta-category">Kategori</Label>
             <Select value={category} onValueChange={onCategoryChange}>
               <SelectTrigger id="formula-meta-category" className="h-11 rounded-2xl">
                 <SelectValue />
@@ -78,12 +78,12 @@ const FormulaMetadataDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="formula-meta-version">Version</Label>
+            <Label htmlFor="formula-meta-version">Versi</Label>
             <Input
               id="formula-meta-version"
               value={version}
               onChange={(event) => onVersionChange(event.target.value)}
-              placeholder="e.g., 1.0"
+              placeholder="mis. 1.0"
               className="h-11 rounded-2xl"
             />
           </div>
@@ -105,12 +105,12 @@ const FormulaMetadataDialog = ({
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="formula-meta-notes">Notes</Label>
+            <Label htmlFor="formula-meta-notes">Catatan</Label>
             <Textarea
               id="formula-meta-notes"
               value={notes}
               onChange={(event) => onNotesChange(event.target.value)}
-              placeholder="Formula description, usage notes..."
+              placeholder="Deskripsi formula, catatan pemakaian..."
               rows={4}
               className="rounded-2xl"
             />

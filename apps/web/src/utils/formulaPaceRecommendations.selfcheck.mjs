@@ -153,7 +153,7 @@ const cleanLight = row('top-clean', { pyramidPlacement: 'top', odourWeight: 80, 
 const fivePick = buildPaceRecommendations(simulation([
   penalised('top-a', 95), penalised('top-b', 94), penalised('top-c', 93), penalised('top-d', 92), cleanLight,
 ]), 'projection');
-const opening = fivePick.find((pick) => pick.axisLabel === 'Opening');
+const opening = fivePick.find((pick) => pick.axisLabel === 'Pembuka');
 assert.ok(opening, 'an opening score of 20 against a target of 60 must produce an Opening suggestion');
 assert.equal(opening.itemId, 'top-clean',
   `Opening picked ${opening.itemId}; the clean light row scores highest and was unreachable while the `
@@ -174,7 +174,7 @@ const diffusion = buildPaceRecommendations(simulation([
     bridgeQualityScore: 99, harmonyScore: 99, smoothnessScore: 99,
   },
 }), 'projection');
-const diffusionPick = diffusion.find((pick) => pick.axisLabel === 'Diffusion');
+const diffusionPick = diffusion.find((pick) => pick.axisLabel === 'Pancaran');
 assert.ok(diffusionPick, 'diffusion is 20 against a target of 58 and safe candidates exist');
 assert.equal(diffusionPick.itemId, 'mid-light',
   `diffusion picked ${diffusionPick.itemId}; mid-light scores highest and was the row the truncation `
@@ -199,7 +199,7 @@ const onlyDiffusionWeak = simulation([
 const focused = buildPaceRecommendations(onlyDiffusionWeak, 'balance');
 assert.ok(focused.length >= 1, 'diffusion at 20 against a target of 58 must produce a suggestion');
 for (const pick of focused) {
-  assert.equal(pick.axisLabel, 'Diffusion',
+  assert.equal(pick.axisLabel, 'Pancaran',
     `a ${pick.axisLabel} suggestion was made while ${pick.axisLabel} is already on target`);
 }
 assert.ok(focused.some((pick) => pick.action === 'increase'), 'and this is the increase side');

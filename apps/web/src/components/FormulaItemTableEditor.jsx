@@ -41,23 +41,23 @@ const FormulaItemTableEditor = ({
   const formatLifeValue = (value) => (
     value === null || value === undefined || Number.isNaN(Number(value))
       ? '-'
-      : `${formatQuantity(value, 1)} h`
+      : `${formatQuantity(value, 1)} jam`
   );
   const activeInsightSourceLabel = activeItemInsight?.guidanceSourceLabel
-    ? `${activeItemInsight.guidanceSourceLabel} guidance${activeItemInsight.referenceCode ? ` - ${activeItemInsight.referenceCode}` : ''}`
+    ? `Panduan ${activeItemInsight.guidanceSourceLabel}${activeItemInsight.referenceCode ? ` - ${activeItemInsight.referenceCode}` : ''}`
     : activeItemInsight?.guidanceSource === 'linked_profile'
-      ? `Reference guidance${activeItemInsight.referenceCode ? ` - ${activeItemInsight.referenceCode}` : ''}`
+      ? `Panduan acuan${activeItemInsight.referenceCode ? ` - ${activeItemInsight.referenceCode}` : ''}`
       : activeItemInsight?.guidanceSource === 'raw_material_fallback'
-        ? 'Manual guidance from raw material'
-        : 'Guidance missing';
+        ? 'Panduan manual dari bahan baku'
+        : 'Panduan belum ada';
   const hasActualizedDilutionInsight = Boolean(
     activeItemInsight?.dilutionFactor !== null
     && activeItemInsight?.dilutionFactor !== undefined
     && Number(activeItemInsight.dilutionFactor) > 0
     && Number(activeItemInsight.dilutionFactor) < 1
   );
-  const impactCardLabel = hasActualizedDilutionInsight ? 'Actual blend impact' : 'Material impact';
-  const lifeCardLabel = hasActualizedDilutionInsight ? 'Actual blend life' : 'Material life';
+  const impactCardLabel = hasActualizedDilutionInsight ? 'Kekuatan campuran aktual' : 'Kekuatan bahan';
+  const lifeCardLabel = hasActualizedDilutionInsight ? 'Ketahanan campuran aktual' : 'Ketahanan bahan';
   const solventBehaviourLabel = activeItemInsight?.dilutionSolventBehaviour?.key
     ? String(activeItemInsight.dilutionSolventBehaviour.key).toUpperCase()
     : null;
@@ -69,7 +69,7 @@ const FormulaItemTableEditor = ({
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                Selected material insight
+                Ringkasan bahan terpilih
               </div>
               <div className="mt-1 text-sm font-semibold text-[#433821]">
                 {activeItemInsight.name}
@@ -79,13 +79,13 @@ const FormulaItemTableEditor = ({
               </div>
               {hasActualizedDilutionInsight ? (
                 <div className="mt-1 text-xs text-muted-foreground">
-                  Diluted with {activeItemInsight.dilutionSolventName || 'carrier'}{solventBehaviourLabel ? ` (${solventBehaviourLabel})` : ''} so impact/life use the calibrated blend profile.
+                  Diencerkan dengan {activeItemInsight.dilutionSolventName || 'pelarut'}{solventBehaviourLabel ? ` (${solventBehaviourLabel})` : ''}, jadi kekuatan/ketahanan memakai profil campuran yang sudah dikalibrasi.
                 </div>
               ) : null}
             </div>
             {activeItemInsight.effectivePercentage !== null && activeItemInsight.effectivePercentage !== undefined ? (
               <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-[11px] font-semibold text-[#5e5239]">
-                Formula share {formatPercentage(activeItemInsight.effectivePercentage, 2)}
+                Porsi di formula {formatPercentage(activeItemInsight.effectivePercentage, 2)}
               </div>
             ) : null}
           </div>
@@ -96,7 +96,7 @@ const FormulaItemTableEditor = ({
               <div className="mt-1 text-sm font-semibold text-[#443822]">{formatImpactValue(activeItemInsight.impact)}</div>
               {hasActualizedDilutionInsight ? (
                 <div className="mt-1 text-[11px] text-muted-foreground">
-                  Base {formatImpactValue(activeItemInsight.baseImpact)} • Pre-cal {formatImpactValue(activeItemInsight.blendedImpact)}
+                  Asli {formatImpactValue(activeItemInsight.baseImpact)} • Pra-kalibrasi {formatImpactValue(activeItemInsight.blendedImpact)}
                 </div>
               ) : null}
             </div>
@@ -105,16 +105,16 @@ const FormulaItemTableEditor = ({
               <div className="mt-1 text-sm font-semibold text-[#26314e]">{formatLifeValue(activeItemInsight.lifeHours)}</div>
               {hasActualizedDilutionInsight ? (
                 <div className="mt-1 text-[11px] text-muted-foreground">
-                  Base {formatLifeValue(activeItemInsight.baseLifeHours)} • Pre-cal {formatLifeValue(activeItemInsight.blendedLifeHours)}
+                  Asli {formatLifeValue(activeItemInsight.baseLifeHours)} • Pra-kalibrasi {formatLifeValue(activeItemInsight.blendedLifeHours)}
                 </div>
               ) : null}
             </div>
             <div className="rounded-2xl border border-[#dce6d1] bg-white px-3 py-2.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f8454]">Impact in formula</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f8454]">Kekuatan di formula</div>
               <div className="mt-1 text-sm font-semibold text-[#31451f]">{formatImpactValue(activeItemInsight.impactContribution)}</div>
             </div>
             <div className="rounded-2xl border border-[#ead7cf] bg-white px-3 py-2.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a6d5d]">Life in formula</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a6d5d]">Ketahanan di formula</div>
               <div className="mt-1 text-sm font-semibold text-[#4e2c26]">{formatLifeValue(activeItemInsight.lifeContribution)}</div>
             </div>
           </div>
@@ -124,11 +124,11 @@ const FormulaItemTableEditor = ({
       <div className="sticky top-0 z-20 shrink-0 border-b border-[#ddd3bf] bg-[#f3ecdd] px-4 py-2.5 max-md:hidden">
         <div className="grid grid-cols-[38px_minmax(0,2.7fr)_96px_92px_minmax(0,1.5fr)_44px] gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
           <span>No.</span>
-          <span>Raw material</span>
-          <span className="text-right">Amount</span>
-          <span className="text-right">Dil. %</span>
-          <span>Solvent</span>
-          <span className="text-right">Del</span>
+          <span>Bahan baku</span>
+          <span className="text-right">Jumlah</span>
+          <span className="text-right">Kadar %</span>
+          <span>Pelarut</span>
+          <span className="text-right">Hapus</span>
         </div>
       </div>
 
@@ -161,11 +161,11 @@ const FormulaItemTableEditor = ({
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="rounded-full border border-[#ded1b2] bg-[#f6eedc] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6f603d]">
-                      {composerRow ? 'Composer row' : `Row ${rowNumber}`}
+                      {composerRow ? 'Baris komposer' : `Baris ${rowNumber}`}
                     </div>
                     {index === activeRowIndex ? (
                       <div className="rounded-full border border-[#d7e1cd] bg-[#f3f8ee] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#4f6537]">
-                        Active
+                        Aktif
                       </div>
                     ) : null}
                   </div>
@@ -176,7 +176,7 @@ const FormulaItemTableEditor = ({
                     onClick={() => onRemove(index)}
                     disabled={disableRemove}
                     className="h-8 w-8 rounded-full text-destructive hover:text-destructive"
-                    title="Remove row"
+                    title="Hapus baris"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -185,13 +185,13 @@ const FormulaItemTableEditor = ({
                 <div className="space-y-3">
                   {composerRow ? (
                     <div className="rounded-xl border border-dashed border-[#dcc89a] bg-[#fff8e8] px-3 py-2 text-[11px] text-[#6f603d]">
-                      Pilih bahan dari library lalu isi amount untuk mengunci row ini sebagai bahan aktif berikutnya.
+                      Pilih bahan dari pustaka lalu isi jumlahnya untuk mengunci baris ini sebagai bahan aktif berikutnya.
                     </div>
                   ) : null}
                   <div className="min-w-0">
                     <div className="mb-1.5 flex items-center justify-between gap-2">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                        Raw material
+                        Bahan baku
                       </div>
                       {showGuidanceEditor ? (
                         <Button
@@ -210,14 +210,14 @@ const FormulaItemTableEditor = ({
                           ) : (
                             <CheckCircle2 className="mr-1 h-3.5 w-3.5 text-emerald-700" />
                           )}
-                          {hasGuidanceWarning ? 'Fill workbook data' : 'Edit workbook data'}
+                          {hasGuidanceWarning ? 'Lengkapi panduan' : 'Edit panduan'}
                         </Button>
                       ) : null}
                     </div>
                     <IngredientSelect
                       value={item.item_id}
                       onChange={(ingredientId) => onItemChange(index, ingredientId)}
-                      placeholder="Type material name"
+                      placeholder="Ketik nama bahan"
                       ingredients={ingredientOptions}
                       autoFocus={focusRowIndex === index}
                       onAutoFocusHandled={onAutoFocusHandled}
@@ -231,13 +231,13 @@ const FormulaItemTableEditor = ({
                     {showNeedsGuidanceNudge ? (
                       <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900">
                         <div className="flex items-center justify-between gap-2">
-                          <span>Needs guidance: CAS, impact, life, atau workbook belum lengkap.</span>
+                          <span>Perlu panduan: CAS, kekuatan, ketahanan, atau workbook belum lengkap.</span>
                           <button
                             type="button"
                             onClick={() => onOpenGuidanceEditor?.(item)}
                             className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-amber-800 shadow-sm"
                           >
-                            Lengkapi guidance
+                            Lengkapi panduan
                           </button>
                         </div>
                       </div>
@@ -247,7 +247,7 @@ const FormulaItemTableEditor = ({
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="min-w-0">
                       <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                        Amount
+                        Jumlah
                       </div>
                       <div className="flex items-center gap-1.5">
                         <LocalizedNumberInput as={Input}
@@ -263,7 +263,7 @@ const FormulaItemTableEditor = ({
 
                     <div className="min-w-0">
                       <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                        Dil. %
+                        Kadar %
                       </div>
                       <Input
                         type="number"
@@ -282,17 +282,17 @@ const FormulaItemTableEditor = ({
 
                   <div className="min-w-0">
                     <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                      Solvent
+                      Pelarut
                     </div>
                     <Select
                       value={item.dilution_solvent_id || '__none__'}
                       onValueChange={(value) => onDilutionChange(index, 'dilution_solvent_id', value === '__none__' ? '' : value)}
                     >
                       <SelectTrigger className="h-9 w-full min-w-0 rounded-xl border-[#d8cfbf] px-3 text-sm" onClick={() => onActivateRow?.(index)}>
-                        <SelectValue placeholder="No solvent" />
+                        <SelectValue placeholder="Tanpa pelarut" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">No solvent</SelectItem>
+                        <SelectItem value="__none__">Tanpa pelarut</SelectItem>
                         {solventOptions.map((solvent) => (
                           <SelectItem key={solvent.id} value={solvent.id}>
                             {solvent.name}
@@ -308,7 +308,7 @@ const FormulaItemTableEditor = ({
 
           {items.length === 0 ? (
             <div className="rounded-xl bg-white px-4 py-8 text-sm text-muted-foreground">
-              No rows yet.
+              Belum ada baris.
             </div>
           ) : null}
         </div>
@@ -339,7 +339,7 @@ const FormulaItemTableEditor = ({
                 } cursor-pointer`}
               >
                 <div className="text-xs font-semibold tabular-nums text-[#5e5239]">
-                  {composerRow ? 'New' : rowNumber}
+                  {composerRow ? 'Baru' : rowNumber}
                 </div>
 
                 <div className="min-w-0">
@@ -348,7 +348,7 @@ const FormulaItemTableEditor = ({
                       <IngredientSelect
                         value={item.item_id}
                         onChange={(ingredientId) => onItemChange(index, ingredientId)}
-                        placeholder="Type material name"
+                        placeholder="Ketik nama bahan"
                         ingredients={ingredientOptions}
                         autoFocus={focusRowIndex === index}
                         onAutoFocusHandled={onAutoFocusHandled}
@@ -368,8 +368,8 @@ const FormulaItemTableEditor = ({
                             ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
                             : 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
                         }`}
-                        title={hasGuidanceWarning ? 'Complete workbook guidance' : 'Edit workbook guidance'}
-                        aria-label={`${hasGuidanceWarning ? 'Complete' : 'Edit'} workbook guidance for ${item.item_id}`}
+                        title={hasGuidanceWarning ? 'Lengkapi panduan workbook' : 'Edit panduan workbook'}
+                        aria-label={`${hasGuidanceWarning ? 'Lengkapi' : 'Edit'} panduan workbook untuk ${item.item_id}`}
                       >
                         {hasGuidanceWarning ? (
                           <AlertTriangle className="h-3.5 w-3.5 text-amber-700" />
@@ -387,10 +387,10 @@ const FormulaItemTableEditor = ({
                       type="button"
                       onClick={() => onOpenGuidanceEditor?.(item)}
                       className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 hover:bg-amber-100"
-                      title="Lengkapi guidance tanpa keluar dari formula"
+                      title="Lengkapi panduan tanpa keluar dari formula"
                     >
                       <AlertTriangle className="h-3 w-3 shrink-0" />
-                      <span className="truncate">Needs guidance · Lengkapi guidance</span>
+                      <span className="truncate">Perlu panduan · Lengkapi panduan</span>
                     </button>
                   ) : null}
                 </div>
@@ -427,10 +427,10 @@ const FormulaItemTableEditor = ({
                     onValueChange={(value) => onDilutionChange(index, 'dilution_solvent_id', value === '__none__' ? '' : value)}
                   >
                     <SelectTrigger className="h-8 rounded-md border-[#d8cfbf] px-2 text-sm" onClick={() => onActivateRow?.(index)}>
-                      <SelectValue placeholder="No solvent" />
+                      <SelectValue placeholder="Tanpa pelarut" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">No solvent</SelectItem>
+                      <SelectItem value="__none__">Tanpa pelarut</SelectItem>
                       {solventOptions.map((solvent) => (
                         <SelectItem key={solvent.id} value={solvent.id}>
                           {solvent.name}
@@ -448,7 +448,7 @@ const FormulaItemTableEditor = ({
                     onClick={() => onRemove(index)}
                     disabled={disableRemove}
                     className="h-8 w-8 rounded-md text-destructive hover:text-destructive"
-                    title="Remove row"
+                    title="Hapus baris"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -459,7 +459,7 @@ const FormulaItemTableEditor = ({
 
           {items.length === 0 ? (
             <div className="px-4 py-8 text-sm text-muted-foreground">
-              No rows yet.
+              Belum ada baris.
             </div>
           ) : null}
         </div>

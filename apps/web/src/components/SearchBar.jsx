@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, X } from 'lucide-react';
 
-const SearchBar = ({ value, onChange, placeholder = 'Search...', debounceMs = 300, disabled = false }) => {
+const SearchBar = ({ value, onChange, placeholder = 'Cari...', debounceMs = 300, disabled = false }) => {
   const [localValue, setLocalValue] = useState(value);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ const SearchBar = ({ value, onChange, placeholder = 'Search...', debounceMs = 30
           variant="ghost"
           size="icon"
           onClick={handleClear}
-          aria-label="Clear search"
+          aria-label="Hapus pencarian"
           disabled={disabled}
           className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
         >

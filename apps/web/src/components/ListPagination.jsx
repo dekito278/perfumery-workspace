@@ -49,15 +49,15 @@ const ListPagination = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="text-sm font-medium text-[#4d402d]">
-            Showing {startItem}-{endItem}
+            Menampilkan {startItem}-{endItem}
           </span>
           <span className="text-sm text-muted-foreground">
-            of {totalItems} {itemLabel}
+            dari {totalItems} {itemLabel}
           </span>
         </div>
 
         <div className="rounded-full border border-[#e4dac9] bg-white/90 px-3 py-1 text-xs font-medium text-[#6e6048]">
-          Page {currentPage} of {totalPages}
+          Halaman {currentPage} dari {totalPages}
         </div>
       </div>
 

@@ -38,7 +38,7 @@ const FormulaScaleTool = ({
 
   const handleApplyScale = () => {
     if (!scalableIndexes.length || currentTotal <= 0) {
-      toast.error('Isi amount formula dulu sebelum calculate total.');
+      toast.error('Isi gram formula dulu sebelum menghitung total.');
       return;
     }
 
@@ -74,7 +74,7 @@ const FormulaScaleTool = ({
     });
 
     replaceFormulaItems(nextItems, { normalize: false });
-    toast.success(`Formula recalculated to ${formatGramAmount(parsedTargetTotal)} across ${scaledRowCounter} rows.`);
+    toast.success(`Formula dihitung ulang ke ${formatGramAmount(parsedTargetTotal)} untuk ${scaledRowCounter} baris.`);
   };
 
   return (
@@ -83,13 +83,13 @@ const FormulaScaleTool = ({
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#61709a]">
             <Calculator className="h-3.5 w-3.5" />
-            Calculate formula total
+            Hitung total formula
           </div>
           <div className="mt-1 text-sm font-semibold text-[#26314e]">
-            Scale {formatGramAmount(currentTotal)} to a new target total
+            Skalakan {formatGramAmount(currentTotal)} ke target total baru
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            Persentase formula tetap sama, hanya amount gram tiap bahan yang diubah.
+            Persentase formula tetap sama, hanya gram tiap bahan yang diubah.
           </div>
         </div>
 
@@ -120,20 +120,20 @@ const FormulaScaleTool = ({
             className="h-10 self-end rounded-xl gap-2"
           >
             <Scale className="h-4 w-4" />
-            Calculate
+            Hitung
           </Button>
         </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
         <div className="rounded-full border border-[#d9def0] bg-white px-3 py-1 font-semibold text-[#26314e]">
-          Current {formatGramAmount(currentTotal)}
+          Sekarang {formatGramAmount(currentTotal)}
         </div>
         <div className="rounded-full border border-[#e5dcc7] bg-white px-3 py-1 font-semibold text-[#5e5239]">
           Target {parsedTargetTotal > 0 ? formatGramAmount(parsedTargetTotal) : '-'}
         </div>
         <div className="rounded-full border border-[#dce6d1] bg-white px-3 py-1 font-semibold text-[#31451f]">
-          Factor {scaleFactor ? `${scaleFactor.toFixed(3)}x` : '-'}
+          Faktor {scaleFactor ? `${scaleFactor.toFixed(3)}x` : '-'}
         </div>
       </div>
     </div>

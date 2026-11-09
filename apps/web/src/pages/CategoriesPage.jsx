@@ -26,7 +26,7 @@ const CategoriesPage = () => {
       const data = await getRawMaterialCategories();
       setCategories(data);
     } catch (error) {
-      toast.error('Failed to load categories');
+      toast.error('Gagal memuat kategori');
     } finally {
       setLoading(false);
     }
@@ -40,8 +40,8 @@ const CategoriesPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Categories - Solivagant</title>
-        <meta name="description" content="Reference the Perfumer's Workbook A-Z material classification system." />
+        <title>Kategori - Solivagant</title>
+        <meta name="description" content="Acuan sistem klasifikasi bahan A-Z dari Perfumer's Workbook." />
       </Helmet>
       <div className="page-container">
         <div className="mb-4">
@@ -51,13 +51,13 @@ const CategoriesPage = () => {
             className="gap-2 h-9"
           >
             <Home className="w-4 h-4" />
-            Back to dashboard
+            Kembali ke dashboard
           </Button>
         </div>
 
         <PageHeader
-          title="Categories"
-          description="Perfumer's Workbook A-Z classification used across raw materials and formula imports"
+          title="Kategori"
+          description="Klasifikasi A-Z Perfumer's Workbook yang dipakai di bahan baku dan impor formula"
         />
 
         {loading ? (
@@ -67,13 +67,13 @@ const CategoriesPage = () => {
         ) : categories.length === 0 ? (
           <EmptyState
             icon={Tag}
-            title="No categories yet"
-            description="The standard Perfumer's Workbook categories will appear here once loaded."
+            title="Belum ada kategori"
+            description="Kategori standar Perfumer's Workbook akan muncul di sini setelah dimuat."
           />
         ) : (
           <>
             <div className="mb-5 rounded-2xl border bg-card p-4 text-sm text-muted-foreground">
-              This workspace now uses the standard A-Z Perfumer&apos;s Workbook classification. These categories are seeded automatically and should be treated as the shared reference system.
+              Ruang kerja ini memakai klasifikasi standar A-Z Perfumer&apos;s Workbook. Kategori ini diisi otomatis dan menjadi sistem acuan bersama.
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -89,10 +89,10 @@ const CategoriesPage = () => {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm">{category.name}</h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {category.standardDefinition?.description || 'Legacy category'}
+                    {category.standardDefinition?.description || 'Kategori lama'}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Reference: {category.standardDefinition?.reference || category.color}
+                    Acuan: {category.standardDefinition?.reference || category.color}
                   </p>
                 </div>
               </div>
@@ -100,7 +100,7 @@ const CategoriesPage = () => {
             </div>
             {enrichedCategories.length < PERFUMERS_WORLD_CATEGORIES.length && (
               <p className="mt-4 text-xs text-muted-foreground">
-                Some standard categories are still being synchronized. Refresh the page if needed.
+                Sebagian kategori standar masih disinkronkan. Muat ulang halaman bila perlu.
               </p>
             )}
           </>

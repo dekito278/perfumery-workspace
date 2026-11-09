@@ -21,8 +21,12 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { formatGramAmount, formatNullable } from '@/utils/formatting.js';
+import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 
 const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfModal.jsx'));
+// Stored values ('ready_for_batch', 'perfume') are not words; the list prints their labels.
+const statusLabel = (value) => FORMULA_STATUSES.find((option) => option.value === value)?.label || value;
+const categoryLabel = (value) => FORMULA_CATEGORIES.find((option) => option.value === value)?.label || value;
 
 const FormulasPage = () => {
   const navigate = useNavigate();
@@ -98,8 +102,8 @@ const FormulasPage = () => {
 
       setPipelineByFormulaId(nextPipelineByFormulaId);
     } catch (error) {
-      setLoadError(error.message || 'Formula data could not be loaded. Check the connection and retry.');
-      toast.error('Failed to load formulas');
+      setLoadError(error.message || 'Data formula belum bisa dimuat. Periksa koneksi lalu coba lagi.');
+      toast.error('Gagal memuat formula');
     } finally {
       setLoading(false);
     }
@@ -171,10 +175,10 @@ const FormulasPage = () => {
     setDuplicatingId(formula.id);
     try {
       await duplicateFormula(formula.id);
-      toast.success('Formula duplicated successfully');
+      toast.success('Formula diduplikasi');
       loadFormulas();
     } catch (error) {
-      toast.error('Failed to duplicate formula');
+      toast.error('Gagal menduplikasi formula');
     } finally {
       setDuplicatingId(null);
     }
@@ -195,20 +199,20 @@ const FormulasPage = () => {
   const columns = [
     {
       key: 'name',
-      label: 'Name',
+      label: 'Nama',
       render: (row) => <span className="font-medium text-sm">{row.name}</span>,
     },
     {
       key: 'code',
-      label: 'Code',
+      label: 'Kode',
       render: (row) => <span className="font-mono text-xs">{row.code}</span>,
     },
     {
       key: 'category',
-      label: 'Category',
+      label: 'Kategori',
       render: (row) => (
-        <Badge variant="outline" className="capitalize text-xs">
-          {formatNullable(row.category, 'uncategorized')}
+        <Badge variant="outline" className="text-xs">
+          {formatNullable(categoryLabel(row.category), 'Tanpa kategori')}
         </Badge>
       ),
     },
@@ -222,15 +226,15 @@ const FormulasPage = () => {
           archived: 'outline',
         };
         return (
-          <Badge variant={statusColors[row.status] || 'secondary'} className="capitalize text-xs">
-            {row.status || 'draft'}
+          <Badge variant={statusColors[row.status] || 'secondary'} className="text-xs">
+            {statusLabel(row.status || 'draft')}
           </Badge>
         );
       },
     },
     {
       key: 'total',
-      label: 'Total amount',
+      label: 'Jumlah total',
       render: (row) => {
         const metrics = formulaMetrics[row.id];
         return (
@@ -242,7 +246,7 @@ const FormulasPage = () => {
     },
     {
       key: 'pipeline',
-      label: 'Pipeline',
+      label: 'Validasi',
       render: (row) => {
         const pipeline = pipelineByFormulaId[row.id] || {
           validationCount: 0,
@@ -252,11 +256,11 @@ const FormulasPage = () => {
         return (
           <div className="flex min-w-[250px] flex-wrap gap-1.5">
             <Badge variant={pipeline.validationCount ? 'secondary' : 'outline'} className="text-[10px]">
-              Logs {pipeline.validationCount}
+              Catatan uji {pipeline.validationCount}
             </Badge>
             {pipeline.actionNeededCount ? (
               <Badge variant="destructive" className="text-[10px]">
-                Action {pipeline.actionNeededCount}
+                Perlu tindakan {pipeline.actionNeededCount}
               </Badge>
             ) : null}
           </div>
@@ -269,21 +273,21 @@ const FormulasPage = () => {
     {
       id: 'status',
       value: statusFilter,
-      placeholder: 'All statuses',
+      placeholder: 'Semua status',
       options: [
-        { value: 'all', label: 'All statuses' },
-        { value: 'draft', label: 'Draft' },
-        { value: 'active', label: 'Active' },
-        { value: 'archived', label: 'Archived' },
+        { value: 'all', label: 'Semua status' },
+        { value: 'draft', label: statusLabel('draft') },
+        { value: 'active', label: statusLabel('active') },
+        { value: 'archived', label: statusLabel('archived') },
       ],
     },
     {
       id: 'category',
       value: categoryFilter,
-      placeholder: 'All categories',
+      placeholder: 'Semua kategori',
       options: [
-        { value: 'all', label: 'All categories' },
-        ...formulaCategories.map((category) => ({ value: category, label: category })),
+        { value: 'all', label: 'Semua kategori' },
+        ...formulaCategories.map((category) => ({ value: category, label: categoryLabel(category) })),
       ],
     },
   ];
@@ -304,8 +308,8 @@ const FormulasPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Formulas - Solivagant</title>
-        <meta name="description" content="Manage formula compositions, workbook imports, and revision-ready perfume formulas." />
+        <title>Formula - Solivagant</title>
+        <meta name="description" content="Kelola komposisi formula, impor workbook, dan formula parfum yang siap direvisi." />
       </Helmet>
 
       <div className="page-container">
@@ -316,14 +320,14 @@ const FormulasPage = () => {
             className="gap-2 mb-4 h-9"
           >
             <Home className="w-4 h-4" />
-            Back to dashboard
+            Kembali ke dasbor
           </Button>
         </div>
 
         <PageHeader
-          title="Formulas"
-          description="Buat formula mandiri langsung dari material library."
-          action="New formula"
+          title="Formula"
+          description="Buat formula mandiri langsung dari pustaka bahan."
+          action="Formula baru"
           actionIcon={Beaker}
           onAction={() => navigate('/formulas/new')}
         />
@@ -331,7 +335,7 @@ const FormulasPage = () => {
         <div className="mb-6 flex flex-wrap gap-2">
           <Button variant="outline" className="rounded-xl bg-white/80" onClick={() => setImportModalOpen(true)}>
             <FileUp className="mr-2 h-4 w-4" />
-            Import PDF
+            Impor PDF
           </Button>
         </div>
 
@@ -339,12 +343,12 @@ const FormulasPage = () => {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
             <div className="space-y-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Search formulas
+                Cari formula
               </div>
               <SearchBar
                 value={searchTerm}
                 onChange={setSearchTerm}
-                placeholder="Search by name, code, status, or category..."
+                placeholder="Cari nama, kode, status, atau kategori..."
                 disabled={loading}
               />
             </div>
@@ -367,8 +371,8 @@ const FormulasPage = () => {
 
           {!loading && formulas.length > 0 && (
             <div className="results-count">
-              Showing {paginatedFormulas.length} of {filteredFormulas.length} formulas
-              {hasActiveFilters ? ' with active filters applied' : ''}
+              Menampilkan {paginatedFormulas.length} dari {filteredFormulas.length} formula
+              {hasActiveFilters ? ' dengan saringan aktif' : ''}
             </div>
           )}
         </div>
@@ -377,9 +381,9 @@ const FormulasPage = () => {
           <div className="mb-5">
             <StateBlock
               tone="error"
-              title="Formula data may be stale"
+              title="Data formula mungkin sudah usang"
               description={loadError}
-              action={loading ? '' : 'Retry formulas'}
+              action={loading ? '' : 'Coba lagi'}
               onAction={loading ? null : loadFormulas}
               className="bg-rose-50/80 p-5"
             />
@@ -388,24 +392,24 @@ const FormulasPage = () => {
 
         {loading ? (
           <StudioLoadingState
-            eyebrow="Loading formulas"
-            title="Preparing formula library"
-            description="Mengambil formula, metric komposisi, dan validation log."
+            eyebrow="Memuat formula"
+            title="Menyiapkan daftar formula"
+            description="Mengambil formula, ringkasan komposisi, dan catatan uji."
           />
         ) : loadError && formulas.length === 0 ? (
           <StateBlock
             tone="error"
-            title="Formulas could not be loaded"
+            title="Formula gagal dimuat"
             description={loadError}
-            action="Retry formulas"
+            action="Coba lagi"
             onAction={loadFormulas}
           />
         ) : formulas.length === 0 ? (
           <EmptyState
             icon={Beaker}
-            title="No formulas yet"
-            description="Create your first formula to start composing guidance-aware, performance-ready formulas."
-            action="New formula"
+            title="Belum ada formula"
+            description="Buat formula pertama atau impor PDF workbook untuk mulai menyusun komposisi."
+            action="Formula baru"
             actionIcon={Plus}
             onAction={() => navigate('/formulas/new')}
           />
@@ -431,27 +435,27 @@ const FormulasPage = () => {
                         <div className="text-base font-semibold text-primary">{row.name}</div>
                         <div className="mt-1 text-xs font-mono text-muted-foreground">{row.code}</div>
                       </div>
-                      <Badge variant="outline" className="capitalize text-xs">
-                        {row.status || 'draft'}
+                      <Badge variant="outline" className="text-xs">
+                        {statusLabel(row.status || 'draft')}
                       </Badge>
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <div className="text-muted-foreground">Category</div>
-                        <div className="mt-1">{formatNullable(row.category, 'uncategorized')}</div>
+                        <div className="text-muted-foreground">Kategori</div>
+                        <div className="mt-1">{formatNullable(categoryLabel(row.category), 'Tanpa kategori')}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Total amount</div>
+                        <div className="text-muted-foreground">Jumlah total</div>
                         <div className="mt-1 font-mono">{metrics ? formatGramAmount(metrics.totalGrams) : '-'}</div>
                       </div>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-1.5">
                       <Badge variant={pipeline.validationCount ? 'secondary' : 'outline'} className="text-[10px]">
-                        Logs {pipeline.validationCount || 0}
+                        Catatan uji {pipeline.validationCount || 0}
                       </Badge>
                       {pipeline.actionNeededCount ? (
                         <Badge variant="destructive" className="text-[10px]">
-                          Action {pipeline.actionNeededCount}
+                          Perlu tindakan {pipeline.actionNeededCount}
                         </Badge>
                       ) : null}
                     </div>
@@ -462,10 +466,10 @@ const FormulasPage = () => {
                         size="sm"
                         onClick={() => handleView(row)}
                         className="h-10 rounded-xl gap-2 text-xs"
-                        aria-label={`View ${row.name}`}
+                        aria-label={`Lihat ${row.name}`}
                       >
                         <Eye className="h-4 w-4" />
-                        View
+                        Lihat
                       </Button>
                       <Button
                         type="button"
@@ -474,10 +478,10 @@ const FormulasPage = () => {
                         onClick={() => handleDuplicate(row)}
                         className="h-10 rounded-xl gap-2 text-xs"
                         disabled={duplicatingId === row.id}
-                        aria-label={`Duplicate ${row.name}`}
+                        aria-label={`Duplikasi ${row.name}`}
                       >
                         <Copy className={`h-4 w-4 ${duplicatingId === row.id ? 'animate-spin' : ''}`} />
-                        Duplicate
+                        Duplikasi
                       </Button>
                       <Button
                         type="button"
@@ -496,10 +500,10 @@ const FormulasPage = () => {
                         size="sm"
                         onClick={() => handleDelete(row)}
                         className="h-10 rounded-xl gap-2 border-destructive/25 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        aria-label={`Delete ${row.name}`}
+                        aria-label={`Hapus ${row.name}`}
                       >
                         <Trash2 className="h-4 w-4" />
-                        Delete
+                        Hapus
                       </Button>
                     </div>
                   </div>
@@ -512,8 +516,8 @@ const FormulasPage = () => {
                     size="sm"
                     onClick={() => handleView(row)}
                     className="table-action-button"
-                    title="View details"
-                    aria-label={`View ${row.name}`}
+                    title="Lihat detail"
+                    aria-label={`Lihat ${row.name}`}
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
@@ -522,8 +526,8 @@ const FormulasPage = () => {
                     size="sm"
                     onClick={() => handleDuplicate(row)}
                     className="table-action-button"
-                    title="Duplicate formula"
-                    aria-label={`Duplicate ${row.name}`}
+                    title="Duplikasi formula"
+                    aria-label={`Duplikasi ${row.name}`}
                     disabled={duplicatingId === row.id}
                   >
                     <Copy className={`w-4 h-4 ${duplicatingId === row.id ? 'animate-spin' : ''}`} />
@@ -535,7 +539,7 @@ const FormulasPage = () => {
               currentPage={currentPage}
               pageSize={pageSize}
               totalItems={filteredFormulas.length}
-              itemLabel="formulas"
+              itemLabel="formula"
               onPageChange={setCurrentPage}
             />
           </>

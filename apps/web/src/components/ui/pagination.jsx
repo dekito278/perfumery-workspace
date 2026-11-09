@@ -10,7 +10,7 @@ const Pagination = ({
 }) => (
   <nav
     role="navigation"
-    aria-label="pagination"
+    aria-label="Navigasi halaman"
     className={cn("mx-auto flex w-full justify-center", className)}
     {...props} />
 )
@@ -50,12 +50,12 @@ const PaginationPrevious = ({
   ...props
 }) => (
   <PaginationLink
-    aria-label="Go to previous page"
+    aria-label="Ke halaman sebelumnya"
     size="default"
     className={cn("gap-1 rounded-full px-3 sm:pl-2.5 sm:pr-4", className)}
     {...props}>
     <ChevronLeft className="h-4 w-4" />
-    <span className="hidden sm:inline">Previous</span>
+    <span className="hidden sm:inline">Sebelumnya</span>
   </PaginationLink>
 )
 PaginationPrevious.displayName = "PaginationPrevious"
@@ -65,11 +65,11 @@ const PaginationNext = ({
   ...props
 }) => (
   <PaginationLink
-    aria-label="Go to next page"
+    aria-label="Ke halaman berikutnya"
     size="default"
     className={cn("gap-1 rounded-full px-3 sm:pl-4 sm:pr-2.5", className)}
     {...props}>
-    <span className="hidden sm:inline">Next</span>
+    <span className="hidden sm:inline">Berikutnya</span>
     <ChevronRight className="h-4 w-4" />
   </PaginationLink>
 )
@@ -84,7 +84,7 @@ const PaginationEllipsis = ({
     className={cn("flex h-9 w-9 items-center justify-center", className)}
     {...props}>
     <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">More pages</span>
+    <span className="sr-only">Halaman lain</span>
   </span>
 )
 PaginationEllipsis.displayName = "PaginationEllipsis"

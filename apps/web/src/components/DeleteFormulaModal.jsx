@@ -17,7 +17,7 @@ const DeleteFormulaModal = ({ isOpen, onClose, formulaId, formulaName, onDeleteS
       onDeleteSuccess();
       onClose();
     } catch (error) {
-      toast.error(error.message || 'Failed to delete formula. Please try again.');
+      toast.error(error.message || 'Gagal menghapus formula. Coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -29,27 +29,27 @@ const DeleteFormulaModal = ({ isOpen, onClose, formulaId, formulaName, onDeleteS
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Trash2 className="w-5 h-5 text-destructive" />
-            Delete formula
+            Hapus formula
           </DialogTitle>
           <DialogDescription className="text-sm">
             {formulaName
               ? `Formula: ${formulaName}`
-              : 'This will permanently remove the selected formula.'}
+              : 'Formula yang dipilih akan dihapus permanen.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-2">
           <p className="text-muted-foreground text-sm">
-            This action cannot be undone. Remove the formula only if you no longer need its composition, workbook guidance, and performance notes.
+            Tindakan ini tidak bisa dibatalkan. Hapus formula hanya jika komposisi, panduan workbook, dan catatan performanya sudah tidak dibutuhkan.
           </p>
         </div>
 
         <DialogFooter className="gap-2">
           <Button onClick={onClose} variant="outline" disabled={loading} size="sm">
-            Cancel
+            Batal
           </Button>
           <Button onClick={handleDelete} variant="destructive" disabled={loading} size="sm">
-            {loading ? 'Deleting...' : 'Delete'}
+            {loading ? 'Menghapus...' : 'Hapus'}
           </Button>
         </DialogFooter>
       </DialogContent>

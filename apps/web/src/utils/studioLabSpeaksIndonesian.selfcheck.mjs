@@ -1,4 +1,4 @@
-// `node src/utils/phoneLabSpeaksIndonesian.selfcheck.mjs`
+// `node src/utils/studioLabSpeaksIndonesian.selfcheck.mjs` (named phoneLabSpeaksIndonesian until 2026-11-10)
 //
 // The phone Studio's lab side — raw materials, formulas, batches, costing, validation — came over from
 // another app in English and was half-translated afterwards. Dekito works it from his phone, and on
@@ -18,6 +18,11 @@
 // 2026-11-09 and the formula detail page was still telling Dekito "Bridge quality is weak" under a
 // "Papan PACE" heading. A module is read for those shapes: a label/title/message/helper/description/
 // reason property, an Error, a pushed validation error, and a toast.
+//
+// The DESKTOP lab pages joined on 2026-11-10 (Dekito: "ikut saran kamu"). Until then the phone and the
+// desktop shared the engine but not the screens, so translating the engine left the desktop formula page
+// reading Indonesian axis names inside English panels — 400 English candidates over 49 files. The routes
+// are the same five areas with or without /mobile/, plus the desktop lab dashboard.
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -27,7 +32,7 @@ import { appImports, routeBlocks } from './buyerSurfaces.mjs';
 const src = join(dirname(fileURLToPath(import.meta.url)), '..');
 const app = readFileSync(join(src, 'App.jsx'), 'utf8');
 const imports = appImports(app);
-const LAB = /^\/mobile\/(?:raw-material|formulas|batches|validation|production-costing|categories)/;
+const LAB = /^\/(?:mobile\/)?(?:dashboard|raw-material|formulas|batches|validation|production-costing|categories)/;
 
 const screens = new Set();
 for (const block of routeBlocks(app)) {
@@ -37,7 +42,7 @@ for (const block of routeBlocks(app)) {
     if (imports.has(name) && imports.get(name).startsWith('pages/')) screens.add(join(src, imports.get(name)));
   }
 }
-assert.ok(screens.size >= 12, `only ${screens.size} lab screens resolved from App.jsx — the parse is broken, not the router`);
+assert.ok(screens.size >= 24, `only ${screens.size} lab screens resolved from App.jsx — the parse is broken, not the router`);
 
 const resolveImport = (from, spec) => {
   const base = spec.startsWith('@/') ? join(src, spec.slice(2)) : spec.startsWith('.') ? resolve(dirname(from), spec) : null;
@@ -47,7 +52,9 @@ const resolveImport = (from, spec) => {
 };
 // Where the walk stops. The bespoke template pulls in the order service, a finished batch pulls in the
 // product catalogue, and from there the storefront's own copy (data/, i18n/) — none of it is the lab.
-const SHOP = /\/(?:data|i18n)\/|\/services\/(?:order|customer|voucher|productCatalog|productImageStorage|journalPosts\w*)Service\.js$|\/utils\/(?:bespokeOrder|voucherValidation)\.js$|Exports?\.js$/;
+// contexts/AuthContext.jsx is app-wide (the buyer portal signs in through it too) and its few words sit
+// behind Supabase's own English error.message, so the walk stops there as well.
+const SHOP = /\/(?:data|i18n)\/|\/contexts\/AuthContext\.jsx$|\/services\/(?:order|customer|voucher|productCatalog|productImageStorage|journalPosts\w*)Service\.js$|\/utils\/(?:bespokeOrder|voucherValidation)\.js$|Exports?\.js$/;
 const files = new Set(screens);
 for (const file of files) {
   for (const [, spec] of readFileSync(file, 'utf8').matchAll(/from\s+['"]([^'"]+)['"]/g)) {
@@ -58,20 +65,26 @@ for (const file of files) {
 }
 const jsx = [...files].filter((file) => file.endsWith('.jsx'));
 const modules = [...files].filter((file) => file.endsWith('.js'));
-assert.ok(jsx.length >= 30, `only ${jsx.length} components reached from the lab screens — the walk is not following imports`);
-assert.ok(modules.length >= 60, `only ${modules.length} modules reached from the lab screens — the walk is not following .js imports`);
-for (const engine of ['utils/formulaWorkbookSimulation.js', 'utils/paceScoreBands.js', 'utils/formulaCalculations.js']) {
+assert.ok(jsx.length >= 100, `only ${jsx.length} components reached from the lab screens — the walk is not following imports`);
+assert.ok(modules.length >= 80, `only ${modules.length} modules reached from the lab screens — the walk is not following .js imports`);
+for (const engine of ['utils/formulaWorkbookSimulation.js', 'utils/paceScoreBands.js', 'utils/formulaCalculations.js',
+  'utils/formulaPaceRecommendations.js', 'utils/validation.js', 'pages/FormulaDetailPage.jsx', 'pages/BatchProductionPage.jsx']) {
   assert.ok(files.has(join(src, engine)), `${engine} is no longer reached — the walk lost the PACE engine and would pass anything it says`);
 }
 
 // Words that only English uses. Loanwords this Studio keeps on purpose — batch, formula, QC, HPP, IFRA,
 // supplier, workbook, Edit, Detail, Mode, Total, Status — are absent by design.
-const ENGLISH = /\b(?:must|opening|heart|drydown|diffusion|tenacity|harmony|smoothness|bridge|strong|healthy|weak|guidance|ingredient|merge|review|bottle|labor|packaging|the|and|with|your|this|that|from|into|for|of|is|are|no|not|yet|save|saving|cancel|delete|add|new|search|loading|failed|update|create|choose|select|open|close|back|show|hide|stock|price|material|materials|notes|empty|required|optional|archive|archived|restore|summary|ready|needs|cleanup|draft|unknown|filter|clear|remove|import|export|download|copy|more|less|retry|again|something|wrong|success|deleted|saved|updated|created)\b/i;
+const ENGLISH = /\b(?:must|opening|heart|drydown|diffusion|tenacity|harmony|smoothness|bridge|strong|healthy|weak|guidance|ingredient|merge|review|bottle|labor|packaging|the|and|with|your|this|that|from|into|for|of|is|are|no|not|yet|save|saving|cancel|delete|add|new|search|loading|failed|update|create|choose|select|open|close|back|show|hide|stock|price|material|materials|notes|empty|required|optional|archive|archived|restore|summary|ready|needs|cleanup|draft|unknown|filter|clear|remove|import|export|download|copy|more|less|retry|again|something|wrong|success|deleted|saved|updated|created|production|overview|details|settings|history|quantity|amount|category|type|date|cost|solvent|dilution|raw|pending|active|inactive|view|list|page|showing|next|previous|items|rows|row|all|none|other|by|at|on|in|to|or|an|it|be|was|has|have|will|can|should|which|when|then|than|use|used|using|value|values|name|names|calculate|recalculated|current|factor|across|scale|note|untitled|loaded|title|action|actions|confirm|confirmed|apply|applied|submit|send|sent|done|error|errors|warning|warnings|yes|please|only|each|every|without|about|after|before|between|also|still|here|there|these|those|what|where|who|how|why|if|else|out|up|down|off|over|under|first|last|level|high|low|middle|linked|unlinked|matched|source|sources|reference|profile|profiles|weight|percentage|concentration|blend|family|families|impact|lifetime|odour|odor|scent|smell|sample|samples|run|start|stop|pause|play|step|steps|recommended|quote|bulk|selling|buying|purchase|supplier\s+name|usage|limit|limits|maximum|average)\b/i;
 
+// The text either side of every {…}, nested ones included.
+const unbrace = (text) => { let out = text; while (/\{[^{}]*\}/.test(out)) out = out.replace(/\{[^{}]*\}/g, ' '); return out.replace(/[{}]/g, ' '); };
 const spoken = (source) => {
   const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
   return [
-    ...[...code.matchAll(/>\s*([A-Za-z][^<>{}\n]*?)\s*</g)].map((m) => m[1]),
+    // `(?<!=)`: the > of an arrow function is not the end of a tag.
+    ...[...code.matchAll(/(?<!=)>\s*([A-Za-z][^<>{}\n]*?)\s*</g)].map((m) => m[1]),
+    // Text broken by an interpolation ("Scale {x} to a new target total"): the words around the braces.
+    ...[...code.matchAll(/(?<!=)>\s*([A-Za-z][^<>\n]*\{[^<>\n]*?)\s*</g)].map((m) => unbrace(m[1])),
     ...[...code.matchAll(/\b(?:placeholder|title|aria-label|label|description|subtitle|helper|eyebrow|alt)=["']([^"']+)["']/g)].map((m) => m[1]),
     ...[...code.matchAll(/\btoast(?:\.\w+)?\(\s*['"`]([^'"`]+)['"`]/g)].map((m) => m[1]),
   ];
@@ -92,14 +105,50 @@ const said = (source) => {
   return MODULE_SHAPES.flatMap((shape) => [...code.matchAll(shape)].map((m) => m[2]));
 };
 
+// Words a screen or module hands over without any of the shapes above, found in English after the desktop
+// pages were translated (2026-11-10): a JSX ternary (`compact ? 'Clear filters' : 'Clear'`), a returned
+// message (`return \`${fieldName} is required\``), a fallback (`name || 'Unknown material'`) and a default
+// prop (`cancelText = 'Cancel'`). These positions also carry stored values and class lists, so a literal
+// counts only when it reads as words: no class-list token (h-10, sm:inline), no code characters, and a
+// single word only when capitalised — 'draft' is a value, 'Draft' is a label.
+const Q = (n) => `(['"\`])((?:(?!\\${n})[^\\\\\\n]|\\\\.)*)\\${n}`;
+const LOOSE_SHAPES = [
+  new RegExp(String.raw`\?\s*` + Q(1) + String.raw`\s*:\s*` + Q(3), 'g'),
+  new RegExp(String.raw`\breturn\s+` + Q(1), 'g'),
+  new RegExp(String.raw`(?:\|\||\?\?)\s*` + Q(1), 'g'),
+  new RegExp(String.raw`\b\w*(?:Text|Label|label|title|message|placeholder|fieldName|eyebrow|description|subtitle|helper)\s*=\s*` + Q(1), 'g'),
+];
+const readsAsWords = (raw) => {
+  const text = raw.replace(/\$\{[^}]*\}/g, ' ').trim();
+  return /[A-Za-z]/.test(text) && !/[=<>{}[\]\\|@]|\b[a-z0-9]+[-:/][a-z0-9[]/.test(text)
+    && (/\s/.test(text) || /^[A-Z][a-z]/.test(text));
+};
+// Not screen copy, so left as they are: the reference profile's confidence_reason column; the notes
+// template a bespoke order prefills into a formula, saved with it; and the costing scenario and quote names,
+// which also title the English costing and quotation PDFs (productionCostingExports.js).
+const STORED = new Set([
+  'Multiple external sources disagree on one or more normalized fields and need review.',
+  'Canonical profile resolved with source priority first, then confidence and method strength.',
+  'Reference: ${orderItem.referenceProductName}',
+  'Recommended retail',
+  'Quote ${index + 1}',
+]);
+const loose = (source) => {
+  const code = source.replace(/^.*\bconsole\.\w+\(.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+  return LOOSE_SHAPES.flatMap((shape) => [...code.matchAll(shape)].flatMap((m) => [m[2], m[4]]))
+    .filter((text) => text !== undefined && readsAsWords(text));
+};
+
 const english = [];
 let checked = 0;
 for (const file of files) {
   const source = readFileSync(file, 'utf8');
-  for (const text of file.endsWith('.jsx') ? spoken(source) : said(source)) {
+  for (const text of [...(file.endsWith('.jsx') ? spoken(source) : said(source)), ...loose(source)]) {
     checked += 1;
-    // An interpolation is data, and a reference source keeps its own name.
-    const words = text.replace(/\$\{[^}]*\}/g, ' ').replace(/The Good Scents Company|Perfumer's World|ScenTree|Queen of the ORIENT/gi, ' ');
+    if (STORED.has(text)) continue;
+    // An interpolation is data, a reference source keeps its own name, and "No." is Indonesian's own
+    // abbreviation for nomor ("No. pesanan").
+    const words = text.replace(/\$\{[^}]*\}/g, ' ').replace(/The Good Scents Company|Perfumer's World|ScenTree|Queen of the ORIENT|\bNo\.(?=\s|$)|https?:\/\/\S+/gi, ' ');
     if (ENGLISH.test(words)) english.push(`${file.slice(src.length + 1)}  "${text}"`);
   }
 }
@@ -134,4 +183,4 @@ for (const wrapper of ['Gagal mengambil ringkasan bahan baku', 'Gagal mengambil 
 assert.match(readFileSync(join(src, 'pages/DashboardPage.jsx'), 'utf8'), /isTransientNetworkError[\s\S]{0,240}error\?\.cause\?\.message/,
   'DashboardPage judges a dropped connection from the wrapper alone, and the wrapper no longer says "failed to fetch"');
 
-console.log(`phoneLabSpeaksIndonesian selfcheck OK (${screens.size} screens, ${jsx.length} components + ${modules.length} modules, ${checked} spoken strings, none in English)`);
+console.log(`studioLabSpeaksIndonesian selfcheck OK (${screens.size} screens, ${jsx.length} components + ${modules.length} modules, ${checked} spoken strings, none in English)`);

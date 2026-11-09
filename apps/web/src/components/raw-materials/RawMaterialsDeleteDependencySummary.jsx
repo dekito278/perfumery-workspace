@@ -10,7 +10,7 @@ const RawMaterialsDeleteDependencySummary = ({
   if (!selectedMaterial) {
     return (
       <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        Bulk delete will process {selectedMaterials.length} selected material(s) one by one and stop on the first blocked item.
+        Hapus sekaligus memproses {selectedMaterials.length} bahan terpilih satu per satu dan berhenti di bahan pertama yang tertahan.
       </div>
     );
   }
@@ -18,7 +18,7 @@ const RawMaterialsDeleteDependencySummary = ({
   if (loading) {
     return (
       <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        Checking where this material is still used...
+        Memeriksa di mana bahan ini masih dipakai...
       </div>
     );
   }
@@ -28,7 +28,7 @@ const RawMaterialsDeleteDependencySummary = ({
   if (checkFailed) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        Gagal memeriksa di mana material ini masih dipakai. Coba lagi sebentar; jangan hapus sebelum hasilnya keluar.
+        Gagal memeriksa di mana bahan ini masih dipakai. Coba lagi sebentar; jangan hapus sebelum hasilnya keluar.
       </div>
     );
   }
@@ -36,7 +36,7 @@ const RawMaterialsDeleteDependencySummary = ({
   if (dependencies.length) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        <div className="font-medium">This material is still referenced in:</div>
+        <div className="font-medium">Bahan ini masih dipakai di:</div>
         <ul className="mt-2 list-disc pl-5">
           {dependencies.map((entry) => (
             <li key={entry.label}>
@@ -50,7 +50,7 @@ const RawMaterialsDeleteDependencySummary = ({
 
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-      No blocking references found. This material is ready to delete, and its linked workbook/reference artifacts will be removed too.
+      Tidak ada yang menahan. Bahan ini siap dihapus, dan data workbook/acuan yang tertaut ikut dihapus.
     </div>
   );
 };

@@ -48,9 +48,9 @@ const MaterialPill = ({ material }) => {
       <span className="font-medium text-foreground">{material.name}</span>
       {material.workbook_code ? <Badge variant="outline">{material.workbook_code}</Badge> : null}
       {material.cas_number ? <Badge variant="outline">CAS {material.cas_number}</Badge> : null}
-      {material.is_diluted ? <Badge variant="secondary">Dilution</Badge> : null}
+      {material.is_diluted ? <Badge variant="secondary">Diencerkan</Badge> : null}
       <Badge variant={guidanceCount >= 4 ? 'default' : 'secondary'}>
-        {guidanceCount >= 4 ? 'Guidance rich' : `Guidance ${guidanceCount}/5`}
+        {guidanceCount >= 4 ? 'Panduan lengkap' : `Panduan ${guidanceCount}/5`}
       </Badge>
     </div>
   );
@@ -91,7 +91,7 @@ const RawMaterialAuditPage = () => {
       setMaterials(rows || []);
     } catch (error) {
       console.error('Failed to load raw material audit:', error);
-      toast.error('Failed to load raw material audit');
+      toast.error('Gagal memuat audit bahan baku');
     } finally {
       setLoading(false);
     }
@@ -137,16 +137,16 @@ const RawMaterialAuditPage = () => {
 
   const buildCollapsedMergeIntent = (row) => ({
     kind: 'collapsed-group',
-    title: `Merge ${row.duplicates.length} duplicate row${row.duplicates.length > 1 ? 's' : ''}`,
-    description: `Master "${row.master.name}" will stay. Duplicate rows will be moved to this master, references will be reassigned, then the duplicate rows will be removed.`,
+    title: `Gabung ${row.duplicates.length} baris duplikat`,
+    description: `"${row.master.name}" tetap dipakai sebagai induk. Baris duplikat dipindahkan ke induk ini, semua rujukannya dialihkan, lalu baris duplikatnya dihapus.`,
     master: row.master,
     duplicates: row.duplicates,
   });
 
   const buildAliasMergeIntent = (row) => ({
     kind: 'alias-pair',
-    title: 'Merge alias candidate',
-    description: `Alias row "${row.source.name}" will be merged into "${row.target.name}". Usage, shortlist, and reference links will be reassigned automatically.`,
+    title: 'Gabung kandidat alias',
+    description: `Baris alias "${row.source.name}" akan digabung ke "${row.target.name}". Pemakaian, shortlist, dan tautan acuan dialihkan otomatis.`,
     master: row.target,
     duplicates: [row.source],
   });
@@ -164,14 +164,14 @@ const RawMaterialAuditPage = () => {
 
       toast.success(
         mergeIntent.kind === 'collapsed-group'
-          ? `${mergeIntent.duplicates.length} duplicate raw material berhasil digabung ke ${mergeIntent.master.name}.`
-          : `Alias raw material berhasil digabung ke ${mergeIntent.master.name}.`
+          ? `${mergeIntent.duplicates.length} duplikat bahan baku berhasil digabung ke ${mergeIntent.master.name}.`
+          : `Alias bahan baku berhasil digabung ke ${mergeIntent.master.name}.`
       );
       setMergeIntent(null);
       await loadAudit(true);
     } catch (error) {
       console.error('Failed to merge raw material audit candidate:', error);
-      toast.error(error.message || 'Failed to merge raw materials');
+      toast.error(error.message || 'Gagal menggabung bahan baku');
     } finally {
       setMergeSubmitting(false);
     }
@@ -195,7 +195,7 @@ const RawMaterialAuditPage = () => {
 
     if (!jobs.length) {
       setBulkMergeIntentOpen(false);
-      toast.info('Tidak ada kandidat safe cleanup untuk di-merge.');
+      toast.info('Tidak ada kandidat aman untuk digabung.');
       return;
     }
 
@@ -212,7 +212,7 @@ const RawMaterialAuditPage = () => {
           failures.push({
             masterName: job.master.name,
             duplicateName: job.duplicate.name,
-            message: error.message || 'Unknown merge error',
+            message: error.message || 'Gagal digabung tanpa keterangan',
           });
         }
       }
@@ -221,18 +221,18 @@ const RawMaterialAuditPage = () => {
       await loadAudit(true);
 
       if (successCount && !failures.length) {
-        toast.success(`${successCount} safe duplicate raw material berhasil digabung.`);
+        toast.success(`${successCount} duplikat aman bahan baku berhasil digabung.`);
         return;
       }
 
       if (successCount && failures.length) {
         toast.warning(
-          `${successCount} merge berhasil, ${failures.length} kandidat dilewati. Contoh: ${failures[0].duplicateName} -> ${failures[0].masterName} (${failures[0].message})`
+          `${successCount} berhasil digabung, ${failures.length} kandidat dilewati. Contoh: ${failures[0].duplicateName} -> ${failures[0].masterName} (${failures[0].message})`
         );
         return;
       }
 
-      toast.error(failures[0]?.message || 'Bulk merge gagal.');
+      toast.error(failures[0]?.message || 'Gabung sekaligus gagal.');
     } finally {
       setBulkMergeSubmitting(false);
     }
@@ -241,7 +241,7 @@ const RawMaterialAuditPage = () => {
   const collapsedColumns = [
     {
       key: 'label',
-      label: 'Master candidate',
+      label: 'Kandidat induk',
       render: (row) => (
         <div className="space-y-2">
           <MaterialPill material={row.master} />
@@ -251,7 +251,7 @@ const RawMaterialAuditPage = () => {
     },
     {
       key: 'duplicates',
-      label: 'Duplicate rows',
+      label: 'Baris duplikat',
       render: (row) => renderMaterialList(row.duplicates),
     },
   ];
@@ -259,17 +259,17 @@ const RawMaterialAuditPage = () => {
   const aliasColumns = [
     {
       key: 'source',
-      label: 'Alias row',
+      label: 'Baris alias',
       render: (row) => (
         <div className="space-y-2">
           <MaterialPill material={row.source} />
-          <p className="text-sm text-muted-foreground">Alias match: {row.alias}</p>
+          <p className="text-sm text-muted-foreground">Cocok lewat alias: {row.alias}</p>
         </div>
       ),
     },
     {
       key: 'target',
-      label: 'Suggested master',
+      label: 'Saran induk',
       render: (row) => (
         <div className="space-y-2">
           <MaterialPill material={row.target} />
@@ -282,19 +282,19 @@ const RawMaterialAuditPage = () => {
   const practicalColumns = [
     {
       key: 'master',
-      label: 'Recommended merge',
+      label: 'Saran gabung',
       render: (row) => (
         <div className="space-y-2">
           <MaterialPill material={row.master} />
           <div className="text-sm text-muted-foreground">
-            Remove: <span className="font-medium text-foreground">{row.duplicate.name}</span>
+            Hapus: <span className="font-medium text-foreground">{row.duplicate.name}</span>
           </div>
         </div>
       ),
     },
     {
       key: 'synonyms',
-      label: 'Detected synonyms',
+      label: 'Sinonim terdeteksi',
       render: (row) => (
         <div className="space-y-2">
           {renderSynonymList(row.synonymNames)}
@@ -304,11 +304,11 @@ const RawMaterialAuditPage = () => {
     },
     {
       key: 'reason',
-      label: 'Why flagged',
+      label: 'Alasan ditandai',
       render: (row) => (
         <div className="space-y-2">
           <Badge variant={row.confidence === 'high' ? 'default' : 'secondary'}>
-            {row.confidence === 'high' ? 'High confidence' : 'Needs quick review'}
+            {row.confidence === 'high' ? 'Keyakinan tinggi' : 'Perlu ditinjau sebentar'}
           </Badge>
           <p className="text-sm text-muted-foreground">{row.reason}</p>
         </div>
@@ -325,7 +325,7 @@ const RawMaterialAuditPage = () => {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-foreground">{row.casNumber}</span>
             <Badge variant={row.classification === 'worth-review' ? 'default' : 'secondary'}>
-              {row.classification === 'worth-review' ? 'Review merge' : 'Keep separate'}
+              {row.classification === 'worth-review' ? 'Tinjau gabung' : 'Biarkan terpisah'}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">{row.reason}</p>
@@ -334,7 +334,7 @@ const RawMaterialAuditPage = () => {
     },
     {
       key: 'materials',
-      label: 'Materials',
+      label: 'Bahan',
       render: (row) => renderMaterialList(row.materials),
     },
   ];
@@ -346,8 +346,8 @@ const RawMaterialAuditPage = () => {
       size="sm"
       className="table-action-button"
       onClick={() => openMaterial(row.master?.id || row.target?.id || row.source?.id || row.materials?.[0]?.id)}
-      title="Open raw material"
-      aria-label="Open raw material"
+      title="Buka bahan baku"
+      aria-label="Buka bahan baku"
     >
       <Eye className="h-4 w-4" />
     </Button>
@@ -362,10 +362,10 @@ const RawMaterialAuditPage = () => {
         size="sm"
         className="table-action-button text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
         onClick={() => setMergeIntent(buildCollapsedMergeIntent(row))}
-        title="Merge duplicate rows"
-        aria-label={`Merge duplicates into ${row.master.name}`}
+        title="Gabung baris duplikat"
+        aria-label={`Gabung duplikat ke ${row.master.name}`}
       >
-        Merge
+        Gabung
       </Button>
     </>
   );
@@ -379,10 +379,10 @@ const RawMaterialAuditPage = () => {
         size="sm"
         className="table-action-button text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
         onClick={() => setMergeIntent(buildAliasMergeIntent(row))}
-        title="Merge alias row"
-        aria-label={`Merge ${row.source.name} into ${row.target.name}`}
+        title="Gabung baris alias"
+        aria-label={`Gabung ${row.source.name} ke ${row.target.name}`}
       >
-        Merge
+        Gabung
       </Button>
     </>
   );
@@ -397,15 +397,15 @@ const RawMaterialAuditPage = () => {
         className="table-action-button text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
         onClick={() => setMergeIntent({
           kind: row.type,
-          title: row.type === 'collapsed-group' ? 'Merge practical candidate' : 'Merge synonym candidate',
-          description: `Duplicate row "${row.duplicate.name}" will be merged into "${row.master.name}".`,
+          title: row.type === 'collapsed-group' ? 'Gabung kandidat praktis' : 'Gabung kandidat sinonim',
+          description: `Baris duplikat "${row.duplicate.name}" akan digabung ke "${row.master.name}".`,
           master: row.master,
           duplicates: [row.duplicate],
         })}
         title={row.actionLabel}
         aria-label={`${row.actionLabel} ${row.duplicate.name}`}
       >
-        Merge
+        Gabung
       </Button>
     </>
   );
@@ -413,15 +413,15 @@ const RawMaterialAuditPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Material Audit - Solivagant</title>
+        <title>Audit bahan baku - Solivagant</title>
       </Helmet>
 
       <div className="page-container space-y-6">
         <PageHeader
-          eyebrow="Data quality"
-          title="Raw material audit"
-          description="Audit duplicate candidates, alias collisions, dan CAS groups langsung dari data live."
-          action="Refresh audit"
+          eyebrow="Kualitas data"
+          title="Audit bahan baku"
+          description="Periksa kandidat duplikat, alias yang bertabrakan, dan grup CAS langsung dari data terkini."
+          action="Muat ulang audit"
           actionIcon={RefreshCw}
           onAction={() => loadAudit(true)}
         />
@@ -434,23 +434,23 @@ const RawMaterialAuditPage = () => {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <SummaryCard label="Materials scanned" value={audit.summary.materialCount} />
-            <SummaryCard label="Practical queue" value={audit.summary.practicalMergeCandidateCount} tone="warning" />
-            <SummaryCard label="Safe name groups" value={audit.summary.collapsedNameGroupCount} tone="warning" />
-            <SummaryCard label="Alias candidates" value={audit.summary.slashAliasCandidateCount} tone="warning" />
-            <SummaryCard label="CAS keep separate" value={audit.summary.keepSeparateGroupCount} tone="success" />
+            <SummaryCard label="Bahan dipindai" value={audit.summary.materialCount} />
+            <SummaryCard label="Antrean praktis" value={audit.summary.practicalMergeCandidateCount} tone="warning" />
+            <SummaryCard label="Grup nama aman" value={audit.summary.collapsedNameGroupCount} tone="warning" />
+            <SummaryCard label="Kandidat alias" value={audit.summary.slashAliasCandidateCount} tone="warning" />
+            <SummaryCard label="CAS dibiarkan terpisah" value={audit.summary.keepSeparateGroupCount} tone="success" />
           </div>
         )}
 
         <Card className="rounded-[32px] border-white/70 bg-white/80 shadow-sm">
           <CardHeader className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <Badge variant="outline">Live dataset</Badge>
-              <Badge variant="outline">Smart-match aligned</Badge>
+              <Badge variant="outline">Data terkini</Badge>
+              <Badge variant="outline">Selaras dengan smart-match</Badge>
             </div>
-            <CardTitle className="text-xl">Candidate buckets</CardTitle>
+            <CardTitle className="text-xl">Kelompok kandidat</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Tab pertama untuk kandidat yang biasanya aman dirapikan, tab kedua untuk review manual, dan tab ketiga untuk grup yang sengaja dipertahankan terpisah.
+              Tab pertama untuk kandidat yang biasanya aman dirapikan, tab kedua untuk tinjauan manual, dan tab ketiga untuk grup yang sengaja dipertahankan terpisah.
             </p>
           </CardHeader>
           <CardContent>
@@ -458,10 +458,10 @@ const RawMaterialAuditPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <WandSparkles className="h-5 w-5 text-emerald-700" />
-                  Practical merge queue
+                  Antrean gabung praktis
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Daftar kandidat merge yang paling actionable, lengkap dengan nama sinonim yang terdeteksi.
+                  Daftar kandidat gabung yang paling siap ditindak, lengkap dengan nama sinonim yang terdeteksi.
                 </p>
               </CardHeader>
               <CardContent>
@@ -472,13 +472,13 @@ const RawMaterialAuditPage = () => {
                     columns={practicalColumns}
                     data={audit.practicalMergeCandidates}
                     actions={practicalActions}
-                    emptyMessage="No practical merge candidates found."
+                    emptyMessage="Tidak ada kandidat gabung praktis."
                   />
                 ) : (
                   <EmptyState
                     icon={ShieldCheck}
-                    title="Practical queue bersih"
-                    description="Belum ada kandidat merge yang cukup jelas untuk langsung ditindak."
+                    title="Antrean praktis bersih"
+                    description="Belum ada kandidat gabung yang cukup jelas untuk langsung ditindak."
                   />
                 )}
               </CardContent>
@@ -486,17 +486,17 @@ const RawMaterialAuditPage = () => {
 
             <Tabs defaultValue="safe" className="space-y-4">
               <TabsList className="h-auto flex-wrap rounded-2xl bg-muted/70 p-1">
-                <TabsTrigger value="safe" className="rounded-xl">Safe cleanup</TabsTrigger>
-                <TabsTrigger value="review" className="rounded-xl">Manual review</TabsTrigger>
-                <TabsTrigger value="keep" className="rounded-xl">Keep separate</TabsTrigger>
+                <TabsTrigger value="safe" className="rounded-xl">Rapikan aman</TabsTrigger>
+                <TabsTrigger value="review" className="rounded-xl">Tinjauan manual</TabsTrigger>
+                <TabsTrigger value="keep" className="rounded-xl">Biarkan terpisah</TabsTrigger>
               </TabsList>
 
               <TabsContent value="safe" className="space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-amber-200/70 bg-amber-50/70 px-4 py-4">
                   <div className="space-y-1">
-                    <div className="text-sm font-medium text-foreground">Bulk safe cleanup</div>
+                    <div className="text-sm font-medium text-foreground">Rapikan aman sekaligus</div>
                     <p className="text-sm text-muted-foreground">
-                      Merge semua kandidat aman sekaligus dari collapsed-name groups dan alias candidates.
+                      Gabung semua kandidat aman sekaligus dari grup nama serupa dan kandidat alias.
                     </p>
                   </div>
                   <Button
@@ -506,7 +506,7 @@ const RawMaterialAuditPage = () => {
                     onClick={() => setBulkMergeIntentOpen(true)}
                   >
                     <WandSparkles className="h-4 w-4" />
-                    {bulkMergeSubmitting ? 'Merging...' : `Merge all safe (${safeCleanupCandidateCount})`}
+                    {bulkMergeSubmitting ? 'Menggabung...' : `Gabung semua yang aman (${safeCleanupCandidateCount})`}
                   </Button>
                 </div>
 
@@ -514,7 +514,7 @@ const RawMaterialAuditPage = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <FolderTree className="h-5 w-5 text-primary" />
-                      Collapsed name groups
+                      Grup nama serupa
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -525,12 +525,12 @@ const RawMaterialAuditPage = () => {
                         columns={collapsedColumns}
                         data={audit.collapsedNameGroups}
                         actions={collapsedActions}
-                        emptyMessage="No collapsed-name groups found."
+                        emptyMessage="Tidak ada grup nama serupa."
                       />
                     ) : (
                       <EmptyState
                         icon={ShieldCheck}
-                        title="Tidak ada duplicate aman"
+                        title="Tidak ada duplikat aman"
                         description="Nama yang hanya beda spasi atau tanda baca sudah bersih."
                       />
                     )}
@@ -541,7 +541,7 @@ const RawMaterialAuditPage = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <ScanSearch className="h-5 w-5 text-primary" />
-                      Alias candidates
+                      Kandidat alias
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -552,13 +552,13 @@ const RawMaterialAuditPage = () => {
                         columns={aliasColumns}
                         data={audit.slashAliasCandidates}
                         actions={aliasActions}
-                        emptyMessage="No alias-match candidates found."
+                        emptyMessage="Tidak ada kandidat alias."
                       />
                     ) : (
                       <EmptyState
                         icon={ShieldCheck}
-                        title="Alias candidate bersih"
-                        description="Nama slash atau synonym yang aman di-match tidak tersisa."
+                        title="Kandidat alias bersih"
+                        description="Nama bergaris miring atau sinonim yang aman dicocokkan sudah tidak tersisa."
                       />
                     )}
                   </CardContent>
@@ -570,7 +570,7 @@ const RawMaterialAuditPage = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <AlertTriangle className="h-5 w-5 text-primary" />
-                      CAS groups worth review
+                      Grup CAS yang perlu ditinjau
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -587,19 +587,19 @@ const RawMaterialAuditPage = () => {
                             size="sm"
                             className="table-action-button"
                             onClick={() => openMaterial(row.materials[0]?.id)}
-                            title="Open raw material"
-                            aria-label="Open raw material"
+                            title="Buka bahan baku"
+                            aria-label="Buka bahan baku"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                         )}
-                        emptyMessage="No CAS review groups found."
+                        emptyMessage="Tidak ada grup CAS untuk ditinjau."
                       />
                     ) : (
                       <EmptyState
                         icon={ShieldCheck}
-                        title="Tidak ada review manual tambahan"
-                        description="Grup CAS yang tersisa tidak menunjukkan duplicate kuat untuk di-merge."
+                        title="Tidak ada tinjauan manual tambahan"
+                        description="Grup CAS yang tersisa tidak menunjukkan duplikat kuat untuk digabung."
                       />
                     )}
                   </CardContent>
@@ -611,7 +611,7 @@ const RawMaterialAuditPage = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <ShieldCheck className="h-5 w-5 text-primary" />
-                      CAS groups to keep separate
+                      Grup CAS yang dibiarkan terpisah
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -628,13 +628,13 @@ const RawMaterialAuditPage = () => {
                             size="sm"
                             className="table-action-button"
                             onClick={() => openMaterial(row.materials[0]?.id)}
-                            title="Open raw material"
-                            aria-label="Open raw material"
+                            title="Buka bahan baku"
+                            aria-label="Buka bahan baku"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                         )}
-                        emptyMessage="No keep-separate groups found."
+                        emptyMessage="Tidak ada grup yang dibiarkan terpisah."
                       />
                     ) : (
                       <EmptyState
@@ -658,10 +658,10 @@ const RawMaterialAuditPage = () => {
           }
         }}
         onConfirm={handleConfirmMerge}
-        title={mergeIntent?.title || 'Merge raw material'}
-        description={mergeIntent?.description || 'This merge will reassign usage to the selected master and remove the duplicate row.'}
-        confirmText={mergeSubmitting ? 'Merging...' : 'Merge now'}
-        cancelText="Cancel"
+        title={mergeIntent?.title || 'Gabung bahan baku'}
+        description={mergeIntent?.description || 'Penggabungan ini mengalihkan pemakaian ke bahan induk lalu menghapus baris duplikatnya.'}
+        confirmText={mergeSubmitting ? 'Menggabung...' : 'Gabung sekarang'}
+        cancelText="Batal"
         destructive={false}
         variant="default"
         confirmDisabled={mergeSubmitting}
@@ -669,11 +669,11 @@ const RawMaterialAuditPage = () => {
         {mergeIntent ? (
           <div className="space-y-3 rounded-2xl border bg-muted/30 p-4 text-sm">
             <div>
-              <div className="font-medium text-foreground">Master</div>
+              <div className="font-medium text-foreground">Induk (tetap dipakai)</div>
               <div className="text-muted-foreground">{mergeIntent.master.name}</div>
             </div>
             <div>
-              <div className="font-medium text-foreground">Will be removed</div>
+              <div className="font-medium text-foreground">Akan dihapus</div>
               <div className="space-y-1 text-muted-foreground">
                 {mergeIntent.duplicates.map((material) => (
                   <div key={material.id}>{material.name}</div>
@@ -691,25 +691,25 @@ const RawMaterialAuditPage = () => {
           }
         }}
         onConfirm={handleConfirmBulkMerge}
-        title="Merge all safe candidates"
-        description={`Semua kandidat aman di tab Safe cleanup akan diproses berurutan. Yang gagal akan dilewati, dan yang berhasil tetap disimpan.`}
-        confirmText={bulkMergeSubmitting ? 'Merging...' : 'Merge all'}
-        cancelText="Cancel"
+        title="Gabung semua kandidat aman"
+        description={`Semua kandidat aman di tab Rapikan aman akan diproses berurutan. Yang gagal akan dilewati, dan yang berhasil tetap disimpan.`}
+        confirmText={bulkMergeSubmitting ? 'Menggabung...' : 'Gabung semua'}
+        cancelText="Batal"
         destructive={false}
         variant="default"
         confirmDisabled={bulkMergeSubmitting || safeCleanupCandidateCount === 0}
       >
         <div className="space-y-3 rounded-2xl border bg-muted/30 p-4 text-sm">
           <div>
-            <div className="font-medium text-foreground">Will be processed</div>
+            <div className="font-medium text-foreground">Akan diproses</div>
             <div className="text-muted-foreground">
-              {audit.collapsedNameGroups.length} collapsed groups and {audit.slashAliasCandidates.length} alias candidates.
+              {audit.collapsedNameGroups.length} grup nama serupa dan {audit.slashAliasCandidates.length} kandidat alias.
             </div>
           </div>
           <div>
-            <div className="font-medium text-foreground">Behavior</div>
+            <div className="font-medium text-foreground">Cara kerja</div>
             <div className="text-muted-foreground">
-              Merge berjalan satu per satu. Kalau ada kandidat yang tidak aman digabung, kandidat itu akan dilewati dan proses lanjut ke kandidat berikutnya.
+              Penggabungan berjalan satu per satu. Kalau ada kandidat yang tidak aman digabung, kandidat itu akan dilewati dan proses lanjut ke kandidat berikutnya.
             </div>
           </div>
         </div>

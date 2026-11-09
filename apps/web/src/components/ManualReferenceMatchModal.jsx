@@ -114,26 +114,26 @@ const ManualReferenceMatchModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl gap-0 overflow-hidden border-white/70 bg-[#fffaf2] p-0">
         <DialogHeader className="border-b border-border/60 px-6 py-5">
-          <DialogTitle>Match Reference Profile</DialogTitle>
+          <DialogTitle>Cocokkan profil acuan</DialogTitle>
           <DialogDescription>
-            Attach a workbook reference profile to <strong>{material?.name || 'this material'}</strong> without changing stock, vendor, cost, or dilution data.
+            Tautkan profil acuan workbook ke <strong>{material?.name || 'bahan ini'}</strong> tanpa mengubah stok, supplier, biaya, atau data pengenceran.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-0 lg:grid-cols-[340px_minmax(0,1fr)]">
           <div className="border-b border-border/60 bg-white/70 px-6 py-5 lg:border-b-0 lg:border-r">
             <div className="rounded-2xl border border-border/60 bg-white/90 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Library material</div>
-              <div className="mt-3 text-lg font-semibold">{material?.name || 'Unknown material'}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bahan di pustaka</div>
+              <div className="mt-3 text-lg font-semibold">{material?.name || 'Bahan tanpa nama'}</div>
               <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                <div>Workbook code: {formatNullable(material?.workbook_code)}</div>
-                <div>CAS: {formatNullable(material?.cas_number)}</div>
-                <div>Vendor: {formatNullable(material?.vendor)}</div>
+                <div>Kode workbook: {formatNullable(material?.workbook_code, '-')}</div>
+                <div>CAS: {formatNullable(material?.cas_number, '-')}</div>
+                <div>Supplier: {formatNullable(material?.vendor, '-')}</div>
               </div>
             </div>
 
             <div className="mt-4 rounded-2xl border border-border/60 bg-white/90 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Current link</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tautan sekarang</div>
               {currentProfile ? (
                 <div className="mt-3 space-y-2">
                   <div className="text-base font-semibold">{currentProfile.name}</div>
@@ -142,12 +142,12 @@ const ManualReferenceMatchModal = ({
                     <Badge variant="outline">{currentLink?.match_method || 'manual'}</Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    ABC: {formatNullable(currentProfile.abc_code)} · IFRA: {currentProfile.ifra_limit_percent !== null ? formatPercentage(currentProfile.ifra_limit_percent, 2) : 'N/A'}
+                    ABC: {formatNullable(currentProfile.abc_code, '-')} · IFRA: {currentProfile.ifra_limit_percent !== null ? formatPercentage(currentProfile.ifra_limit_percent, 2) : '-'}
                   </div>
                 </div>
               ) : (
                 <p className="mt-3 text-sm text-muted-foreground">
-                  No primary reference profile linked yet.
+                  Belum ada profil acuan utama yang tertaut.
                 </p>
               )}
             </div>
@@ -159,7 +159,7 @@ const ManualReferenceMatchModal = ({
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search by reference code, name, CAS, ABC family..."
+                placeholder="Cari kode acuan, nama, CAS, keluarga ABC..."
                 className="h-11 rounded-2xl border-white/70 bg-white pl-10"
               />
             </div>
@@ -167,7 +167,7 @@ const ManualReferenceMatchModal = ({
             <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-1">
               {loading ? (
                 <div className="rounded-2xl border border-dashed border-border/60 bg-white/80 p-5 text-sm text-muted-foreground">
-                  Loading reference profiles...
+                  Memuat profil acuan...
                 </div>
               ) : results.length ? results.map((profile) => {
                 const selected = profile.id === selectedId;
@@ -190,19 +190,19 @@ const ManualReferenceMatchModal = ({
                         <div className="mt-1 flex flex-wrap gap-2">
                           <Badge variant="secondary">Ref {profile.reference_code}</Badge>
                           {profile.abc_code ? <Badge variant="outline">{profile.abc_code}</Badge> : null}
-                          {isCurrent ? <Badge variant="outline">Current link</Badge> : null}
+                          {isCurrent ? <Badge variant="outline">Tautan sekarang</Badge> : null}
                         </div>
                       </div>
                       <div className="text-right text-xs text-muted-foreground">
-                        <div>CAS {formatNullable(profile.cas_no)}</div>
-                        <div>{formatNullable(profile.supplier, 'Supplier N/A')}</div>
+                        <div>CAS {formatNullable(profile.cas_no, '-')}</div>
+                        <div>{formatNullable(profile.supplier, 'Supplier belum ada')}</div>
                       </div>
                     </div>
 
                     <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-                      <div>Family: {formatNullable(profile.abc_primary_family)}</div>
-                      <div>Typical: {profile.use_level_typical_percent !== null ? formatPercentage(profile.use_level_typical_percent, 2) : 'N/A'}</div>
-                      <div>IFRA: {profile.ifra_limit_percent !== null ? formatPercentage(profile.ifra_limit_percent, 2) : 'N/A'}</div>
+                      <div>Keluarga aroma: {formatNullable(profile.abc_primary_family, '-')}</div>
+                      <div>Takaran umum: {profile.use_level_typical_percent !== null ? formatPercentage(profile.use_level_typical_percent, 2) : '-'}</div>
+                      <div>IFRA: {profile.ifra_limit_percent !== null ? formatPercentage(profile.ifra_limit_percent, 2) : '-'}</div>
                     </div>
                   </button>
                 );
@@ -210,7 +210,7 @@ const ManualReferenceMatchModal = ({
                 <div className="rounded-2xl border border-dashed border-border/60 bg-white/80 p-5 text-sm text-muted-foreground">
                   {searchFailed
                     ? 'Pencarian gagal, jadi belum tentu tidak ada yang cocok. Coba lagi.'
-                    : 'No reference profiles found for that search yet.'}
+                    : 'Belum ada profil acuan yang cocok dengan pencarian itu.'}
                 </div>
               )}
             </div>
@@ -227,15 +227,15 @@ const ManualReferenceMatchModal = ({
               className="gap-2"
             >
               <Unlink className="h-4 w-4" />
-              Remove link
+              Lepas tautan
             </Button>
           ) : <div />}
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
-              Cancel
+              Batal
             </Button>
             <Button type="button" onClick={handleAssign} disabled={!selectedProfile || saving}>
-              {saving ? 'Saving...' : 'Use selected profile'}
+              {saving ? 'Menyimpan...' : 'Pakai profil terpilih'}
             </Button>
           </div>
         </DialogFooter>

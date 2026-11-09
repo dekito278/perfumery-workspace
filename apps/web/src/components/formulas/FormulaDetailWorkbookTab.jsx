@@ -19,7 +19,7 @@ const FormulaDetailWorkbookTab = ({
   workbookBoardStats,
 }) => (
   <div className="space-y-5">
-    <DetailSection title="Workbook visualisation">
+    <DetailSection title="Visualisasi workbook">
       {hasFormulaItems ? (
         <div className="space-y-4">
           <div className="grid gap-3 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] xl:items-start">
@@ -27,18 +27,18 @@ const FormulaDetailWorkbookTab = ({
               <div className="overflow-hidden rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,244,235,0.96)_100%)] shadow-sm">
                 <div className="border-b border-[#e2d8c2] px-4 py-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7e6c42]">
-                    Composition board
+                    Papan komposisi
                   </div>
                   <div className="mt-1 text-sm text-[#5f5239]">
-                    Dominant groups in a tighter workbook-style table.
+                    Kelompok dominan dalam tabel ringkas ala workbook.
                   </div>
                 </div>
                 <div className="px-4 py-3">
                   <div className="grid grid-cols-[minmax(0,1.4fr)_76px_76px_58px] gap-3 border-b border-[#ece4d3] pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                    <div>Group</div>
-                    <div className="text-right">% share</div>
-                    <div className="text-right">Amount</div>
-                    <div className="text-right">Rows</div>
+                    <div>Kelompok</div>
+                    <div className="text-right">% porsi</div>
+                    <div className="text-right">Jumlah</div>
+                    <div className="text-right">Baris</div>
                   </div>
                   <div className="divide-y divide-[#f0e8d8]">
                     {compactCompositionRows.map((row) => (
@@ -60,7 +60,7 @@ const FormulaDetailWorkbookTab = ({
                   </div>
                   {hiddenCompositionGroupCount > 0 ? (
                     <div className="border-t border-[#ece4d3] pt-2 text-xs text-muted-foreground">
-                      +{hiddenCompositionGroupCount} more groups hidden for a cleaner desktop view.
+                      +{hiddenCompositionGroupCount} kelompok lain disembunyikan agar tampilan tetap rapi.
                     </div>
                   ) : null}
                 </div>
@@ -68,10 +68,10 @@ const FormulaDetailWorkbookTab = ({
               <div className="overflow-hidden rounded-[24px] border border-[#ddd3bf] bg-white shadow-sm">
                 <div className="border-b border-[#eee4d0] px-4 py-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7e6c42]">
-                    Formula ledger
+                    Ringkasan formula
                   </div>
                   <div className="mt-1 text-sm text-[#5f5239]">
-                    Quick workbook coverage and formula economics.
+                    Cakupan panduan workbook dan biaya formula sekilas.
                   </div>
                 </div>
                 <div className="divide-y divide-[#f1eadc]">
@@ -100,8 +100,8 @@ const FormulaDetailWorkbookTab = ({
               items={items}
               rawMaterialsById={rawMaterialsById}
               referenceLinksMap={itemReferenceLinksMap}
-              title="Workbook diagnostics"
-              description="Reference coverage, lifetime estimate, and IFRA-oriented diagnostics for the current formula."
+              title="Diagnosis workbook"
+              description="Cakupan acuan, perkiraan ketahanan, dan diagnosis IFRA untuk formula ini."
               onCreatePacedRevision={handleCreatePacedRevision}
               isCreatingPacedRevision={isCreatingPacedRevision}
               priorityMode={pacePriorityMode}
@@ -111,7 +111,7 @@ const FormulaDetailWorkbookTab = ({
         </div>
       ) : (
         <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-          Workbook charts and composition profile will appear after the formula has ingredients. Linked workbook materials will unlock odour facets, family spread, and top-middle-base decay curves.
+          Grafik workbook dan profil komposisi muncul setelah formula punya bahan. Bahan yang terhubung ke workbook membuka nuansa aroma, sebaran keluarga aroma, dan kurva penguapan nada atas, tengah, dan dasar.
         </div>
       )}
     </DetailSection>

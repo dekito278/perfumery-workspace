@@ -23,7 +23,7 @@ const ProductionCostToolbar = ({
         <Label>Formula</Label>
         <Select value={selectedFormulaId} onValueChange={setSelectedFormulaId}>
           <SelectTrigger className="h-9">
-            <SelectValue placeholder="Select formula" />
+            <SelectValue placeholder="Pilih formula" />
           </SelectTrigger>
           <SelectContent>
             {formulas.map((formula) => (
@@ -36,10 +36,10 @@ const ProductionCostToolbar = ({
       </div>
 
       <div className="space-y-2">
-        <Label>Main solvent</Label>
+        <Label>Pelarut utama</Label>
         <Select value={selectedSolventId} onValueChange={setSelectedSolventId}>
           <SelectTrigger className="h-9">
-            <SelectValue placeholder="Select solvent" />
+            <SelectValue placeholder="Pilih pelarut" />
           </SelectTrigger>
           <SelectContent>
             {solventOptions.map((material) => (
@@ -52,7 +52,7 @@ const ProductionCostToolbar = ({
       </div>
 
       <div className="space-y-2">
-        <Label>Concentration %</Label>
+        <Label>Konsentrasi %</Label>
         <Input
           value={retailInputs.formulaPercentage}
           onChange={(event) => updateRetailInput('formulaPercentage', event.target.value)}
@@ -64,11 +64,11 @@ const ProductionCostToolbar = ({
       </div>
 
       <div className="space-y-2">
-        <Label>Print / export</Label>
+        <Label>Cetak / ekspor</Label>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={onPrint} className="h-9 gap-2">
             <Printer className="h-4 w-4" />
-            Print
+            Cetak
           </Button>
           <Button variant="outline" size="sm" onClick={onExportPdf} className="h-9 gap-2">
             <Download className="h-4 w-4" />

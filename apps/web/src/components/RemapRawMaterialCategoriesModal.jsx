@@ -16,6 +16,15 @@ const CONFIDENCE_STYLES = {
   none: 'outline',
 };
 
+// Display only: the confidence keys themselves are compared above and below.
+const CONFIDENCE_LABELS = {
+  exact: 'pasti',
+  high: 'tinggi',
+  medium: 'sedang',
+  low: 'rendah',
+  none: '-',
+};
+
 const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSuccess }) => {
   const [savingIds, setSavingIds] = useState({});
   const [applyingAll, setApplyingAll] = useState(false);
@@ -51,12 +60,12 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
         ...candidate.material,
         category: candidate.suggestion.category.label.toLowerCase(),
       });
-      toast.success(`Updated ${candidate.material.name}`);
+      toast.success(`${candidate.material.name} diperbarui`);
       if (onSuccess) {
         await onSuccess();
       }
     } catch (error) {
-      toast.error(error.message || `Failed to update ${candidate.material.name}`);
+      toast.error(error.message || `Gagal memperbarui ${candidate.material.name}`);
     } finally {
       setSavingIds((current) => {
         const next = { ...current };
@@ -72,7 +81,7 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
     );
 
     if (!safeCandidates.length) {
-      toast.info('No safe category suggestions available to apply');
+      toast.info('Tidak ada saran kategori aman yang bisa diterapkan');
       return;
     }
 
@@ -84,12 +93,12 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
           category: candidate.suggestion.category.label.toLowerCase(),
         });
       }
-      toast.success(`Applied ${safeCandidates.length} category remaps`);
+      toast.success(`${safeCandidates.length} kategori dipetakan ulang`);
       if (onSuccess) {
         await onSuccess();
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to apply all remaps');
+      toast.error(error.message || 'Gagal menerapkan semua pemetaan ulang');
     } finally {
       setApplyingAll(false);
     }
@@ -99,22 +108,22 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto p-6">
         <DialogHeader>
-          <DialogTitle>Remap raw material categories</DialogTitle>
+          <DialogTitle>Petakan ulang kategori bahan baku</DialogTitle>
           <DialogDescription>
-            Review legacy materials and file them under the 11 scent grandfamilies, one by one, with suggested mappings.
+            Tinjau bahan lama dan masukkan ke 11 grandfamily aroma satu per satu, dengan saran pemetaan.
           </DialogDescription>
         </DialogHeader>
 
         {candidates.length === 0 ? (
           <div className="rounded-xl border bg-muted/30 p-6 text-sm text-muted-foreground">
-            All loaded raw materials already use the scent taxonomy, or no safe suggestions were found.
+            Semua bahan baku yang dimuat sudah memakai taksonomi aroma, atau tidak ada saran yang cukup aman.
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{candidates.length} materials need remap</Badge>
+              <Badge variant="secondary">{candidates.length} bahan perlu dipetakan ulang</Badge>
               <Badge variant="outline">
-                {candidates.filter((candidate) => ['exact', 'high', 'medium'].includes(candidate.suggestion.confidence)).length} safe suggestions
+                {candidates.filter((candidate) => ['exact', 'high', 'medium'].includes(candidate.suggestion.confidence)).length} saran aman
               </Badge>
             </div>
 
@@ -122,11 +131,11 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Material</TableHead>
-                    <TableHead>Current category</TableHead>
-                    <TableHead>Suggested grandfamily</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead>Bahan</TableHead>
+                    <TableHead>Kategori sekarang</TableHead>
+                    <TableHead>Saran grandfamily</TableHead>
+                    <TableHead>Alasan</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -139,18 +148,18 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
                         <TableCell>
                           <div className="font-medium text-sm">{material.name}</div>
                           <div className="text-xs text-muted-foreground font-mono">
-                            {material.workbook_code || 'No workbook code'}
+                            {material.workbook_code || 'Belum ada kode workbook'}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{material.category || 'Uncategorized'}</Badge>
+                          <Badge variant="outline">{material.category || 'Tanpa kategori'}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant={CONFIDENCE_STYLES[suggestion.confidence] || 'outline'}>
-                              {suggestion.category?.label || 'No suggestion'}
+                              {suggestion.category?.label || 'Tidak ada saran'}
                             </Badge>
-                            <span className="text-xs text-muted-foreground uppercase">{suggestion.confidence}</span>
+                            <span className="text-xs text-muted-foreground uppercase">{CONFIDENCE_LABELS[suggestion.confidence] || suggestion.confidence}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">{suggestion.reason}</TableCell>
@@ -163,7 +172,7 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
                             onClick={() => applyRemap(candidate)}
                           >
                             {isSaving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Apply
+                            Terapkan
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -177,11 +186,11 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
 
         <DialogFooter className="gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Close
+            Tutup
           </Button>
           <Button type="button" onClick={applyAllSafeSuggestions} disabled={applyingAll || !candidates.length} className="gap-2">
             {applyingAll ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            Apply safe suggestions
+            Terapkan saran aman
           </Button>
         </DialogFooter>
       </DialogContent>

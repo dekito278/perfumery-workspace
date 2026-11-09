@@ -57,10 +57,10 @@ const ProductionCostPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Production Costing - Solivagant</title>
+        <title>Biaya Produksi - Solivagant</title>
         <meta
           name="description"
-          content="Calculate retail bottle COGS and bulk brand pricing from formula concentrate, solvent, packaging, overhead, and manual markup."
+          content="Hitung HPP botol retail dan harga curah untuk brand dari konsentrat formula, pelarut, kemasan, overhead, dan markup manual."
         />
       </Helmet>
 
@@ -72,17 +72,17 @@ const ProductionCostPage = () => {
             className="mb-4 h-9 gap-2"
           >
             <Home className="h-4 w-4" />
-            Back to dashboard
+            Kembali ke dashboard
           </Button>
         </div>
 
         <PageHeader
-          title="Production Costing"
-          description="Pakai satu halaman untuk dua kebutuhan: costing botol retail dan harga bulk juice ke brand dengan volume quote yang bisa diatur sendiri."
-          action="Export PDF"
+          title="Biaya Produksi"
+          description="Satu halaman untuk dua kebutuhan: hitung biaya botol retail dan harga curah ke brand dengan volume penawaran yang bisa diatur sendiri."
+          action="Ekspor PDF"
           actionIcon={Download}
           onAction={handleExportPdf}
-          eyebrow="Costing"
+          eyebrow="Hitung biaya"
         />
 
         {loading ? (
@@ -94,7 +94,7 @@ const ProductionCostPage = () => {
           <div className="space-y-6">
             {profileError ? (
               <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-                Biaya material formula gagal dimuat — angka COGS &amp; harga di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0). Pilih ulang formula sebelum memakai angka ini.
+                Biaya bahan formula gagal dimuat — angka HPP &amp; harga di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0). Pilih ulang formula sebelum memakai angka ini.
               </div>
             ) : null}
 
@@ -124,11 +124,11 @@ const ProductionCostPage = () => {
               <TabsList className="h-auto w-full justify-start gap-2 rounded-xl bg-muted/50 p-1">
                 <TabsTrigger value="retail" className="gap-2 rounded-lg px-4 py-2">
                   <Package2 className="h-4 w-4" />
-                  Bottle Costing
+                  Biaya botol
                 </TabsTrigger>
                 <TabsTrigger value="bulk" className="gap-2 rounded-lg px-4 py-2">
                   <Factory className="h-4 w-4" />
-                  Bulk / Brand Costing
+                  Curah / brand
                 </TabsTrigger>
               </TabsList>
 

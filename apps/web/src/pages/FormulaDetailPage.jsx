@@ -22,6 +22,11 @@ import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { formatDate, formatGramAmount, formatStatus } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { PACE_PRIORITY_QUERY_KEY } from '@/utils/pacePriority.js';
+import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
+
+// Stored values stay English; these are the words the phone already shows for them.
+const optionLabel = (options, value) => options.find((option) => option.value === value)?.label || formatStatus(value);
+const JOURNAL_STATUS_LABELS = { draft: 'Draf', published: 'Terbit' };
 
 const FormulaDetailPage = () => {
   const { id } = useParams();
@@ -97,9 +102,9 @@ const FormulaDetailPage = () => {
       <DetailPageLayout>
         <StudioLoadingState
           variant="detail"
-          eyebrow="Loading formula"
-          title="Preparing formula detail"
-          description="Mengambil komposisi, workbook simulation, advisory, dan validation history."
+          eyebrow="Memuat formula"
+          title="Menyiapkan detail formula"
+          description="Mengambil komposisi, simulasi workbook, peringatan acuan, dan riwayat uji."
         />
       </DetailPageLayout>
     );
@@ -113,7 +118,7 @@ const FormulaDetailPage = () => {
     <>
       <Helmet>
         <title>{`${formula.name} - Solivagant`}</title>
-        <meta name="description" content={`Detailed view of ${formula.name} formula with gram-based composition and cost breakdown.`} />
+        <meta name="description" content={`Detail formula ${formula.name}: komposisi per gram dan rincian biaya.`} />
       </Helmet>
 
       <DetailPageLayout>
@@ -121,27 +126,27 @@ const FormulaDetailPage = () => {
           eyebrow="Formula"
           title={formula.name}
           subtitle={[
-            `Code ${formula.code}`,
-            formula.category ? formatStatus(formula.category) : null,
-            formula.version ? `Version ${formula.version}` : null,
+            `Kode ${formula.code}`,
+            formula.category ? optionLabel(FORMULA_CATEGORIES, formula.category) : null,
+            formula.version ? `Versi ${formula.version}` : null,
           ].filter(Boolean).join(' / ')}
           badge={
             formula.status && (
-              <Badge variant="outline" className="capitalize text-xs">
-                {formatStatus(formula.status)}
+              <Badge variant="outline" className="text-xs">
+                {optionLabel(FORMULA_STATUSES, formula.status)}
               </Badge>
             )
           }
           onBack={handleBack}
-          backLabel="Back to formulas"
+          backLabel="Kembali ke formula"
           meta={
             <>
               <div className="detail-page-meta-chip">
-                <span className="detail-page-meta-label">Formula size</span>
+                <span className="detail-page-meta-label">Ukuran formula</span>
                 <span className="detail-page-meta-value">{formatGramAmount(totalGrams)}</span>
               </div>
               <div className="detail-page-meta-chip">
-                <span className="detail-page-meta-label">Material cost</span>
+                <span className="detail-page-meta-label">Biaya bahan</span>
                 <span className="detail-page-meta-value">{formatPrice(totalCost)}</span>
               </div>
             </>
@@ -158,12 +163,12 @@ const FormulaDetailPage = () => {
                 className="gap-2 h-9"
               >
                 <Pencil className="w-4 h-4" />
-                Edit
+                Ubah
               </Button>
               <ExportFormulaButton formula={formula} items={items} />
               <Button variant="outline" onClick={handlePrint} className="gap-2 h-9">
                 <Printer className="w-4 h-4" />
-                Print
+                Cetak
               </Button>
               <Button
                 variant="outline"
@@ -171,11 +176,11 @@ const FormulaDetailPage = () => {
                 className="gap-2 h-9"
               >
                 <BookOpenText className="w-4 h-4" />
-                Journal note
+                Catatan Journal
               </Button>
               <Button variant="destructive" onClick={() => setIsDeleteModalOpen(true)} className="gap-2 h-9">
                 <Trash2 className="w-4 h-4" />
-                Delete
+                Hapus
               </Button>
             </>
           }
@@ -185,9 +190,9 @@ const FormulaDetailPage = () => {
           <div className="rounded-[28px] border border-white/80 bg-white/90 p-3 shadow-sm sm:p-4">
             <Tabs defaultValue="overview" className="space-y-4">
               <TabsList className="h-auto flex-wrap justify-start rounded-2xl bg-muted/70 p-1">
-                <TabsTrigger value="overview" className="rounded-xl">Overview</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-xl">Ringkasan</TabsTrigger>
                 <TabsTrigger value="workbook" className="rounded-xl">Workbook</TabsTrigger>
-                <TabsTrigger value="composition" className="rounded-xl">Composition</TabsTrigger>
+                <TabsTrigger value="composition" className="rounded-xl">Komposisi</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-5">
@@ -241,21 +246,21 @@ const FormulaDetailPage = () => {
           </div>
 
           {formula.notes ? (
-            <DetailSection title="Notes">
+            <DetailSection title="Catatan">
               <p className="text-muted-foreground whitespace-pre-wrap text-sm">{formula.notes}</p>
             </DetailSection>
           ) : null}
 
 
-          <DetailSection title="Journal links">
+          <DetailSection title="Catatan Journal terkait">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-muted-foreground">
-                  Catatan Journal bisa dikaitkan ke formula ini untuk menyimpan pengalaman, revisi accord, dan observasi pemakaian.
+                  Catatan Journal bisa dikaitkan ke formula ini untuk menyimpan pengalaman, revisi akord, dan pengamatan pemakaian.
                 </div>
                 <Button variant="outline" className="rounded-xl gap-2" onClick={() => navigate(`/journal/new?formulaId=${id}`)}>
                   <BookOpenText className="h-4 w-4" />
-                  New linked note
+                  Catatan terkait baru
                 </Button>
               </div>
 
@@ -269,29 +274,29 @@ const FormulaDetailPage = () => {
                       className="rounded-xl border bg-card p-4 text-left transition hover:border-primary/40 hover:bg-muted/20"
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-semibold">{post.title || 'Untitled note'}</div>
+                        <div className="text-sm font-semibold">{post.title || 'Catatan tanpa judul'}</div>
                         <Badge variant="outline" className="capitalize text-[10px]">
-                          {post.status || 'draft'}
+                          {JOURNAL_STATUS_LABELS[post.status || 'draft'] || post.status}
                         </Badge>
                       </div>
                       {post.excerpt ? (
                         <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{post.excerpt}</p>
                       ) : null}
                       <div className="mt-3 text-xs text-muted-foreground">
-                        Updated {formatDate(post.updated || post.created)}
+                        Diperbarui {formatDate(post.updated || post.created)}
                       </div>
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                  Belum ada Journal note yang terhubung ke formula ini.
+                  Belum ada catatan Journal yang terhubung ke formula ini.
                 </div>
               )}
             </div>
           </DetailSection>
 
-          <DetailSection title="Validation workflow">
+          <DetailSection title="Validasi">
             {validationLoading ? (
               <div className="flex items-center justify-center py-10">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
@@ -300,17 +305,17 @@ const FormulaDetailPage = () => {
               <div className="space-y-5">
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Saved notes</div>
+                    <div className="text-xs text-muted-foreground mb-1">Catatan tersimpan</div>
                     <div className="text-lg font-semibold">{validationLogs.length}</div>
                   </div>
                   <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Action needed</div>
+                    <div className="text-xs text-muted-foreground mb-1">Perlu aksi</div>
                     <div className="text-lg font-semibold text-amber-600">
                       {validationLogs.filter((log) => log.status === 'action_needed').length}
                     </div>
                   </div>
                   <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Last logged</div>
+                    <div className="text-xs text-muted-foreground mb-1">Terakhir dicatat</div>
                     <div className="text-lg font-semibold">
                       {validationLogs[0] ? formatDate(validationLogs[0].tested_at || validationLogs[0].created) : '-'}
                     </div>

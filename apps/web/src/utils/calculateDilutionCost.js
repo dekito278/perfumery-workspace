@@ -60,11 +60,11 @@ export const calculateDilutionComposition = (usedAmount, dilutionPercentage) => 
 /**
  * Format dilution info for display
  * @param {number} dilutionPercentage - Percentage of active material
- * @returns {string} Formatted dilution info (e.g., "50% active + 50% solvent")
+ * @returns {string} Formatted dilution info (e.g., "50% aktif + 50% pelarut")
  */
 export const formatDilutionInfo = (dilutionPercentage) => {
   const percentage = Number(dilutionPercentage) || 0;
   const solventPercentage = 100 - percentage;
-  return `${percentage}% active + ${solventPercentage}% solvent`;
+  return `${percentage}% aktif + ${solventPercentage}% pelarut`;
 };
 

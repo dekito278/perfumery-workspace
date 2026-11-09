@@ -74,14 +74,15 @@ const getGuidanceSourceKey = (referenceProfile, guidanceSource) => {
   return 'manual';
 };
 
+// Read after "Panduan" (FormulaItemTableEditor: "Panduan acuan - CODE"), so the common words stay lower case.
 const getGuidanceSourceLabel = (sourceKey) => ({
   perfumersworld: 'PerfumersWorld',
   tgsc: 'TGSC',
   scentree: 'ScenTree',
-  reference: 'Reference',
-  manual: 'Manual',
-  missing: 'Missing',
-}[sourceKey] || 'Guidance');
+  reference: 'acuan',
+  manual: 'manual',
+  missing: 'belum ada',
+}[sourceKey] || '');
 
 export const getFormulaItemDilutionFactor = (item) => {
   return getDilutionFactor(item?.dilution_percent ?? item?.dilution_percentage);

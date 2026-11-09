@@ -13,7 +13,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
     event.preventDefault();
 
     if (!form.validateForm()) {
-      toast.error('Please fix all errors before submitting');
+      toast.error('Perbaiki dulu isian yang masih salah sebelum menyimpan');
       return;
     }
 
@@ -26,17 +26,17 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
       // Nothing was created in the matched case — keep the dialog open and say so plainly, instead of
       // closing on a toast.info that reads like success (audit round 8).
       if (result?._creationResolution?.action === 'matched_existing') {
-        toast.warning(`${result._creationResolution.message} Material baru TIDAK dibuat — ubah nama atau workbook code kalau ini memang material berbeda.`);
+        toast.warning(`${result._creationResolution.message} Bahan baku baru TIDAK dibuat — ubah nama atau kode workbook kalau ini memang bahan yang berbeda.`);
         onSuccess?.();
         return;
       }
 
-      toast.success('Material added successfully');
+      toast.success('Bahan baku ditambahkan');
       form.resetForm();
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      toast.error(error.message || 'Failed to add material');
+      toast.error(error.message || 'Gagal menambah bahan baku');
     }
   };
 

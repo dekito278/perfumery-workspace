@@ -3,6 +3,7 @@
 //   node tools/studio-phone-scan.mjs                     every protected /mobile Studio screen
 //   node tools/studio-phone-scan.mjs /mobile/studio/orders,/mobile/formulas
 //   WIDTH=360 SHOTS=1 ALLFIELDS=1 OUT=/some/dir node tools/studio-phone-scan.mjs
+//   DESKTOP=1 [WIDTH=1440] node tools/studio-phone-scan.mjs   the desktop Studio (/studio, lab pages)
 //
 // Per screen it reports: sideways overflow, clipped text, text overlapping text, controls under 40px,
 // the end of the page hidden under the nav or a floating button, anything under the account button,
@@ -22,7 +23,10 @@ import { join } from 'node:path';
 const BASE = 'http://localhost:3001';
 const OUT = `${process.env.OUT || join(tmpdir(), 'studio-phone-scan')}/`;
 mkdirSync(OUT, { recursive: true });
-const W = Number(process.env.WIDTH || 390), H = 844, KB = 320;
+// DESKTOP=1 scans the desktop Studio instead: a desktop browser, the desktop routes, and WCAG 2.2's 24px
+// target floor rather than the phone's 40px. The keyboard pass finds no phone shell there and skips itself.
+const DESK = Boolean(process.env.DESKTOP);
+const W = Number(process.env.WIDTH || (DESK ? 1280 : 390)), H = DESK ? 900 : 844, KB = 320;
 const EMAIL = 'admin-e2e@solivagant.test';
 const b64 = (v) => Buffer.from(JSON.stringify(v)).toString('base64url');
 const exp = Math.floor(Date.now() / 1000) + 3600;
@@ -95,10 +99,19 @@ const ALL = [
   '/mobile/validation', '/mobile/validation/new', '/mobile/studio/site-images', '/mobile/studio/site-facts', '/mobile/studio/export-shipping',
   '/mobile/authenticator',
 ];
-const routes = process.argv[2] ? process.argv[2].split(',') : ALL;
+const DESKTOP_ALL = [
+  '/studio', '/dashboard', '/studio/products', '/studio/products/curation', '/studio/products/wear', '/studio/products/new',
+  '/studio/products/inventory', `/studio/products/${P.id}/edit`, '/studio/product-categories', '/studio/vouchers', '/studio/shipping',
+  '/studio/orders', `/studio/orders/${orders[0].id}`, '/studio/customers', '/studio/shipments', '/studio/site-images', '/studio/site-facts',
+  '/studio/export-shipping', '/studio/stories', '/studio/journal', '/studio/journal/new', `/studio/journal/${posts[0].id}`,
+  `/studio/journal/${posts[0].id}/edit`, '/raw-materials', '/raw-material-audit', `/raw-material/${materials[0].id}`, '/categories',
+  '/formulas', '/formulas/new', `/formulas/${formulas[0].id}`, `/formulas/${formulas[0].id}/edit`, '/batches', `/batches/${batches[0].id}`,
+  '/production-costing', '/validation', '/authenticator',
+];
+const routes = process.argv[2] ? process.argv[2].split(',') : DESK ? DESKTOP_ALL : ALL;
 
 const browser = await chromium.launch();
-const context = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: W, height: H } });
+const context = await browser.newContext(DESK ? { viewport: { width: W, height: H } } : { ...devices['iPhone 13'], viewport: { width: W, height: H } });
 const blockedWrites = [];
 await context.route('**/*', async (route, req) => {
   const url = req.url();
@@ -137,7 +150,7 @@ for (const route of routes) {
   await page.waitForTimeout(900);
   const slug = route.replace(/[^a-z0-9]+/gi, '_').slice(0, 60);
   if (process.env.SHOTS) await page.screenshot({ path: `${OUT}${slug}-${W}.png`, fullPage: true });
-  const res = await page.evaluate(async ({ H }) => {
+  const res = await page.evaluate(async ({ H, DESK }) => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const vis = (el) => { const r = el.getBoundingClientRect(); if (r.width < 1 || r.height < 1) return false; const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none') return false; if (el.closest('[aria-hidden="true"],[hidden],[data-state="inactive"],[inert],.mobile-accordion-content[data-open="false"]')) return false;
       for (let p = el; p && p !== document.body; p = p.parentElement) { const pc = getComputedStyle(p); if (Number(pc.opacity) === 0) return false; if (p !== el && /(hidden|clip)/.test(pc.overflowX + pc.overflowY)) { const pr = p.getBoundingClientRect(); if (r.bottom <= pr.top + 1 || r.top >= pr.bottom - 1 || r.right <= pr.left + 1 || r.left >= pr.right - 1) return false; } }
@@ -167,7 +180,7 @@ for (const route of routes) {
     const sr = session && vis(session) ? session.getBoundingClientRect() : null;
     const underSession = sr ? texts.concat(all.filter((el) => el.matches('button,a,input'))).filter((el) => !session.contains(el) && !el.contains(session)).filter((el) => { const r = el.getBoundingClientRect(); return r.right > sr.left + 2 && r.left < sr.right - 2 && r.bottom > sr.top + 2 && r.top < sr.bottom - 2; }).filter((el, _, arr) => !arr.some((o) => o !== el && el.contains(o))).slice(0, 4).map(name) : [];
     const small = all.filter((el) => el.matches('button,a[href],select,[role=button],[role=tab],input:not([type=hidden]):not([type=checkbox]):not([type=radio])') && !el.closest('p'))
-      .filter((el) => { const r = el.getBoundingClientRect(); return r.height < 40 || r.width < 30; }).slice(0, 8).map((el) => `${name(el)} ${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`);
+      .filter((el) => { const r = el.getBoundingClientRect(); return DESK ? r.height < 24 || r.width < 24 : r.height < 40 || r.width < 30; }).slice(0, 8).map((el) => `${name(el)} ${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`);
     const scrollers = [document.scrollingElement, ...[...document.querySelectorAll('body *')].filter((el) => /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 10)];
     const scroller = scrollers.sort((a, b) => b.scrollHeight - a.scrollHeight)[0];
     document.documentElement.style.scrollBehavior = 'auto'; scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'instant' }); await sleep(350);
@@ -179,7 +192,7 @@ for (const route of routes) {
     scroller.scrollTo({ top: 0, behavior: 'instant' });
     const rawKeys = [...document.body.innerText.matchAll(/\b[a-z]+(?:\.[a-zA-Z]+){1,3}\b/g)].map((m) => m[0]).filter((t) => /^(cust|pdp|home|nav|cart|bsp|why|journal|imm|wear|track|price|studio|mobile)\./.test(t)).slice(0, 5);
     return { overflow, clipped, overlaps, small, hiddenEnd, underSession, rawKeys, path: location.pathname, h1: document.querySelector('h1')?.textContent?.trim().slice(0, 40) || '' };
-  }, { H });
+  }, { H, DESK });
   // keyboard: focus up to 6 fields, shrink the viewport the way a resizing keyboard does
   const fieldHandles = await page.$$('.mobile-app-shell input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([readonly]):not([disabled]), .mobile-app-shell textarea:not([readonly]), .mobile-app-shell select');
   const visibleFields = [];

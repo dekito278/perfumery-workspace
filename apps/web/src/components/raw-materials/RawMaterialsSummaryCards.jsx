@@ -15,9 +15,9 @@ const RawMaterialsSummaryCards = ({
     <div className="list-summary-card">
       <div className="flex items-center justify-between">
         <div>
-          <p className="list-summary-label">Total materials</p>
+          <p className="list-summary-label">Total bahan baku</p>
           <span className="list-summary-value">{summaryLoading ? '...' : totalMaterials}</span>
-          <p className="list-summary-note">{matchedReferenceCount} linked to workbook references.</p>
+          <p className="list-summary-note">{matchedReferenceCount} tertaut ke acuan workbook.</p>
         </div>
         <Layers3 className="h-5 w-5 text-muted-foreground" />
       </div>
@@ -25,9 +25,9 @@ const RawMaterialsSummaryCards = ({
     <div className="list-summary-card">
       <div className="flex items-center justify-between">
         <div>
-          <p className="list-summary-label">Guidance gaps</p>
+          <p className="list-summary-label">Panduan belum lengkap</p>
           <span className="list-summary-value text-amber-700">{guidanceGapCount}</span>
-          <p className="list-summary-note">Materials that still need reference signals.</p>
+          <p className="list-summary-note">Bahan yang masih butuh data acuan.</p>
         </div>
         <AlertTriangle className="h-5 w-5 text-amber-700" />
       </div>
@@ -35,9 +35,9 @@ const RawMaterialsSummaryCards = ({
     <div className="list-summary-card">
       <div className="flex items-center justify-between">
         <div>
-          <p className="list-summary-label">Solvents ready</p>
+          <p className="list-summary-label">Pelarut siap</p>
           <span className="list-summary-value">{solventCount}</span>
-          <p className="list-summary-note">Solvents available for dilution-aware composition work.</p>
+          <p className="list-summary-note">Pelarut yang bisa dipakai untuk pengenceran di komposisi.</p>
         </div>
         <Droplets className="h-5 w-5 text-muted-foreground" />
       </div>
@@ -45,9 +45,9 @@ const RawMaterialsSummaryCards = ({
     <div className="list-summary-card">
       <div className="flex items-center justify-between">
         <div>
-          <p className="list-summary-label">Reference and audit</p>
+          <p className="list-summary-label">Acuan dan audit</p>
           <span className="list-summary-value text-[1.45rem] sm:text-[1.7rem]">{categoryCount}</span>
-          <p className="list-summary-note">{ifraReferenceCount} IFRA linked, {practicalMergeCandidateCount} merge candidates.</p>
+          <p className="list-summary-note">{ifraReferenceCount} tertaut IFRA, {practicalMergeCandidateCount} kandidat gabung.</p>
         </div>
         <Package className="h-5 w-5 text-muted-foreground" />
       </div>

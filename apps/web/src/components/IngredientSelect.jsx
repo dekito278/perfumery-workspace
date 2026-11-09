@@ -111,7 +111,7 @@ const scoreIngredientMatch = (ingredientName, rawQuery) => {
 const IngredientSelect = ({
   value,
   onChange,
-  placeholder = 'Type material name',
+  placeholder = 'Ketik nama bahan',
   disabled = false,
   ingredients = [],
   autoFocus = false,
@@ -120,7 +120,7 @@ const IngredientSelect = ({
   showSuggestions = true,
   onActivate,
   onCreateMissing,
-  createMissingLabel = 'Tambah raw material baru',
+  createMissingLabel = 'Tambah bahan baku baru',
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -338,7 +338,7 @@ const IngredientSelect = ({
           <div className="max-h-[238px] overflow-y-auto">
             {filteredIngredients.length === 0 ? (
               <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-                No matching materials
+                Tidak ada bahan yang cocok
               </div>
             ) : (
               filteredIngredients.map((ingredient, index) => (
@@ -358,7 +358,7 @@ const IngredientSelect = ({
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{ingredient.name}</div>
                       <div className="truncate text-xs text-muted-foreground">
-                        {ingredient.type === 'solvent' ? 'Solvent' : 'Raw material'} - {ingredient.unit}
+                        {ingredient.type === 'solvent' ? 'Pelarut' : 'Bahan baku'} - {ingredient.unit}
                       </div>
                     </div>
                     {value === ingredient.id ? (
@@ -381,7 +381,7 @@ const IngredientSelect = ({
             >
               <span className="min-w-0">
                 <span className="block font-semibold">{createMissingLabel}</span>
-                <span className="block truncate text-[11px] text-amber-800">"{trimmedSearchTerm}" akan dibuat sebagai raw material.</span>
+                <span className="block truncate text-[11px] text-amber-800">"{trimmedSearchTerm}" akan dibuat sebagai bahan baku.</span>
               </span>
               <PlusCircle className="h-4 w-4 shrink-0" />
             </button>
