@@ -1270,6 +1270,37 @@ const postAuthoritativeOrder = async (body) => {
   return normalizeOrder(data.order);
 };
 
+/**
+ * The English cart's order (10 Nov 2026). References only — which bottles, where to, who — and the
+ * endpoint prices everything itself. Resolves to { orderNumber, paymentToken, totalUsd }; throws with the
+ * endpoint's own English message, which is written for the buyer.
+ *
+ * No direct-insert fallback, unlike the domestic path: an overseas order the server did not price is
+ * exactly the order this exists to stop writing by hand.
+ */
+export const placeInternationalOrder = async ({ country, buyer, items, notes = '' }) => {
+  const response = await fetch('/api/orders/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      international: { ...buyer, country },
+      items: items.map((item) => ({
+        productSlug: item.productSlug || item.slug,
+        variantId: item.variantId || item.variant_id || '',
+        size: item.size || '',
+        quantity: item.quantity,
+      })),
+      notes,
+      client: getClientContext(),
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data?.paymentToken) {
+    throw new Error(data?.message || '', { cause: response.status });
+  }
+  return data;
+};
+
 const createBespokeOrderViaEndpoint = (request) => postAuthoritativeOrder({
   source: 'bespoke',
   customer: { name: request.customerName || '', code: request.customerCode || '', contact: request.contact || '' },

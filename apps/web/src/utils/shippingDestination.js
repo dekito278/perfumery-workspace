@@ -15,8 +15,8 @@
 // every international order. The card has been machine-readable since 24 Sep; this is the buyer reading
 // it themselves.
 
-import { SHIPPING_RATE_REGIONS } from '@/data/internationalShippingRates.js';
-import { NON_ISO_NAMES } from '@/data/exportZones.js';
+import { SHIPPING_RATE_REGIONS } from '../data/internationalShippingRates.js';
+import { NON_ISO_NAMES } from '../data/exportZones.js';
 
 export const DESTINATION_STORAGE_KEY = 'solivagant.storefront.destination.v1';
 export const DESTINATION_QUERY_KEY = 'dest';

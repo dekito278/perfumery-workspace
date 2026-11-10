@@ -67,6 +67,11 @@ const guard = async (context, state) => {
         }
         if (name === 'storefront_voucher_redeemed_by_me') return json(route, 0);
         if (name === 'storefront_payment_session_lookup') return json(route, state.order || null);
+        // The English cart's own order (10 Nov 2026): the payment page looks its token up.
+        if (name === 'storefront_payment_link' && state.intlOrder) {
+          return json(route, [{ order_number: 'DKT-SMOKE-INTL', subtotal: state.intlOrder.totalUsd * 16500, payment_status: 'pending',
+            payment_provider: 'manual', status: 'pending_payment', created_at: new Date().toISOString() }]);
+        }
         if (name === 'storefront_customer_portal') {
           // As the server answers since 20261107100000: a code alone opens nothing; the checkout number does.
           const typed = String(JSON.parse(request.postData() || '{}').p_contact || '').replace(/\D/g, '').replace(/^0/, '62');
@@ -101,6 +106,11 @@ const guard = async (context, state) => {
       if (url.pathname === '/api/orders/create') {
         const body = JSON.parse(request.postData() || '{}');
         state.orderBodies.push(body);
+        if (body.international) {
+          // Never written: answered here with the total the cart showed, which the test reads off the page.
+          state.intlOrder = { body, totalUsd: state.intlCartTotal || 0 };
+          return json(route, { orderNumber: 'DKT-SMOKE-INTL', paymentToken: '0123456789ABCDEFGHJKMNPQRSTVWXYZ', totalUsd: state.intlCartTotal || 0 });
+        }
         state.order = makeOrder(body);
         return json(route, { order: state.order });
       }
@@ -435,13 +445,33 @@ const runShop = async (browser, run, contextOptions) => {
       const option = await country.locator('option').nth(1).getAttribute('value');
       await country.selectOption(option);
       await page.waitForTimeout(800);
-      const order = page.getByRole('link', { name: EN['cart.intl.order'] });
-      check(run, 'with a destination, the WhatsApp order is offered', await order.isVisible().catch(() => false));
-      const href = await order.getAttribute('href').catch(() => '');
-      check(run, 'and it goes to WhatsApp (not clicked)', /^https:\/\/wa\.me\//.test(href || ''), href ? href.slice(0, 40) : 'no href');
+      // Since 2026-11-10 a priced parcel is ordered right here; WhatsApp stays for questions.
+      const place = page.getByRole('button', { name: /^Place order · US\$\d+$/ });
+      check(run, 'with a destination, the cart offers its own order form', await place.isVisible().catch(() => false));
+      const ask = page.getByRole('link', { name: EN['cart.intl.askWhatsApp'] });
+      const href = await ask.getAttribute('href').catch(() => '');
+      check(run, 'and WhatsApp stays for questions (not clicked)', /^https:\/\/wa\.me\//.test(href || ''), href ? href.slice(0, 40) : 'no href');
+      check(run, 'English cart has no horizontal scroll', await noSideScroll(page));
+      if (SHOTS) await page.screenshot({ path: `${SHOTS}/${run}-en-cart.png`, fullPage: true });
+      if (await place.isVisible().catch(() => false)) {
+        state.intlCartTotal = Number((await place.textContent()).match(/US\$(\d+)/)[1]);
+        const intlForm = page.locator('form[aria-labelledby="intl-order-form"]');
+        await intlForm.getByLabel(EN['cart.intl.formName'], { exact: true }).fill('Smoke Buyer');
+        await intlForm.getByLabel(EN['cart.intl.formEmail'], { exact: true }).fill('smoke@example.test');
+        await intlForm.getByLabel(EN['cart.intl.formAddress'], { exact: true }).fill('1 Smoke Street');
+        await intlForm.getByLabel(EN['cart.intl.formCity'], { exact: true }).fill('Smoketown');
+        await place.click();
+        await page.waitForURL(/\/en\/pay\/[0-9A-Z]{32}$/, { timeout: 8000 }).catch(() => {});
+        check(run, 'placing the order lands on its payment page', /^\/en\/pay\/[0-9A-Z]{32}$/.test(new URL(page.url()).pathname), new URL(page.url()).pathname);
+        const sent = state.intlOrder?.body || {};
+        check(run, 'the browser sent which bottles and where — no price', Boolean(sent.international?.country)
+          && !/priceNumber|subtotal|totalUsd|unitUsd|"price"/.test(JSON.stringify(sent.items || [])), JSON.stringify(sent.items || []).slice(0, 80));
+        const amount = await page.locator('.pay-link__amount strong').textContent({ timeout: 8000 }).catch(() => '');
+        check(run, 'the payment page asks for exactly the cart total', amount === `US$${state.intlCartTotal}`, `${amount} vs US$${state.intlCartTotal}`);
+        check(run, 'and takes the receipt there', await page.getByRole('button', { name: EN['pay.link.proofSend'] }).isVisible().catch(() => false));
+        check(run, 'payment page has no horizontal scroll', await noSideScroll(page));
+      }
     }
-    check(run, 'English cart has no horizontal scroll', await noSideScroll(page));
-    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${run}-en-cart.png`, fullPage: true });
   }
 
   check(run, 'no write left the browser', state.blocked.length === 0, state.blocked.join(', '));

@@ -8,15 +8,15 @@
 //
 // The limits are answers, not gaps: more bottles than the policy's cap, and any destination the carrier's zone sheet
 // does not name, are quoted on request. Returning a number there would be inventing a price.
-import { EXPORT_PACKAGE_RATES } from '@/data/exportRates.js';
-import { normalizeExportShippingPolicy, supportUsdFor } from '@/utils/exportShippingPolicy.js';
+import { EXPORT_PACKAGE_RATES } from '../data/exportRates.js';
+import { normalizeExportShippingPolicy, supportUsdFor } from './exportShippingPolicy.js';
 import {
   SHIPPING_RATE_TIERS,
   parcelTierFor,
   SHIPPING_TRANSIT_DAYS,
   shippingRateRegionFor,
   shippingZoneFor,
-} from '@/data/internationalShippingRates.js';
+} from '../data/internationalShippingRates.js';
 
 /** Whole dollars on a US$5 step, rounded UP — a cost rounded down is a cost understated. */
 const up5 = (usd) => Math.ceil(usd / 5) * 5;

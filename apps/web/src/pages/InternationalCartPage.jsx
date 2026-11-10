@@ -12,6 +12,7 @@ import { shortNoteList } from '@/utils/shortNoteList.js';
 import { splitScriptName } from '@/utils/scriptName.js';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
+import InternationalOrderForm from '@/components/storefront/InternationalOrderForm.jsx';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -24,7 +25,9 @@ import { productCopyFor } from '@/utils/productCopy.js';
 
 /**
  * The English shop's cart: the same basket as the Indonesian one, priced in dollars, with the parcel's
- * destination, shipping and arrival next to it, and WhatsApp as the till.
+ * destination, shipping and arrival next to it. Since 2026-11-10 a settled quote is ordered right here
+ * (InternationalOrderForm → the server prices it → /pay/<token>); WhatsApp stays for questions and for
+ * whatever the rule cannot price.
  *
  * Dekito's decision, 2026-10-06, reversing an earlier one of 18 Sep: "saya maunya orang luar itu masukin ke
  * keranjang sama kayak di Indonesia — dari situ baru pilih negara dan kelihatan ongkir, baru order ke
@@ -53,6 +56,10 @@ const InternationalCartPage = () => {
   // Lines the catalogue can no longer fulfil. The domestic cart has said this since audit round 9; this
   // one said nothing, and three bottles are out of stock in the shop as this is written.
   const unfulfillable = lines.filter((line) => line.unavailable || line.outOfStock);
+  // The order is written HERE when the rule has priced every line and the parcel (10 Nov 2026). Anything
+  // it cannot price — another country, more bottles than the policy quotes, a line with no export price,
+  // a bottle out of stock — still goes to WhatsApp, where Dekito can answer it.
+  const canPlaceHere = quote.settled && !unpriced.length && !unfulfillable.length;
   // Four bottles that can be bought and are not in the cart yet — empty or full, as the Indonesian cart
   // does (the English one only offered them while empty, 2026-11-07). The Studio catalogue has no
   // publicStatus, so stock is counted.
@@ -146,8 +153,18 @@ const InternationalCartPage = () => {
                   <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
                   <h2 id="intl-cart-summary" className="sr-only">{t('cart.summary')}</h2>
                   {lines.length ? <InternationalShippingQuote quote={quote} /> : null}
-                  <p className="m-0 text-sm leading-relaxed text-ng-dust">{t('cart.intl.howItWorks')}</p>
-                  {lines.length ? (
+                  {canPlaceHere ? (
+                    <>
+                      <InternationalOrderForm quote={quote} />
+                      {canOrder ? (
+                        <a href={buildWhatsAppCheckoutUrl(message, phone)} target="_blank" rel="noopener noreferrer" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">
+                          {t('cart.intl.askWhatsApp')}
+                        </a>
+                      ) : null}
+                    </>
+                  ) : null}
+                  {!canPlaceHere ? <p className="m-0 text-sm leading-relaxed text-ng-dust">{t('cart.intl.howItWorks')}</p> : null}
+                  {canPlaceHere ? null : lines.length ? (
                     <a
                       href={canOrder ? buildWhatsAppCheckoutUrl(message, phone) : '#'}
                       onClick={needsDestination ? focusDestinationPicker : undefined}
