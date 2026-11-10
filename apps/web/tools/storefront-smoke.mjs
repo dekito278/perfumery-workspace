@@ -22,7 +22,7 @@ const CUSTOMER_CODE = 'SOLI90001';
 const VOUCHER = { code: 'SMOKE10', discount_type: 'percent', discount_value: 10, active: true };
 
 // RPCs that only read. Everything else under /rest/v1/rpc/ is mocked or refused.
-const READ_RPC = new Set(['storefront_member_prices', 'storefront_prices_for_me', 'storefront_my_price_tier', 'is_admin',
+const READ_RPC = new Set(['storefront_member_prices', 'storefront_prices_for_me', 'storefront_my_price_tier', 'storefront_my_member_status', 'is_admin',
   'storefront_public_tracking_lookup', 'storefront_payment_link']);
 
 const makeOrder = (body) => {

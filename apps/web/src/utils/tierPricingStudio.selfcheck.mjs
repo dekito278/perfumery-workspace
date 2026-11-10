@@ -60,8 +60,9 @@ assert.match(service, /export const customerTierSchemaReady/);
 assert.match(service, /\.select\('tier'\)/, 'the probe has to ask for the column by name');
 
 // --- the controls offer only values that do something ----------------------------------------------
-// storefront_my_price_tier() answers 'member' for anyone signed in, whatever this column says, so a
-// "member" option would be a setting that changes nothing.
+// This control grants or removes reseller. Since 10 Nov 2026 membership comes from a member code
+// (Studio → Kode member) or a paid web order, so a "member" option here would be a second, unexplained
+// way in — and on a customer with no linked login it would change nothing at all.
 assert.doesNotMatch(tierSelect.slice(0, tierSelect.indexOf('const CustomerTierSelect')).replace(/\/\/[^\n]*/g, ''),
   /value: 'member'/, 'offering member here would be a control that does nothing');
 assert.match(tierSelect, /value: 'retail'[\s\S]{0,200}value: 'reseller'/, 'the two real states must both be offered');
