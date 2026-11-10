@@ -51,7 +51,7 @@ const createSignature = ({ clientId, requestId, timestamp, target, digest, secre
   return `HMACSHA256=${signature}`;
 };
 
-const contactToCustomer = (contact = '') => {
+export const contactToCustomer = (contact = '') => {
   const trimmedContact = String(contact).trim();
   if (!trimmedContact) return {};
   if (trimmedContact.includes('@')) {
@@ -62,8 +62,27 @@ const contactToCustomer = (contact = '') => {
   if (phone.startsWith('0')) phone = `62${phone.slice(1)}`;
   if (phone.startsWith('8')) phone = `62${phone}`;
   if (phone.startsWith('620')) phone = `62${phone.slice(3)}`;
-  return { phone };
+  // DOKU refuses the whole checkout for a phone outside 1-20 digits ("phone number must be 1-20 digits");
+  // no phone at all is accepted.
+  return phone && phone.length <= 20 ? { phone } : {};
 };
+
+// DOKU refuses the WHOLE checkout when any name holds a character outside
+// a-z A-Z 0-9 . - / + , = _ : ' @ % ( ) and space. Six of the 20 product names did (HUG N°1, J’adore…,
+// L’iris, Wongka!, Ayang-ayang's Javanese script), so every DOKU order containing one of them failed and
+// the buyer never saw a payment panel (production smoke, 2026-11-11). Accents fold to their letter,
+// curly apostrophes become straight ones, ° becomes o, the rest is dropped.
+export const dokuText = (value, fallback) => (
+  String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u2018\u2019\u02BC`]/g, "'")
+    .replace(/\u00B0/g, 'o')
+    .replace(/[^a-zA-Z0-9 .\-/+,=_:'@%()]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\(\s*\)/g, '')
+    .trim()
+  || fallback
+);
 
 const normalizeCallbackPath = (value) => {
   const path = String(value || '/payment').trim();
@@ -78,7 +97,7 @@ const normalizeUrlBase = (value = '') => String(value || '').trim().replace(/\/$
 const toDokuLineItems = (items = []) => (
   Array.isArray(items)
     ? items.map((item) => ({
-      name: String(item.name || item.slug || 'Solivagant item').slice(0, 255),
+      name: dokuText(item.name || item.slug, 'Solivagant item').slice(0, 255),
       quantity: Math.max(1, Math.round(Number(item.quantity || 1))),
       price: Math.round(Number(item.priceNumber || item.totalPrice || item.price || 0)),
       ...(item.slug ? { sku: String(item.slug).slice(0, 64) } : {}),
@@ -226,8 +245,10 @@ export default async function handler(request, response) {
         // contact per order, so both arrived undefined and DOKU was handed "Solivagant Customer" with no
         // phone and no email at all. The masked name on the portal payload is not a substitute — this
         // reads the real one, server-side, where it was never masked.
-        name: String(input.customerName || order.customer_name || 'Solivagant Customer').trim(),
-        ...contactToCustomer(input.contact || order.contact),
+        // The row first: the payment page's retry sends what the public lookup gave it, which is masked
+        // ("T*** S***") and holds characters DOKU refuses.
+        name: dokuText(order.customer_name || input.customerName, 'Solivagant Customer').slice(0, 255),
+        ...contactToCustomer(order.contact || input.contact),
       },
       ...(notificationBaseUrl ? {
         additional_info: {
