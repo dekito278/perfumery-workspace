@@ -16,7 +16,7 @@
 // Dekito's decision, 2026-10-06. The cost side (exportZones.js, exportRates.js) is the carrier's sheet,
 // transcribed; nothing here is interpolated.
 
-import { EXPORT_ZONE_BY_COUNTRY } from '@/data/exportZones.js';
+import { EXPORT_ZONE_BY_COUNTRY } from './exportZones.js';
 
 export const SHIPPING_RATES_EFFECTIVE_YEAR = 2026;
 

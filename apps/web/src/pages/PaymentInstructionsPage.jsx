@@ -5,10 +5,68 @@ import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { findOrderByPaymentToken } from '@/services/paymentLinkService.js';
-import { usdPriceFor } from '@/utils/usdPrice.js';
+import { paymentAmountUsd } from '@/utils/internationalOrder.js';
+import { submitOrderPaymentProof } from '@/services/orderService.js';
+import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
 import {
   PAY_BANK, PAY_CASH, PAY_WIRE, bankIsConfigured, cashIsConfigured, wireIsConfigured,
 } from '@/data/paymentDetails.js';
+
+/**
+ * The receipt, uploaded here instead of sent on WhatsApp (10 Nov 2026). The same two calls the domestic
+ * payment page makes — storage upload under orders/<NUMBER>/, then storefront_submit_payment_proof, which
+ * accepts manual-transfer orders only — and the same nudge to the owner's Telegram.
+ */
+const ReceiptUpload = ({ orderNumber }) => {
+  const { t } = useTranslate();
+  const [file, setFile] = useState(null);
+  const [state, setState] = useState('idle');
+
+  const send = async (event) => {
+    event.preventDefault();
+    if (!file || state === 'sending') return;
+    setState('sending');
+    try {
+      const uploaded = await uploadPaymentProof({ file, orderNumber });
+      await submitOrderPaymentProof(orderNumber, {
+        paymentProofUrl: uploaded.paymentProofUrl,
+        fileName: uploaded.fileName,
+        contentType: uploaded.contentType,
+      });
+      fetch('/api/orders/notify-proof', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber }),
+      }).catch(() => {});
+      setFile(null);
+      setState('done');
+    } catch (error) {
+      console.warn('Receipt upload failed:', error?.message || error);
+      setState('failed');
+    }
+  };
+
+  return (
+    <form className="pay-link__block flex flex-col gap-3" onSubmit={send}>
+      <h2>{t('pay.link.proofTitle')}</h2>
+      <p>{t('pay.link.proofBody')}</p>
+      <label className="ng-label">
+        <span className="ng-mono text-ng-dust">{t('pay.link.proofPick')}</span>
+        <input
+          type="file"
+          className="ng-field"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          onChange={(event) => { setFile(event.target.files?.[0] || null); setState('idle'); }}
+        />
+      </label>
+      <button type="submit" className="ng-btn self-start" disabled={!file || state === 'sending'}>
+        {state === 'sending' ? t('pay.link.proofSending') : t('pay.link.proofSend')}
+      </button>
+      {state === 'done' ? <p className="pay-link__note" role="status">{t('pay.link.proofDone')}</p> : null}
+      {state === 'failed' ? <p className="ng-error m-0 text-sm" role="alert">{t('pay.link.proofFailed')}</p> : null}
+    </form>
+  );
+};
 
 // /pay/<token> — how to pay ONE order, opened without logging in.
 //
@@ -45,7 +103,8 @@ const PaymentInstructionsPage = () => {
   }, [token]);
 
   const orderNumber = order?.orderNumber || '';
-  const usd = order ? usdPriceFor(order.amountIdr) : null;
+  // Exactly the cart's total for an order the English cart wrote; the usual $5 round-up otherwise.
+  const usd = order ? paymentAmountUsd(order.amountIdr) : null;
 
   return (
     <>
@@ -122,6 +181,8 @@ const PaymentInstructionsPage = () => {
               </article>
 
               <p className="pay-link__note">{t('pay.link.after')}</p>
+              <ReceiptUpload orderNumber={orderNumber} />
+              <p className="pay-link__note">{t('pay.link.deadline')}</p>
             </>
           )}
           </div>

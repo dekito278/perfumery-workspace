@@ -28,6 +28,10 @@ import { FREE_VIAL_PRICE_LABEL, FREE_VIAL_TAG, FREE_VIALS_PER_ORDER, isFreeVialP
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
 import { isInternalErrorMessage } from '../../src/utils/publicErrorMessage.js';
+import { randomBytes } from 'node:crypto';
+import { quoteInternationalOrder } from '../../src/utils/internationalOrder.js';
+import { countryNameFor } from '../../src/utils/shippingDestination.js';
+import { createPaymentToken } from '../../src/utils/paymentLinkToken.js';
 
 const jsonResponse = (res, status, body) => {
   res.statusCode = status;
@@ -435,6 +439,19 @@ export default async function handler(req, res) {
       });
     }
 
+    if (input.international) {
+      // Its own catch: the shared one below answers in Indonesian, and this buyer reads English.
+      try {
+        return await createInternationalOrder(res, input, clientContext);
+      } catch (error) {
+        console.error('International order failed:', error?.message || error);
+        const message = isInternalErrorMessage(error?.message) || /[Pp]esanan|Stok/.test(String(error?.message))
+          ? 'Your order could not be created. Please try again in a moment, or message us on WhatsApp.'
+          : error.message;
+        return jsonResponse(res, 400, { message });
+      }
+    }
+
     // 1. Item prices (authoritative, from DB)
     const buyer = await resolveBuyer(req);
     const buyerTier = buyer.tier;
@@ -708,3 +725,190 @@ export default async function handler(req, res) {
     return jsonResponse(res, 400, { message });
   }
 }
+
+// --- the English shop's order (Dekito, 10 Nov 2026) ------------------------------------------------
+//
+// Below the handler on purpose: several guards read the FIRST occurrence of a call in this file as the
+// domestic flow's, and this branch repeats some of those calls.
+//
+// Until now the English cart ended at a WhatsApp message and Dekito retyped the order in Studio. Here the
+// buyer's own cart becomes the order: export price per bottle and DHL shipping, both recomputed from the
+// database with quoteInternationalOrder (the cart's arithmetic), a /pay/<token> link minted here, stock
+// held like any other order. What the browser sends is only WHICH bottles and WHERE; never a price.
+//
+// Deliberately narrower than the domestic path: no voucher, no bespoke brief, no domestic courier. Each
+// is a domestic promotion or a hand-quoted flow, and accepting them here would be pricing the server
+// never agreed to. The free vial IS offered in the English cart (since 2026-10-06), so it is accepted
+// here on the same terms as at home: decided by the product's own tag, at most one, free, and outside
+// the bottle count, so it changes neither the shipping nor the total.
+
+// One line on purpose: priceIsNotGuessed reads every line shaped `  ['…',` in this file as a voucher
+// refusal signature.
+const INTERNATIONAL_FIELDS = [['name', 120], ['email', 200], ['phone', 40], ['address', 600], ['city', 120], ['postcode', 20]];
+
+const readExportPolicy = async () => {
+  const rows = await sbSelectOptional('storefront_export_shipping_settings?id=eq.default&select=*');
+  return rows?.[0] || null;
+};
+
+const priceInternationalLines = async (items = []) => {
+  if (!Array.isArray(items) || !items.length) return { lines: [], gifts: [] };
+  if (items.length > MAX_ORDER_LINES) throw new Error(`Too many lines in this order (max ${MAX_ORDER_LINES})`);
+  const lines = [];
+  const gifts = [];
+  for (const line of items) {
+    const slug = String(line?.productSlug || line?.product_slug || line?.slug || '').trim();
+    const quantity = Math.max(1, Math.round(Number(line?.quantity || 1)));
+    if (!slug) throw new Error('Item missing productSlug');
+    if (!Number.isFinite(quantity) || quantity > MAX_LINE_QUANTITY) throw new Error(`Quantity out of range for ${slug}`);
+    const rows = await sbSelect(`storefront_products?slug=eq.${encodeURIComponent(slug)}&select=id,slug,name,category,price_number,variants,tags`);
+    const product = rows?.[0];
+    if (!product) throw new Error(`Unknown product: ${slug}`);
+    const variants = Array.isArray(product.variants) ? product.variants : [];
+    const variantRef = String(line?.variantId || line?.variant_id || '');
+    const variant = variants.find((v) => (variantRef ? v.id === variantRef : v.size === line?.size));
+    if (variants.length && !variant) throw new Error(`No matching variant for ${slug}`);
+    if (isFreeVialProduct(product)) {
+      if (gifts.length >= FREE_VIALS_PER_ORDER) throw new Error(`An order carries at most ${FREE_VIALS_PER_ORDER} free vial.`);
+      gifts.push({ product, variant, slug, name: product.name, size: variant?.size || line?.size || '' });
+      continue;
+    }
+    const basePrice = Number(variant?.priceNumber ?? variant?.price_number ?? product.price_number ?? 0);
+    const tierRows = await sbSelectOptional(`storefront_product_prices?product_id=eq.${encodeURIComponent(product.id)}&select=*`);
+    const scheduledRows = await sbSelectOptional(`storefront_price_schedule?product_id=eq.${encodeURIComponent(product.id)}&select=*`);
+    const index = indexTierPrices([...tierRows, ...scheduledRows].map((row) => ({ ...row, slug })), { asOf: Date.now() });
+    const tierPrices = tierPricesForLine(index, slug, variant?.id || '');
+    lines.push({
+      product, variant, slug, quantity,
+      name: product.name,
+      size: variant?.size || line?.size || '',
+      // The retail price IN FORCE (a scheduled one once it has arrived) — what the cart compares with.
+      retailPrice: resolveTierPrice({ retailPrice: basePrice, tierPrices, tier: 'retail' }),
+      tierPrices,
+    });
+  }
+  return { lines, gifts };
+};
+
+const createInternationalOrder = async (res, input, clientContext) => {
+  const buyer = input.international || {};
+  const fields = Object.fromEntries(INTERNATIONAL_FIELDS.map(([key]) => [key, String(buyer[key] || '').trim()]));
+  const tooLong = INTERNATIONAL_FIELDS.find(([key, limit]) => fields[key].length > limit);
+  if (tooLong) return jsonResponse(res, 422, { message: `The ${tooLong[0]} field is too long.`, field: tooLong[0] });
+  const missing = ['name', 'email', 'address', 'city'].find((key) => !fields[key]);
+  if (missing) return jsonResponse(res, 422, { message: `Please fill in your ${missing}.`, field: missing });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
+    return jsonResponse(res, 422, { message: 'Please check your email address.', field: 'email' });
+  }
+  if (input.voucherCode || input.bespoke || input.shipping) {
+    return jsonResponse(res, 422, { message: 'Vouchers and domestic shipping do not apply to international orders.' });
+  }
+
+  const { lines, gifts } = await priceInternationalLines(input.items);
+  const quote = quoteInternationalOrder({ country: buyer.country, lines, policy: await readExportPolicy() });
+  if (!quote.ok) return jsonResponse(res, 422, { message: quote.reason, reason: 'international_quote' });
+
+  const countryName = countryNameFor(quote.country, 'en');
+  const contact = [fields.email, fields.phone].filter(Boolean).join(' · ');
+  const deliveryAddress = [fields.address, [fields.postcode, fields.city].filter(Boolean).join(' '), countryName].join('\n');
+  const customerArgs = {
+    p_customer_code: null,
+    p_customer_name: fields.name,
+    p_contact: contact,
+    p_delivery_address: deliveryAddress,
+    p_delivery_area: countryName,
+    p_notes: null,
+  };
+  const customer = (await sbRpc('storefront_upsert_customer', { ...customerArgs, p_increment_order: false }))?.[0] || null;
+
+  const rate = quote.subtotalIdr / quote.totalUsd;
+  const items = quote.lines.map((line) => ({
+    id: line.product.id,
+    slug: line.slug,
+    productSlug: line.slug,
+    name: line.name,
+    category: line.product.category || '',
+    cartSlug: `${line.slug}-${line.variant?.id || line.size}`,
+    variantId: line.variant?.id || '',
+    size: line.size,
+    quantity: line.quantity,
+    priceNumber: line.unitUsd * rate,
+    price: `US$${line.unitUsd}`,
+    tags: [],
+  })).concat(gifts.map((gift) => ({
+    id: gift.product.id,
+    slug: gift.slug,
+    productSlug: gift.slug,
+    name: gift.name,
+    category: gift.product.category || '',
+    cartSlug: `${gift.slug}-${gift.variant?.id || gift.size}`,
+    variantId: gift.variant?.id || '',
+    size: gift.size,
+    quantity: FREE_VIALS_PER_ORDER,
+    priceNumber: 0,
+    price: FREE_VIAL_PRICE_LABEL,
+    tags: [FREE_VIAL_TAG],
+  })));
+  const eta = quote.transitDays ? `${quote.transitDays[0]}–${quote.transitDays[1]} business days after dispatch` : '';
+  const paymentToken = createPaymentToken(randomBytes);
+  const payload = {
+    order_number: `DKT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+    status: 'pending_payment',
+    customer_name: fields.name,
+    customer_code: customer?.customer_code || null,
+    customer_id: customer?.id || null,
+    contact,
+    notes: [
+      `Order luar negeri dari toko EN (web) — ${countryName}.`,
+      `Parfum US$${quote.goodsUsd} · Ongkir DHL US$${quote.shippingUsd} · Total US$${quote.totalUsd} (kurs toko Rp ${rate.toLocaleString('id-ID')}).`,
+      `Alamat:\n${deliveryAddress}`,
+      String(input.notes || '').trim().slice(0, 2000),
+    ].filter(Boolean).join('\n'),
+    items,
+    quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+    subtotal: quote.subtotalIdr,
+    checkout_draft: '',
+    payment_provider: 'manual',
+    payment_status: 'pending',
+    payment_token: paymentToken,
+    courier_name: `DHL Express / US$${quote.shippingUsd}${eta ? ` / ${eta}` : ''}`,
+    source: 'storefront',
+    client_context: { ...clientContext, shop: 'en' },
+  };
+
+  const { restUrl, headers } = getSupabaseRest();
+  const insertRes = await fetch(`${restUrl}/storefront_orders`, {
+    method: 'POST',
+    headers: { ...headers, Prefer: 'return=representation' },
+    body: JSON.stringify(payload),
+  });
+  if (!insertRes.ok) {
+    console.error('International order insert failed:', await insertRes.text());
+    throw new Error('Your order could not be created. Please try again in a moment.');
+  }
+  const [order] = await insertRes.json();
+
+  try {
+    await deductInventory(order.id || order.order_number);
+  } catch (stockError) {
+    await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(order.order_number)}`, {
+      method: 'PATCH',
+      headers: { ...headers, Prefer: 'return=minimal' },
+      body: JSON.stringify({ status: 'cancelled', payment_status: 'expired' }),
+    }).catch(() => {});
+    console.warn('International order stock refused:', stockError?.message || stockError);
+    return jsonResponse(res, 409, { message: 'One of these perfumes just ran out. Please check your cart.', reason: 'stock' });
+  }
+
+  await sbRpc('storefront_upsert_customer', { ...customerArgs, p_increment_order: true }).catch(() => {});
+  await sendOrderAlert({ order, event: 'created', env: process.env });
+
+  // Only what the buyer's browser needs to go on: where to pay, and what it said.
+  return jsonResponse(res, 200, {
+    orderNumber: order.order_number,
+    paymentToken,
+    goodsUsd: quote.goodsUsd,
+    shippingUsd: quote.shippingUsd,
+    totalUsd: quote.totalUsd,
+  });
+};

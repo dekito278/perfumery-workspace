@@ -28,17 +28,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { ITEM_WEIGHT_GRAM_BY_ML, itemWeightGram, DEFAULT_ITEM_WEIGHT_GRAM } from './itemWeight.js';
-import { pathToFileURL } from 'node:url';
-import { Buffer } from 'node:buffer';
+import { EXPORT_BOX } from '../data/internationalShippingRates.js';
 
 const src = dirname(fileURLToPath(import.meta.url)).replace(/\/utils$/, '');
 const root = join(src, '..');
 
-// The packing rule's module reads the carrier's zone sheet through the '@/' alias, which node does not
-// resolve: lifted with the alias rewritten to a file URL, so the REAL rule is what this guard holds.
-const { EXPORT_BOX } = await import(`data:text/javascript;base64,${Buffer.from(
-  readFileSync(join(src, 'data', 'internationalShippingRates.js'), 'utf8')
-    .replace(/'@\//g, `'${pathToFileURL(src).href}/`), 'utf8').toString('base64')}`);
+// The packing rule's module imports relatively since 2026-11-10 (the order endpoint prices international
+// parcels with it), so the REAL rule is imported directly.
 
 // --- 1. The table is real and still the thing the quote uses --------------------------------------------
 const entries = Object.entries(ITEM_WEIGHT_GRAM_BY_ML);
