@@ -212,4 +212,40 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   assert.equal(paypalLinkFor(null, 'https://paypal.me/solivagant'), '', 'no amount, no link');
 }
 
+// --- 5. Studio can follow the order up: the pay link and the dollars ------------------------------------
+// Measured 10 Nov 2026 on the Studio screens with this order as the fixture: "Salin link bayar" and
+// "WA link bayar" were dead (they knew only DOKU's link), and the English message to the buyer said
+// "Total: Rp 3.877.500" for an order paid in dollars.
+{
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const srcDir = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const read = (...parts) => readFileSync(join(srcDir, ...parts), 'utf8');
+  assert.match(read('services', 'orderService.js'), /paymentToken: order\.payment_token \|\| order\.paymentToken \|\| ''/,
+    'the order screens must read the /pay token back, or Studio cannot hand the link out again');
+  const templates = read('services', 'notificationTemplateService.js');
+  assert.doesNotMatch(templates, /formatTotal\(order\.subtotal\)/, 'a buyer message prints a rupiah total without asking whether the order is in dollars');
+  assert.match(templates, /amountUsd/, 'the message total reads the dollars the order carries');
+  assert.match(templates, /\/pay\/\$\{order\.paymentToken\}/, 'the pay link is the /pay/<token> page when there is no DOKU link');
+  const desk = read('pages', 'OrderDetailPage.jsx');
+  assert.equal((desk.match(/disabled=\{!paymentLink\}/g) || []).length, 2, 'both desktop pay-link buttons open for a /pay order');
+  assert.match(read('pages', 'mobile', 'MobileOrderDetailPage.jsx'), /order\.paymentToken && \['unpaid', 'pending'\]\.includes\(order\.paymentStatus\)/,
+    'the phone screen offers the /pay link too');
+}
+
+// --- 6. The contact the server writes ("email · phone") reaches both Studio buttons ------------------------
+{
+  const { normalizeWhatsAppPhoneNumber } = await import('./phoneNumber.js');
+  assert.equal(normalizeWhatsAppPhoneNumber('jordan.ellis@example.com · +44 20 7946 0958'), '442079460958',
+    'WhatsApp from Studio must reach the number in a combined contact, not open with no recipient');
+  assert.equal(normalizeWhatsAppPhoneNumber('budi123@gmail.com'), '', 'an email alone is still never a phone number');
+  assert.equal(normalizeWhatsAppPhoneNumber('081234567890'), '6281234567890', 'and a domestic number reads as before');
+  const { readFileSync } = await import('node:fs');
+  const templates = readFileSync(new URL('../services/notificationTemplateService.js', import.meta.url), 'utf8');
+  assert.match(templates, /export const canSendEmailNotification = \(order\) => Boolean\(contactEmail\(order\?\.contact\)\);/,
+    'the Email button must find the address inside a combined contact');
+  assert.match(templates, /const email = contactEmail\(order\?\.contact\);/, 'and mail it there');
+}
+
 console.log('internationalOrder wiring OK');

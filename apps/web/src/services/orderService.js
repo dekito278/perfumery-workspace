@@ -386,6 +386,10 @@ const normalizeOrder = (order) => {
     paymentStatus: order.payment_status || order.paymentStatus || 'unpaid',
     paymentReference: order.payment_reference || order.paymentReference || '',
     paymentUrl: order.payment_url || order.paymentUrl || '',
+    // The /pay/<token> secret, read back so Studio can hand the buyer their payment page again. It was
+    // written (toOrderDatabasePayload) and never read, so "Salin link bayar" stayed dead on every order
+    // that is not DOKU — every overseas one.
+    paymentToken: order.payment_token || order.paymentToken || '',
     paymentExpiresAt: order.payment_expires_at || order.paymentExpiresAt || '',
     paymentSessionId: order.payment_session_id || order.paymentSessionId || '',
     paymentResponse: order.doku_response || order.payment_response || order.paymentResponse || {},

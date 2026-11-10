@@ -39,6 +39,28 @@ const shopPrefix = (order) => (shopOf(order) === 'en' ? '/en' : '');
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
+/**
+ * What the buyer actually pays. An overseas order (the English cart's, or one Studio's export screen
+ * wrote) carries its dollars on payment_response.amountUsd, and that is the figure on its payment page —
+ * a message saying "Total: Rp 3.877.500" to a buyer in San Francisco names a number they will never send.
+ */
+export const formatOrderTotal = (order) => {
+  const usd = Number(order?.paymentResponse?.amountUsd);
+  return Number.isFinite(usd) && usd > 0 ? `US$${usd}` : formatTotal(order?.subtotal);
+};
+
+/**
+ * The page where this order is paid: DOKU's when there is one, else the /pay/<token> instructions page
+ * (overseas manual transfer). '' when neither exists.
+ */
+export const getPaymentLinkUrl = (order) => {
+  if (order?.paymentUrl) return order.paymentUrl;
+  if (typeof window === 'undefined' || !order?.paymentToken) return '';
+  return `${window.location.origin}${shopPrefix(order)}/pay/${order.paymentToken}`;
+};
+
+const unpaid = (order) => ['unpaid', 'pending'].includes(order?.paymentStatus);
+
 const formatItemLines = (order = {}) => {
   const items = getOrderProductItems(order);
   const voucherSnapshot = getOrderVoucherSnapshot(order);
@@ -52,6 +74,14 @@ const formatItemLines = (order = {}) => {
 };
 
 const isEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+
+/**
+ * The email address inside a contact, which may also hold a phone number — the English cart stores
+ * "name@example.com · +1 415 555 0132", and an overseas buyer is reached by email first. '' when none.
+ */
+export const contactEmail = (contact = '') => (
+  String(contact || '').split(/[\s·,;/]+/).find((part) => isEmail(part)) || ''
+);
 
 /**
  * Where this buyer can look their order up.
@@ -118,10 +148,11 @@ const templatesById = {
     '',
     'Detail order:',
     formatItemLines(order),
-    `Total: ${formatTotal(order.subtotal)}`,
+    `Total: ${formatOrderTotal(order)}`,
     `Status pembayaran: ${order.paymentStatus || '-'}`,
     order.customerCode ? `Kode customer: ${order.customerCode}` : null,
     linkLine(order, 'Invoice', 'Lacak pesanan'),
+    unpaid(order) && order.paymentToken ? `Link bayar: ${getPaymentLinkUrl(order)}` : null,
     '',
     'Kami akan update lagi setelah pembayaran terkonfirmasi. Terima kasih.',
   ],
@@ -144,7 +175,7 @@ const templatesById = {
     'Mohon upload ulang bukti transfer yang jelas lewat link berikut:',
     getManualPaymentUploadUrl(order),
     '',
-    `Total order: ${formatTotal(order.subtotal)}`,
+    `Total order: ${formatOrderTotal(order)}`,
     order.customerCode ? `Kode customer: ${order.customerCode}` : null,
     '',
     'Status order tetap pending sampai bukti transfer baru kami cek. Terima kasih.',
@@ -187,10 +218,11 @@ const templatesByEn = {
     '',
     'Order details:',
     formatItemLines(order),
-    `Total: ${formatTotal(order.subtotal)}`,
+    `Total: ${formatOrderTotal(order)}`,
     `Payment status: ${order.paymentStatus || '-'}`,
     order.customerCode ? `Customer code: ${order.customerCode}` : null,
     linkLine(order, 'Invoice', 'Track your order'),
+    unpaid(order) && order.paymentToken ? `Pay here: ${getPaymentLinkUrl(order)}` : null,
     '',
     'We will write again once the payment is confirmed. Thank you.',
   ],
@@ -213,7 +245,7 @@ const templatesByEn = {
     'Please upload a clearer transfer proof here:',
     getManualPaymentUploadUrl(order),
     '',
-    `Order total: ${formatTotal(order.subtotal)}`,
+    `Order total: ${formatOrderTotal(order)}`,
     order.customerCode ? `Customer code: ${order.customerCode}` : null,
     '',
     'The order stays pending until we have checked the new proof. Thank you.',
@@ -279,17 +311,17 @@ export const getNotificationHandoffUrl = (order, message, eventKey) => {
   if (phone) {
     return `https://wa.me/${phone}?text=${encodeURIComponent(message || '')}`;
   }
-  if (isEmail(order?.contact)) {
+  if (contactEmail(order?.contact)) {
     return getEmailNotificationUrl(order, eventKey, message);
   }
   return `https://wa.me/?text=${encodeURIComponent(message || '')}`;
 };
 
 export const getEmailNotificationUrl = (order, eventKey, message) => {
-  const email = isEmail(order?.contact) ? String(order.contact).trim() : '';
+  const email = contactEmail(order?.contact);
   const subject = encodeURIComponent(buildNotificationSubject(order, eventKey));
   const body = encodeURIComponent(message || '');
   return `mailto:${email}?subject=${subject}&body=${body}`;
 };
 
-export const canSendEmailNotification = (order) => isEmail(order?.contact);
+export const canSendEmailNotification = (order) => Boolean(contactEmail(order?.contact));
