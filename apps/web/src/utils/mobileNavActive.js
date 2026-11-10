@@ -8,7 +8,7 @@
 export const MOBILE_NAV_GROUP_PATHS = {
   commerce: [
     '/mobile/studio/products', '/mobile/studio/product-categories', '/mobile/studio/orders', '/mobile/studio/fulfillment',
-    '/mobile/studio/customers', '/mobile/studio/bespoke', '/mobile/studio/vouchers', '/mobile/studio/shipping',
+    '/mobile/studio/customers', '/mobile/studio/bespoke', '/mobile/studio/vouchers', '/mobile/studio/member-codes', '/mobile/studio/shipping',
     '/mobile/studio/export-shipping',
   ],
   studio: [

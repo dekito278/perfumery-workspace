@@ -137,15 +137,29 @@ const resolveBuyer = async (req) => {
     return ANONYMOUS_BUYER;
   }
 
-  // Past this line the identity is PROVEN, and the next rule says a signed-in buyer is at least a member.
-  // Falling back to ANONYMOUS_BUYER here contradicted it and charged her retail — so a failed tier read
-  // refuses the order instead of guessing a price. The same call this endpoint already makes for an
-  // invalid voucher: refuse, and let checkout re-price, rather than charge more than she confirmed.
+  // Past this line the identity is PROVEN. A failed status read refuses the order instead of guessing a
+  // price — the same call this endpoint already makes for an invalid voucher: refuse, and let checkout
+  // re-price, rather than charge more (or less) than the buyer confirmed.
+  //
+  // storefront_member_status is the rule the storefront displays with (member code, paid order, legacy,
+  // or an admin-set tier; reseller unchanged). Until its migration runs, the old rule answers here AND in
+  // the browser — signed in = member — so the two readers keep agreeing on either side of the switch.
+  try {
+    const rows = await sbRpc('storefront_member_status', { p_auth_user_id: verified });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    const percent = Number(row?.member_percent);
+    return {
+      tier: ['member', 'reseller'].includes(row?.tier) ? row.tier : 'retail',
+      memberPercent: Number.isFinite(percent) && percent > 0 ? percent : null,
+      authUserId: verified,
+    };
+  } catch (error) {
+    if (!/PGRST202|42883|does not exist|schema cache/i.test(String(error?.message || ''))) throw error;
+  }
   const rows = await sbSelectOptional(
     `storefront_customers?auth_user_id=eq.${encodeURIComponent(verified)}&select=tier&limit=1`,
   );
-  // Signed in at all makes someone a member; only a row an admin wrote makes them a reseller.
-  return { tier: rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member', authUserId: verified };
+  return { tier: rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member', memberPercent: null, authUserId: verified };
 };
 
 // How much of this code the account has already redeemed. Advisory: it lets checkout be refused with the
@@ -175,7 +189,7 @@ const countAccountRedemptions = async (code, authUserId) => {
 // generic line stays the default for anything unrecognised. Matched on the part of each raise that
 // carries no interpolated value, so a code with an unlucky name cannot change which branch fires.
 const VOUCHER_REFUSAL_MESSAGES = [
-  ['hanya untuk pembeli yang masuk', (code) => `Voucher ${code} hanya untuk pembeli yang masuk ke akunnya. Masuk dengan Google dulu — sekalian dapat harga member.`],
+  ['hanya untuk pembeli yang masuk', (code) => `Voucher ${code} hanya untuk pembeli yang masuk ke akunnya. Masuk dengan Google dulu.`],
   ['sudah dipakai di akun ini', (code) => `Voucher ${code} sudah pernah dipakai di akun ini.`],
   ['Kuota voucher sudah habis', (code) => `Voucher ${code} sudah habis kuotanya. Checkout ulang tanpa voucher tersebut.`],
 ];
@@ -197,7 +211,7 @@ const voucherRefusalMessage = (error, code) => {
 const MAX_ORDER_LINES = 50;
 const MAX_LINE_QUANTITY = 100;
 
-const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
+const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent = null) => {
   if (items.length > MAX_ORDER_LINES) {
     throw new Error(`Order has too many item lines (${items.length}, max ${MAX_ORDER_LINES})`);
   }
@@ -246,7 +260,8 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
     const scheduledRows = await sbSelectOptional(
       `storefront_price_schedule?product_id=eq.${encodeURIComponent(product.id)}&select=*`,
     );
-    if (tierRows.length || scheduledRows.length) {
+    // A member code prices from retail alone, so it applies even to a product with no tier rows at all.
+    if (tierRows.length || scheduledRows.length || (buyerTier === 'member' && memberPercent)) {
       // The SERVER's clock decides when a price changes, never the buyer's device. indexTierPrices drops
       // rows whose effective_at has not arrived and, among those in force, keeps the latest — without
       // that second rule the winner was whichever row this query happened to return last.
@@ -259,6 +274,7 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
         tierPrices: tierPricesForLine(index, slug, variant?.id || ''),
         tier: buyerTier,
         overseas: false,
+        memberPercent,
       });
     }
 
@@ -422,7 +438,7 @@ export default async function handler(req, res) {
     // 1. Item prices (authoritative, from DB)
     const buyer = await resolveBuyer(req);
     const buyerTier = buyer.tier;
-    const catalog = await priceCatalogItems(input.items || [], buyerTier);
+    const catalog = await priceCatalogItems(input.items || [], buyerTier, buyer.memberPercent);
     const bespoke = isBespoke ? await priceBespokeOptions(input.bespoke?.optionIds || {}) : { subtotal: 0, labels: {} };
     const itemsSubtotal = catalog.subtotal + bespoke.subtotal;
     if (itemsSubtotal <= 0) return jsonResponse(res, 422, { message: 'Order has no priced items' });

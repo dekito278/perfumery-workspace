@@ -1,6 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { formatRupiah } from '@/services/productCatalogService.js';
-import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
@@ -18,7 +18,6 @@ const TIER_LABELS = { member: 'price.memberTier', reseller: 'price.resellerTier'
  * set above the selling price, is every product. The storefront stays exactly as it is.
  */
 const PriceNote = ({ product, variant = null, className = '' }) => {
-  const { loginWithGoogle } = useAuth();
   const { t } = useTranslate();
   const overseasPrice = useOverseasPrice(product, variant);
   const price = Number(variant?.priceNumber ?? product?.priceNumber ?? 0);
@@ -42,6 +41,9 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   }
 
   // Not a member yet, and a member price exists for this line: say so, with the number and the way in.
+  // The way in is the account page, not a sign-in button: since 10 Nov 2026 signing in alone does not
+  // make anyone a member — a member code or a paid order here does — and that page says so and takes the
+  // code.
   // attachMemberPrices only sets memberPriceNumber when it is strictly below the price on the line, so
   // this branch cannot fire for a signed-in member (their price already IS the member price) nor for a
   // product with no member price — which, until Dekito fills them in, is every product.
@@ -56,13 +58,12 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
       <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-ng-ember ${className}`}>
         <span>{t('price.memberIs', { price: formatRupiah(memberPrice) })}</span>
         <span className="font-semibold normal-case tracking-normal text-ng-dust">{t('price.saveShort', { amount: formatRupiah(price - memberPrice) })}</span>
-        <button
-          type="button"
-          onClick={() => loginWithGoogle(window.location.href).catch(() => {})}
+        <Link
+          to="/customer"
           className="inline-flex min-h-[44px] items-center font-bold normal-case tracking-normal underline underline-offset-2"
         >
-          {t('price.signInGoogle')}
-        </button>
+          {t('price.howToMember')}
+        </Link>
       </p>
     );
   }

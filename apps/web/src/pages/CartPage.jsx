@@ -13,10 +13,9 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
-import { useMemberPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
-import { memberSavingForCart, shouldPromptSignInForMemberPrice } from '@/utils/memberPriceNudge.js';
+import { useMemberPrices, useStorefrontProducts, useTierPrices } from '@/hooks/useStorefrontProducts.js';
+import { memberSavingForCart, shouldOfferMemberPrice } from '@/utils/memberPriceNudge.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
-import { useAuth } from '@/contexts/AuthContext.jsx';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
@@ -30,9 +29,9 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Numbe
 const CartPage = () => {
   const { items, summary, updateQuantity, removeItem, setGift } = useCart();
   const { index: memberIndex } = useMemberPrices();
-  const { currentUser } = useAuth();
+  const { tier } = useTierPrices();
   const memberSaving = memberSavingForCart(items, memberIndex);
-  const offerMemberSignIn = shouldPromptSignInForMemberPrice({ saving: memberSaving, signedIn: Boolean(currentUser) });
+  const offerMemberSignIn = shouldOfferMemberPrice({ saving: memberSaving, isMember: tier === 'member' || tier === 'reseller' });
   const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const subtotal = summary.subtotal;

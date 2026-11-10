@@ -1,6 +1,8 @@
 // Which price applies to one line. Pure and import-free so the browser and the order endpoint (plain
 // node) can share it — the same reason schemaAvailability.js is shaped this way. Two implementations of
 // one answer is how the availability and og:image bugs happened; pricing is the last place to repeat it.
+// (memberPriceFill.js is import-free too, so this stays loadable from plain node.)
+import { memberPriceFromRetail } from './memberPriceFill.js';
 
 export const OVERSEAS_TIER = 'overseas';
 
@@ -24,8 +26,11 @@ export const RETAIL_TIER = 'retail';
  * @param tierPrices   { retail?, member?, reseller?, overseas? } for this exact product/variant
  * @param tier         the buyer's tier, resolved from their session by the server
  * @param overseas     true when the parcel leaves Indonesia; a destination, not a customer tier
+ * @param memberPercent the percentage of the member code this buyer redeemed (Studio, "Kode member"),
+ *                      or null. A member pays the LOWER of the product's member price and retail minus
+ *                      this percentage — a community code can only ever add to what membership gives.
  */
-export const resolveTierPrice = ({ retailPrice, tierPrices = {}, tier = 'retail', overseas = false } = {}) => {
+export const resolveTierPrice = ({ retailPrice, tierPrices = {}, tier = 'retail', overseas = false, memberPercent = null } = {}) => {
   // A SCHEDULED retail price outranks the one on the variant. That is how the 12 Nov 2026 change is
   // delivered: the new figure is a row with an effective_at, and until it arrives indexTierPrices does
   // not hand it over at all. The variant keeps the old price, so nothing has to be rewritten in place
@@ -38,11 +43,17 @@ export const resolveTierPrice = ({ retailPrice, tierPrices = {}, tier = 'retail'
     return toPrice(tierPrices[OVERSEAS_TIER]) ?? retail;
   }
 
+  let price = retail;
   for (const candidate of LADDER[tier] || []) {
-    const price = toPrice(tierPrices[candidate]);
-    if (price !== null) return price;
+    const tierPrice = toPrice(tierPrices[candidate]);
+    if (tierPrice !== null) {
+      price = tierPrice;
+      break;
+    }
   }
-  return retail;
+  // Only a member: a reseller's own price is negotiated, and a code does not stack on it.
+  const fromCode = tier === 'member' && memberPercent ? memberPriceFromRetail(retail, memberPercent) : null;
+  return fromCode !== null && fromCode < price ? fromCode : price;
 };
 
 const effectiveTime = (row) => {

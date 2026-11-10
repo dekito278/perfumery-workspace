@@ -16,17 +16,64 @@ export const isSchemaMissing = (error) => Boolean(
   error && (SCHEMA_MISSING_CODES.has(error.code) || /does not exist|schema cache/i.test(error.message || '')),
 );
 
-/** The caller's tier, resolved by the server from their session. Always safe to call. */
+/**
+ * The caller's tier — and, for a member who redeemed a code, its percentage and name — resolved by the
+ * server from their session. Always safe to call.
+ *
+ * storefront_my_member_status arrives with the member-code migration. Until it runs, the old function
+ * answers with the old rule (signed in = member), which is also what the order endpoint falls back to:
+ * the two readers must change together or a buyer is shown one price and charged another.
+ */
 export const getMyPriceTier = async () => {
+  try {
+    const { data, error } = await supabase.rpc('storefront_my_member_status');
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    const percent = Number(row?.member_percent);
+    return {
+      tier: String(row?.tier || 'retail'),
+      memberPercent: Number.isFinite(percent) && percent > 0 ? percent : null,
+      codeName: row?.code_name ? String(row.code_name) : '',
+      codesReady: true,
+      schemaReady: true,
+    };
+  } catch (error) {
+    if (!isSchemaMissing(error)) {
+      console.warn('Member status lookup failed, treating as retail:', error?.message || error);
+      return { tier: 'retail', memberPercent: null, codeName: '', codesReady: true, schemaReady: true };
+    }
+  }
   try {
     const { data, error } = await supabase.rpc('storefront_my_price_tier');
     if (error) throw error;
-    return { tier: String(data || 'retail'), schemaReady: true };
+    return { tier: String(data || 'retail'), memberPercent: null, codeName: '', codesReady: false, schemaReady: true };
   } catch (error) {
     if (!isSchemaMissing(error)) {
       console.warn('Price tier lookup failed, treating as retail:', error?.message || error);
     }
-    return { tier: 'retail', schemaReady: !isSchemaMissing(error) };
+    return { tier: 'retail', memberPercent: null, codeName: '', codesReady: false, schemaReady: !isSchemaMissing(error) };
+  }
+};
+
+/**
+ * Turns a member code into membership for the signed-in caller. Answers with a result word, never throws:
+ * 'ok' | 'unknown' (no such active code) | 'too_many' (ten wrong tries this hour) | 'signin' |
+ * 'unavailable' (migration not run yet) | 'failed'.
+ */
+export const redeemMemberCode = async (code) => {
+  try {
+    const { data, error } = await supabase.rpc('storefront_redeem_member_code', { p_code: String(code || '') });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      result: String(row?.result || 'failed'),
+      codeName: row?.code_name ? String(row.code_name) : '',
+      memberPercent: Number(row?.member_percent) || null,
+    };
+  } catch (error) {
+    if (isSchemaMissing(error)) return { result: 'unavailable', codeName: '', memberPercent: null };
+    console.warn('Member code redeem failed:', error?.message || error);
+    return { result: 'failed', codeName: '', memberPercent: null };
   }
 };
 

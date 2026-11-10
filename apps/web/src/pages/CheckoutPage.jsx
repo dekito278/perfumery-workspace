@@ -16,6 +16,7 @@ import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
+import MemberCodePanel from '@/components/storefront/MemberCodePanel.jsx';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
@@ -186,6 +187,8 @@ const CheckoutPage = () => {
                         : t('checkout.signInPlain')}
                     </button>
                   )}
+                  {/* Signed in but not a member yet: the code goes in here, before the total is weighed. */}
+                  {currentUser ? <MemberCodePanel hideForMembers /> : null}
                   <label className="ng-label">
                     <span className="ng-mono text-ng-dust">{t('checkout.customerCode')}</span>
                     <div className="flex gap-2">

@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { setCustomerTier } from '@/services/tierPricingService.js';
 
-// Only two states are real. storefront_my_price_tier() reports 'member' for anyone signed in with a
-// linked account regardless of what this column says, so offering a third "member" option here would
-// let the owner pick a value that changes nothing — and offering it on a linked account would promise
-// a change that does not happen.
+// This control grants or removes RESELLER and nothing else. Membership is not set here: since 10 Nov 2026
+// it comes from a member code (Studio → Kode member) or a paid web order, so "Biasa" means "not a
+// reseller" — a customer who joined through a code keeps the member price either way.
 const OPTIONS = [
   { value: 'retail', label: 'Biasa' },
   { value: 'reseller', label: 'Reseller' },
@@ -22,7 +21,7 @@ const CustomerTierSelect = ({ customer, disabled = false, className = '' }) => {
     setSaving(true);
     try {
       await setCustomerTier(customer.id, next);
-      toast.success(next === 'reseller' ? `${customer.customerName} jadi reseller` : `${customer.customerName} kembali ke harga biasa`);
+      toast.success(next === 'reseller' ? `${customer.customerName} jadi reseller` : `${customer.customerName} bukan reseller lagi`);
     } catch (error) {
       // Put the control back where it was: a select that stayed on "Reseller" after a refused write is
       // the same lie as a toast that says tersimpan.
