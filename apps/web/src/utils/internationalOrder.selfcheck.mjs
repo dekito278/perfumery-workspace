@@ -248,4 +248,19 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   assert.match(templates, /const email = contactEmail\(order\?\.contact\);/, 'and mail it there');
 }
 
+// --- 7. payment_response is read even beside an empty doku_response ---------------------------------------
+// doku_response is `not null default '{}'` in production; `doku_response || payment_response` read {} and
+// the buyer's message printed a rupiah total for a dollar order (found by the production smoke, 10 Nov).
+{
+  const { readFileSync } = await import('node:fs');
+  const service = readFileSync(new URL('../services/orderService.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(service, /paymentResponse: order\.doku_response \|\|/, 'an empty doku_response must not hide payment_response');
+  const line = service.match(/paymentResponse: (\[order\.doku_response, order\.payment_response, order\.paymentResponse\][^\n]*\n[^\n]*)/)?.[1];
+  assert.ok(line, 'normalizeOrder picks the payment response with a list it can be checked against');
+  const pick = new Function('order', `return ${line.replace(/,\s*$/, '')};`);
+  assert.deepEqual(pick({ doku_response: {}, payment_response: { amountUsd: 115 } }), { amountUsd: 115 });
+  assert.deepEqual(pick({ doku_response: { invoice: 'x' }, payment_response: { invoice: 'x' } }), { invoice: 'x' }, 'a DOKU order reads as before');
+  assert.deepEqual(pick({ doku_response: {}, payment_response: {} }), {});
+}
+
 console.log('internationalOrder wiring OK');

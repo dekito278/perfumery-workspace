@@ -70,6 +70,8 @@ const intlOrder = {
   quantity: 3, subtotal: 3877500, checkout_draft: '', payment_provider: 'manual', payment_status: 'pending',
   payment_token: 'MD8YVJE7EZ1G0ZN80FY0MBR17JHBJQDM',
   payment_response: { amountUsd: 235, currency: 'USD', amountIdr: 3877500, usdRate: 16500, bankName: 'PT Bank SMBC Indonesia Tbk (Jenius)', swift: 'SUNIIDJA', accountNumber: '', accountName: '', bankAddress: '' },
+  // The column's own default, as production holds it: an empty object here hid payment_response once.
+  doku_response: {},
   courier_name: 'DHL Express / US$45 / 5–8 business days after dispatch', source: 'storefront',
   client_context: { surface: 'mobile', shop: 'en', viewport_width: 390 },
   payment_proof_url: 'orders/DKT-MWAUROI3-KQJDYC/1794320000000-abc.png', payment_proof_file_name: 'wise-receipt.png',
