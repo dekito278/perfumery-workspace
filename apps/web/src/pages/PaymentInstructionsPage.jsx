@@ -9,7 +9,7 @@ import { paymentAmountUsd } from '@/utils/internationalOrder.js';
 import { submitOrderPaymentProof } from '@/services/orderService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
 import {
-  PAY_BANK, PAY_CASH, PAY_WIRE, bankIsConfigured, cashIsConfigured, wireIsConfigured,
+  PAY_BANK, PAY_CASH, PAY_WIRE, bankIsConfigured, cashIsConfigured, paypalLinkFor, wireIsConfigured,
 } from '@/data/paymentDetails.js';
 
 /**
@@ -105,6 +105,7 @@ const PaymentInstructionsPage = () => {
   const orderNumber = order?.orderNumber || '';
   // Exactly the cart's total for an order the English cart wrote; the usual $5 round-up otherwise.
   const usd = order ? paymentAmountUsd(order.amountIdr) : null;
+  const paypalUrl = paypalLinkFor(usd);
 
   return (
     <>
@@ -136,6 +137,16 @@ const PaymentInstructionsPage = () => {
                 {/* The dollar figure, with the shop's own rounding — the same number the quote carried. */}
                 <strong>{usd ? `US$${usd}` : ''}</strong>
               </p>
+
+              {paypalUrl ? (
+                <article className="pay-link__block flex flex-col gap-3">
+                  <h2>{t('pay.link.paypalTitle')}</h2>
+                  <p>{t('pay.link.paypalBody', { order: orderNumber })}</p>
+                  <a href={paypalUrl} target="_blank" rel="noopener noreferrer" className="ng-btn self-start">
+                    {t('pay.link.paypalButton', { amount: `US$${usd}` })}
+                  </a>
+                </article>
+              ) : null}
 
               <article className="pay-link__block">
                 <h2>{t('pay.link.wiseTitle')}</h2>

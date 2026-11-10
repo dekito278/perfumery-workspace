@@ -201,4 +201,15 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   }
 }
 
+// --- 4. PayPal: shown only once Dekito sets the link, and only ever to paypal.me ------------------------
+{
+  const { paypalLinkFor } = await import('../data/paymentDetails.js');
+  assert.equal(paypalLinkFor(180, ''), '', 'no link set = no PayPal block (nothing invented)');
+  assert.equal(paypalLinkFor(180, 'https://paypal.me/solivagant'), 'https://paypal.me/solivagant/180USD', 'the amount rides in the link');
+  assert.equal(paypalLinkFor(180, 'https://www.paypal.me/solivagant/'), 'https://paypal.me/solivagant/180USD');
+  assert.equal(paypalLinkFor(180, 'https://paypal.me.evil.test/x'), '', 'a look-alike host is refused');
+  assert.equal(paypalLinkFor(180, 'http://paypal.me/solivagant'), '', 'only https');
+  assert.equal(paypalLinkFor(null, 'https://paypal.me/solivagant'), '', 'no amount, no link');
+}
+
 console.log('internationalOrder wiring OK');

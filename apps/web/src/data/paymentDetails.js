@@ -17,6 +17,7 @@
 //   VITE_PAY_WIRE_ACCOUNT    the USD account number
 //   VITE_PAY_WIRE_ADDRESS    the branch address the wire form asks for
 //   VITE_PAY_CASH_CITY       the city for a Western Union cash pickup
+//   VITE_PAY_PAYPAL_LINK     Dekito's PayPal.me link (https://paypal.me/<name>) — card or PayPal, 10 Nov 2026
 
 const read = (name) => {
   try {
@@ -51,3 +52,17 @@ export const PAY_CASH = {
 export const bankIsConfigured = () => Boolean(PAY_BANK.bank && PAY_BANK.account && PAY_BANK.holder);
 export const wireIsConfigured = () => Boolean(PAY_WIRE.bank && PAY_WIRE.bic && PAY_WIRE.account && PAY_WIRE.holder);
 export const cashIsConfigured = () => Boolean(PAY_CASH.holder && PAY_CASH.city);
+
+/**
+ * Card or PayPal, through a PayPal.me link with the amount already in it (10 Nov 2026). Nothing is
+ * shown until Dekito sets the link: no link is invented here. Only a paypal.me address is accepted, so a
+ * typo in the environment cannot send a buyer's money anywhere else.
+ *
+ * @returns the URL to pay `usd` dollars, or '' when PayPal is not set up (or the amount is unknown)
+ */
+export const paypalLinkFor = (usd, link = read('VITE_PAY_PAYPAL_LINK')) => {
+  const match = /^https:\/\/(?:www\.)?paypal\.me\/([A-Za-z0-9._-]+)\/?$/.exec(String(link || '').trim());
+  const amount = Number(usd);
+  if (!match || !Number.isFinite(amount) || amount <= 0) return '';
+  return `https://paypal.me/${match[1]}/${amount}USD`;
+};
