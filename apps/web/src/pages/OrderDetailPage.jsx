@@ -31,6 +31,8 @@ import {
 } from '@/services/orderService.js';
 import {
   buildNotificationMessage,
+  formatOrderTotal,
+  getPaymentLinkUrl,
   canSendEmailNotification,
   getEmailNotificationUrl,
   getNotificationEventLabels,
@@ -211,20 +213,24 @@ const OrderDetailPage = () => {
     () => buildNotificationMessage(order, notificationEvent),
     [notificationEvent, order],
   );
+  // DOKU's link, or the /pay/<token> page an overseas order carries — and in the buyer's language: an
+  // overseas order is answered in English everywhere else, and this reminder was the one Indonesian line.
+  const paymentLink = order ? getPaymentLinkUrl(order) : '';
+  const english = order?.clientContext?.shop === 'en';
   const paymentReminderMessage = useMemo(() => [
-    `Halo ${order?.customerName || 'Kak'},`,
+    english ? `Hi ${order?.customerName || 'there'},` : `Halo ${order?.customerName || 'Kak'},`,
     '',
-    `Ini link pembayaran untuk order ${order?.orderNumber || '-'}:`,
-    order?.paymentUrl || null,
+    english ? `Here is the payment page for order ${order?.orderNumber || '-'}:` : `Ini link pembayaran untuk order ${order?.orderNumber || '-'}:`,
+    paymentLink || null,
     '',
-    `Total: ${formatTotal(order?.subtotal)}`,
+    `Total: ${order ? formatOrderTotal(order) : formatTotal(0)}`,
     order?.customerCode ? `Customer code: ${order.customerCode}` : null,
     '',
-    'Kalau sudah dibayar, status order akan kami update. Terima kasih.',
+    english ? 'Once it is paid we will update the order. Thank you.' : 'Kalau sudah dibayar, status order akan kami update. Terima kasih.',
     // Optional lines are null; the '' entries above are deliberate blank lines. Filtering on '' removed
     // both, so the reminder a buyer receives arrived as one unbroken block — the same fault as the order
     // notifications, the checkout draft and the owner's own alerts.
-  ].filter((line) => line != null).join('\n'), [order]);
+  ].filter((line) => line != null).join('\n'), [order, paymentLink, english]);
   const auditAdmins = useMemo(() => (
     Array.from(new Set(auditLogs.map((log) => log.actorEmail || log.actorName || 'system'))).filter(Boolean)
   ), [auditLogs]);
@@ -1107,11 +1113,11 @@ const OrderDetailPage = () => {
                   <FileText className="h-4 w-4" />
                   Invoice customer
                 </Button>
-                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => copyText(paymentReminderMessage, 'Reminder pembayaran')} disabled={!order.paymentUrl}>
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => copyText(paymentReminderMessage, 'Reminder pembayaran')} disabled={!paymentLink}>
                   <CreditCard className="h-4 w-4" />
                   Salin link bayar
                 </Button>
-                <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => openWhatsApp(paymentReminderMessage)} disabled={!order.paymentUrl}>
+                <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => openWhatsApp(paymentReminderMessage)} disabled={!paymentLink}>
                   <MessageCircle className="h-4 w-4" />
                   WA link bayar
                 </Button>

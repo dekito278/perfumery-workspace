@@ -1,6 +1,9 @@
 export const normalizeWhatsAppPhoneNumber = (value = '') => {
-  const rawValue = String(value || '').trim();
-  if (!rawValue || rawValue.includes('@')) return '';
+  // An email is never a phone number, but a contact can hold BOTH: an order from the English cart stores
+  // "name@example.com · +1 415 555 0132". Refusing anything with an '@' in it threw the number away with
+  // the address, so Studio opened WhatsApp with no recipient. The address is removed, the rest is read.
+  const rawValue = String(value || '').replace(/[^\s@·,;/]+@[^\s@·,;/]+/g, ' ').trim();
+  if (!rawValue) return '';
 
   let digits = rawValue.replace(/[^0-9]/g, '');
   if (!digits) return '';

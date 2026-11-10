@@ -56,7 +56,27 @@ const order = (n, status, pay, ship, extra = {}) => ({
   payment_provider: 'manual', payment_reference: '', source: 'storefront', courier_name: ship === 'shipped' ? 'JNE' : '', tracking_number: '',
   created_at: now, updated_at: now, ...extra,
 });
-const orders = [order(1, 'paid', 'paid', 'pending'), order(2, 'pending_payment', 'pending', 'pending'), order(3, 'shipped', 'paid', 'shipped')];
+// An overseas order as the English cart writes it (api/orders/create.js, input.international, since
+// 2026-11-10) — captured from the real handler run against a fake database, with the receipt uploaded.
+const intlOrder = {
+  id: '33333334-3333-4333-8333-333333333334', order_number: 'DKT-MWAUROI3-KQJDYC', status: 'pending_payment',
+  customer_name: 'Jordan Ellis-Whitaker', customer_code: 'SOLI90004', customer_id: null,
+  contact: 'jordan.ellis@example.com · +1 415 555 0132',
+  notes: 'Order luar negeri dari toko EN (web) — United States.\nParfum US$190 · Ongkir DHL US$45 · Total US$235 (kurs toko Rp 16.500).\nAlamat:\n2210 Fillmore Street, Apt 4B\n94115 San Francisco, CA\nUnited States',
+  items: [
+    { id: P.id, slug: P.slug, productSlug: P.slug, name: P.name, category: P.category || 'Floral', cartSlug: `${P.slug}-${P.variants?.[0]?.id}`, variantId: P.variants?.[0]?.id, size: '30 ml', quantity: 2, priceNumber: 1567500, price: 'US$95', tags: [] },
+    { id: 'p-vial', slug: 'vial-hadiah', productSlug: 'vial-hadiah', name: 'Vial hadiah', category: 'Gift', cartSlug: 'vial-hadiah-la-rose', variantId: 'la-rose', size: 'La Rose', quantity: 1, priceNumber: 0, price: 'Gratis', tags: ['Vial hadiah'] },
+  ],
+  quantity: 3, subtotal: 3877500, checkout_draft: '', payment_provider: 'manual', payment_status: 'pending',
+  payment_token: 'MD8YVJE7EZ1G0ZN80FY0MBR17JHBJQDM',
+  payment_response: { amountUsd: 235, currency: 'USD', amountIdr: 3877500, usdRate: 16500, bankName: 'PT Bank SMBC Indonesia Tbk (Jenius)', swift: 'SUNIIDJA', accountNumber: '', accountName: '', bankAddress: '' },
+  courier_name: 'DHL Express / US$45 / 5–8 business days after dispatch', source: 'storefront',
+  client_context: { surface: 'mobile', shop: 'en', viewport_width: 390 },
+  payment_proof_url: 'orders/DKT-MWAUROI3-KQJDYC/1794320000000-abc.png', payment_proof_file_name: 'wise-receipt.png',
+  payment_proof_content_type: 'image/png', payment_proof_uploaded_at: now, payment_proof_status: 'submitted',
+  shipment_status: 'not_ready', tracking_number: '', inventory_deducted: true, created_at: now, updated_at: now,
+};
+const orders = [order(1, 'paid', 'paid', 'pending'), order(2, 'pending_payment', 'pending', 'pending'), order(3, 'shipped', 'paid', 'shipped'), intlOrder];
 const customers = [1, 2, 3].map((n) => ({ id: `4444444${n}-4444-4444-8444-44444444444${n}`, customer_code: `SOLI9000${n}`, customer_name: n === 1 ? orders[0].customer_name : `Pelanggan ${n}`, contact: '6281234567890', delivery_address: 'Jl. Panglima Polim Raya No. 123A, RT 004/RW 011, Kebayoran Baru', delivery_area: 'Jakarta Selatan', notes: '', order_count: n, last_order_at: now, created_at: now, updated_at: now, tier: n === 2 ? 'reseller' : 'retail', auth_user_id: null }));
 const matNames = ['Hedione HC (Methyl Dihydrojasmonate high cis)', 'Iso E Super', 'Ambroxan', 'Bergamot Essential Oil FCF (Bergaptene free)', 'Galaxolide 50% IPM', 'Vanillin', 'Ethyl Maltol', 'Cashmeran', 'Rose Absolute Turkey', 'Sandalwood Mysore Australian (Santalum spicatum)', 'Dipropylene Glycol (DPG)', 'Ethanol 96% Perfumer Grade'];
 const materials = matNames.map((name, i) => ({ id: `5555555${String(i).padStart(1, '0')}-5555-4555-8555-5555555555${String(i).padStart(2, '0')}`, user_id: user.id, name, category: i > 9 ? 'Solvent' : ['Floral', 'Woody', 'Amber', 'Citrus', 'Musk', 'Gourmand'][i % 6], type: i > 9 ? 'solvent' : 'aroma_chemical', scent_family: 'Floral', note_type: ['top', 'heart', 'base'][i % 3], unit: 'g', cost_per_unit: 1250 + i * 731, supplier_name: 'PT Aroma Nusantara Sejahtera Abadi', vendor: 'Perfumer Supply House', default_dilution_percent: 100, ifra_limit: i % 3 ? 2.5 : null, pyramid_placement: ['top', 'heart', 'base'][i % 3], description: 'Bright, radiant jasmine facet with fresh, diffusive lift.', notes: '', is_diluted: false, cas_number: '24851-98-7', stock_quantity: i * 13, minimum_stock: 10, low_stock_threshold: 20, data_status: 'verified', created_at: now, updated_at: now }));
