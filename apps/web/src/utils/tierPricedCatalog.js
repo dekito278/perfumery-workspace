@@ -10,6 +10,7 @@ import { carryCatalogFlags } from './catalogArrayFlags.js';
  * @param index       tier prices by slug/variant, from storefront_prices_for_me
  * @param formatPrice the app's own Rupiah formatter — passed in rather than reimplemented, so the
  *                    rewritten `price` string cannot drift from every other price on the page
+ * @param memberPercent the visitor's member-code percentage, or null — see resolveTierPrice
  *
  * Returns the array it was given, by reference, when nothing applies. Before the migration runs that
  * is always, so the storefront behaves exactly as it does today — no re-render, no near-miss copy.
@@ -19,8 +20,10 @@ const toPrice = (value) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
-export const applyTierPrices = (products = [], tier = 'retail', index = {}, formatPrice = String) => {
-  if (!products.length || !index || !Object.keys(index).length) return products;
+export const applyTierPrices = (products = [], tier = 'retail', index = {}, formatPrice = String, memberPercent = null) => {
+  // A member code prices from retail alone, so it applies even where no tier row exists.
+  const codeApplies = tier === 'member' && Number(memberPercent) > 0;
+  if (!products.length || ((!index || !Object.keys(index).length) && !codeApplies)) return products;
 
   let changed = false;
   const priced = products.map((product) => {
@@ -30,6 +33,7 @@ export const applyTierPrices = (products = [], tier = 'retail', index = {}, form
       tier,
       // overseas is a destination, not a visitor. Those orders are quoted by hand and never priced here.
       overseas: false,
+      memberPercent,
     });
 
     // A SCHEDULED retail price moves the BASELINE, it is not something to strike through. Once the

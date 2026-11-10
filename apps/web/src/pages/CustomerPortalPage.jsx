@@ -48,6 +48,7 @@ import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
+import MemberCodePanel from '@/components/storefront/MemberCodePanel.jsx';
 import useTranslate from '@/hooks/useTranslate.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -1386,6 +1387,7 @@ const CustomerPortalPage = () => {
                 </button>
               )}
             </form>
+            <MemberCodePanel />
             {renderAccountPanel()}
           </div>
 
@@ -1622,7 +1624,9 @@ const CustomerPortalPage = () => {
                     <StateBlock
                       className="border-0 bg-transparent p-0 shadow-none"
                       icon={searched ? Search : ShoppingBag}
-                      title={searched ? t('cust.codeNotFound') : t('cust.memberWaiting')}
+                      // A member reading "Harga member menunggu" beside the panel that says it is on was told two
+                      // opposite things on one screen; the tier the server resolved decides the headline.
+                      title={searched ? t('cust.codeNotFound') : t(priceTier === 'member' || priceTier === 'reseller' ? 'cust.memberActive' : 'cust.memberWaiting')}
                       description={searched ? t('cust.checkSoliCodeYours') : t('cust.memberWaitingBody')}
                     />
                   </div>

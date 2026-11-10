@@ -26,7 +26,7 @@ assert.match(header, /useAuth\(\)/, 'the header must know whether the visitor is
 // that the header link CHANGES with the session — an "Akun member" label shown to a signed-out visitor
 // hides the reason to sign in, which is the whole point of the link.
 assert.match(header, /to="\/customer"[\s\S]{0,400}?aria-label=\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)\}/,
-  'the header must link to the account, labelled "Masuk untuk harga member" when signed out and "Akun member" when in');
+  'the header must link to the account, labelled with what signing in opens when signed out and "Akun member" when in');
 assert.match(header, /\{ labelKey: 'nav\.account', to: '\/customer' \}/, 'the mega menu must list the account too');
 assert.match(header, /labelKey: 'nav\.trackOrder'/, 'tracking stays available — it just stops being the only door');
 // Both labels have to exist in both languages, or the English header shows a raw key where the reason
@@ -34,7 +34,10 @@ assert.match(header, /labelKey: 'nav\.trackOrder'/, 'tracking stays available �
 for (const key of ['nav.account', 'nav.accountSub', 'nav.trackOrder']) {
   assert.ok(MESSAGES.id[key] && MESSAGES.en[key], `${key} exists in both languages`);
 }
-assert.match(MESSAGES.id['nav.accountSub'], /harga member/, 'and the Indonesian one still names the price');
+// Since 10 Nov 2026 signing in alone does not give the member price — a member code or a paid order here
+// does — so the signed-out label names the code, not a price the sign-in cannot hand over.
+assert.match(MESSAGES.id['nav.accountSub'], /kode member/, 'and the Indonesian one names the member code the account opens');
+assert.doesNotMatch(MESSAGES.id['nav.accountSub'], /harga member/, 'and does not promise a price that signing in no longer gives');
 
 // --- 2. Phone nav: "Akun", not "Cek Order" -------------------------------------------------------------
 // The phone's tab bar retired with the phone storefront (2026-10-31); the header is the navigation on a
@@ -51,7 +54,8 @@ const portal = read('pages', 'CustomerPortalPage.jsx');
 // One portal tree since the phone storefront retired (2026-10-31).
 assert.equal((portal.match(/\{t\('cust\.signInMember'\)\}/g) || []).length, 1,
   'the sign-in button must say what signing in is for');
-assert.match(MESSAGES.id['cust.signInMember'], /harga member/, 'and the Indonesian button still names the price');
+// Since 10 Nov 2026 the button must NOT name the price: signing in alone does not give it any more.
+assert.doesNotMatch(MESSAGES.id['cust.signInMember'], /harga member/, 'the sign-in button promises a member price that signing in no longer gives');
 // The English half of this rule ENDED when the English shop stopped having a checkout. A member price
 // cannot be spent there — there is no cart and no catalogue checkout — so naming it on the button is
 // selling something the shop cannot hand over. The Indonesian shop still can, and still does.
@@ -59,7 +63,8 @@ assert.doesNotMatch(MESSAGES.en['cust.signInMember'], /member price/i,
   'the English button offers a member price the English shop has no way to charge');
 assert.doesNotMatch(portal, /Dashboard tampil di sini/, 'the empty state must not describe a dashboard nobody asked for');
 // One portal tree since the phone storefront retired (2026-10-31).
-assert.equal((portal.match(/t\('cust\.memberWaiting'\)/g) || []).length, 1, 'the empty state must lead with the price');
+// Since 10 Nov 2026 a member sees "Harga member aktif" there instead — the server-resolved tier picks.
+assert.equal((portal.match(/'cust\.memberActive' : 'cust\.memberWaiting'\)/g) || []).length, 1, 'the empty state must lead with the price');
 assert.match(MESSAGES.id['cust.memberWaiting'], /Harga member/, 'and that empty state is about the price in Indonesian');
 assert.doesNotMatch(MESSAGES.en['cust.memberWaiting'], /Member price/i,
   'the English empty state still leads with a price that cannot be spent in that shop');
@@ -92,7 +97,7 @@ assert.doesNotMatch(portal, /Cek order dengan kode unik/, 'the hero must not lea
 assert.doesNotMatch(portal, /<title>Cek Order - Solivagant<\/title>/, 'the tab title must not call the account "Cek Order"');
 assert.equal((portal.match(/<title>\{t\('cust\.tab'\)\}<\/title>/g) || []).length, 1, 'the page is titled as the member account');
 assert.match(MESSAGES.id['cust.tab'], /Akun Member/, 'and the tab is named for the account, not for tracking');
-assert.match(portal, /\{t\('cust\.heroTitle'\)\}/, 'the hero leads with what signing in does to the price');
+assert.match(portal, /\{t\('cust\.heroTitle'\)\}/, 'the hero leads with what the account is for');
 assert.match(MESSAGES.id['cust.heroTitle'], /harga member/, 'and says so in Indonesian');
 // English leads with what the account DOES there instead: following an order. Same rule as the button
 // above — a member price is real, and it is real in the Indonesian shop, which is the only one with a

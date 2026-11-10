@@ -76,7 +76,7 @@ const source = readFileSync(endpoint, 'utf8');
           ? { ok: true, status: 200, json: async () => user, text: async () => JSON.stringify(user) }
           : { ok: false, status: 401, json: async () => ({}), text: async () => 'bad token' };
       }
-      return table();
+      return table(String(url));
     };
   };
   const rows = (value) => () => ({ ok: true, status: 200, json: async () => value, text: async () => JSON.stringify(value) });
@@ -91,27 +91,47 @@ const source = readFileSync(endpoint, 'utf8');
   const MISSING_TABLE = '{"code":"PGRST205","details":null,'
     + '"hint":"Perhaps you meant the table \'public.storefront_orders\'",'
     + '"message":"Could not find the table \'public.storefront_zz_tidak_ada\' in the schema cache"}';
+  // And the member-status function itself, before 20261110120000_member_codes.sql runs — production's
+  // own answer, captured 2026-11-10. Until then the old rule answers (signed in = member), the same one
+  // the browser falls back to, so what is shown and what is charged switch together.
+  const MISSING_FUNCTION = '{"code":"PGRST202","details":"Searched for the function public.storefront_member_status '
+    + 'with parameter p_auth_user_id or with a single unnamed json/jsonb parameter, but no matches were found in the '
+    + 'schema cache.","hint":"Perhaps you meant to call the function public.storefront_member_prices",'
+    + '"message":"Could not find the function public.storefront_member_status(p_auth_user_id) in the schema cache"}';
+  const byUrl = (rpc, select) => (url) => (url.includes('/rpc/') ? rpc(url) : select(url));
   for (const body of [MISSING_COLUMN, MISSING_TABLE]) {
-    stub({ table: fails(400, body) });
-    assert.deepEqual(await resolveBuyer(req), { tier: 'member', authUserId: 'acct-1' },
+    stub({ table: byUrl(fails(404, MISSING_FUNCTION), fails(400, body)) });
+    assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: null, authUserId: 'acct-1' },
       'a relation that has not been added yet must still read as member, not refuse the order');
     assert.deepEqual(await sbSelectOptional('anything'), [], 'and the helper answers it with an empty list');
   }
 
   // A read that merely failed must NOT become a price.
   stub({ table: fails(503, 'upstream connect error') });
-  await assert.rejects(() => resolveBuyer(req), /Supabase read failed/,
+  await assert.rejects(() => resolveBuyer(req), /Supabase (read|rpc storefront_member_status) failed/,
     'a tier read that failed must refuse the order — returning retail charges a member more than the '
     + 'price she was shown, and nothing compares the total she confirmed');
   await assert.rejects(() => sbSelectOptional('anything'), /Supabase read failed/,
     'and the helper must stop swallowing every failure into an empty list');
 
-  // The real answers still come through, both tiers.
-  stub({ table: rows([{ tier: 'reseller' }]) });
-  assert.deepEqual(await resolveBuyer(req), { tier: 'reseller', authUserId: 'acct-1' });
-  stub({ table: rows([]) });
-  assert.deepEqual(await resolveBuyer(req), { tier: 'member', authUserId: 'acct-1' },
-    'a signed-in buyer with no row is a member — the rule the old retail fallback contradicted');
+  // Before the member-code migration: the old rule, both tiers.
+  stub({ table: byUrl(fails(404, MISSING_FUNCTION), rows([{ tier: 'reseller' }])) });
+  assert.deepEqual(await resolveBuyer(req), { tier: 'reseller', memberPercent: null, authUserId: 'acct-1' });
+  stub({ table: byUrl(fails(404, MISSING_FUNCTION), rows([])) });
+  assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: null, authUserId: 'acct-1' },
+    'before the migration, a signed-in buyer with no row is a member — the rule the browser shows too');
+
+  // After it: the server's member status decides, and signing in alone is retail (Dekito, 10 Nov 2026).
+  stub({ table: rows([{ tier: 'retail', member_percent: null, code_name: null }]) });
+  assert.deepEqual(await resolveBuyer(req), { tier: 'retail', memberPercent: null, authUserId: 'acct-1' },
+    'a signed-in account with no code and no paid order is retail — still identified, for per-account vouchers');
+  stub({ table: rows([{ tier: 'member', member_percent: 12.5, code_name: 'Jakarta Fragrance Club' }]) });
+  assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: 12.5, authUserId: 'acct-1' },
+    'a code member carries the code\'s percentage to the price');
+  stub({ table: rows([{ tier: 'reseller', member_percent: 10, code_name: 'X' }]) });
+  assert.equal((await resolveBuyer(req)).tier, 'reseller', 'a reseller stays a reseller whatever code they hold');
+  stub({ table: rows([{ tier: 'owner', member_percent: null, code_name: null }]) });
+  assert.equal((await resolveBuyer(req)).tier, 'retail', 'a tier word the endpoint does not know is retail, never a discount');
 
   // And the deliberate anonymous cases are untouched: no token, and a token that does not verify.
   assert.deepEqual(await resolveBuyer({ headers: {} }), { tier: 'retail', authUserId: null });

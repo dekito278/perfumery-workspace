@@ -39,7 +39,10 @@ assert.match(page, /<meta name="robots" content="noindex,follow" \/>/, 'a door f
 // The copy now lives in the message file, because this page speaks two languages. The rules below
 // therefore check the MESSAGES, not the JSX — a claim moved into a data file is a claim that escaped
 // its guard unless the guard follows it.
-assert.match(MESSAGES.id['welcome.signIn'], /harga member/, 'the Indonesian way in says what it is for');
+// Since 10 Nov 2026 signing in alone does not give the member price — a member code or a paid order here
+// does. The button must not promise it, and the lead must say what does.
+assert.doesNotMatch(MESSAGES.id['welcome.signIn'], /harga member/, 'the way in promises a member price that signing in no longer gives');
+assert.match(MESSAGES.id['welcome.lead'], /kode member/, 'the lead names what opens the member price: a member code');
 // On the right surface AND in the right shop. Built from the origin alone, an English visitor who
 // signed in from /en/welcome came back to the Indonesian /customer, leaving the /en address behind.
 assert.match(page, /loginWithGoogle\(\s*`\$\{window\.location\.origin\}\$\{shopPrefixForRegion\(region\)\}\/customer`/,

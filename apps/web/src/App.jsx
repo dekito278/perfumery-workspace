@@ -101,6 +101,7 @@ const ProductEditPage = lazyRoute(() => import('@/pages/ProductEditPage.jsx'));
 const ProductInventoryPage = lazyRoute(() => import('@/pages/ProductInventoryPage.jsx'));
 const ProductCategoriesPage = lazyRoute(() => import('@/pages/ProductCategoriesPage.jsx'));
 const VoucherManagementPage = lazyRoute(() => import('@/pages/VoucherManagementPage.jsx'));
+const MemberCodesPage = lazyRoute(() => import('@/pages/MemberCodesPage.jsx'));
 const ShippingPromotionPage = lazyRoute(() => import('@/pages/ShippingPromotionPage.jsx'));
 const OrdersPage = lazyRoute(() => import('@/pages/OrdersPage.jsx'));
 const OrderDetailPage = lazyRoute(() => import('@/pages/OrderDetailPage.jsx'));
@@ -138,6 +139,7 @@ const MobileProductEditPage = lazyRoute(() => import('@/pages/mobile/MobileProdu
 const MobileProductCategoriesPage = lazyRoute(() => import('@/pages/mobile/MobileProductCategoriesPage.jsx'));
 const MobileBespokeSettingsPage = lazyRoute(() => import('@/pages/mobile/MobileBespokeSettingsPage.jsx'));
 const MobileVoucherManagementPage = lazyRoute(() => import('@/pages/mobile/MobileVoucherManagementPage.jsx'));
+const MobileMemberCodesPage = lazyRoute(() => import('@/pages/mobile/MobileMemberCodesPage.jsx'));
 const MobileShippingPromotionPage = lazyRoute(() => import('@/pages/mobile/MobileShippingPromotionPage.jsx'));
 const MobileOrdersPage = lazyRoute(() => import('@/pages/mobile/MobileOrdersPage.jsx'));
 const MobileOrderDetailPage = lazyRoute(() => import('@/pages/mobile/MobileOrderDetailPage.jsx'));
@@ -595,6 +597,12 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
 
+        <Route path="/mobile/studio/member-codes" element={
+          <ProtectedRoute>
+            <MobileMemberCodesPage />
+          </ProtectedRoute>
+        } />
+
         <Route path="/mobile/studio/shipping" element={
           <ProtectedRoute>
             <MobileShippingPromotionPage />
@@ -831,6 +839,12 @@ function AppRoutes() {
         <Route path="/studio/vouchers" element={
           <ProtectedRoute>
             <VoucherManagementPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/member-codes" element={
+          <ProtectedRoute>
+            <MemberCodesPage />
           </ProtectedRoute>
         } />
 

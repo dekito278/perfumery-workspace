@@ -36,14 +36,22 @@ assert.doesNotMatch(resolver, /customer_code|customerCode|input\./,
 assert.equal((resolver.match(/return ANONYMOUS_BUYER;/g) || []).length, 5,
   'all five ways this can fail land on retail: no token, no env, the check rejecting the token, a '
   + 'response with no user id, and anything thrown');
+// Since 10 Nov 2026 the member rule lives in ONE SQL function, read by the storefront and by this
+// endpoint alike. Until it exists the old rule (signed in = member) answers on both sides.
+assert.match(resolver, /sbRpc\('storefront_member_status', \{ p_auth_user_id: verified \}\)/,
+  'the endpoint must ask the same member rule the storefront displays with, for the identity it verified');
+assert.match(resolver, /\['member', 'reseller'\]\.includes\(row\?\.tier\) \? row\.tier : 'retail'/,
+  'a tier word the endpoint does not recognise must be retail, never a discount');
 assert.match(resolver, /rows\?\.\[0\]\?\.tier === 'reseller' \? 'reseller' : 'member'/,
-  'only a row an admin wrote makes a reseller; being signed in at all makes a member');
+  'before the migration: only a row an admin wrote makes a reseller; being signed in at all makes a member');
 
 // The resolved tier is what prices the order.
 assert.match(endpoint, /const buyer = await resolveBuyer\(req\);\s*\n\s*const buyerTier = buyer\.tier;/,
   'the recompute must be fed the tier this endpoint resolved itself');
-assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier\)/,
-  'the recompute must be given the resolved tier, or it silently prices everything at retail');
+assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier, buyer\.memberPercent\)/,
+  'the recompute must be given the resolved tier and member-code percentage, or it prices everything at retail');
+assert.match(endpoint, /tier: buyerTier,\s*overseas: false,\s*memberPercent,/,
+  'and the shared rule must receive the percentage, or a code member is charged more than they were shown');
 
 // One rule for which price applies, shared with the storefront.
 assert.match(endpoint, /from '\.\.\/\.\.\/src\/utils\/tierPrice\.js'/,

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Beaker,
+  BadgeCheck,
   BadgePercent,
   BookOpenText,
   ClipboardCheck,
@@ -38,6 +39,7 @@ const navGroups = [
       { path: '/mobile/studio/customers', label: 'Customer', helper: 'Cari kode customer', icon: UsersRound },
       { path: '/mobile/studio/bespoke', label: 'Bespoke', helper: 'Botol, cap, label', icon: WandSparkles },
       { path: '/mobile/studio/vouchers', label: 'Vouchers', helper: 'Kode promo', icon: BadgePercent },
+      { path: '/mobile/studio/member-codes', label: 'Kode member', helper: 'Satu kode per komunitas', icon: BadgeCheck },
       { path: '/mobile/studio/shipping', label: 'Ongkir', helper: 'Gratis ongkir dan area', icon: Truck },
       { path: '/mobile/studio/export-shipping', label: 'Ekspor', helper: 'Order dan ongkir luar negeri', icon: Globe2 },
       { path: '/mobile/journal', label: 'Journal', helper: 'Tulis dan publish artikel', icon: BookOpenText },

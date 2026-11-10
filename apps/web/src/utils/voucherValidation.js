@@ -330,7 +330,7 @@ export const validateVoucher = ({
       return {
         valid: false,
         reason: VOUCHER_VALIDATION_REASONS.ACCOUNT_REQUIRED,
-        message: `Voucher ${matchedVoucher.code} hanya untuk pembeli yang masuk ke akunnya. Masuk dengan Google dulu — sekalian dapat harga member.`,
+        message: `Voucher ${matchedVoucher.code} hanya untuk pembeli yang masuk ke akunnya. Masuk dengan Google dulu.`,
         voucher: matchedVoucher,
         discountAmount: 0,
       };

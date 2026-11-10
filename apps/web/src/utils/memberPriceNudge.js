@@ -80,27 +80,16 @@ export const attachMemberPrices = (products = [], index = {}) => {
  * caller keeps its ordinary copy.
  */
 /**
- * Should the cart offer "sign in and save" at all?
+ * Should the cart offer the member price at all?
  *
- * The saving above is real arithmetic — the cart's line prices against the member prices on the
- * products — and all 19 products carry one. What nobody carries is the TIER: measured on production
- * 2026-10-11, 43 of 43 customers are 'retail', including the 8 who have linked a Google account. The
- * tier lives on the customer row and only Dekito can grant it.
- *
- * So for a customer who has already signed in, the line said "Harga member · hemat Rp X · Masuk" with
- * a link to the account page they were already signed into. The saving cannot arrive by signing in
- * again; the only thing that can change it is the tier.
- *
- * Dekito's decision, 11 Oct 2026: keep the offer for a visitor who has NOT signed in — there the call
- * to action is honest — and drop it once they have. The two checkout screens already behaved this way,
- * because their nudge sits inside the sign-in button itself; the two cart screens showed it to
- * everyone.
- *
- * A signed-in MEMBER needs no special case: their cart lines already carry member prices, so the
- * saving is 0 and the line was never drawn.
+ * Since 10 Nov 2026 signing in does not make anyone a member: a member code or a paid order here does
+ * (see the member-code migration). So the offer is for whoever is not a member yet, signed in or not,
+ * and it points at the account page, which says how to become one and takes the code. A member's lines
+ * already carry member prices, so their saving is 0 and the line was never drawn; isMember also covers
+ * a code member whose price sits below the product's member price.
  */
-export const shouldPromptSignInForMemberPrice = ({ saving = 0, signedIn = false } = {}) => (
-  Number(saving) > 0 && !signedIn
+export const shouldOfferMemberPrice = ({ saving = 0, isMember = false } = {}) => (
+  Number(saving) > 0 && !isMember
 );
 
 export const memberSavingForCart = (items = [], index = {}) => {

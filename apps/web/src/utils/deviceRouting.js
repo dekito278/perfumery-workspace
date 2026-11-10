@@ -23,6 +23,7 @@ const DESKTOP_TO_MOBILE_PATHS = [
   // yet, so a phone stays on the desktop one rather than being sent to a 404.
 
   [/^\/studio\/vouchers$/, '/mobile/studio/vouchers'],
+  [/^\/studio\/member-codes$/, '/mobile/studio/member-codes'],
   [/^\/studio\/shipping$/, '/mobile/studio/shipping'],
   [/^\/studio\/orders$/, '/mobile/studio/orders'],
   [/^\/studio\/orders\/([^/]+)$/, '/mobile/studio/orders/$1'],

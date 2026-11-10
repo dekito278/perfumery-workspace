@@ -105,10 +105,12 @@ const note = read('components', 'storefront', 'PriceNote.jsx');
 assert.match(note, /memberPrice < price/, 'the nudge must require the member price to be strictly lower');
 // The wording moved into the message file when the storefront learned English. What must still hold is
 // that the way in is offered at all, in BOTH languages — a number with no button is a tease.
-assert.match(note, /t\('price\.signInGoogle'\)/, 'and must offer the way in, not just the number');
-assert.match(MESSAGES.id['price.signInGoogle'], /Masuk dengan Google/);
-assert.ok(MESSAGES.en['price.signInGoogle'], 'in English too, or the English shop shows a raw key on the button');
-assert.match(note, /loginWithGoogle\(window\.location\.href\)/, 'signing in must bring the visitor back to the product they were looking at');
+// Since 10 Nov 2026 the way in is the account page, not a sign-in button: signing in alone no longer gives
+// the member price (a member code or a paid order here does), and that page says so and takes the code.
+assert.match(note, /<Link\s+to="\/customer"[\s\S]{0,200}?t\('price\.howToMember'\)/, 'and must offer the way in, not just the number');
+assert.match(MESSAGES.id['price.howToMember'], /member/);
+assert.ok(MESSAGES.en['price.howToMember'], 'in English too, or the English shop shows a raw key on the button');
+assert.doesNotMatch(note, /loginWithGoogle/, 'a sign-in button here would promise a price that signing in no longer gives');
 assert.ok(note.indexOf('memberPriceNumber') < note.indexOf('compareAtPriceNumber'), 'the member nudge must come before the compare-at line, or a discounted product hides the reason to sign in');
 assert.ok(note.indexOf('TIER_LABELS[product?.priceTier]') < note.indexOf('memberPriceNumber'), 'a signed-in member sees the tier label, never the nudge');
 assert.match(MESSAGES.id['price.memberTier'], /Harga member/, 'and that label is still the words Dekito chose');
@@ -250,13 +252,13 @@ for (const page of ['pages/CartPage.jsx']) {
   assert.match(source, /memberSavingForCart\(items, memberIndex\)/,
     `${page} must compute the real saving from the cart, the same way both checkouts do`);
   // Its reason was already half of what Dekito decided on 11 Oct: "a signed-in member is not nudged".
-  // The property now lives in shouldPromptSignInForMemberPrice, which asks BOTH halves — is there
-  // anything to save, and can this viewer still act on it — because 43 of 43 customers on production are
-  // retail, so a signed-in customer was being told to sign in. memberNudgeIsHonest.selfcheck.mjs runs
-  // that predicate over all four states; here the page only has to defer to it.
+  // The property now lives in shouldOfferMemberPrice, which asks BOTH halves — is there anything to save,
+  // and is this viewer a member already (the server-resolved tier, since 10 Nov 2026 no longer the same
+  // thing as being signed in). memberNudgeIsHonest.selfcheck.mjs runs that predicate over every state;
+  // here the page only has to defer to it.
   assert.match(source, /offerMemberSignIn \?/,
     `${page} must stay silent when there is nothing to save, and when the viewer cannot act on it`);
-  assert.match(source, /shouldPromptSignInForMemberPrice\(\{ saving: memberSaving, signedIn: Boolean\(currentUser\) \}\)/,
+  assert.match(source, /shouldOfferMemberPrice\(\{ saving: memberSaving, isMember: tier === 'member' \|\| tier === 'reseller' \}\)/,
     `${page} must ask the shared predicate rather than branching on the raw saving`);
   assert.match(source, /price\.saveShort', \{ amount: formatTotal\(memberSaving\) \}/,
     `${page} must print the actual amount, not a vague promise`);

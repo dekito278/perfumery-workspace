@@ -18,7 +18,7 @@ import supabase from '@/lib/supabaseClient.js';
 // round trips for a single product page, before counting the extra pair that onAuthStateChange fires
 // the moment it subscribes. useCatalogProducts already had a warm cache for exactly this reason; this
 // is the same pattern, module-level so no provider has to be mounted.
-let tierState = { tier: 'retail', index: {} };
+let tierState = { tier: 'retail', index: {}, memberPercent: null, codeName: '', codesReady: false };
 let tierLoaded = false;
 let inFlight = null;
 const listeners = new Set();
@@ -28,8 +28,8 @@ const notify = () => { for (const listener of listeners) listener(tierState); };
 const loadTierPrices = () => {
   if (inFlight) return inFlight;
   inFlight = Promise.all([getMyPriceTier(), getTierPricesFor()])
-    .then(([{ tier }, { index }]) => {
-      tierState = { tier, index };
+    .then(([{ tier, memberPercent, codeName, codesReady }, { index }]) => {
+      tierState = { tier, index, memberPercent, codeName, codesReady };
       tierLoaded = true;
       notify();
     })
@@ -37,7 +37,13 @@ const loadTierPrices = () => {
   return inFlight;
 };
 
-// Signing in is what makes someone a member, so the prices on screen have to follow the session. One
+/** After a member code is redeemed: the session is the same, so nothing else would reload the prices. */
+export const refreshTierPrices = () => {
+  tierLoaded = false;
+  return loadTierPrices();
+};
+
+// Signing in can make someone a member, so the prices on screen have to follow the session. One
 // subscription for the app, and INITIAL_SESSION is ignored: it fires on subscribe and would only repeat
 // the load this module already does.
 supabase.auth.onAuthStateChange((event) => {
@@ -95,13 +101,13 @@ export const useTierPrices = () => {
 /** The catalog as this visitor may buy it. Every buyer-facing surface reads this, not the raw catalog. */
 export const useStorefrontProducts = (options) => {
   const products = useCatalogProducts(options);
-  const { tier, index } = useTierPrices();
+  const { tier, index, memberPercent } = useTierPrices();
   const { index: memberIndex } = useMemberPrices();
   return useMemo(
     // Tier first, then the nudge: once a member's price has been lowered to the member price, the nudge
     // finds nothing lower and stays away. The order is what keeps a member from being told to sign in.
-    () => attachMemberPrices(applyTierPrices(products, tier, index, formatRupiah), memberIndex),
-    [products, tier, index, memberIndex],
+    () => attachMemberPrices(applyTierPrices(products, tier, index, formatRupiah, memberPercent), memberIndex),
+    [products, tier, index, memberPercent, memberIndex],
   );
 };
 

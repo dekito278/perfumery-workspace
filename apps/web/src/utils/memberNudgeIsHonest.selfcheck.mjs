@@ -14,33 +14,36 @@
 //
 // Dekito's decision, 11 Oct 2026: keep the offer for a visitor who has not signed in, where the call to
 // action is honest, and drop it once they have.
+//
+// The rule moved again on 10 Nov 2026: signing in no longer makes anyone a member — a member code or a paid
+// order here does. So the honest offer is now to whoever is NOT A MEMBER, signed in or not, and it leads to
+// the account page, which says how to become one and takes the code.
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { memberSavingForCart, shouldPromptSignInForMemberPrice } from './memberPriceNudge.js';
+import { memberSavingForCart, shouldOfferMemberPrice } from './memberPriceNudge.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf8'));
 
-// ── 1. The predicate, run over the four states a viewer can be in ────────────────────────────────
-assert.equal(shouldPromptSignInForMemberPrice({ saving: 25000, signedIn: false }), true,
-  'a visitor who has not signed in is offered the member price — the call to action is honest there');
-assert.equal(shouldPromptSignInForMemberPrice({ saving: 25000, signedIn: true }), false,
-  'someone already signed in must not be told to sign in: only the tier on their customer row can '
-  + 'change the price, and all 43 customers on production are retail');
-assert.equal(shouldPromptSignInForMemberPrice({ saving: 0, signedIn: false }), false,
+// ── 1. The predicate, run over the states a viewer can be in ──────────────────────────────────────
+assert.equal(shouldOfferMemberPrice({ saving: 25000, isMember: false }), true,
+  'someone who is not a member yet is offered the member price, signed in or not — signing in alone no longer gives it');
+assert.equal(shouldOfferMemberPrice({ saving: 25000, isMember: true }), false,
+  'a member is not offered what they already have');
+assert.equal(shouldOfferMemberPrice({ saving: 0, isMember: false }), false,
   'and with nothing to save there is nothing to offer');
-assert.equal(shouldPromptSignInForMemberPrice({ saving: 0, signedIn: true }), false);
+assert.equal(shouldOfferMemberPrice({ saving: 0, isMember: true }), false);
 // Defaults and junk: a missing argument must not turn the offer on.
-assert.equal(shouldPromptSignInForMemberPrice(), false, 'no arguments is not an offer');
-assert.equal(shouldPromptSignInForMemberPrice({}), false);
-assert.equal(shouldPromptSignInForMemberPrice({ saving: -500, signedIn: false }), false,
+assert.equal(shouldOfferMemberPrice(), false, 'no arguments is not an offer');
+assert.equal(shouldOfferMemberPrice({}), false);
+assert.equal(shouldOfferMemberPrice({ saving: -500, isMember: false }), false,
   'a negative saving is not a saving');
-assert.equal(shouldPromptSignInForMemberPrice({ saving: NaN, signedIn: false }), false);
+assert.equal(shouldOfferMemberPrice({ saving: NaN, isMember: false }), false);
 
 // A signed-in MEMBER needs no special case, and this is why: their lines already carry the member
 // price, so the arithmetic answers 0 and the line was never drawn.
@@ -56,10 +59,10 @@ for (const file of ['pages/CartPage.jsx']) {
   const source = read(...file.split('/'));
   assert.match(
     source,
-    /shouldPromptSignInForMemberPrice\(\{ saving: memberSaving, signedIn: Boolean\(currentUser\) \}\)/,
-    `${file} must ask whether the offer is honest for THIS viewer`,
+    /shouldOfferMemberPrice\(\{ saving: memberSaving, isMember: tier === 'member' \|\| tier === 'reseller' \}\)/,
+    `${file} must ask whether the offer is honest for THIS viewer, from the tier the server resolved`,
   );
-  assert.match(source, /useAuth\(\)/, `${file} must know whether anyone is signed in`);
+  assert.match(source, /const \{ tier \} = useTierPrices\(\);/, `${file} must read the server-resolved tier, not the session`);
   // The condition that draws the line is the predicate's answer, not the raw saving. A file that still
   // branches on `memberSaving > 0` around the CTA would show it to everyone again.
   const cta = source.indexOf("why.member.cta");
@@ -87,4 +90,4 @@ for (const file of ['pages/CheckoutPage.jsx']) {
   );
 }
 
-console.log('memberNudgeIsHonest: ok — the offer is made to visitors who can still act on it, and to nobody else');
+console.log('memberNudgeIsHonest: ok — the offer is made to whoever is not a member yet, and to nobody else');
