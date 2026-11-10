@@ -115,6 +115,11 @@ assert.equal(insert.client_context.shop, 'en', 'every message about it goes out 
 assert.ok(isPaymentToken(insert.payment_token), 'a /pay token in the format the page accepts');
 assert.equal(good.json.paymentToken, insert.payment_token);
 assert.match(insert.notes, /Berlin/);
+assert.equal(insert.payment_response.amountUsd, expected.totalUsd,
+  '/payment?order= (Studio templates, the portal) reads the dollars from here, as on a Studio export order');
+assert.equal(insert.payment_response.currency, 'USD');
+assert.ok(insert.payment_response.bankName && insert.payment_response.swift,
+  'and the international account — without it that page shows the domestic BCA account for a dollar order');
 assert.ok(!('contact' in good.json) && !('order' in good.json), 'the response carries no customer data back');
 assert.ok(good.calls.some((c) => c.href.includes('storefront_deduct_inventory_for_order')), 'stock is held');
 const upserts = good.calls.filter((c) => c.href.includes('storefront_upsert_customer')).map((c) => c.body.p_increment_order);
@@ -183,6 +188,17 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   assert.match(pay, /paymentAmountUsd\(order\.amountIdr\)/, 'the payment page asks for the exact total');
   assert.match(pay, /submitOrderPaymentProof\(orderNumber/, 'the receipt is recorded on the order');
   assert.match(pay, /notify-proof/, 'and Dekito is told');
+  const cartService = read('services', 'cartService.js');
+  const endpointSource = readFileSync(join(srcDir, '..', 'api', 'orders', 'create.js'), 'utf8');
+  for (const fallback of ["'PT Bank SMBC Indonesia Tbk (Jenius)'", "'SUNIIDJA'"]) {
+    assert.ok(cartService.includes(fallback) && endpointSource.includes(fallback),
+      `the endpoint and INTERNATIONAL_TRANSFER_PAYMENT disagree on the fallback ${fallback}`);
+  }
+  const studio = read('pages', 'ExportShippingCalculatorPage.jsx');
+  for (const key of ['amountUsd', 'currency', 'amountIdr', 'usdRate', 'bankName', 'swift', 'accountNumber', 'accountName', 'bankAddress']) {
+    assert.ok(studio.includes(key) && new RegExp(`\\b${key}:`).test(endpointSource.slice(endpointSource.indexOf('payment_response:'))),
+      `payment_response.${key} is written by one order writer and not the other`);
+  }
 }
 
 console.log('internationalOrder wiring OK');

@@ -871,6 +871,21 @@ const createInternationalOrder = async (res, input, clientContext) => {
     payment_provider: 'manual',
     payment_status: 'pending',
     payment_token: paymentToken,
+    // The same block Studio's export screen freezes onto its orders (ExportShippingCalculatorPage), read by
+    // /payment?order= — the page the Studio message templates and the buyer's portal link to. Without it
+    // that page shows the domestic BCA account for a dollar order. Env names and fallbacks mirror
+    // INTERNATIONAL_TRANSFER_PAYMENT in cartService.js, which the browser cannot share with this file.
+    payment_response: {
+      amountUsd: quote.totalUsd,
+      currency: 'USD',
+      amountIdr: quote.subtotalIdr,
+      usdRate: rate,
+      bankName: process.env.VITE_PAY_WIRE_BANK || 'PT Bank SMBC Indonesia Tbk (Jenius)',
+      swift: process.env.VITE_PAY_WIRE_BIC || 'SUNIIDJA',
+      accountNumber: process.env.VITE_PAY_WIRE_ACCOUNT || '',
+      accountName: process.env.VITE_PAY_BANK_HOLDER || '',
+      bankAddress: process.env.VITE_PAY_WIRE_ADDRESS || '',
+    },
     courier_name: `DHL Express / US$${quote.shippingUsd}${eta ? ` / ${eta}` : ''}`,
     source: 'storefront',
     client_context: { ...clientContext, shop: 'en' },
