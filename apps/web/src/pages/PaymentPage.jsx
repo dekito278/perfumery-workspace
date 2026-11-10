@@ -945,18 +945,20 @@ const EmptyPaymentState = ({ orderNumber, orderFound = null, loading = false, on
   return (
   <section className="mx-auto max-w-xl rounded-none border border-ng-bone/30 bg-transparent p-8 text-center">
     <span className="mx-auto grid h-12 w-12 place-items-center rounded-none bg-ng-ink text-ng-bone">
-      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
+      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber && orderFound !== 'notReady' ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
     </span>
     <h1 className="mt-4 font-ng-display text-4xl font-normal text-ng-bone">
       {orderNumber
-        ? (orderFound === false ? t("pay.orderNotFound") : t("pay.processing"))
+        ? (orderFound === false ? t("pay.orderNotFound") : orderFound === 'notReady' ? t("pay.notReady") : t("pay.processing"))
         : t("pay.noSession")}
     </h1>
     <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
       {orderNumber
         ? (orderFound === false
           ? t("pay.orderMissing", { order: orderNumber })
-          : t("pay.orderReturned", { order: orderNumber }))
+          : orderFound === 'notReady'
+            ? t("pay.notReadyBody", { order: orderNumber })
+            : t("pay.orderReturned", { order: orderNumber }))
         : t("pay.noSessionBody")}
     </p>
     <div className="mt-5 flex justify-center gap-2">
@@ -1106,6 +1108,9 @@ const PaymentPageContent = () => {
           setSession(recoveredDokuSession);
           return;
         }
+        // Unpaid and DOKU would not open a panel. The page used to say the payment "is being processed" and
+        // "has come back to Solivagant" to a buyer who had never seen a payment screen (2026-11-11).
+        setOrderFound('notReady');
       }
 
       // Only fall back to the stored session when it belongs to THIS order — otherwise the page rendered
