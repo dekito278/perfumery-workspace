@@ -27,7 +27,7 @@ const line = (tierPrices, extra = {}) => resolveTierPrice({ retailPrice: 479000,
 assert.equal(line({ member: 429000 }, { memberPercent: 15 }), 407000,
   'a 15% code beats the product member price: 479.000 − 15% = 407.150, rounded DOWN to 407.000');
 assert.equal(line({ member: 429000 }, { memberPercent: 5 }), 455000,
-  'a code pays EXACTLY its percentage, even above the product member price (Dekito, 12 Nov 2026: per community, Dekito's call)');
+  'a code pays EXACTLY its percentage, even above the product member price (Dekito, 12 Nov 2026: per community, chosen by Dekito)');
 assert.equal(line({ member: 429000 }, { memberPercent: 10 }), 431000,
   'a 10% community pays 479.000 − 10% = 431.000, not the product member price');
 assert.equal(line({}, { memberPercent: 10 }), 431000, 'a code works on a product with no member price at all');
