@@ -266,7 +266,7 @@ const CatalogPage = () => {
                         {shortNoteList(productCopyFor(product, region).notes, CARD_NOTE_LIMIT)}
                       </span>
                       <span className="ng-cat-row__price flex flex-col gap-1 text-base">
-                        <CardPrice product={product} memberClassName="ng-mono text-ng-dust" />
+                        <CardPrice product={product} />
                       </span>
                       <span className="ng-cat-row__act">
                         {/* Quick-add in both shops since 2026-10-06. It once added the bottle at the

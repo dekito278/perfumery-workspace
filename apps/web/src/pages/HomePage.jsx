@@ -196,7 +196,7 @@ const HomePage = () => {
                   <div className="flex justify-between gap-6 border-b border-ng-bone/15 py-3.5 text-[15px]">
                     <dt className="ng-mono text-ng-ash">{t('home.ngFeatPrice')}</dt>
                     <dd className="m-0 flex flex-col items-end gap-1 text-right">
-                      <CardPrice product={featured} memberClassName="ng-mono text-ng-dust" />
+                      <CardPrice product={featured} />
                     </dd>
                   </div>
                 </dl>
@@ -245,7 +245,7 @@ const HomePage = () => {
                       <span className="ng-row__size ng-mono text-ng-dust">{product.size}</span>
                       <span className="ng-row__price flex flex-col gap-1 text-[15px]">
                         {(product.price || product.priceNumber) ? (
-                          <CardPrice product={product} memberClassName="ng-mono text-ng-dust" />
+                          <CardPrice product={product} />
                         ) : null}
                       </span>
                       <ArrowRight className="ng-row__arrow h-4 w-4 opacity-60" aria-hidden="true" />

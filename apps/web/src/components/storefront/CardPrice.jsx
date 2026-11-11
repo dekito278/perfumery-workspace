@@ -14,7 +14,7 @@ import { usdPriceFor } from '@/utils/usdPrice.js';
  * The lookup goes through the PRIMARY VARIANT, not the product: every export price is keyed by variant,
  * so a product-level lookup finds nothing and the card would quietly fall back to the Indonesian price.
  */
-const CardPrice = ({ product, className = '', memberClassName = '' }) => {
+const CardPrice = ({ product, className = '' }) => {
   const { t } = useTranslate();
   const variant = getPrimaryVariant(Array.isArray(product?.variants) ? product.variants : []);
   // useOverseasPrice, NOT useExportPrice: the second returns the export price to EVERYONE, and using
@@ -29,14 +29,9 @@ const CardPrice = ({ product, className = '', memberClassName = '' }) => {
     return <span className={className}>{usd ? `US$${usd}` : formatRupiah(exportPrice)}</span>;
   }
 
-  return (
-    <>
-      <span className={className}>{product?.price || formatRupiah(product?.priceNumber || 0)}</span>
-      {product?.memberPriceNumber ? (
-        <span className={memberClassName}>{t('price.memberIs', { price: formatRupiah(product.memberPriceNumber) })}</span>
-      ) : null}
-    </>
-  );
+  // No member price on a card (Dekito, 12 Nov 2026): it differs per community code, so any one number
+  // is wrong for most members and a free discount sheet for everyone else.
+  return <span className={className}>{product?.price || formatRupiah(product?.priceNumber || 0)}</span>;
 };
 
 export default CardPrice;

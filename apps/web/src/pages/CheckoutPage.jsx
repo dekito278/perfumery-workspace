@@ -183,7 +183,7 @@ const CheckoutPage = () => {
                     <button type="button" onClick={handleGoogleLogin} className="ng-btn ng-btn--ghost ng-btn--block !min-h-[56px] !justify-start !normal-case !tracking-normal !font-ng-body !text-[15px]">
                       <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
                       {memberSaving > 0
-                        ? t('checkout.signInSaving', { amount: formatTotal(memberSaving) })
+                        ? t('checkout.signInSaving')
                         : t('checkout.signInPlain')}
                     </button>
                   )}

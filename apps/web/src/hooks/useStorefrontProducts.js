@@ -104,9 +104,12 @@ export const useStorefrontProducts = (options) => {
   const { tier, index, memberPercent } = useTierPrices();
   const { index: memberIndex } = useMemberPrices();
   return useMemo(
-    // Tier first, then the nudge: once a member's price has been lowered to the member price, the nudge
-    // finds nothing lower and stays away. The order is what keeps a member from being told to sign in.
-    () => attachMemberPrices(applyTierPrices(products, tier, index, formatRupiah, memberPercent), memberIndex),
+    // The nudge is for retail visitors only. A code member can pay MORE than the product member price
+    // (a 5% community), so "finds nothing lower" no longer keeps a member from being nudged — the tier does.
+    () => {
+      const priced = applyTierPrices(products, tier, index, formatRupiah, memberPercent);
+      return tier === 'retail' ? attachMemberPrices(priced, memberIndex) : priced;
+    },
     [products, tier, index, memberPercent, memberIndex],
   );
 };

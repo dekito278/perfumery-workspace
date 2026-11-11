@@ -239,11 +239,8 @@ assert.match(priceNote, /if \(!overseasPrice && price && memberPrice && memberPr
   const printers = [...sweep('pages'), ...sweep('components/storefront')]
     .filter(([, source]) => /memberPriceNumber/.test(source))
     .map(([name]) => name);
-  assert.deepEqual(printers.sort(), ['components/storefront/CardPrice.jsx', 'components/storefront/PriceNote.jsx'],
-    'a page is printing a member price of its own — route it through PriceNote or CardPrice, which are gated');
-  const cardPrice = read('components', 'storefront', 'CardPrice.jsx');
-  assert.match(cardPrice, /if \(exportPrice\) \{?[\s\S]{0,200}?return[\s\S]*?memberPriceNumber/,
-    'CardPrice returns the export price BEFORE it reaches the member price');
+  assert.deepEqual(printers.sort(), ['components/storefront/PriceNote.jsx'],
+    'a page is printing a member price of its own — route it through PriceNote, which is gated');
   for (const [name, source] of [['PriceNote', priceNote]]) {
     const gated = (source.match(/!overseasPrice/g) || []).length;
     assert.ok(gated >= 1, `${name} gates its member price on the export price`);

@@ -97,12 +97,17 @@ assert.match(service, /'PGRST202'/, 'the code PostgREST actually returns must be
 
 // --- 6. Order of operations in the hook -------------------------------------------------------------------
 const hook = read('hooks', 'useStorefrontProducts.js');
-assert.match(hook, /attachMemberPrices\(applyTierPrices\(/, 'tier first, then the nudge — reversed, a member would be told to sign in');
+assert.match(hook, /tier === 'retail' \? attachMemberPrices\(priced, memberIndex\) : priced/,
+  'the nudge is for retail visitors only — a 5% code member pays above the product member price and must not be nudged');
 assert.match(hook, /export const useMemberPrices/, 'the public index must be shared like the tier index, not fetched per page');
 
 // --- 7. The note: right branch, right order, right gate -----------------------------------------------------
 const note = read('components', 'storefront', 'PriceNote.jsx');
 assert.match(note, /memberPrice < price/, 'the nudge must require the member price to be strictly lower');
+// Said, never priced (Dekito, 12 Nov 2026): the member price depends on the community code.
+assert.doesNotMatch(note, /formatRupiah\(memberPrice|price - memberPrice/, 'no member NUMBER is shown to a non-member');
+assert.match(note, /t\('price\.memberHint'\)/);
+for (const language of ['id', 'en']) assert.doesNotMatch(MESSAGES[language]['price.memberHint'], /\{|Rp|\d/, `${language} hint carries no number`);
 // The wording moved into the message file when the storefront learned English. What must still hold is
 // that the way in is offered at all, in BOTH languages — a number with no button is a tease.
 // Since 10 Nov 2026 the way in is the account page, not a sign-in button: signing in alone no longer gives
@@ -119,9 +124,8 @@ assert.match(MESSAGES.id['price.memberTier'], /Harga member/, 'and that label is
 // The card surfaces route their price through CardPrice now — one component for four places, so the
 // member line cannot be present on three cards and missing on the fourth. The assertion follows it.
 const cardPrice = read('components', 'storefront', 'CardPrice.jsx');
-assert.match(cardPrice, /product\?\.memberPriceNumber \? \(/, 'CardPrice shows the member price beside the price');
-assert.match(cardPrice, /price\.memberIs', \{ price: formatRupiah\(product\.memberPriceNumber\)/,
-  "and formats it with the app's own formatter");
+// Since 12 Nov 2026 a card shows no member price at all — it differs per community code.
+assert.doesNotMatch(cardPrice, /memberPriceNumber/, 'CardPrice must not print a member price');
 // Every surface that renders a product CARD, related-product strips included: those sat outside the four
 // obvious ones and kept showing Indonesian prices under an English product page.
 for (const surface of ['pages/CatalogPage.jsx',
@@ -204,11 +208,11 @@ for (const page of ['pages/CheckoutPage.jsx']) {
   const source = read(...page.split('/'));
   assert.match(source, /memberSavingForCart\(items, memberIndex\)/, `${page} must compute the real saving from the cart`);
   assert.match(source, /memberSaving > 0\s*\?/, `${page} must fall back to the ordinary copy when there is nothing to save`);
-  // The wording moved into the message file when the checkout learned English; the AMOUNT still has to
-  // reach it, in both languages, or the button becomes a vague promise.
-  assert.match(source, /signInSaving', \{ amount: formatTotal\(memberSaving\) \}/, `${page} must print the actual amount, not a vague promise`);
+  // Since 12 Nov 2026 the amount is NOT printed: the member price depends on the community code, so any
+  // one saving is wrong for most members (Dekito: don't show member prices to non-members).
+  assert.match(source, /t\('checkout\.signInSaving'\)/, `${page} names the member price without an amount`);
   for (const language of ['id', 'en']) {
-    assert.match(MESSAGES[language]['checkout.signInSaving'], /\{amount\}/, `${language} saving copy carries the amount`);
+    assert.doesNotMatch(MESSAGES[language]['checkout.signInSaving'], /\{amount\}|Rp|\d/, `${language} saving copy carries no number`);
   }
   // Bound to the button's ELSE branch: a bare phrase match once passed while the button's fallback was
   // empty, so the branch itself is asserted.
@@ -260,9 +264,9 @@ for (const page of ['pages/CartPage.jsx']) {
     `${page} must stay silent when there is nothing to save, and when the viewer cannot act on it`);
   assert.match(source, /shouldOfferMemberPrice\(\{ saving: memberSaving, isMember: tier === 'member' \|\| tier === 'reseller' \}\)/,
     `${page} must ask the shared predicate rather than branching on the raw saving`);
-  assert.match(source, /price\.saveShort', \{ amount: formatTotal\(memberSaving\) \}/,
-    `${page} must print the actual amount, not a vague promise`);
-  assert.match(source, /t\('price\.memberTier'\)/, `${page} must name what the saving is`);
+  // Since 12 Nov 2026: said, not priced — the member price depends on the community code.
+  assert.match(source, /t\('price\.memberHint'\)/, `${page} must say member pricing exists`);
+  assert.doesNotMatch(source, /formatTotal\(memberSaving\)/, `${page} must not print a member saving`);
   // And a way to act on it, or the number is a tease.
   assert.match(source, /customer['"]/, `${page} must offer the door to the account, not just the number`);
 }
