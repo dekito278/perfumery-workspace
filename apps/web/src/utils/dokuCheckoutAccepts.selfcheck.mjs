@@ -61,7 +61,12 @@ for (const value of names) {
 // --- 4. When DOKU still will not open, the page says so instead of "being processed" --------------------------
 const page = read('../pages/PaymentPage.jsx');
 assert.match(page, /setOrderFound\('notReady'\)/, 'a failed DOKU recovery must mark the order not ready');
-assert.match(page, /orderFound === 'notReady' \? t\("pay\.notReady"\)/);
+assert.match(page, /state === 'notReady' \? t\("pay\.notReady"\)/);
+// While looking up, the loading copy, from the very first paint; never "being processed" (12 Nov 2026).
+assert.match(page, /const state = loading \? 'loading' : orderFound === null \? 'notReady' : orderFound;/);
+assert.match(page, /state === 'loading' \? t\("pay\.loadingPanel"\)/);
+assert.match(page, /useState\(\(\) => typeof window !== 'undefined' && new URLSearchParams\(window\.location\.search\)\.has\('order'\)\)/,
+  'loadingOrder must start true when there is an order, or the first frame flashes the result copy');
 assert.match(page, /t\("pay\.notReadyBody", \{ order: orderNumber \}\)/);
 for (const lang of ['id', 'en']) {
   for (const key of ['pay.notReady', 'pay.notReadyBody']) assert.ok(MESSAGES[lang][key], `${lang} ${key}`);

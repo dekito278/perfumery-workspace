@@ -942,21 +942,27 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
 
 const EmptyPaymentState = ({ orderNumber, orderFound = null, loading = false, onRefresh }) => {
   const { t } = useTranslate();
+  // While the order is still being looked up, say so. The page used to show "Pembayaran sedang diproses …
+  // sudah kembali ke Solivagant" for ~5 s before the DOKU panel appeared (measured 11 Nov 2026). And a lookup
+  // that THREW (orderFound null once loading is over) gets the "press Refresh" copy, not "being processed".
+  const state = loading ? 'loading' : orderFound === null ? 'notReady' : orderFound;
   return (
   <section className="mx-auto max-w-xl rounded-none border border-ng-bone/30 bg-transparent p-8 text-center">
     <span className="mx-auto grid h-12 w-12 place-items-center rounded-none bg-ng-ink text-ng-bone">
-      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber && orderFound !== 'notReady' ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
+      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber && state !== 'notReady' ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
     </span>
     <h1 className="mt-4 font-ng-display text-4xl font-normal text-ng-bone">
       {orderNumber
-        ? (orderFound === false ? t("pay.orderNotFound") : orderFound === 'notReady' ? t("pay.notReady") : t("pay.processing"))
+        ? (state === 'loading' ? t("pay.loadingPanel") : state === false ? t("pay.orderNotFound") : state === 'notReady' ? t("pay.notReady") : t("pay.processing"))
         : t("pay.noSession")}
     </h1>
     <p className="mt-2 text-sm font-semibold leading-relaxed text-ng-dust">
       {orderNumber
-        ? (orderFound === false
+        ? (state === 'loading'
+          ? t("pay.loadingPanelBody")
+          : state === false
           ? t("pay.orderMissing", { order: orderNumber })
-          : orderFound === 'notReady'
+          : state === 'notReady'
             ? t("pay.notReadyBody", { order: orderNumber })
             : t("pay.orderReturned", { order: orderNumber }))
         : t("pay.noSessionBody")}
@@ -983,7 +989,8 @@ const PaymentPageContent = () => {
   const { t } = useTranslate();
   const [searchParams] = useSearchParams();
   const [session, setSession] = useState(null);
-  const [loadingOrder, setLoadingOrder] = useState(false);
+  // True from the first paint when there is an order to look up, or the first frame flashes the result copy.
+  const [loadingOrder, setLoadingOrder] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('order'));
   // Whether the lookup actually found the order. Without this the page told anyone arriving with an
   // order number — a typo, an old link, a cancelled order — that their payment was being processed and
   // had "returned to Solivagant", which is a reassurance about something that does not exist.

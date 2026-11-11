@@ -65,7 +65,7 @@ const proofStatuses = ['missing', 'submitted', 'approved', 'rejected'];
 
 // A write is only coherent with certain words. "Mulai packing" under "Follow-up pengiriman" is the bug.
 const ALLOWED_WITH = new Map([
-  [null, [ORDER_TASKS.review, ORDER_TASKS.done, ORDER_TASKS.proof, ORDER_TASKS.quote, ORDER_TASKS.payment, ORDER_TASKS.followUp]],
+  [null, [ORDER_TASKS.review, ORDER_TASKS.done, ORDER_TASKS.cancelled, ORDER_TASKS.proof, ORDER_TASKS.quote, ORDER_TASKS.payment, ORDER_TASKS.followUp]],
   ['packing', [ORDER_TASKS.pack, ORDER_TASKS.proof]],
   ['shipped', [ORDER_TASKS.ship, ORDER_TASKS.proof]],
 ]);
@@ -92,7 +92,7 @@ for (const status of orderStatuses) {
 
           // A finished or cancelled order is never given work, and never a write.
           if (isArchivedOrder(order)) {
-            assert.equal(task, ORDER_TASKS.done, `${JSON.stringify(order)} is archived but was given work`);
+            assert.equal(task, status === 'cancelled' ? ORDER_TASKS.cancelled : ORDER_TASKS.done, `${JSON.stringify(order)} is archived but was given work`);
             assert.equal(action, null, `${JSON.stringify(order)} is archived but was offered a write`);
           }
           // Nothing moves until the money is in.
@@ -141,3 +141,9 @@ assert.match(phone, /quickShipmentUpdate\((?:step|fulfillmentStep)\.status\)/,
   'the write must still come from the shared action rather than a status typed at the call site');
 
 console.log(`oneNextAction: ok — ${checked} order shapes, the card and the button agree on every one`);
+
+// A cancelled order is archived, but it is not "selesai" (seen on a cancelled smoke order, 11 Nov 2026).
+assert.equal(nextOrderTask({ status: 'cancelled', paymentStatus: 'expired' }).title, 'Order dibatalkan');
+assert.equal(nextOrderTask({ status: 'cancelled', paymentStatus: 'unpaid', paymentProofStatus: 'submitted' }).title, 'Order dibatalkan',
+  'a proof left on a cancelled order is not a task');
+assert.equal(nextOrderTask({ status: 'completed', paymentStatus: 'paid' }).title, 'Order selesai');

@@ -22,6 +22,7 @@ import { splitFreeVialLines } from '@/utils/freeVial.js';
 import { shortNoteList } from '@/utils/shortNoteList.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 import { splitScriptName } from '@/utils/scriptName.js';
+import { onEnter } from '@/utils/onEnter.js';
 
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -168,6 +169,7 @@ const CartPage = () => {
                         className="ng-field !min-h-[48px] uppercase placeholder:normal-case"
                         value={voucher.inputCode}
                         onChange={(event) => voucher.setInputCode(event.target.value)}
+                        onKeyDown={onEnter(voucher.applyVoucher)}
                         placeholder={t('cart.voucherPlaceholder')}
                         autoComplete="off"
                         autoCapitalize="characters"
