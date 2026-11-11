@@ -42,7 +42,7 @@ const JournalRelatedProduct = ({ post, className = '' }) => {
           <p className="ng-mono m-0 text-ng-ember">{t('journal.relatedProductEyebrow')}</p>
           <strong className="font-ng-display text-[44px] font-normal leading-none md:text-[60px]">{product.name}</strong>
           <span className="flex flex-col gap-1 text-base">
-            <CardPrice product={product} memberClassName="ng-mono text-ng-dust" />
+            <CardPrice product={product} />
           </span>
           <Link to={path} className="ng-btn self-start">
             {t('journal.relatedProductCta')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

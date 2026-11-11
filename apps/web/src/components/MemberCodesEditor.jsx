@@ -88,7 +88,7 @@ const MemberCodesEditor = ({ curationPath = '/studio/products/curation' }) => {
         Setiap komunitas punya kode sendiri. Akun yang memasukkan kode di toko langsung jadi member, dengan
         persen kode itu. Yang belum punya kode jadi member setelah belanja pertamanya lunas, dengan harga
         member per produk dari <Link to={curationPath} className="font-bold underline underline-offset-2">Kurasi katalog</Link>.
-        Pembeli selalu dapat harga member yang lebih murah dari keduanya.
+        Pemegang kode membayar persis persen kodenya, boleh lebih kecil atau lebih besar dari harga member produk.
       </p>
 
       {!schemaReady ? (

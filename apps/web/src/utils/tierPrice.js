@@ -27,8 +27,9 @@ export const RETAIL_TIER = 'retail';
  * @param tier         the buyer's tier, resolved from their session by the server
  * @param overseas     true when the parcel leaves Indonesia; a destination, not a customer tier
  * @param memberPercent the percentage of the member code this buyer redeemed (Studio, "Kode member"),
- *                      or null. A member pays the LOWER of the product's member price and retail minus
- *                      this percentage — a community code can only ever add to what membership gives.
+ *                      or null. A code member pays EXACTLY retail minus this percentage — smaller or
+ *                      larger than the product's member price (Dekito, 12 Nov 2026: "suka-suka saya
+ *                      ngatur" per community). The product member price is for members without a code.
  */
 export const resolveTierPrice = ({ retailPrice, tierPrices = {}, tier = 'retail', overseas = false, memberPercent = null } = {}) => {
   // A SCHEDULED retail price outranks the one on the variant. That is how the 12 Nov 2026 change is
@@ -53,7 +54,7 @@ export const resolveTierPrice = ({ retailPrice, tierPrices = {}, tier = 'retail'
   }
   // Only a member: a reseller's own price is negotiated, and a code does not stack on it.
   const fromCode = tier === 'member' && memberPercent ? memberPriceFromRetail(retail, memberPercent) : null;
-  return fromCode !== null && fromCode < price ? fromCode : price;
+  return fromCode ?? price;
 };
 
 const effectiveTime = (row) => {

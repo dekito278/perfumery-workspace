@@ -56,8 +56,8 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   if (!overseasPrice && price && memberPrice && memberPrice < price) {
     return (
       <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-ng-ember ${className}`}>
-        <span>{t('price.memberIs', { price: formatRupiah(memberPrice) })}</span>
-        <span className="font-semibold normal-case tracking-normal text-ng-dust">{t('price.saveShort', { amount: formatRupiah(price - memberPrice) })}</span>
+        {/* Said, not priced (Dekito, 12 Nov 2026): the member price depends on the community code. */}
+        <span>{t('price.memberHint')}</span>
         <Link
           to="/customer"
           className="inline-flex min-h-[44px] items-center font-bold normal-case tracking-normal underline underline-offset-2"

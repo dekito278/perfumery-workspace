@@ -87,7 +87,6 @@ export const MESSAGES = {
     'price.memberTier': 'Harga member',
     'price.retailLabel': 'Harga retail',
     'price.resellerTier': 'Harga reseller',
-    'price.memberIs': 'Member {price}',
     // The eleven days before the domestic prices change, 1-11 Nov 2026. No percentage in it on
     // purpose (Dekito's brief, §2), and domestic only: the dollar prices are not moving, so
     // telling an overseas visitor that current prices hold would announce a change that never
@@ -133,9 +132,9 @@ export const MESSAGES = {
     'pay.link.fieldCurrency': 'Mata uang',
     'pay.link.fieldBic': 'SWIFT/BIC',
     'pay.link.fieldAddress': 'Alamat bank',
-    'price.saveShort': 'hemat {amount}',
     'price.save': 'Hemat {amount}',
     'price.howToMember': 'Cara jadi member',
+    'price.memberHint': 'Ada harga khusus member komunitas',
     'member.howTitle': 'Cara jadi member',
     'member.howBody': 'Harga member untuk yang punya kode member (dari komunitasmu atau kartu di paket) dan untuk yang sudah pernah belanja di sini. Masuk dengan Google, lalu masukkan kodenya. Pernah belanja tanpa akun? Masuk, lalu tautkan kode SOLI di pengaturan akun.',
     'member.activeTitle': 'Harga member aktif',
@@ -471,7 +470,7 @@ export const MESSAGES = {
     'checkout.errPhone': 'Nomor WhatsApp wajib diisi.',
     'checkout.errPhoneInvalid': 'Nomor WhatsApp belum valid.',
     'checkout.errAddress': 'Alamat pengiriman wajib diisi.',
-    'checkout.signInSaving': 'Masuk dengan Google — punya kode member? hemat {amount}',
+    'checkout.signInSaving': 'Masuk dengan Google — punya kode member? ada harga khusus',
     'checkout.signInPlain': 'Masuk dengan Google — alamat & data terisi otomatis',
     'checkout.missingFields': 'Lengkapi: {fields}.',
     'checkout.missingFieldsFallback': 'data checkout',
@@ -1258,7 +1257,6 @@ export const MESSAGES = {
     'price.memberTier': 'Member price',
     'price.retailLabel': 'Retail price',
     'price.resellerTier': 'Reseller price',
-    'price.memberIs': 'Member {price}',
     'price.oldPricesHold': 'Current prices hold until 11.11',
     'pay.link.tab': 'Payment {order} - SOLIVAGANT',
     'pay.link.eyebrow': 'PAYMENT',
@@ -1298,9 +1296,9 @@ export const MESSAGES = {
     'pay.link.fieldCurrency': 'Currency',
     'pay.link.fieldBic': 'SWIFT/BIC',
     'pay.link.fieldAddress': 'Bank address',
-    'price.saveShort': 'save {amount}',
     'price.save': 'Save {amount}',
     'price.howToMember': 'How to become a member',
+    'price.memberHint': 'Member pricing available',
     'member.howTitle': 'How to become a member',
     'member.howBody': 'Member prices are for anyone with a member code (from your community or the card in your parcel) and for anyone who has ordered here before. Sign in with Google, then enter the code. Ordered before without an account? Sign in and link your SOLI code in the account settings.',
     'member.activeTitle': 'Member prices on',
@@ -1636,7 +1634,7 @@ export const MESSAGES = {
     // The member price IS true here, unlike on the welcome page and the why-direct card. Anyone
     // completing this form is shipping to an Indonesian address — the notice above it says so — and a
     // domestic order does get the member price. Same promise, different reader.
-    'checkout.signInSaving': 'Sign in with Google — have a member code? save {amount}',
+    'checkout.signInSaving': 'Sign in with Google — have a member code? member pricing applies',
     'checkout.signInPlain': 'Sign in with Google — your address fills in automatically',
     'checkout.missingFields': 'Still needed: {fields}.',
     'checkout.missingFieldsFallback': 'your checkout details',

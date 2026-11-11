@@ -422,7 +422,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                     <span className="ng-mono text-ng-ash">{item.category}</span>
                     <span className="font-ng-display text-[26px] leading-none md:text-[28px]">{splitScriptName(item.name).name}</span>
                     <span className="flex flex-col gap-1 text-[15px]">
-                      <CardPrice product={item} memberClassName="ng-mono text-ng-dust" />
+                      <CardPrice product={item} />
                     </span>
                   </Link>
                 ))}

@@ -220,7 +220,7 @@ const CartPage = () => {
                       message keys those pages already use, so there is no second wording to keep in step. */}
                   {offerMemberSignIn ? (
                     <div className="flex flex-col gap-1.5 border border-ng-bone/20 p-4 text-sm">
-                      <span>{t('price.memberTier')} · {t('price.saveShort', { amount: formatTotal(memberSaving) })}</span>
+                      <span>{t('price.memberHint')}</span>
                       <Link to="/customer" className="ng-link ng-mono inline-flex min-h-[44px] items-center underline underline-offset-4">{t('why.member.cta')}</Link>
                     </div>
                   ) : null}
