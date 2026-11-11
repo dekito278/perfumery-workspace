@@ -22,7 +22,7 @@ const RESULT_KEYS = {
 const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
   const { currentUser } = useAuth();
   const { t, isInternational } = useTranslate();
-  const { tier, codeName, codesReady } = useTierPrices();
+  const { tier, codeName, memberPercent, codesReady } = useTierPrices();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -47,7 +47,7 @@ const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
   };
 
   let body = t('member.howBody');
-  if (isMember) body = codeName ? t('member.activeViaCode', { name: codeName }) : t('member.activeBody');
+  if (isMember) body = codeName && memberPercent ? t('member.activeViaCode', { name: codeName, percent: memberPercent }) : t('member.activeBody');
 
   return (
     <section className={`rounded-none border border-ng-bone/10 bg-transparent p-4 ${className}`}>

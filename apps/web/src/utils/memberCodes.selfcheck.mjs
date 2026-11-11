@@ -145,3 +145,9 @@ for (const raw of [read('utils', 'voucherValidation.js'), endpoint]) {
 }
 
 console.log('memberCodes selfcheck OK (a code\'s percentage prices the line, never above the member price; one rule, both readers)');
+
+// Since #591 a code gives exactly its percentage, so a code member is told the percentage, not "the member price".
+for (const language of ['id', 'en']) {
+  assert.match(MESSAGES[language]['member.activeViaCode'], /\{name\}[\s\S]*\{percent\}%/, `${language}: the code member is told their percentage`);
+}
+assert.match(read('components', 'storefront', 'MemberCodePanel.jsx'), /t\('member\.activeViaCode', \{ name: codeName, percent: memberPercent \}\)/);

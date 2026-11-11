@@ -47,7 +47,6 @@ import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
-import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import MemberCodePanel from '@/components/storefront/MemberCodePanel.jsx';
 import useTranslate from '@/hooks/useTranslate.js';
 
@@ -1327,16 +1326,10 @@ const CustomerPortalPage = () => {
               <p className="mt-4 text-base font-medium leading-relaxed text-ng-dust">
                 {t('cust.heroBody')}
               </p>
-              {/* The English shop has no checkout: that sentence tells a reader abroad their order is
-                  arranged on WhatsApp, so the way to arrange one belongs under it rather than in the
-                  footer. The Indonesian sentence says nothing of the kind — there is a checkout — so
-                  there is nothing here to answer. */}
+              {/* Since 10 Nov 2026 (#587) the English cart takes the order itself, so a reader abroad is sent
+                  to the catalogue, not to WhatsApp. */}
               {isInternational ? (
-                <AskAtelierButton
-                  labelKey="intl.noticeCta"
-                  draftKey="intl.noticeMessage"
-                  className="mt-4 w-full sm:w-auto"
-                />
+                <Link to="/catalog" className="ng-btn ng-btn--ghost mt-4 w-full sm:w-auto">{t('mcheckout.openCatalog')}</Link>
               ) : null}
             </div>
 
