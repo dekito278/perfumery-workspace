@@ -144,7 +144,7 @@ for (const raw of [read('utils', 'voucherValidation.js'), endpoint]) {
   assert.doesNotMatch(raw, /sekalian dapat harga member/, 'a voucher refusal still promises the member price for signing in');
 }
 
-console.log('memberCodes selfcheck OK (a code\'s percentage prices the line, never above the member price; one rule, both readers)');
+console.log('memberCodes selfcheck OK (a code\'s percentage prices the line, exactly; one rule, both readers)');
 
 // Since #591 a code gives exactly its percentage, so a code member is told the percentage, not "the member price".
 for (const language of ['id', 'en']) {
