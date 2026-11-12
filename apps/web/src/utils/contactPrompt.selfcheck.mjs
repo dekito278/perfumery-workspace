@@ -77,27 +77,13 @@ for (const parts of surfaces) {
 }
 assert.ok(guarded >= 3, `the scan found only ${guarded} asking sentence(s) — it is no longer looking at the right thing`);
 
-// --- 3b. The account page, where WhatsApp is not help but the checkout itself -----------------------------
-// The English shop takes no orders through this checkout, and the hero says so. That sentence does not
-// order the reader to do anything (rule 1 agrees), but a reader abroad still has nowhere else to go, so
-// the way to arrange an order sits under it rather than in the footer.
+// --- 3b. The account page abroad ------------------------------------------------------------------------
+// Since 10 Nov 2026 (#587) the English cart takes the order itself. The portal used to put a WhatsApp
+// "arrange an international order" button under the hero; now a reader abroad is sent to the catalogue.
 const portal = read('pages', 'CustomerPortalPage.jsx');
-// BOTH heroes. The page returns a different tree for /mobile, and the first version of this shipped to
-// the desktop one only — measured on production: /en/customer on a phone redirects to /en/mobile/customer
-// and had no WhatsApp link at all, which is the surface nearly every overseas reader is on. The phone
-// hero does not even carry the sentence about arranging an order, so nothing would have complained.
-const portalButtons = [...portal.matchAll(/<AskAtelierButton[\s\S]{0,240}?\/>/g)].map((m) => m[0]);
-// Floor lowered when the phone storefront retired (2026-10-31): every screen counted here had a phone twin.
-assert.equal(portalButtons.length, 1,
-  `the account page has a phone tree and a desktop tree; found ${portalButtons.length} contact button(s), expected one in each`);
-for (const button of portalButtons) {
-  assert.match(button, /labelKey="intl\.noticeCta"/,
-    'labelled as arranging an order, not as asking about a parcel that does not exist yet');
-  assert.match(button, /draftKey="intl\.noticeMessage"/, 'and drafted the same way');
-}
-// One portal tree since the phone storefront retired (2026-10-31).
-assert.equal((portal.match(/\{isInternational \? \(\s*<AskAtelierButton/g) || []).length, 1,
-  'and both belong to the English shop only — the Indonesian account page has a checkout to spend a member price in');
+assert.doesNotMatch(portal, /<AskAtelierButton[\s\S]{0,240}?labelKey="intl\.noticeCta"/,
+  'the account page must not send a reader abroad to WhatsApp to order — the English cart takes the order');
+assert.match(portal, /\{isInternational \? \(\s*<Link to="\/catalog"/, 'it sends them to the catalogue instead');
 
 // --- 4. The button keeps its promise ---------------------------------------------------------------------
 const button = read('components', 'storefront', 'AskAtelierButton.jsx');
