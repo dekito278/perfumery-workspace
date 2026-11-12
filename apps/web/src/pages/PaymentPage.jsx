@@ -311,11 +311,6 @@ const PaymentFrame = ({ session }) => {
   // Not session.paymentExpiresAt: manual transfer never has one, and it is the path where somebody is
   // about to move money into a reservation that expires.
   const expiresAtLabel = formatDateTime(paymentDeadlineAt(session, PAYMENT_RESERVATION_TTL_HOURS), t);
-  const copyCustomerCode = async () => {
-    if (!customerCode) return;
-    const copied = await copyTextToClipboard(customerCode);
-    copied ? toast.success(t("pay.copied", { label: customerCode })) : toast.error(t("pay.copyFailed"));
-  };
 
   return (
     <section className="overflow-hidden rounded-none border border-ng-bone/15 bg-transparent">
@@ -339,7 +334,7 @@ const PaymentFrame = ({ session }) => {
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
             <div className="ng-mono text-ng-dust">{t('pay.customer')}</div>
-            <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
+            <div className="mt-1 truncate">{session.customerName || '-'}</div>
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
             <div className="ng-mono text-ng-dust">Total</div>
@@ -393,19 +388,6 @@ const PaymentFrame = ({ session }) => {
           onError={() => setFrameStatus('failed')}
         />
       </div>
-      {customerCode ? (
-        <div className="flex items-center justify-between gap-3 border-t border-ng-bone/10 bg-transparent px-4 py-3">
-          <div className="min-w-0">
-            <span className="ng-mono text-ng-dust">{t("pay.customerCode")}</span>
-            <div className="select-text text-lg font-bold tracking-[0.12em] text-ng-bone">{customerCode}</div>
-            <p className="text-[11px] font-semibold text-ng-dust">{t("pay.saveCode")}</p>
-          </div>
-          <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={copyCustomerCode}>
-            <Copy className="h-4 w-4" />
-            {t('pay.copy')}
-          </button>
-        </div>
-      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ng-bone/10 bg-ng-deep p-4">
         <p className="text-xs font-semibold leading-relaxed text-ng-dust">
           {t('pay.fallbackHint')}
@@ -480,11 +462,6 @@ const QrisPanel = ({ session, onPaid }) => {
   const expired = Boolean(session.paymentExpiresAt) && remainingMs <= 0;
   const pad = (n) => String(n).padStart(2, '0');
 
-  const copyCustomerCode = async () => {
-    if (!customerCode) return;
-    const copied = await copyTextToClipboard(customerCode);
-    copied ? toast.success(t("pay.copied", { label: customerCode })) : toast.error(t("pay.copyFailed"));
-  };
 
   if (paid) {
     return <PaymentSuccessPanel orderNumber={orderNumber} customerCode={customerCode} method="QRIS" />;
@@ -565,18 +542,6 @@ const QrisPanel = ({ session, onPaid }) => {
           {t('pay.awaitingEllipsis')}
         </div>
 
-        {customerCode ? (
-          <div className="mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-none border border-ng-bone/10 bg-transparent px-4 py-3">
-            <div className="min-w-0">
-              <span className="ng-mono text-ng-dust">{t("pay.customerCode")}</span>
-              <div className="select-text text-lg font-bold tracking-[0.12em] text-ng-bone">{customerCode}</div>
-            </div>
-            <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={copyCustomerCode}>
-              <Copy className="h-4 w-4" />
-              {t('pay.copy')}
-            </button>
-          </div>
-        ) : null}
       </div>
     </section>
   );
@@ -712,7 +677,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
             <div className="ng-mono text-ng-dust">{t('pay.customer')}</div>
-            <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
+            <div className="mt-1 truncate">{session.customerName || '-'}</div>
           </div>
           <div className="rounded-none bg-transparent px-4 py-3">
             <div className="ng-mono text-ng-dust">{t("pay.transferTotal")}</div>
@@ -723,25 +688,6 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
       </div>
 
       <div className="grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]">
-        {customerCode ? (
-          <div className="rounded-none border border-ng-bone/15 bg-ng-ink p-5 lg:col-span-2">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <div className="ng-mono text-ng-dust">{t("pay.customerCode")}</div>
-                <div className="mt-1 select-text text-3xl font-bold tracking-[0.16em] text-ng-bone">
-                  {customerCode}
-                </div>
-                <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">
-                  {t('pay.keepCode')}
-                </p>
-              </div>
-              <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={() => copyValue(t("pay.customerCode"), customerCode)}>
-                <Copy className="h-4 w-4" />
-                {t('pay.copyCode')}
-              </button>
-            </div>
-          </div>
-        ) : null}
 
         {awaitingShippingQuote ? (
           <div className="rounded-none border border-ng-ember/40 bg-transparent p-4 text-ng-ember">

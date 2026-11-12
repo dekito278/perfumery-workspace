@@ -73,14 +73,19 @@ assert.match(api, /isInternalErrorMessage\(error\?\.message\)/,
 assert.match(read('hooks', 'useCheckoutFlow.js'), /toast\.error\(publicErrorMessage\(error, 'Gagal menyimpan pesanan'\)\)/,
   'and the checkout must not print one either — this catch also sees errors that never reached the endpoint');
 
-// --- 5. And she is told her code was not used -------------------------------------------------------------
-for (const file of [['pages', 'CheckoutPage.jsx']]) {
-  assert.match(read(...file), /!asCustomerCode\(customerCode\)[\s\S]{0,160}t\('checkout\.codeUnknown'\)/,
-    `${file.join('/')}: a code that will be dropped must say so before the order is placed, not silently`);
-}
-for (const language of ['id', 'en']) {
-  assert.match(MESSAGES[language]['checkout.codeUnknown'], /SOLI/,
-    `${language}.checkout.codeUnknown must show the shape that works`);
+// --- 5. The checkout does not ask for it at all (Dekito, 13 Nov 2026) ----------------------------------------
+// Four code-ish things on one page (Google, member code, SOLI code, voucher) was too many. Signing in fills
+// the details and a guest just types them, so the SOLI field left the checkout. The endpoint still accepts
+// a code (a signed-in buyer's profile carries one) and still drops a malformed one — sections 1–4 hold.
+const checkoutPage = read('pages', 'CheckoutPage.jsx');
+assert.doesNotMatch(checkoutPage, /t\('checkout\.customerCode'\)|updateCustomerCode|lookupCustomer\b|securityChallenge/,
+  'the checkout must not ask a buyer for a SOLI customer code again');
+assert.doesNotMatch(checkoutPage, /<MemberCodePanel\b/,
+  'nor show a separate member-code box: member codes go in the one code field with vouchers');
+// And nobody is told to keep one: the code is a Studio id now, not something a buyer has to remember.
+for (const file of [['pages', 'PaymentPage.jsx'], ['hooks', 'useCheckoutFlow.js'], ['services', 'notificationTemplateService.js']]) {
+  assert.doesNotMatch(read(...file), /Kode customer: \$\{|Customer code: \$\{|t\("pay\.customerCode"\)|t\('pay\.customerCode'\)/,
+    `${file.join('/')}: a buyer is no longer shown (or sent) their SOLI code to keep`);
 }
 
 console.log('customerCode selfcheck OK (a mistyped code costs no order, and no buyer reads a constraint)');

@@ -64,8 +64,8 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'home.tabMobile',   // same
   'home.atelier',     // "atelier" is the word used in both, and it is the section's name
   'mood.woody.short', // Cedar · Vetiver · Mineral — three material names, identical in both
-  'cart.voucher',     // the loanword, used on Indonesian receipts already
-  'bsp.voucher',      // same word on the bespoke summary
+  // cart.voucher / bsp.voucher left this list on 13 Nov 2026: the Indonesian field is now "Kode" (voucher
+  // OR member code, one field), the English one still "Voucher" (member codes are Indonesian-shop only).
   'cart.brief',       // "Brief" is the word used for a bespoke brief in both
   'cart.subtotal',    // Subtotal is Subtotal
   // Checkout: the same word is already used on Indonesian receipts and in Indonesian banking.

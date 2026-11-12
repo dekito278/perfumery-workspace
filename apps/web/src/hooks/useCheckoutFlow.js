@@ -671,7 +671,7 @@ export const useCheckoutFlow = ({
         clearCheckoutDraft();
         (clearVoucher || clearAppliedVoucherCode)();
         setSubmittedOrder(order);
-        toast.success(`Pesanan ${order.orderNumber} tersimpan. Kode customer: ${order.customerCode || customerCode}`);
+        toast.success(`Pesanan ${order.orderNumber} tersimpan.`);
         onSuccess?.(order);
         navigate(paymentPath);
         // No client write. Unlike api/doku/checkout.js, api/doku/qris.js does NOT persist its session to
@@ -711,7 +711,7 @@ export const useCheckoutFlow = ({
       clearCheckoutDraft();
       (clearVoucher || clearAppliedVoucherCode)();
       setSubmittedOrder(order);
-      toast.success(`Pesanan ${order.orderNumber} tersimpan. Kode customer: ${order.customerCode || customerCode}`);
+      toast.success(`Pesanan ${order.orderNumber} tersimpan.`);
       onSuccess?.(order);
       // Optimistic navigation: the payment panel renders straight from sessionStorage (paymentUrl), so
       // navigate NOW. The order number rides along so the payment link stays recoverable if this tab is

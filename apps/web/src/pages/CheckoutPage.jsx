@@ -1,7 +1,6 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from '@/utils/freeVial.js';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
-import { asCustomerCode } from '@/utils/customerCode.js';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -16,7 +15,6 @@ import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
-import MemberCodePanel from '@/components/storefront/MemberCodePanel.jsx';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
@@ -52,14 +50,13 @@ const CheckoutPage = () => {
     clearVoucher: voucher.removeVoucher,
   });
   const {
-    customerCode, customerName, contact, deliveryAddress, notes, saving, lookupLoading,
+    customerName, contact, deliveryAddress, notes, saving,
     repeatCustomer, repeatAddressMode, useCustomerLastAddress, useCustomerNewAddress,
-    securityChallenge, securityAnswer, setSecurityAnswer, verifyCustomerSecurity,
     destinationSearch, destinationOptions, selectedDestination, selectedCourier, selectedShipping, shippingOptions,
     shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, selectedPaymentMethod,
-    canSubmitCheckout, blockedItems, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
+    canSubmitCheckout, blockedItems, validPhoneContact, setCustomerName, setContact, setDeliveryAddress, setNotes,
     updateDestinationSearch, chooseShippingCourier, autoCalculateShipping, loadShippingRates, setSelectedShipping,
-    setSelectedPaymentMethod, lookupCustomer, submitOrder,
+    setSelectedPaymentMethod, submitOrder,
   } = checkout;
   const visibleShippingOptions = useMemo(() => (
     selectedCourier ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier) : shippingOptions
@@ -188,38 +185,9 @@ const CheckoutPage = () => {
                         : t('checkout.signInPlain')}
                     </button>
                   )}
-                  {/* Signed in but not a member yet: the code goes in here, before the total is weighed. */}
-                  {currentUser ? <MemberCodePanel hideForMembers /> : null}
-                  <label className="ng-label">
-                    <span className="ng-mono text-ng-dust">{t('checkout.customerCode')}</span>
-                    <div className="flex gap-2">
-                      <input type="text" className="ng-field uppercase placeholder:normal-case" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('checkout.customerCodePlaceholder')} aria-label={t('checkout.customerCode')} autoComplete="off" autoCapitalize="characters" spellCheck={false} />
-                      <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
-                        {lookupLoading ? t('checkout.checking') : t('checkout.load')}
-                      </button>
-                    </div>
-                    {customerCode.trim() && !asCustomerCode(customerCode) ? (
-                      <p className="m-0 text-sm text-ng-dust" role="status">{t('checkout.codeUnknown')}</p>
-                    ) : null}
-                  </label>
-                  {securityChallenge ? (
-                    <label className="ng-label">
-                      <span className="ng-mono text-ng-dust">{securityChallenge.securityQuestion || t('checkout.securityQuestion')}</span>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          className="ng-field"
-                          value={securityAnswer}
-                          onChange={(event) => setSecurityAnswer(event.target.value)}
-                          placeholder={t('checkout.securityAnswer')} aria-label={t('checkout.securityAnswer')}
-                          autoComplete="off"
-                        />
-                        <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={verifyCustomerSecurity} disabled={lookupLoading || !securityAnswer.trim()}>
-                          {lookupLoading ? t('checkout.checking') : t('checkout.verify')}
-                        </button>
-                      </div>
-                    </label>
-                  ) : null}
+                  {/* No code fields here (Dekito, 13 Nov 2026: too many codes). A member code goes in the one
+                      "Kode" field below, with vouchers; the old SOLI customer code is not asked for at all —
+                      signing in fills the details, and a guest just types them. */}
                   <div className="grid gap-5 md:grid-cols-2">
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.fullName')}</span>
@@ -353,7 +321,7 @@ const CheckoutPage = () => {
                         {voucher.loading ? t('checkout.checking') : t('checkout.voucherApply')}
                       </button>
                     </div>
-                    {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.appliedVoucher ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
+                    {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
                     {voucher.appliedVoucher ? (
                       <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
                         <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
