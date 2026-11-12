@@ -329,6 +329,8 @@ const PAGES_FULLY_TRANSLATED = [
   // SWIFT routes are theirs — but a domestic order settled by manual transfer can be sent the same link,
   // so both halves are real translations rather than one language with a note.
   ['pages', 'PaymentInstructionsPage.jsx'],
+  // /help: order, shipping, tracking, a broken parcel, privacy, contact — in both shops (13 Nov 2026).
+  ['pages', 'HelpPage.jsx'],
   // One component behind /about and /mobile/about, in both shops. The English half is the one a
   // fragrance-database editor reads, so an untranslated line here reaches exactly the reader it must not.
   ['pages', 'AboutPage.jsx'],

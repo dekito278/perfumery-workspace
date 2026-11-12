@@ -52,12 +52,28 @@ for (const [file, pattern, why] of [
   [['components', 'storefront', 'StorefrontFooter.jsx'], /\{siteFacts\.footerOwner\}/, 'the footer still types its own name'],
   [['pages', 'AboutPage.jsx'], /city: siteFacts\.brandCity, foundedYear: siteFacts\.brandFoundedYear/, 'About ignores the city and year set in Studio'],
   [['App.jsx'], /function AppRoutes\(\) \{\n[^\n]*\n\s*useSiteFacts\(\);/, 'nothing loads the facts at the root, so labels keep the defaults until a screen asks'],
+  // The help page (13 Nov 2026). A promise is shown only once Dekito has set it: an empty fact hides the line.
+  [['pages', 'HelpPage.jsx'], /\{facts\.dispatchDays \? <p className="m-0">\{t\('help\.dispatch', \{ days: facts\.dispatchDays \}\)\}/, 'dispatch days are promised only once set'],
+  [['pages', 'HelpPage.jsx'], /facts\.problemReportDays > 0 \? t\('help\.problemPromise', \{ days: facts\.problemReportDays \}\) : t\('help\.problemAsk'\)/, 'the broken-parcel promise only once a window is set'],
+  [['pages', 'HelpPage.jsx'], /\{facts\.contactEmail \? \(/, 'an email only once one is set'],
+  [['pages', 'HelpPage.jsx'], /t\('help\.bespoke', \{ days: facts\.bespokeDays \}\)/, 'the bespoke lead time comes from Studio here too'],
+  [['pages', 'HelpPage.jsx'], /hours: PAYMENT_RESERVATION_TTL_HOURS/, 'the hold is the same hours the payment page counts down'],
 ]) assert.match(read(...file), pattern, `${file.join('/')}: ${why}`);
 // Any message that names a fact placeholder must be one of the sentences checked above — a new one would
 // otherwise print "{days}" on some screen nobody looked at.
 const messages = read('i18n', 'messages.js');
 const factKeys = [...new Set([...messages.matchAll(/["']([\w.]+)["']:\s*["'][^\n]*\{(?:days|hours)\}/g)].map((m) => m[1]))].sort();
-assert.deepEqual(factKeys, ['bsp.lead', 'bsp.preorderConfirm', 'pay.quoteBody'], `a fact placeholder appeared in: ${factKeys.join(', ')}`);
+assert.deepEqual(factKeys, ['bsp.lead', 'bsp.preorderConfirm', 'help.bespoke', 'help.dispatch', 'help.orderEn', 'help.orderIdDoku',
+  'help.orderIdTransfer', 'help.problemPromise', 'pay.quoteBody'], `a fact placeholder appeared in: ${factKeys.join(', ')}`);
+// The promises are EMPTY until Dekito sets them: the shop says nothing on his behalf.
+assert.equal(DEFAULT_SITE_FACTS.dispatchDays, '', 'no dispatch promise by default');
+assert.equal(DEFAULT_SITE_FACTS.problemReportDays, 0, 'no broken-parcel window by default');
+assert.equal(DEFAULT_SITE_FACTS.contactEmail, '', 'no email by default');
+assert.equal(normalizeSiteFacts({ dispatchDays: '1-3', problemReportDays: '2', contactEmail: ' halo@solivagantscent.com ' }).dispatchDays, '1–3');
+assert.equal(normalizeSiteFacts({ problemReportDays: '2' }).problemReportDays, 2);
+assert.equal(normalizeSiteFacts({ problemReportDays: 99 }).problemReportDays, 0, 'a typo falls back to no promise, never a bigger one');
+assert.equal(normalizeSiteFacts({ contactEmail: ' halo@solivagantscent.com ' }).contactEmail, 'halo@solivagantscent.com');
+assert.equal(normalizeSiteFacts({ contactEmail: 'not an email' }).contactEmail, '', 'a broken address is not printed');
 // The build prints bsp.lead for readers without JavaScript; it must fill it from the saved row.
 const build = readFileSync(join(src, '..', 'tools', 'build.mjs'), 'utf8');
 assert.match(build, /translate\(lang, page\.leadKey, \{ days: facts\.bespokeDays \}\)/, 'the build prints the lead sentence unfilled');

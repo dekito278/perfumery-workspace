@@ -16,7 +16,7 @@ import path from 'node:path';
 
 // The public routes the sitemap, the prerendered pages and llms.txt all advertise. build.mjs checks
 // each one against App.jsx before a deploy can ship a link to a 404.
-export const STATIC_PUBLIC_ROUTES = ['/home', '/catalog', '/journal', '/bespoke', '/about'];
+export const STATIC_PUBLIC_ROUTES = ['/home', '/catalog', '/journal', '/bespoke', '/about', '/help'];
 
 // The English shop is a second address for the same app (see utils/storefrontRegion.js). A prerendered
 // file carries ONE title, description and og:image, so the Indonesian file could never speak for the

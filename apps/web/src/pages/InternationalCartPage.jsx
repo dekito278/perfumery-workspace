@@ -182,6 +182,7 @@ const InternationalCartPage = () => {
                     <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
                   )}
                   <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
+                  <Link to="/help" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('help.shippingAndPayment')}</Link>
                 </aside>
               ) : null}
             </div>

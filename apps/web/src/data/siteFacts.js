@@ -22,6 +22,14 @@ export const DEFAULT_JOURNAL_CATEGORIES = [
 ];
 
 export const DEFAULT_SITE_FACTS = {
+  // The help page (13 Nov 2026). EMPTY by default, on purpose: each is a promise to a buyer, and the shop
+  // makes none until Dekito sets it in Studio. Empty means the sentence that would carry it is not shown.
+  //   dispatchDays       working days from payment to the parcel leaving, e.g. "1–3"
+  //   problemReportDays  days after delivery to report a broken or wrong parcel; 0 = no such promise
+  //   contactEmail       an address buyers may write to
+  dispatchDays: '',
+  problemReportDays: 0,
+  contactEmail: '',
   bespokeDays: '7–14',
   quoteHours: 24,
   brandCity: 'Bogor',
@@ -65,7 +73,11 @@ const categories = (value) => {
 /** Every fact, valid, whatever arrives — a typo falls back to the shipped value rather than reaching a page. */
 export const normalizeSiteFacts = (input = {}) => {
   const raw = input && typeof input === 'object' ? input : {};
+  const email = text(raw.contactEmail, '');
   return {
+    dispatchDays: dayRange(raw.dispatchDays, DEFAULT_SITE_FACTS.dispatchDays),
+    problemReportDays: whole(raw.problemReportDays, DEFAULT_SITE_FACTS.problemReportDays, 0, 60),
+    contactEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 120 ? email : DEFAULT_SITE_FACTS.contactEmail,
     bespokeDays: dayRange(raw.bespokeDays, DEFAULT_SITE_FACTS.bespokeDays),
     quoteHours: whole(raw.quoteHours, DEFAULT_SITE_FACTS.quoteHours, 1, 168),
     brandCity: text(raw.brandCity, DEFAULT_SITE_FACTS.brandCity),

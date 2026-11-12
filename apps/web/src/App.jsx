@@ -130,6 +130,7 @@ const ExportShippingCalculatorPage = lazyRoute(() => import('@/pages/ExportShipp
 const StoryEditorPage = lazyRoute(() => import('@/pages/StoryEditorPage.jsx'));
 const MobileLoginPage = lazyRoute(() => import('@/pages/mobile/MobileLoginPage.jsx'));
 const AboutPage = lazyRoute(() => import('@/pages/AboutPage.jsx'));
+const HelpPage = lazyRoute(() => import('@/pages/HelpPage.jsx'));
 // The international cart is lazy like the phone's: it is one shop's page, not every visitor's.
 const InternationalCartPage = lazyRoute(() => import('@/pages/InternationalCartPage.jsx'));
 const MobileProductListPage = lazyRoute(() => import('@/pages/mobile/MobileProductListPage.jsx'));
@@ -500,6 +501,7 @@ function AppRoutes() {
         <Route path="/articles" element={<Navigate to="/journal" replace />} />
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/help" element={<HelpPage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/journal" element={<PublicJournalPage />} />
         <Route path="/cart" element={<ByShop domestic={<CartPage />} international={<InternationalCartPage />} />} />
