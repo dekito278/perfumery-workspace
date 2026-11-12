@@ -60,6 +60,10 @@ for (const tag of ['property="og:image"', 'name="twitter:image"']) {
   assert.ok(indexHtml.includes(`${tag} content="${sharePath}"`), `index.html ${tag} must name the same image`);
 }
 
+// /en is the English home, and its file says so (audit, 13 Nov 2026).
+assert.match(build, /if \(page\.route === '\/home'\) fs\.writeFileSync\(path\.join\(distRoot, EN_PREFIX\.slice\(1\), 'index\.html'\), enHtml\);/,
+  'the bare /en address gets the English home page file, not the Indonesian shell');
+
 // If a build is present, hold the output to the same rule.
 const dist = join(webRoot, 'dist');
 if (existsSync(join(dist, 'index.html'))) {
@@ -69,6 +73,12 @@ if (existsSync(join(dist, 'index.html'))) {
   assert.match(shell, /name="description"[^>]*content="[^"]{20,}"/, 'the built shell needs a real description');
   assert.match(shell, /property="og:description" content="SOLIVAGANT adalah/, 'the built shell previews in Indonesian');
   assert.doesNotMatch(shell, /rel="canonical"/, 'the built shell must not claim a canonical');
+  const enIndex = join(dist, 'en', 'index.html');
+  if (existsSync(enIndex)) {
+    const en = readFileSync(enIndex, 'utf8');
+    assert.match(en, /<html lang="en"/, 'dist/en/index.html is English');
+    assert.match(en, /property="og:locale" content="en_US"/, 'and previews as English');
+  }
 
   // And the four static pages must still have theirs — they are single URLs, so they do.
   for (const route of ['home', 'catalog', 'journal', 'bespoke']) {

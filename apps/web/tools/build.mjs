@@ -311,6 +311,10 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = [], facts = DE
       const enDir = path.join(distRoot, EN_PREFIX.slice(1), routeName);
       fs.mkdirSync(enDir, { recursive: true });
       fs.writeFileSync(path.join(enDir, 'index.html'), enHtml);
+      // /en itself — the address handed to a buyer abroad — fell through to the Indonesian shell: lang="id",
+      // an Indonesian card, no canonical (visitor audit, 13 Nov 2026). It renders the English home, so it
+      // gets the English home's file; the canonical inside still names /en/home, the one address for it.
+      if (page.route === '/home') fs.writeFileSync(path.join(distRoot, EN_PREFIX.slice(1), 'index.html'), enHtml);
     }
   });
 
@@ -876,6 +880,9 @@ const assertLanguagePairsAreCoherent = (siteUrl, expectedRoutes = []) => {
   // And nothing in the English shop that the build did not mean to put there — a leftover from a route
   // that was renamed keeps answering 200 with stale copy long after its Indonesian twin has moved.
   for (const route of written) {
+    // /en/ is the English home under its shortest address; its Indonesian twin is the bare domain, whose
+    // file is the shell (dist/index.html) rather than a route of its own.
+    if (route === '/') continue;
     if (!routes.includes(route)) problems.push(`${EN_PREFIX}${route}: an English page with no Indonesian twin`);
   }
 
