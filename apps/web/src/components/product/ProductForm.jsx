@@ -193,6 +193,12 @@ const ProductForm = ({ product = null, onSaved, backTo = '' }) => {
     const images = value.split('\n').map((item) => item.trim()).filter(Boolean);
     setForm((current) => ({ ...current, images, imageUrl: images[0] || '' }));
   };
+  // One tap to change the catalogue cover (the first photo). It used to mean reordering lines of URLs in the
+  // text box below — and six live perfumes led with a white name card on a dark shop (audit, 13 Nov 2026).
+  const makeCover = (imageUrl) => setForm((current) => {
+    const images = [imageUrl, ...(current.images || []).filter((image) => image !== imageUrl)];
+    return { ...current, images, imageUrl: images[0] || '' };
+  });
   const removeImage = (imageUrl) => setForm((current) => {
     const images = (current.images || []).filter((image) => image !== imageUrl);
     return { ...current, images, imageUrl: images[0] || '' };
@@ -486,7 +492,9 @@ const ProductForm = ({ product = null, onSaved, backTo = '' }) => {
                   {form.images.map((image, index) => (
                     <div key={image} className="relative overflow-hidden rounded-2xl border bg-white">
                       <img src={image} alt="" className="h-16 w-full object-cover" />
-                      {index === 0 ? <span className="absolute bottom-1 left-1 rounded-full bg-white/90 px-1.5 text-[9px] font-bold uppercase text-editorial-charcoal">Cover</span> : null}
+                      {index === 0 ? <span className="absolute bottom-1 left-1 rounded-full bg-white/90 px-1.5 text-[9px] font-bold uppercase text-editorial-charcoal">Cover</span> : (
+                    <button type="button" onClick={() => makeCover(image)} className="absolute bottom-1 left-1 min-h-0 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-bold uppercase text-editorial-charcoal" aria-label={`Jadikan foto ${index + 1} cover`} title="Jadikan cover">Jadikan cover</button>
+                  )}
                       <button type="button" onClick={() => removeImage(image)} className="absolute right-1 top-1 grid h-7 w-7 min-h-0 place-items-center rounded-full bg-white/90 text-rose-700" aria-label={`Hapus foto ${index + 1}`} title="Hapus foto">
                         <ImageOff className="h-3.5 w-3.5" />
                       </button>

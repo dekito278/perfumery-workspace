@@ -72,8 +72,11 @@ const ProductVisual = ({
         <img
           src={optimizedImageUrl}
           alt={product?.name ? `${product.name}${product.category ? ` — ${product.category}` : ''}` : 'Solivagant fragrance'}
+          // !h-full, not h-full: `.solivagant-editorial-home img { height: auto }` (storefront.css) outranks a
+          // single class, so every product photo took its FILE's height instead of the frame's — a square
+          // photo in a 4:5 frame left a dark band under it (Aquilaria, visitor audit 13 Nov 2026).
           className={cn(
-            'absolute inset-0 h-full w-full transition-opacity duration-150',
+            'absolute inset-0 !h-full !w-full !max-w-none transition-opacity duration-150',
             imageFit === 'cover' ? 'object-cover p-0' : 'object-contain p-3 sm:p-4',
             imageLoaded ? 'opacity-100' : 'opacity-0',
             imageClassName
