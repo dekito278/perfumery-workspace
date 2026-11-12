@@ -1,7 +1,8 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { nearestSlug } from '@/utils/nearestSlug.js';
 import { ArrowLeft, Copy } from 'lucide-react';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
@@ -13,6 +14,7 @@ import {
   getJournalCategoryLabel,
   getJournalCategoryShopLabel,
   getPublishedJournalPostBySlug,
+  getPublishedJournalPosts,
 } from '@/services/journalPostsSupabaseService.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { formatDate } from '@/utils/formatting.js';
@@ -40,6 +42,7 @@ const DEFAULT_DESCRIPTION = 'Read a Solivagant perfumery journal article.';
 const PublicJournalArticlePage = () => {
   const { t, isInternational } = useTranslate();
   const { slug } = useParams();
+  const navigate = useNavigate();
   const revealRef = useScrollReveal();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +62,19 @@ const PublicJournalArticlePage = () => {
       try {
         const publishedPost = await getPublishedJournalPostBySlug(slug);
         if (!active) return;
+        // Almost the right address — the correct spelling of a misspelled one, or without its id — goes to the
+        // article it can only mean (utils/nearestSlug.js). Anything less certain stays "not found".
+        if (!publishedPost) {
+          const near = nearestSlug(slug, (await getPublishedJournalPosts().catch(() => [])).map((item) => item.slug));
+          if (!active) return;
+          if (near && near !== slug) {
+            // Stay "loading" until the new address loads: falling through to finally rendered an article page
+            // with no article and no failure, which the error boundary caught as "Halaman ini gagal tampil".
+            active = false;
+            navigate(`/articles/${near}`, { replace: true });
+            return;
+          }
+        }
         setPost(publishedPost);
         setFailed(publishedPost ? '' : 'missing');
       } catch (error) {
@@ -70,7 +86,7 @@ const PublicJournalArticlePage = () => {
 
     loadPost();
     return () => { active = false; };
-  }, [slug, attempt]);
+  }, [slug, attempt, navigate]);
 
   const tags = Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [];
   const readingMinutes = useMemo(() => getReadingMinutes(post?.content), [post?.content]);

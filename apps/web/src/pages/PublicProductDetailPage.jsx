@@ -43,6 +43,7 @@ import { usdPriceFor } from '@/utils/usdPrice.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
 import { isPlaceholderMood } from '@/utils/productMood.js';
 import { describeWear } from '@/utils/productWear.js';
+import { nearestSlug } from '@/utils/nearestSlug.js';
 
 
 
@@ -132,6 +133,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         </div>
       );
     }
+    // /catalog/j-adore-la-vanille — the perfume's own name — is soli-extended-j-adore-la-vanille; a slip of a
+    // letter is the same perfume. Only an address that can mean one perfume is followed (utils/nearestSlug.js).
+    const near = nearestSlug(slug, visibleProducts.map((item) => item.slug));
+    if (near && near !== slug) return <Navigate to={`/catalog/${near}`} replace />;
     return <Navigate to="/not-found" replace />;
   }
 
