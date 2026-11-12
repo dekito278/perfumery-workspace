@@ -22,7 +22,7 @@ const RESULT_KEYS = {
 const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
   const { currentUser } = useAuth();
   const { t, isInternational } = useTranslate();
-  const { tier, codeName, memberPercent, codesReady } = useTierPrices();
+  const { tier, codeName, memberPercent, keepsMemberPrice, codesReady } = useTierPrices();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -34,12 +34,16 @@ const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
     if (!code.trim() || busy) return;
     setBusy(true);
     setMessage('');
-    const { result, codeName: joined } = await redeemMemberCode(code);
+    const { result, codeName: joined, memberPercent: percent } = await redeemMemberCode(code);
     if (result === 'ok') {
       // Same session, new tier: nothing else would reload the prices on the page and in the cart.
       await refreshTierPrices();
       setCode('');
       setMessage(t('member.codeJoined', { name: joined }));
+    } else if (result === 'smaller') {
+      // A real code with a smaller percentage: the member keeps the one they have, and is told which.
+      setCode('');
+      setMessage(t('member.codeSmaller', { name: joined, percent }));
     } else {
       setMessage(t(RESULT_KEYS[result] || 'member.codeFailed'));
     }
@@ -47,7 +51,10 @@ const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
   };
 
   let body = t('member.howBody');
-  if (isMember) body = codeName && memberPercent ? t('member.activeViaCode', { name: codeName, percent: memberPercent }) : t('member.activeBody');
+  // A member from before their code pays the cheaper of the two per perfume (resolveTierPrice), so "N% on
+  // every perfume" would be wrong for them wherever their old member price is lower.
+  const viaCodeKey = keepsMemberPrice ? 'member.activeViaCodeKept' : 'member.activeViaCode';
+  if (isMember) body = codeName && memberPercent ? t(viaCodeKey, { name: codeName, percent: memberPercent }) : t('member.activeBody');
 
   return (
     <section className={`rounded-none border border-ng-bone/10 bg-transparent p-4 ${className}`}>

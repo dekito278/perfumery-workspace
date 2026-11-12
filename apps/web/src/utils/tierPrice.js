@@ -30,8 +30,15 @@ export const RETAIL_TIER = 'retail';
  *                      or null. A code member pays EXACTLY retail minus this percentage — smaller or
  *                      larger than the product's member price (Dekito, 12 Nov 2026: "suka-suka saya
  *                      ngatur" per community). The product member price is for members without a code.
+ * @param keepsMemberPrice true when this buyer was a member BEFORE (and apart from) their code: a legacy
+ *                      account, a paid order here, or an admin-set member. A code is then something they
+ *                      gained, never something they lose by: they pay the cheaper of the code and the
+ *                      product member price. Without it a legacy member who typed a 5% code — the account
+ *                      page invites exactly that — paid more than before, for good (the latest code wins).
  */
-export const resolveTierPrice = ({ retailPrice, tierPrices = {}, tier = 'retail', overseas = false, memberPercent = null } = {}) => {
+export const resolveTierPrice = ({
+  retailPrice, tierPrices = {}, tier = 'retail', overseas = false, memberPercent = null, keepsMemberPrice = false,
+} = {}) => {
   // A SCHEDULED retail price outranks the one on the variant. That is how the 12 Nov 2026 change is
   // delivered: the new figure is a row with an effective_at, and until it arrives indexTierPrices does
   // not hand it over at all. The variant keeps the old price, so nothing has to be rewritten in place
@@ -54,7 +61,8 @@ export const resolveTierPrice = ({ retailPrice, tierPrices = {}, tier = 'retail'
   }
   // Only a member: a reseller's own price is negotiated, and a code does not stack on it.
   const fromCode = tier === 'member' && memberPercent ? memberPriceFromRetail(retail, memberPercent) : null;
-  return fromCode ?? price;
+  if (fromCode === null) return price;
+  return keepsMemberPrice ? Math.min(fromCode, price) : fromCode;
 };
 
 const effectiveTime = (row) => {

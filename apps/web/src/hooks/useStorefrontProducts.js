@@ -18,7 +18,7 @@ import supabase from '@/lib/supabaseClient.js';
 // round trips for a single product page, before counting the extra pair that onAuthStateChange fires
 // the moment it subscribes. useCatalogProducts already had a warm cache for exactly this reason; this
 // is the same pattern, module-level so no provider has to be mounted.
-let tierState = { tier: 'retail', index: {}, memberPercent: null, codeName: '', codesReady: false };
+let tierState = { tier: 'retail', index: {}, memberPercent: null, keepsMemberPrice: false, codeName: '', codesReady: false };
 let tierLoaded = false;
 let inFlight = null;
 const listeners = new Set();
@@ -28,8 +28,8 @@ const notify = () => { for (const listener of listeners) listener(tierState); };
 const loadTierPrices = () => {
   if (inFlight) return inFlight;
   inFlight = Promise.all([getMyPriceTier(), getTierPricesFor()])
-    .then(([{ tier, memberPercent, codeName, codesReady }, { index }]) => {
-      tierState = { tier, index, memberPercent, codeName, codesReady };
+    .then(([{ tier, memberPercent, keepsMemberPrice, codeName, codesReady }, { index }]) => {
+      tierState = { tier, index, memberPercent, keepsMemberPrice, codeName, codesReady };
       tierLoaded = true;
       notify();
     })
@@ -101,16 +101,16 @@ export const useTierPrices = () => {
 /** The catalog as this visitor may buy it. Every buyer-facing surface reads this, not the raw catalog. */
 export const useStorefrontProducts = (options) => {
   const products = useCatalogProducts(options);
-  const { tier, index, memberPercent } = useTierPrices();
+  const { tier, index, memberPercent, keepsMemberPrice } = useTierPrices();
   const { index: memberIndex } = useMemberPrices();
   return useMemo(
     // The nudge is for retail visitors only. A code member can pay MORE than the product member price
     // (a 5% community), so "finds nothing lower" no longer keeps a member from being nudged — the tier does.
     () => {
-      const priced = applyTierPrices(products, tier, index, formatRupiah, memberPercent);
+      const priced = applyTierPrices(products, tier, index, formatRupiah, memberPercent, keepsMemberPrice);
       return tier === 'retail' ? attachMemberPrices(priced, memberIndex) : priced;
     },
-    [products, tier, index, memberPercent, memberIndex],
+    [products, tier, index, memberPercent, keepsMemberPrice, memberIndex],
   );
 };
 

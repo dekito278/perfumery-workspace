@@ -48,8 +48,8 @@ assert.match(resolver, /rows\?\.\[0\]\?\.tier === 'reseller' \? 'reseller' : 'me
 // The resolved tier is what prices the order.
 assert.match(endpoint, /const buyer = await resolveBuyer\(req\);\s*\n\s*const buyerTier = buyer\.tier;/,
   'the recompute must be fed the tier this endpoint resolved itself');
-assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier, buyer\.memberPercent\)/,
-  'the recompute must be given the resolved tier and member-code percentage, or it prices everything at retail');
+assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier, buyer\.memberPercent, buyer\.keepsMemberPrice\)/,
+  'the recompute must be given the resolved tier, member-code percentage and keepsMemberPrice, or it prices everything at retail');
 assert.match(endpoint, /tier: buyerTier,\s*overseas: false,\s*memberPercent,/,
   'and the shared rule must receive the percentage, or a code member is charged more than they were shown');
 

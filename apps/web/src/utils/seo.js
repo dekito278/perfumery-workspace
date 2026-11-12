@@ -61,7 +61,10 @@ export const SITE_TAGLINE = 'Atelier Parfum Artisan oleh Dekito';
 export const BRAND_LOGO_PATH = '/brand/solivagant-logo.png';
 // One share image for the whole site. There used to be two — seo.js pointed at the raw-material photo
 // while the journal page had its own — so a link preview looked different depending on what was shared.
-export const DEFAULT_SHARE_IMAGE = '/brand/home/perfumer-at-work.jpg';
+// No person in it (Dekito, 13 Nov 2026: his portrait was the WhatsApp card for the whole site), and no shelf
+// photo either: brand art, drawn by tools/share-art/solivagant-share.html at 1200x630, the size WhatsApp and
+// Facebook draw, so nothing is cropped by chance.
+export const DEFAULT_SHARE_IMAGE = '/brand/share/solivagant-share.jpg';
 // Canonical production origin. Overridable via env, but defaults to the live domain
 // so canonical/OG URLs always point at production — even when viewed on a Vercel
 // preview URL or localhost (both of which should not be the canonical target).
