@@ -2,7 +2,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Copy } from 'lucide-react';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
 import JournalRelatedProduct from '@/components/journal/JournalRelatedProduct.jsx';
@@ -19,7 +19,7 @@ import { formatDate } from '@/utils/formatting.js';
 // The shared helpers fall back to the production site URL; this page had its own copies that fell back to
 // window.location.origin, so an article viewed on a Vercel preview or a bare domain published a canonical,
 // og:url and JSON-LD @id pointing at that host (audit round 8).
-import { DEFAULT_SHARE_IMAGE, SITE_NAME, brandedTitle, getSiteOrigin, metaSnippet, stripTrailingBrand, toAbsoluteUrl } from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, SITE_NAME, brandedTitle, getSiteOrigin, metaSnippet, shopCanonicalUrl, stripTrailingBrand, toAbsoluteUrl } from '@/utils/seo.js';
 import { stripMarkdown } from '@/utils/articleExcerpt.js';
 
 const getReadingMinutes = (content) => {
@@ -80,6 +80,9 @@ const PublicJournalArticlePage = () => {
   const canonicalPath = post?.slug ? `/articles/${post.slug}` : `/articles/${slug || ''}`;
   const siteOrigin = getSiteOrigin();
   const canonicalUrl = toAbsoluteUrl(canonicalPath, siteOrigin);
+  // The address a reader SHARES is the one of the shop they are in: an English reader copied the Indonesian
+  // address and, through "Open", was taken out of /en (visitor audit, 13 Nov 2026). The canonical stays.
+  const shareUrl = shopCanonicalUrl(canonicalPath, isInternational ? 'en' : 'id', siteOrigin);
   const shareImageUrl = toAbsoluteUrl(post?.cover_image_url || DEFAULT_SHARE_IMAGE, siteOrigin);
   const publishedDate = post?.published_at || post?.created;
   const modifiedDate = post?.updated || post?.published_at || post?.created;
@@ -102,7 +105,7 @@ const PublicJournalArticlePage = () => {
 
   const copyArticleLink = async () => {
     try {
-      await navigator.clipboard.writeText(canonicalUrl);
+      await navigator.clipboard.writeText(shareUrl);
       setCopyState('copied');
       window.setTimeout(() => setCopyState('idle'), 1800);
     } catch (error) {
@@ -218,10 +221,6 @@ const PublicJournalArticlePage = () => {
                     <Copy className="h-4 w-4" aria-hidden="true" />
                     {copyState === 'copied' ? t("journal.copied") : copyState === 'failed' ? t("journal.copyFailed") : t("journal.copy")}
                   </button>
-                  <a href={canonicalUrl} target="_blank" rel="noreferrer" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2">
-                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                    {t('journal.openLink')}
-                  </a>
                 </div>
               </div>
             </div>

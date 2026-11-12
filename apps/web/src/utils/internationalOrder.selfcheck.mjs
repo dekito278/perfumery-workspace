@@ -248,19 +248,24 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   assert.match(templates, /const email = contactEmail\(order\?\.contact\);/, 'and mail it there');
 }
 
-// --- 7. payment_response is read even beside an empty doku_response ---------------------------------------
+// --- 7. payment_response is read even beside doku_response ----------------------------------------------
 // doku_response is `not null default '{}'` in production; `doku_response || payment_response` read {} and
 // the buyer's message printed a rupiah total for a dollar order (found by the production smoke, 10 Nov).
+// Then picking the first non-empty one still lost payment_response when DOKU had answered too (13 Nov).
 {
   const { readFileSync } = await import('node:fs');
+  const { mergePaymentResponse: pick } = await import('./paymentResponse.js');
   const service = readFileSync(new URL('../services/orderService.js', import.meta.url), 'utf8');
   assert.doesNotMatch(service, /paymentResponse: order\.doku_response \|\|/, 'an empty doku_response must not hide payment_response');
-  const line = service.match(/paymentResponse: (\[order\.doku_response, order\.payment_response, order\.paymentResponse\][^\n]*\n[^\n]*)/)?.[1];
-  assert.ok(line, 'normalizeOrder picks the payment response with a list it can be checked against');
-  const pick = new Function('order', `return ${line.replace(/,\s*$/, '')};`);
+  assert.match(service, /paymentResponse: mergePaymentResponse\(order\),/, 'normalizeOrder reads both columns through the one helper');
   assert.deepEqual(pick({ doku_response: {}, payment_response: { amountUsd: 115 } }), { amountUsd: 115 });
   assert.deepEqual(pick({ doku_response: { invoice: 'x' }, payment_response: { invoice: 'x' } }), { invoice: 'x' }, 'a DOKU order reads as before');
   assert.deepEqual(pick({ doku_response: {}, payment_response: {} }), {});
+  assert.deepEqual(pick({ doku_response: { paymentUrl: 'u' }, payment_response: { amountUsd: 115, shippingQuotePending: true } }),
+    { paymentUrl: 'u', amountUsd: 115, shippingQuotePending: true }, 'a DOKU answer no longer hides the dollars or the quote flag');
+  assert.equal(pick({ doku_response: { amount: 1 }, payment_response: { amount: 2 } }).amount, 1, 'DOKU wins a key both carry');
+  assert.deepEqual(pick({ paymentResponse: { amountUsd: 9 } }), { amountUsd: 9 }, 'an already-normalised order keeps what it has');
+  assert.deepEqual(pick({ doku_response: null, payment_response: [] }), {}, 'nothing that is not an object leaks in');
 }
 
 console.log('internationalOrder wiring OK');

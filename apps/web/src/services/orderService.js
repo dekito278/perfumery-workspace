@@ -1,4 +1,5 @@
 import { BESPOKE_REQUEST_ITEM_TYPE, VOUCHER_DISCOUNT_ITEM_TYPE } from '@/utils/orderTotals.js';
+import { mergePaymentResponse } from '@/utils/paymentResponse.js';
 import supabase from '@/lib/supabaseClient.js';
 import { saveCustomer } from '@/services/customerService.js';
 import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock } from '@/services/productCatalogService.js';
@@ -392,12 +393,10 @@ const normalizeOrder = (order) => {
     paymentToken: order.payment_token || order.paymentToken || '',
     paymentExpiresAt: order.payment_expires_at || order.paymentExpiresAt || '',
     paymentSessionId: order.payment_session_id || order.paymentSessionId || '',
-    // The first one that HOLDS something. doku_response is `not null default '{}'`, and an empty object is
-    // truthy, so it won over payment_response on every order the server writes with only the latter — the
-    // English cart's: its dollars and international account were read as {} and the buyer's message said
-    // "Total: Rp 1.897.500" for a US$115 order (production smoke, 10 Nov 2026).
-    paymentResponse: [order.doku_response, order.payment_response, order.paymentResponse]
-      .find((value) => value && typeof value === 'object' && Object.keys(value).length) || {},
+    // Both payment columns, merged (utils/paymentResponse.js). `doku_response || payment_response` read the
+    // empty default {} and printed "Total: Rp 1.897.500" for a US$115 order (10 Nov 2026); picking the first
+    // non-empty one still lost payment_response whenever DOKU had answered too.
+    paymentResponse: mergePaymentResponse(order),
     paymentProofUrl: order.payment_proof_url || order.paymentProofUrl || '',
     paymentProofFileName: order.payment_proof_file_name || order.paymentProofFileName || '',
     paymentProofContentType: order.payment_proof_content_type || order.paymentProofContentType || '',

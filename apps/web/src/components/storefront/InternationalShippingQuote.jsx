@@ -126,11 +126,13 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
       </dl>
 
       {/* The one sentence the whole rule was shaped to be: a number, not a percentage, so it can be said.
+          With the full DHL figure beside it (audit, 13 Nov 2026): "covers US$30" next to "US$85" read as
+          either US$85 or US$55; "DHL US$115, we pay US$30, you pay US$85" cannot be misread.
           Shown only with a settled figure — "we cover US$30" over "quoted on request" is a promise about a
           parcel we have not priced. */}
       {shippingUsd && shippingSupportUsd ? (
         <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-bone">
-          {t('intlQuote.support', { amount: shippingSupportUsd })}
+          {t('intlQuote.support', { amount: shippingSupportUsd, full: shippingUsd + shippingSupportUsd, net: shippingUsd })}
         </p>
       ) : null}
 

@@ -104,8 +104,13 @@ assert.match(MESSAGES.id['cust.heroTitle'], /harga member/, 'and says so in Indo
 // checkout to spend it in.
 assert.doesNotMatch(MESSAGES.en['cust.heroTitle'], /member price/i,
   'the English hero opens on a member price the English shop cannot charge');
-assert.match(MESSAGES.en['cust.heroBody'], /Indonesian shop/,
-  'and must say where a member price does apply, rather than leaving it unexplained');
+// And no member price at all on the English account page (visitor audit, 13 Nov 2026): it said "Member
+// prices apply in the Indonesian shop" three times, once with "where the checkout runs" — untrue since the
+// English cart places orders. Nothing on that page offers a member price, so nothing needs explaining.
+for (const key of ['cust.tab', 'cust.eyebrow', 'cust.heroBody', 'cust.memberWaitingBody', 'cust.memberNow']) {
+  assert.doesNotMatch(MESSAGES.en[key], /member/i, `en.${key} talks about membership to a shop that has none: ${MESSAGES.en[key]}`);
+}
+assert.match(MESSAGES.en['cust.heroBody'], /cart/, 'the English account says where an order is placed');
 // The rule is that someone holding an old code is still told the box is down there — not the wording.
 // Pinned to the sentence, this failed the day the label was corrected: the field resolves the CUSTOMER
 // code (SOLI...), and calling it an order code is what sent buyers holding DKT-... into a dead end.

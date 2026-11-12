@@ -46,7 +46,7 @@ const CartPage = () => {
   const unavailableItems = items.filter((item) => item.unavailable || item.outOfStock);
   // The gift is not a purchase: it has no price to show, no quantity to change and no line of its own in
   // the list. The picker below owns it.
-  const { lines: boughtLines } = splitFreeVialLines(items);
+  const { lines: boughtLines, gift } = splitFreeVialLines(items);
 
   const recommendations = useMemo(() => {
     const inCart = new Set(items.map((item) => item.productSlug || item.slug));
@@ -206,10 +206,14 @@ const CartPage = () => {
                         </div>
                       </>
                     ) : null}
-                    <div className="flex justify-between gap-4">
-                      <dt className="text-ng-dust">{t('cart.giftTitle')}</dt>
-                      <dd className="m-0 text-ng-sand">{t('cart.giftFree')}</dd>
-                    </div>
+                    {/* Only once one is chosen: "Vial hadiah, gratis — Gratis" with nothing picked read as a gift
+                        already in the parcel (visitor audit, 13 Nov 2026). */}
+                    {gift ? (
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-ng-dust">{t('cart.giftTitle')}</dt>
+                        <dd className="m-0 text-ng-sand">{t('cart.giftFree')}</dd>
+                      </div>
+                    ) : null}
                     <div className="flex justify-between gap-4">
                       <dt className="text-ng-dust">{t('checkout.shipping')}</dt>
                       <dd className="m-0 text-right text-ng-ash">{t('cart.shippingAtCheckout')}</dd>

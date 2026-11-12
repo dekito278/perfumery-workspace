@@ -49,6 +49,7 @@ import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import MemberCodePanel from '@/components/storefront/MemberCodePanel.jsx';
 import useTranslate from '@/hooks/useTranslate.js';
+import { asCustomerCode } from '@/utils/customerCode.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value, t) => (value
@@ -1062,6 +1063,12 @@ const CustomerPortalPage = () => {
 
   const loadPortal = async (event) => {
     event?.preventDefault();
+    // A community member code typed here read "Kode customer tidak ditemukan. Cek lagi kode SOLI…" — the
+    // buyer had the right code in the wrong box (visitor audit, 13 Nov 2026). Not SOLI-shaped: say where it goes.
+    if (customerCode.trim() && !asCustomerCode(customerCode)) {
+      toast.error(t('cust.notSoliCode'));
+      return;
+    }
     await loadPortalForCode(customerCode);
   };
 

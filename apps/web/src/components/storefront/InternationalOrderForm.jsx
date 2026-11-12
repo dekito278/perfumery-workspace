@@ -4,13 +4,17 @@ import { Loader2 } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { clearCart } from '@/services/cartService.js';
 import { placeInternationalOrder } from '@/services/orderService.js';
+import { regionRequiredFor } from '@/utils/internationalAddress.js';
 
 const FIELDS = [
   { key: 'name', label: 'cart.intl.formName', autoComplete: 'name', required: true },
   { key: 'email', label: 'cart.intl.formEmail', autoComplete: 'email', type: 'email', required: true },
-  { key: 'phone', label: 'cart.intl.formPhone', autoComplete: 'tel', type: 'tel' },
+  // Required: DHL asks for a phone on every international waybill (internationalAddress.js).
+  { key: 'phone', label: 'cart.intl.formPhone', autoComplete: 'tel', type: 'tel', required: true },
   { key: 'address', label: 'cart.intl.formAddress', autoComplete: 'street-address', hint: 'cart.intl.formAddressHint', required: true, multiline: true },
   { key: 'city', label: 'cart.intl.formCity', autoComplete: 'address-level2', required: true },
+  // Required only where DHL needs it (US, CA, AU); asked of everyone, since most addresses have one.
+  { key: 'region', label: 'cart.intl.formRegion', autoComplete: 'address-level1', requiredFor: regionRequiredFor },
   { key: 'postcode', label: 'cart.intl.formPostcode', autoComplete: 'postal-code' },
 ];
 
@@ -26,7 +30,7 @@ const FIELDS = [
 const InternationalOrderForm = ({ quote }) => {
   const { t } = useTranslate();
   const navigate = useNavigate();
-  const [buyer, setBuyer] = useState({ name: '', email: '', phone: '', address: '', city: '', postcode: '' });
+  const [buyer, setBuyer] = useState({ name: '', email: '', phone: '', address: '', city: '', region: '', postcode: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -65,7 +69,7 @@ const InternationalOrderForm = ({ quote }) => {
               onChange={(event) => setBuyer((current) => ({ ...current, [field.key]: event.target.value }))}
               placeholder={field.hint ? t(field.hint) : undefined}
               autoComplete={field.autoComplete}
-              required={field.required}
+              required={field.required || Boolean(field.requiredFor?.(quote.country))}
             />
           </label>
         );

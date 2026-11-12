@@ -207,7 +207,7 @@ assert.deepEqual(splitFreeVialLines().lines, [], 'called with nothing, no crash'
 // Both carts render the bought lines, never the raw cart, and both hand the picker the same writer.
 for (const page of ['pages/CartPage.jsx']) {
   const source = read(...page.split('/'));
-  assert.match(source, /const \{ lines: boughtLines \} = splitFreeVialLines\(items\);/,
+  assert.match(source, /const \{ lines: boughtLines(, gift)? \} = splitFreeVialLines\(items\);/,
     `${page} must separate the gift from what was bought`);
   assert.match(source, /boughtLines\.map\(/, `${page} must render the bought lines, not the raw cart`);
   assert.doesNotMatch(source, /\{items\.map\(/, `${page} still renders the raw cart somewhere — the gift would appear as a Rp 0 purchase`);

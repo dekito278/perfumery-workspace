@@ -358,8 +358,12 @@ for (const shop of ['id', 'en']) {
 // --- 6. THE GAP IS EXPLAINED, THE SUPPORT IS SAID, AND THE FREIGHT IS STILL NOT IN THE PRICE ------
 const quoteBlock = read('components', 'storefront', 'InternationalShippingQuote.jsx');
 assert.match(quoteBlock, /t\('intlQuote\.why'\)/, 'the quote block must say what the international price covers');
-assert.match(quoteBlock, /t\('intlQuote\.support', \{ amount: shippingSupportUsd \}\)/,
+assert.match(quoteBlock, /t\('intlQuote\.support', \{ amount: shippingSupportUsd, full: shippingUsd \+ shippingSupportUsd, net: shippingUsd \}\)/,
   'the quote block must say what SOLIVAGANT carries, with the real figure — that sentence is the point of the rule');
+for (const shop of ['id', 'en']) {
+  assert.match(MESSAGES[shop]['intlQuote.support'], /\{full\}[\s\S]*\{amount\}[\s\S]*\{net\}/,
+    `${shop}.intlQuote.support says the DHL figure, our part and theirs — "covers US$30" beside "US$85" was read both ways`);
+}
 // Said only with a settled figure: "we cover US$30" over "quoted on request" is a promise about a parcel we
 // have not priced.
 assert.match(quoteBlock, /shippingUsd && shippingSupportUsd \? \(/, 'and only when there is a shipping figure to carry part of');

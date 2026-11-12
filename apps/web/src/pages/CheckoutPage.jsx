@@ -20,6 +20,7 @@ import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { splitScriptName } from '@/utils/scriptName.js';
 import { onEnter } from '@/utils/onEnter.js';
+import { destinationSearchText } from '@/utils/areaFromAddress.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
@@ -111,7 +112,8 @@ const CheckoutPage = () => {
   const handleCourierChange = (courierCode) => {
     chooseShippingCourier(courierCode);
     if (!courierCode) return;
-    const searchText = destinationSearch.trim() || deliveryAddress.trim();
+    // The area the buyer typed, else the area PART of the address — never the whole address (areaFromAddress.js).
+    const searchText = destinationSearchText({ areaText: destinationSearch, address: deliveryAddress });
     if (searchText.length >= 3) {
       autoCalculateShipping({ courierCode, searchText, autoSelectBest: true });
     }
@@ -236,7 +238,7 @@ const CheckoutPage = () => {
                           type="button"
                           className="ng-btn ng-btn--ghost shrink-0"
                           disabled={shippingLoading || !selectedCourier}
-                          onClick={() => autoCalculateShipping({ searchText: destinationSearch || deliveryAddress, autoSelectBest: true })}
+                          onClick={() => autoCalculateShipping({ searchText: destinationSearchText({ areaText: destinationSearch, address: deliveryAddress }), autoSelectBest: true })}
                         >
                           <Search className="h-4 w-4" aria-hidden="true" /> {t('checkout.search')}
                         </button>

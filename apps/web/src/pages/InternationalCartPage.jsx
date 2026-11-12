@@ -157,7 +157,10 @@ const InternationalCartPage = () => {
                     <>
                       <InternationalOrderForm quote={quote} />
                       {canOrder ? (
-                        <a href={buildWhatsAppCheckoutUrl(message, phone)} target="_blank" rel="noopener noreferrer" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">
+                        // A QUESTION, not a second order: this sits under "Place order", and the order draft here
+                        // ("I would like to order… nothing is reserved until we confirm") invited a parallel order
+                        // on WhatsApp and said the cart reserves nothing — untrue since it holds bottles 24h.
+                        <a href={buildWhatsAppCheckoutUrl(t('cart.intl.askDraft', { lines: draft?.vars?.lines || '', destination: draft?.vars?.destination || '-' }), phone)} target="_blank" rel="noopener noreferrer" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">
                           {t('cart.intl.askWhatsApp')}
                         </a>
                       ) : null}

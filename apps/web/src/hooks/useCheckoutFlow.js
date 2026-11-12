@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { areaQueryFromAddress, pickConfidentDestination } from '@/utils/areaFromAddress.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -228,8 +229,18 @@ export const useCheckoutFlow = ({
     resetShipping({ keepSearch: true });
   };
 
+  // The area the shop picked FROM THE ADDRESS, remembered as the address part it was read from. Typing a
+  // different area into the address drops that pick: the audit changed Bandung to Bali and kept being
+  // quoted for Bengkulu, and a saved draft kept a Kebayoran area beside a Jakarta Pusat address.
+  const areaGuessedFromRef = useRef('');
+
   const updateDeliveryAddress = (value) => {
     setDeliveryAddress(value);
+    if (areaGuessedFromRef.current && areaQueryFromAddress(value) !== areaGuessedFromRef.current) {
+      areaGuessedFromRef.current = '';
+      resetShipping({ keepSearch: false });
+      setShippingNotice('Alamat berubah — pilih ulang area tujuan supaya ongkirnya benar.');
+    }
     if (repeatCustomer?.deliveryAddress && value !== repeatCustomer.deliveryAddress) {
       setRepeatAddressMode('new');
     }
@@ -339,7 +350,10 @@ export const useCheckoutFlow = ({
     searchText = '',
     autoSelectBest = false,
   } = {}) => {
-    const search = String(searchText || destinationSearch || deliveryArea || deliveryAddress || '').trim();
+    // Never the whole address: its street and house number matched village names (areaFromAddress.js).
+    const search = String(searchText || destinationSearch || deliveryArea || areaQueryFromAddress(deliveryAddress) || '').trim();
+    const fromAddress = !String(searchText || destinationSearch || deliveryArea || '').trim()
+      || search === areaQueryFromAddress(deliveryAddress);
     if (search.length < 3) {
       toast.error('Isi alamat lengkap atau area tujuan dulu');
       return;
@@ -383,9 +397,13 @@ export const useCheckoutFlow = ({
 
       setSelectedDestination(null);
       const destinations = await searchShippingDestinations(search);
-      if (autoSelectBest && destinations.length) {
-        await loadShippingRates(destinations[0], { courierCode, autoSelectCheapest: true });
-        setDestinationOptions(destinations.slice(1));
+      // Chosen for the buyer only when the result names the kecamatan AND the city they wrote; otherwise
+      // the list is shown and they pick. destinations[0] was how Bandung became Bengkulu.
+      const confident = autoSelectBest ? pickConfidentDestination(search, destinations, deliveryAddress) : null;
+      if (confident) {
+        await loadShippingRates(confident, { courierCode, autoSelectCheapest: true });
+        setDestinationOptions(destinations.filter((destination) => destination !== confident));
+        areaGuessedFromRef.current = fromAddress ? areaQueryFromAddress(deliveryAddress) : '';
         return;
       }
 

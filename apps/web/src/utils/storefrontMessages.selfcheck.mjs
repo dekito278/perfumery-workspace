@@ -60,7 +60,8 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'why.atelier.cta',  // "Bespoke ritual" is the name of the service, not a description of it
   'region.enTitle',   // the international option is named in English on BOTH sides on purpose: it is
                       // what an Indonesian reader is switching TO, so translating it hides the switch
-  'home.tab',         // the browser tab is the shop's name, already in English on the Indonesian site
+  // home.tab left this list on 13 Nov 2026: it is also the WhatsApp card title of the bare domain, and
+  // Dekito saw his Indonesian shop shared as "Artisan Perfumery Atelier by Dekito".
   'home.tabMobile',   // same
   'home.atelier',     // "atelier" is the word used in both, and it is the section's name
   'mood.woody.short', // Cedar · Vetiver · Mineral — three material names, identical in both

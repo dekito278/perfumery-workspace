@@ -34,6 +34,7 @@ import { bespokeStepKeys, bespokeTakesPayment, bespokeOccasionLabel, bespokeUsdP
 import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { onEnter } from '@/utils/onEnter.js';
+import { areaQueryFromAddress, destinationSearchText, pickConfidentDestination } from '@/utils/areaFromAddress.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -431,7 +432,8 @@ const BespokePage = () => {
     searchText = '',
     autoSelectBest = false,
   } = {}) => {
-    const search = String(searchText || destinationSearch || form.deliveryAddress || '').trim();
+    // Never the whole address: its street and house number matched village names (areaFromAddress.js).
+    const search = String(searchText || destinationSearch || areaQueryFromAddress(form.deliveryAddress) || '').trim();
     if (search.length < 3) {
       toast.error(t('bsp.areaFirst'));
       return;
@@ -455,8 +457,10 @@ const BespokePage = () => {
 
       setSelectedDestination(null);
       const destinations = await searchShippingDestinations(search);
-      if (autoSelectBest && destinations.length) {
-        await loadShippingRates(destinations[0], { courierCode, autoSelectCheapest: true });
+      // Chosen for the buyer only when the result names the kecamatan AND the city; otherwise they pick.
+      const confident = autoSelectBest ? pickConfidentDestination(search, destinations, form.deliveryAddress) : null;
+      if (confident) {
+        await loadShippingRates(confident, { courierCode, autoSelectCheapest: true });
         setDestinationOptions([]);
         setShippingError('');
         return;
@@ -479,7 +483,7 @@ const BespokePage = () => {
     setShippingError('');
     if (!courierCode) return;
 
-    const searchText = destinationSearch.trim() || form.deliveryArea.trim() || form.deliveryAddress.trim();
+    const searchText = destinationSearchText({ areaText: destinationSearch.trim() || form.deliveryArea.trim(), address: form.deliveryAddress });
     if (searchText.length >= 3) {
       autoCalculateShipping({ courierCode, searchText, autoSelectBest: true });
     }
