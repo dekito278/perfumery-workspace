@@ -29,6 +29,30 @@ assert.doesNotMatch(block, /upsertCanonical|rel="canonical"/,
   'the shell answers /cart, /checkout and every unknown path — a canonical here would claim they are all '
   + 'the home page');
 
+// The share image itself (Dekito, 13 Nov 2026): no portrait of him as the card for the whole site, and the
+// 1200x630 shape WhatsApp draws, read from the JPEG header so a swapped file cannot pass by name alone.
+const seoSource = readFileSync(join(webRoot, 'src', 'utils', 'seo.js'), 'utf8');
+const sharePath = (seoSource.match(/export const DEFAULT_SHARE_IMAGE = '([^']+)'/) || [])[1] || '';
+assert.ok(sharePath.startsWith('/'), 'DEFAULT_SHARE_IMAGE must be a site path');
+assert.doesNotMatch(sharePath, /perfumer-/, 'the photos of Dekito at work are for the home page, never the link card');
+const shareFile = join(webRoot, 'public', sharePath);
+assert.ok(existsSync(shareFile), `the share image ${sharePath} must exist in public/`);
+const jpeg = readFileSync(shareFile);
+let at = 2;
+let size = null;
+while (at < jpeg.length) {
+  const marker = jpeg[at + 1];
+  const length = jpeg.readUInt16BE(at + 2);
+  if (marker >= 0xc0 && marker <= 0xc3) { size = [jpeg.readUInt16BE(at + 7), jpeg.readUInt16BE(at + 5)]; break; }
+  at += 2 + length;
+}
+assert.deepEqual(size, [1200, 630], `the share image must be 1200x630, is ${size}`);
+assert.ok(jpeg.length < 300 * 1024, 'and small enough for WhatsApp to fetch it (its limit is about 300 KB)');
+const indexHtml = readFileSync(join(webRoot, 'index.html'), 'utf8');
+for (const tag of ['property="og:image"', 'name="twitter:image"']) {
+  assert.ok(indexHtml.includes(`${tag} content="${sharePath}"`), `index.html ${tag} must name the same image`);
+}
+
 // If a build is present, hold the output to the same rule.
 const dist = join(webRoot, 'dist');
 if (existsSync(join(dist, 'index.html'))) {
