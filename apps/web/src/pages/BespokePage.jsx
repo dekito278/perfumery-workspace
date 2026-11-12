@@ -33,6 +33,7 @@ import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { bespokeStepKeys, bespokeTakesPayment, bespokeOccasionLabel, bespokeUsdPrice, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice, optionExtraPrice } from '@/utils/bespokeOrder.js';
 import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
+import { onEnter } from '@/utils/onEnter.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -997,6 +998,7 @@ const BespokePage = () => {
                       className="ng-field uppercase placeholder:normal-case"
                       value={voucher.inputCode}
                       onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                      onKeyDown={onEnter(voucher.applyVoucher)}
                       aria-label={t('bsp.voucherPlaceholder')}
                       placeholder={t('bsp.voucherPlaceholder')}
                     />

@@ -21,6 +21,7 @@ import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { splitScriptName } from '@/utils/scriptName.js';
+import { onEnter } from '@/utils/onEnter.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
@@ -340,6 +341,7 @@ const CheckoutPage = () => {
                         className="ng-field uppercase placeholder:normal-case"
                         value={voucher.inputCode}
                         onChange={(event) => voucher.setInputCode(event.target.value)}
+                        onKeyDown={onEnter(voucher.applyVoucher)}
                         placeholder={t('checkout.voucherPlaceholder')} aria-label={t('checkout.voucherPlaceholder')}
                         autoComplete="off"
                         autoCapitalize="characters"

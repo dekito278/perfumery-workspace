@@ -126,6 +126,8 @@ export const isAwaitingShippingQuote = (order = {}) => {
 export const ORDER_TASKS = {
   review: { title: 'Tinjau order', helper: 'Buka order dan cek data terbaru.' },
   done: { title: 'Order selesai', helper: 'Order sudah masuk arsip operasional.' },
+  // A cancelled order is archived too, but it is not "selesai" — read on a cancelled smoke order 11 Nov 2026.
+  cancelled: { title: 'Order dibatalkan', helper: 'Tidak ada tugas lagi untuk order ini.' },
   proof: { title: 'Review bukti transfer', helper: 'Buka bukti, approve atau reject dengan catatan.' },
   quote: { title: 'Kirim angka ongkir', helper: 'Order ini menunggu ongkir dari kita sebelum bisa dibayar.' },
   payment: { title: 'Tuntaskan pembayaran', helper: 'Follow-up pembayaran atau sinkron DOKU bila perlu.' },
@@ -136,6 +138,7 @@ export const ORDER_TASKS = {
 
 export const nextOrderTask = (order) => {
   if (!order || typeof order !== 'object') return ORDER_TASKS.review;
+  if (order.status === 'cancelled') return ORDER_TASKS.cancelled;
   if (isArchivedOrder(order)) return ORDER_TASKS.done;
   if (order.paymentProofStatus === 'submitted') return ORDER_TASKS.proof;
   if (isAwaitingShippingQuote(order)) return ORDER_TASKS.quote;
