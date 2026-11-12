@@ -22,7 +22,7 @@ const RESULT_KEYS = {
 const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
   const { currentUser } = useAuth();
   const { t, isInternational } = useTranslate();
-  const { tier, codeName, memberPercent, codesReady } = useTierPrices();
+  const { tier, codeName, memberPercent, keepsMemberPrice, codesReady } = useTierPrices();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -47,7 +47,10 @@ const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
   };
 
   let body = t('member.howBody');
-  if (isMember) body = codeName && memberPercent ? t('member.activeViaCode', { name: codeName, percent: memberPercent }) : t('member.activeBody');
+  // A member from before their code pays the cheaper of the two per perfume (resolveTierPrice), so "N% on
+  // every perfume" would be wrong for them wherever their old member price is lower.
+  const viaCodeKey = keepsMemberPrice ? 'member.activeViaCodeKept' : 'member.activeViaCode';
+  if (isMember) body = codeName && memberPercent ? t(viaCodeKey, { name: codeName, percent: memberPercent }) : t('member.activeBody');
 
   return (
     <section className={`rounded-none border border-ng-bone/10 bg-transparent p-4 ${className}`}>

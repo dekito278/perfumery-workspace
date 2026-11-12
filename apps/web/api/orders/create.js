@@ -155,6 +155,9 @@ const resolveBuyer = async (req) => {
     return {
       tier: ['member', 'reseller'].includes(row?.tier) ? row.tier : 'retail',
       memberPercent: Number.isFinite(percent) && percent > 0 ? percent : null,
+      // A member before (and apart from) their code pays the cheaper of the two. Read exactly as the
+      // storefront reads it (tierPricingService.getMyPriceTier): absent = false.
+      keepsMemberPrice: row?.keeps_member_price === true,
       authUserId: verified,
     };
   } catch (error) {
@@ -163,7 +166,7 @@ const resolveBuyer = async (req) => {
   const rows = await sbSelectOptional(
     `storefront_customers?auth_user_id=eq.${encodeURIComponent(verified)}&select=tier&limit=1`,
   );
-  return { tier: rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member', memberPercent: null, authUserId: verified };
+  return { tier: rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member', memberPercent: null, keepsMemberPrice: false, authUserId: verified };
 };
 
 // How much of this code the account has already redeemed. Advisory: it lets checkout be refused with the
@@ -215,7 +218,7 @@ const voucherRefusalMessage = (error, code) => {
 const MAX_ORDER_LINES = 50;
 const MAX_LINE_QUANTITY = 100;
 
-const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent = null) => {
+const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent = null, keepsMemberPrice = false) => {
   if (items.length > MAX_ORDER_LINES) {
     throw new Error(`Order has too many item lines (${items.length}, max ${MAX_ORDER_LINES})`);
   }
@@ -279,6 +282,7 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
         tier: buyerTier,
         overseas: false,
         memberPercent,
+        keepsMemberPrice,
       });
     }
 
@@ -455,7 +459,7 @@ export default async function handler(req, res) {
     // 1. Item prices (authoritative, from DB)
     const buyer = await resolveBuyer(req);
     const buyerTier = buyer.tier;
-    const catalog = await priceCatalogItems(input.items || [], buyerTier, buyer.memberPercent);
+    const catalog = await priceCatalogItems(input.items || [], buyerTier, buyer.memberPercent, buyer.keepsMemberPrice);
     const bespoke = isBespoke ? await priceBespokeOptions(input.bespoke?.optionIds || {}) : { subtotal: 0, labels: {} };
     const itemsSubtotal = catalog.subtotal + bespoke.subtotal;
     if (itemsSubtotal <= 0) return jsonResponse(res, 422, { message: 'Order has no priced items' });

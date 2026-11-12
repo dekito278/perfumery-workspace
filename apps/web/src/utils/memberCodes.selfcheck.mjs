@@ -106,7 +106,7 @@ const service = read('services', 'tierPricingService.js');
 assert.match(service, /rpc\('storefront_my_member_status'\)/, 'the storefront asks the member rule for its own session');
 assert.match(service, /rpc\('storefront_my_price_tier'\)/, 'and falls back to the old function until the migration runs');
 const hook = read('hooks', 'useStorefrontProducts.js');
-assert.match(hook, /applyTierPrices\(products, tier, index, formatRupiah, memberPercent\)/,
+assert.match(hook, /applyTierPrices\(products, tier, index, formatRupiah, memberPercent(, keepsMemberPrice)?\)/,
   'the catalogue a buyer sees must be priced with their code percentage');
 assert.match(hook, /export const refreshTierPrices/, 'a redeemed code has to be able to reload prices in the same session');
 const panel = read('components', 'storefront', 'MemberCodePanel.jsx');
@@ -144,10 +144,62 @@ for (const raw of [read('utils', 'voucherValidation.js'), endpoint]) {
   assert.doesNotMatch(raw, /sekalian dapat harga member/, 'a voucher refusal still promises the member price for signing in');
 }
 
-console.log('memberCodes selfcheck OK (a code\'s percentage prices the line, exactly; one rule, both readers)');
-
 // Since #591 a code gives exactly its percentage, so a code member is told the percentage, not "the member price".
 for (const language of ['id', 'en']) {
   assert.match(MESSAGES[language]['member.activeViaCode'], /\{name\}[\s\S]*\{percent\}%/, `${language}: the code member is told their percentage`);
+  assert.match(MESSAGES[language]['member.activeViaCodeKept'], /\{name\}[\s\S]*\{percent\}%/, `${language}: and so is a member who kept their old price`);
 }
-assert.match(read('components', 'storefront', 'MemberCodePanel.jsx'), /t\('member\.activeViaCode', \{ name: codeName, percent: memberPercent \}\)/);
+assert.match(panel, /keepsMemberPrice \? 'member\.activeViaCodeKept' : 'member\.activeViaCode'/,
+  'a member who kept their old price is not told "N% on every perfume" — on some perfumes they pay less');
+assert.match(panel, /t\(viaCodeKey, \{ name: codeName, percent: memberPercent \}\)/);
+
+// --- 7. A code never makes an existing member pay more (20261113090000) --------------------------------
+// The account page invites a member to type a community code. Before this, a legacy member who typed a
+// 5% one paid 455.000 instead of 429.000, for good: the latest code wins and there is no way back.
+assert.equal(line({ member: 429000 }, { memberPercent: 5, keepsMemberPrice: true }), 429000,
+  'a member from before their code keeps the product member price where the code is smaller');
+assert.equal(line({ member: 429000 }, { memberPercent: 15, keepsMemberPrice: true }), 407000,
+  'and still gets the code where it is larger — per perfume, the cheaper of the two');
+assert.equal(line({}, { memberPercent: 5, keepsMemberPrice: true }), 455000,
+  'with no product member price there is nothing to keep: the code applies');
+assert.equal(line({ member: 429000 }, { memberPercent: 5, keepsMemberPrice: false }), 455000,
+  'a new community member still pays EXACTLY the percentage (#591 unchanged)');
+assert.equal(line({ member: 429000 }, { memberPercent: 5 }), 455000, 'and that is the default when the flag is absent');
+assert.equal(line({ member: 429000 }, { tier: 'retail', memberPercent: 5, keepsMemberPrice: true }), 479000,
+  'the flag gives nothing to a retail buyer');
+const keptCatalog = [{ slug: 'la-rose', priceNumber: 479000, variants: [{ id: '30-ml', priceNumber: 479000 }] }];
+const keptIndex = { 'la-rose': { '30-ml': { member: 429000 } } };
+assert.equal(applyTierPrices(keptCatalog, 'member', keptIndex, String, 5, true)[0].variants[0].priceNumber, 429000,
+  'the catalogue a kept member sees uses the same rule');
+assert.equal(applyTierPrices(keptCatalog, 'member', keptIndex, String, 5, false)[0].variants[0].priceNumber, 455000);
+
+const fix = readFileSync(join(repo, 'supabase', 'migrations', '20261113090000_code_never_raises_a_member_price.sql'), 'utf8');
+const fixStatus = fix.slice(fix.indexOf('create function public.storefront_member_status('), fix.indexOf('$$;', fix.indexOf('create function public.storefront_member_status(')));
+assert.match(fixStatus, /returns table \(tier text, member_percent numeric, code_name text, keeps_member_price boolean\)/,
+  'the one rule answers whether a code may raise this member\'s price');
+for (const [needle, why] of [
+  ["when p_auth_user_id is null then 'retail'", 'no account is retail'],
+  ["customer.tier = 'reseller') then 'reseller'", 'resellers unchanged'],
+  ["o.payment_status = 'paid'", 'a paid order makes a member'],
+  ["else 'retail'", 'everyone else who signs in is retail'],
+  ['account.kept_member_price', 'an account from before codes keeps its price, even after redeeming'],
+  ["customer.tier = 'member'", 'an admin-set member keeps it'],
+  ['paid.created_at < coalesce(', 'only orders paid BEFORE joining through a code count — or a 5% community gets the member price from its second order'],
+]) assert.ok(fixStatus.includes(needle), `storefront_member_status (20261113090000): ${why}`);
+assert.match(fix, /a\.source = 'legacy'\s*or exists \([\s\S]{0,200}u\.created_at < \(select min\(m\.created_at\)/,
+  'legacy accounts that already redeemed (source rewritten to code) are found again by age');
+assert.match(fix, /revoke all on function public\.storefront_member_status\(uuid\) from public, anon, authenticated;\s*grant execute on function public\.storefront_member_status\(uuid\) to service_role;/,
+  'recreating the function must not open anyone\'s status to anyone');
+assert.match(fix, /grant execute on function public\.storefront_my_member_status\(\) to anon, authenticated;/);
+assert.match(fix, /notify pgrst, 'reload schema';/, 'PostgREST must see the new column without a restart');
+
+// Both readers, and both read a missing column the same way (false), so they agree before the file runs.
+assert.match(service, /keepsMemberPrice: row\?\.keeps_member_price === true/, 'the storefront reads the flag');
+assert.match(endpoint, /keepsMemberPrice: row\?\.keeps_member_price === true/, 'and the order endpoint reads it the same way');
+assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier, buyer\.memberPercent, buyer\.keepsMemberPrice\)/,
+  'the order endpoint charges with it');
+assert.match(endpoint, /memberPercent,\s*keepsMemberPrice,\s*\}\);/, 'and passes it to resolveTierPrice');
+assert.match(hook, /applyTierPrices\(products, tier, index, formatRupiah, memberPercent, keepsMemberPrice\)/,
+  'the catalogue a buyer sees is priced with it');
+
+console.log('memberCodes selfcheck OK (a code\'s percentage prices the line; it never raises an existing member\'s price)');

@@ -33,6 +33,9 @@ export const getMyPriceTier = async () => {
     return {
       tier: String(row?.tier || 'retail'),
       memberPercent: Number.isFinite(percent) && percent > 0 ? percent : null,
+      // From 20261113090000_code_never_raises_a_member_price.sql. Missing (older function) = false, which is
+      // what the order endpoint also reads it as, so display and charge agree on either side of that file.
+      keepsMemberPrice: row?.keeps_member_price === true,
       codeName: row?.code_name ? String(row.code_name) : '',
       codesReady: true,
       schemaReady: true,
@@ -40,18 +43,18 @@ export const getMyPriceTier = async () => {
   } catch (error) {
     if (!isSchemaMissing(error)) {
       console.warn('Member status lookup failed, treating as retail:', error?.message || error);
-      return { tier: 'retail', memberPercent: null, codeName: '', codesReady: true, schemaReady: true };
+      return { tier: 'retail', memberPercent: null, keepsMemberPrice: false, codeName: '', codesReady: true, schemaReady: true };
     }
   }
   try {
     const { data, error } = await supabase.rpc('storefront_my_price_tier');
     if (error) throw error;
-    return { tier: String(data || 'retail'), memberPercent: null, codeName: '', codesReady: false, schemaReady: true };
+    return { tier: String(data || 'retail'), memberPercent: null, keepsMemberPrice: false, codeName: '', codesReady: false, schemaReady: true };
   } catch (error) {
     if (!isSchemaMissing(error)) {
       console.warn('Price tier lookup failed, treating as retail:', error?.message || error);
     }
-    return { tier: 'retail', memberPercent: null, codeName: '', codesReady: false, schemaReady: !isSchemaMissing(error) };
+    return { tier: 'retail', memberPercent: null, keepsMemberPrice: false, codeName: '', codesReady: false, schemaReady: !isSchemaMissing(error) };
   }
 };
 

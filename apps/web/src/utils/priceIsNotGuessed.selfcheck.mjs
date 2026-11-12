@@ -101,7 +101,7 @@ const source = readFileSync(endpoint, 'utf8');
   const byUrl = (rpc, select) => (url) => (url.includes('/rpc/') ? rpc(url) : select(url));
   for (const body of [MISSING_COLUMN, MISSING_TABLE]) {
     stub({ table: byUrl(fails(404, MISSING_FUNCTION), fails(400, body)) });
-    assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: null, authUserId: 'acct-1' },
+    assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: null, keepsMemberPrice: false, authUserId: 'acct-1' },
       'a relation that has not been added yet must still read as member, not refuse the order');
     assert.deepEqual(await sbSelectOptional('anything'), [], 'and the helper answers it with an empty list');
   }
@@ -116,18 +116,25 @@ const source = readFileSync(endpoint, 'utf8');
 
   // Before the member-code migration: the old rule, both tiers.
   stub({ table: byUrl(fails(404, MISSING_FUNCTION), rows([{ tier: 'reseller' }])) });
-  assert.deepEqual(await resolveBuyer(req), { tier: 'reseller', memberPercent: null, authUserId: 'acct-1' });
+  assert.deepEqual(await resolveBuyer(req), { tier: 'reseller', memberPercent: null, keepsMemberPrice: false, authUserId: 'acct-1' });
   stub({ table: byUrl(fails(404, MISSING_FUNCTION), rows([])) });
-  assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: null, authUserId: 'acct-1' },
+  assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: null, keepsMemberPrice: false, authUserId: 'acct-1' },
     'before the migration, a signed-in buyer with no row is a member — the rule the browser shows too');
 
   // After it: the server's member status decides, and signing in alone is retail (Dekito, 10 Nov 2026).
   stub({ table: rows([{ tier: 'retail', member_percent: null, code_name: null }]) });
-  assert.deepEqual(await resolveBuyer(req), { tier: 'retail', memberPercent: null, authUserId: 'acct-1' },
+  assert.deepEqual(await resolveBuyer(req), { tier: 'retail', memberPercent: null, keepsMemberPrice: false, authUserId: 'acct-1' },
     'a signed-in account with no code and no paid order is retail — still identified, for per-account vouchers');
   stub({ table: rows([{ tier: 'member', member_percent: 12.5, code_name: 'Jakarta Fragrance Club' }]) });
-  assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: 12.5, authUserId: 'acct-1' },
+  assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: 12.5, keepsMemberPrice: false, authUserId: 'acct-1' },
     'a code member carries the code\'s percentage to the price');
+  // 20261113090000: a member from before their code keeps the cheaper price. The flag travels as is, and
+  // anything but a real true (missing column before that file runs, null, 't') reads as false.
+  stub({ table: rows([{ tier: 'member', member_percent: 5, code_name: 'Komunitas', keeps_member_price: true }]) });
+  assert.deepEqual(await resolveBuyer(req), { tier: 'member', memberPercent: 5, keepsMemberPrice: true, authUserId: 'acct-1' },
+    'a member from before their code carries keepsMemberPrice to the price');
+  stub({ table: rows([{ tier: 'member', member_percent: 5, code_name: 'Komunitas', keeps_member_price: null }]) });
+  assert.equal((await resolveBuyer(req)).keepsMemberPrice, false, 'null is not true');
   stub({ table: rows([{ tier: 'reseller', member_percent: 10, code_name: 'X' }]) });
   assert.equal((await resolveBuyer(req)).tier, 'reseller', 'a reseller stays a reseller whatever code they hold');
   stub({ table: rows([{ tier: 'owner', member_percent: null, code_name: null }]) });
