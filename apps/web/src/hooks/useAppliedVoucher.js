@@ -7,11 +7,32 @@ import {
   normalizeVoucherCode,
   setAppliedVoucherCode,
   VOUCHER_UPDATED_EVENT,
+  VOUCHER_VALIDATION_REASONS,
 } from '@/services/voucherService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import { refreshTierPrices } from '@/hooks/useStorefrontProducts.js';
+import { redeemMemberCode } from '@/services/tierPricingService.js';
+import { normalizeMemberCode } from '@/utils/memberCode.js';
+
+// ONE FIELD FOR EVERY CODE (Dekito, 13 Nov 2026: "jangan bikin orang pusing masukin kode"). The buyer
+// does not have to know whether what the community gave them is a voucher or a member code: the field
+// tries it as a voucher first, and a code that is not a voucher is tried as a member code. Member codes
+// are an Indonesian-shop thing and need an account, so abroad a non-voucher is just "not found", and a
+// visitor who is not signed in is asked to sign in rather than told the code is wrong.
+const MEMBER_RESULT_KEYS = {
+  smaller: 'member.codeSmaller',
+  too_many: 'member.codeTooMany',
+  signin: 'code.memberSignIn',
+  unknown: 'code.unknown',
+  unavailable: 'code.unknown',
+};
 
 export const useAppliedVoucher = (subtotal = 0, items = []) => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
+  const { currentUser } = useAuth();
+  // True while the line under the field reports good news that is not a voucher (a member code taken).
+  const [memberJoined, setMemberJoined] = useState(false);
   const [voucherCode, setVoucherCode] = useState(getAppliedVoucherCode);
   const [inputCode, setInputCode] = useState(getAppliedVoucherCode);
   const [message, setMessage] = useState('');
@@ -91,11 +112,40 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
     }
   }, [result.message, result.valid, voucherCode]);
 
+  // A code that is not a voucher, in the Indonesian shop: a member code, perhaps. Returns true when it
+  // answered the buyer (joined, refused with a reason), false to let the voucher's "not found" stand.
+  const tryAsMemberCode = async (code) => {
+    if (isInternational) return false;
+    const memberCode = normalizeMemberCode(code);
+    if (!memberCode) return false;
+    if (!currentUser) {
+      setMemberJoined(false);
+      setMessage(t('code.memberSignIn', { code: memberCode }));
+      return true;
+    }
+    const { result: outcome, codeName, memberPercent } = await redeemMemberCode(memberCode);
+    if (outcome === 'ok') {
+      await refreshTierPrices();
+      setInputCode('');
+      setMemberJoined(true);
+      setMessage(t('member.codeJoined', { name: codeName }));
+      return true;
+    }
+    setMemberJoined(false);
+    setMessage(t(MEMBER_RESULT_KEYS[outcome] || 'member.codeFailed', { name: codeName, percent: memberPercent, code: memberCode }));
+    return true;
+  };
+
   const applyVoucher = async () => {
     const nextCode = normalizeVoucherCode(inputCode);
     setLoading(true);
+    setMemberJoined(false);
     try {
       const nextResult = await applyVoucherToSubtotalAsync({ code: nextCode, subtotal, items });
+      if (!nextResult.valid && nextResult.reason === VOUCHER_VALIDATION_REASONS.NOT_FOUND
+        && await tryAsMemberCode(nextCode)) {
+        return nextResult;
+      }
       setMessage(nextResult.message);
       setResult(nextResult);
       if (nextResult.valid) {
@@ -126,6 +176,7 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
     setVoucherCode('');
     setInputCode('');
     setMessage('');
+    setMemberJoined(false);
   };
 
   return {
@@ -139,6 +190,8 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
     eligibleSubtotal: result.valid ? result.eligibleSubtotal || Number(subtotal || 0) : 0,
     eligibleQuantity: result.valid ? result.eligibleQuantity || 0 : 0,
     message,
+    // Paint the message as good news: a voucher that applied, or a member code that was taken.
+    codeAccepted: memberJoined || Boolean(result.valid),
     loading,
     result,
     applyVoucher,

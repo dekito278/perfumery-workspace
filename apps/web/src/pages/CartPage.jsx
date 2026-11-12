@@ -181,7 +181,7 @@ const CartPage = () => {
                         {voucher.loading ? t('cart.voucherChecking') : t('cart.voucherApply')}
                       </button>
                     </div>
-                    {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.appliedVoucher ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
+                    {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
                     {voucher.appliedVoucher ? (
                       <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
                         <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}

@@ -1016,7 +1016,7 @@ const BespokePage = () => {
                       </button>
                     </div>
                   ) : voucher.message ? (
-                    <p role="status" className="ng-notice ng-notice--error">{voucher.message}</p>
+                    <p role="status" className={voucher.codeAccepted ? 'ng-notice' : 'ng-notice ng-notice--error'}>{voucher.message}</p>
                   ) : null}
                 </div>
                 <dl className="ng-panel m-0 flex flex-col gap-3 text-[15px]">
