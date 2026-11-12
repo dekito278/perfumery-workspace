@@ -90,6 +90,34 @@ assert.notEqual(fnStart, -1, 'could not locate getPublicMemberPrices — this ch
 const fnEnd = service.indexOf('export const', fnStart + 1);
 const fn = service.slice(fnStart, fnEnd === -1 ? undefined : fnEnd);
 assert.match(fn, /rpc\('storefront_member_prices'/, 'the service must call the public function');
+// --- 5b. A non-member gets the bit, not the number (20261114090000) -----------------------------------------
+// The page stopped showing member numbers in #591; the network still carried them to every signed-out
+// browser (visitor audit, 13 Nov 2026). The presence-only function is asked FIRST, and the numbered one
+// only while the new one is missing.
+assert.ok(fn.indexOf("rpc('storefront_member_price_lines'") !== -1
+  && fn.indexOf("rpc('storefront_member_price_lines'") < fn.indexOf("rpc('storefront_member_prices'"),
+'the presence-only function is asked first');
+assert.match(fn, /if \(!isSchemaMissing\(lines\.error\)\) throw lines\.error;/, 'the numbered one only while the new one is missing');
+assert.match(fn, /price_number: MEMBER_PRICE_PRESENT/, 'a line is indexed as present, not priced');
+{
+  const MEMBER_PRICE_PRESENT = Number(service.match(/export const MEMBER_PRICE_PRESENT = (\d+);/)?.[1]);
+  assert.equal(MEMBER_PRICE_PRESENT, 1, 'the placeholder sits below any real price, so "strictly lower" still means "there is one"');
+  const presence = indexTierPrices([{ slug: 'hug-n-1', variant_id: '30-ml', tier: 'member', price_number: MEMBER_PRICE_PRESENT }]);
+  const nudged = attachMemberPrices([product('hug-n-1', 479000, [{ id: '30-ml', priceNumber: 479000 }])], presence);
+  assert.ok(nudged[0].variants[0].memberPriceNumber > 0, 'presence alone still raises the note');
+  assert.ok(memberSavingForCart([{ productSlug: 'hug-n-1', variantId: '30-ml', priceNumber: 479000, quantity: 1 }], presence) > 0,
+    'and the cart still knows to offer membership');
+}
+const closing = readRaw('..', '..', '..', 'supabase', 'migrations', '20261114090000_member_prices_stay_with_members.sql');
+const linesFn = closing.slice(closing.indexOf('function public.storefront_member_price_lines'), closing.indexOf('$$;', closing.indexOf('function public.storefront_member_price_lines')));
+assert.match(linesFn, /returns table \(slug text, variant_id text\)/, 'the new function returns no price column at all');
+assert.doesNotMatch(linesFn, /price_number\s*$|select[^;]*price_number/m, 'and selects no price');
+assert.match(linesFn, /f\.tier = 'member'/, 'member rows only');
+assert.match(linesFn, /not public\.storefront_product_is_draft\(p\.tags\)/, 'drafts stay hidden');
+assert.match(linesFn, /sc\.effective_at <= now\(\)/, 'a scheduled member price counts once it is in force, as in the numbered function');
+assert.match(closing, /revoke execute on function public\.storefront_member_prices\(text\[\]\) from public, anon, authenticated;/,
+  'the numbers close to everyone outside the server, PUBLIC included');
+assert.match(closing, /grant execute on function public\.storefront_member_price_lines\(text\[\]\) to anon, authenticated;/);
 assert.match(fn, /isSchemaMissing\(error\)/, 'and treat a missing function as "no member prices", not as an error the visitor sees');
 assert.match(fn, /return \{ index: \{\}/, 'the fallback must be an empty index, so the nudge simply stays away');
 assert.doesNotMatch(fn, /^\s*throw error;\s*$/m, 'nothing in this function may rethrow to the caller');

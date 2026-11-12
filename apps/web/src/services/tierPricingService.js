@@ -98,15 +98,30 @@ export const getTierPricesFor = async (slugs = null) => {
 };
 
 /**
- * Member prices for everyone, signed in or not — the reason to sign in, made visible. Reseller prices
- * never come through here: the function names the tier literally. Empty until the migration runs, and
- * empty again until Dekito fills prices in, so the nudge stays silent on both counts.
+ * Which lines carry a member price — for the "Ada harga khusus member komunitas" note shown to a
+ * non-member. Reseller prices never come through here: both functions name the tier literally. Empty
+ * until Dekito fills prices in, so the note stays silent.
+ *
+ * PRESENCE, NOT A PRICE (20261114090000). Since #591 a non-member is told THAT a member price exists,
+ * never the number, and storefront_member_price_lines returns only that. Each line is indexed at
+ * MEMBER_PRICE_PRESENT — a placeholder below any real price, so memberPriceFor's "strictly lower" test
+ * still reads as "there is one". It is never a figure to show, and the note never shows one.
+ * Until that file runs, the old storefront_member_prices answers (with numbers, as it always has).
  */
+export const MEMBER_PRICE_PRESENT = 1;
+
 export const getPublicMemberPrices = async (slugs = null) => {
+  const args = { p_slugs: Array.isArray(slugs) && slugs.length ? slugs : null };
   try {
-    const { data, error } = await supabase.rpc('storefront_member_prices', {
-      p_slugs: Array.isArray(slugs) && slugs.length ? slugs : null,
-    });
+    const lines = await supabase.rpc('storefront_member_price_lines', args);
+    if (!lines.error) {
+      const rows = (lines.data || []).map((row) => ({
+        slug: row.slug, variant_id: row.variant_id, tier: 'member', price_number: MEMBER_PRICE_PRESENT,
+      }));
+      return { index: indexTierPrices(rows), schemaReady: true };
+    }
+    if (!isSchemaMissing(lines.error)) throw lines.error;
+    const { data, error } = await supabase.rpc('storefront_member_prices', args);
     if (error) throw error;
     return { index: indexTierPrices(data || []), schemaReady: true };
   } catch (error) {
