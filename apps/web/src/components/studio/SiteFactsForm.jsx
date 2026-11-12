@@ -77,6 +77,30 @@ const SiteFactsForm = () => {
         </label>
       </section>
 
+      {/* Each of these is a promise to a buyer on the help page (/help). Empty = the sentence is not shown,
+          so nothing is promised until it is filled in here. */}
+      <section className="grid gap-4 rounded-2xl border border-[#e5e7eb] bg-white p-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <div className={label}>Halaman Bantuan (/help)</div>
+          <p className={`${hint} mt-1`}>Kosongkan kalau belum mau dijanjikan. Kalimatnya hanya muncul di halaman Bantuan setelah diisi.</p>
+        </div>
+        <label className="grid gap-1.5">
+          <span className={label}>Dikirim dalam (hari kerja setelah bayar)</span>
+          <input value={form.dispatchDays} onChange={(event) => update('dispatchDays', event.target.value)} placeholder="mis. 1–3" className={field} />
+          <span className={hint}>Satu angka atau rentang. Tampil sebagai "Pesanan dikirim 1–3 hari kerja setelah pembayaran diterima."</span>
+        </label>
+        <label className="grid gap-1.5">
+          <span className={label}>Lapor paket rusak/salah dalam (hari)</span>
+          <input type="number" inputMode="numeric" min="0" max="60" value={form.problemReportDays} onChange={(event) => update('problemReportDays', event.target.value)} className={field} />
+          <span className={hint}>0 = tidak ditampilkan. Mis. 2: "kabari kami dalam 2 hari setelah paket diterima, dengan video membuka paket; kami ganti atau kembalikan uangmu."</span>
+        </label>
+        <label className="grid gap-1.5 sm:col-span-2">
+          <span className={label}>Email untuk pembeli</span>
+          <input type="email" value={form.contactEmail} onChange={(event) => update('contactEmail', event.target.value)} placeholder="mis. halo@solivagantscent.com" className={field} />
+          <span className={hint}>Tampil di halaman Bantuan, terutama untuk pembeli luar negeri. Kosong = hanya WhatsApp.</span>
+        </label>
+      </section>
+
       <section className="grid gap-3 rounded-2xl border border-[#e5e7eb] bg-white p-4">
         <div>
           <div className={label}>Kategori jurnal</div>

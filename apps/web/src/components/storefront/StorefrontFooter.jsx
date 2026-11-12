@@ -25,6 +25,7 @@ const footerColumns = [
     // The journal had a column of its own with one link in it, "Terbaru".
     links: [
       { labelKey: 'nav.about', to: '/about' },
+      { labelKey: 'nav.help', to: '/help' },
       { labelKey: 'nav.journal', to: '/journal' },
       { labelKey: 'nav.account', to: '/customer' },
       { labelKey: 'nav.trackOrder', to: '/track-order' },

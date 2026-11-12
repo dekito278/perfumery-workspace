@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
@@ -71,6 +72,8 @@ const BuyerAnswers = ({ className = '' }) => {
               {answer.ask ?? null}
             </details>
           ))}
+          {/* The rest of what a buyer asks — dispatch, a broken parcel, privacy, contact — on one page. */}
+          <Link to="/help" className="ng-link ng-mono mt-4 inline-flex min-h-[44px] items-center">{t('help.allAnswers')}</Link>
         </div>
       </div>
     </section>

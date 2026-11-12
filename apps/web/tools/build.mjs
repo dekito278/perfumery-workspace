@@ -114,6 +114,22 @@ const staticPublicPages = [
     ],
   },
   {
+    route: '/help',
+    // How to order and pay, shipping, tracking, a damaged parcel, privacy and contact (13 Nov 2026).
+    headingKey: 'help.title',
+    leadKey: 'help.lead',
+    idTitleKey: 'help.tab',
+    idDescriptionKey: 'help.meta',
+    title: 'Help & Policies - SOLIVAGANT',
+    description: 'How to order and pay, shipping, tracking, a damaged parcel, privacy, and how to reach the SOLIVAGANT atelier.',
+    heading: 'Help & policies',
+    intro: 'Everything about an order at SOLIVAGANT, on one page.',
+    sections: [
+      ['Order & pay', 'Order through the cart; your bottles are held while you pay.'],
+      ['Shipping', 'Domestic couriers in Indonesia, DHL abroad, worked out from your address.'],
+    ],
+  },
+  {
     route: '/journal',
     // The body a reader without JavaScript gets: the live page's own h1 and lead, in each shop's language.
     headingKey: 'journal.title',
