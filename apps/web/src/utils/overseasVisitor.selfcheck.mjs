@@ -145,7 +145,8 @@ const noteSentence = (() => {
 //
 // A silent panel is the failure in every one of those states: a buyer who is surprised by a second bill
 // after paying is the complaint this sentence exists to prevent.
-assert.match(noteSentence, /[Ss]hipping is quoted separately/,
+// "quoted separately" read as a manual quote when the cart prices it instantly (audit, 13 Nov 2026).
+assert.match(noteSentence, /[Ss]hipping to your country is added in the cart/,
   'the panel must tell an overseas reader that the freight is quoted on top, before they press the button');
 assert.doesNotMatch(noteSentence, /Shipping is not\s+included|quote it by hand/i,
   'and it must not go back to promising a separate shipping bill');
@@ -186,8 +187,11 @@ assert.doesNotMatch(hook, /detectOverseasVisitor/,
     }
   };
   walk('.');
-  assert.deepEqual(callers, [join('components', 'storefront', 'SwitchToEnglishHint.jsx')],
-    'the guess reaches the page only as the hint to the English shop');
+  // Both hints, and nothing else: the guess may offer the way to the other shop, in either direction, but
+  // never decide what a page says. The Indonesian-shop hint uses it to stay away from browsers abroad
+  // (audit, 13 Nov 2026: it sent a buyer in Singapore from US$95 to "Rp 569.000").
+  assert.deepEqual(callers.sort(), [join('components', 'storefront', 'SwitchToEnglishHint.jsx'), join('components', 'storefront', 'SwitchToIndonesiaHint.jsx')].sort(),
+    'the guess reaches the page only as the hints between the two shops');
   const hint = read('components', 'storefront', 'SwitchToEnglishHint.jsx');
   assert.match(hint, /!readRegionFromPath\(\) && detectOverseasVisitor\(\)/, 'shown only on an Indonesian address');
   assert.match(hint, /setRegion\(REGION_EN\)/, 'and what it does is go to the English address');
@@ -484,8 +488,9 @@ assert.match(MESSAGES.id['export.priceLine'], /Harga untuk pengiriman ke luar ne
 // Out again because RaySpeed bills a one-kilo MINIMUM: a single 30 ml bottle to Los Angeles costs
 // Rp 670.500 to send against a US$80 price, while four bottles cost the same Rp 670.500. The line is
 // charged from the published card now, on every destination.
-assert.match(MESSAGES.id['export.notIncluded'], /ongkir dikutip terpisah/);
-assert.match(MESSAGES.en['export.notIncluded'], /quoted separately/i,
+// Still on top, said as where it appears (audit, 13 Nov 2026): "quoted separately" read as a manual quote.
+assert.match(MESSAGES.id['export.notIncluded'], /ongkir[\s\S]*dihitung di keranjang/);
+assert.match(MESSAGES.en['export.notIncluded'], /shipping[\s\S]*added in the cart/i,
   'and the English must say it too — a buyer surprised by a second bill after paying is the complaint this line prevents');
 for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
   assert.doesNotMatch(table['export.notIncluded'], /sudah termasuk|shipping included|included to/i,

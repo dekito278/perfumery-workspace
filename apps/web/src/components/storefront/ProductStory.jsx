@@ -17,7 +17,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * This component renders words and media only.
  */
 const ProductStory = ({ product, story }) => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const audioRef = useRef(null);
@@ -93,7 +93,7 @@ const ProductStory = ({ product, story }) => {
     <div className="immersive-page" ref={storyRef}>
       {/* ── Hero ── */}
       {/* Words only: the photo this opening used to sit on is the gallery's cover, one scroll up. */}
-      <section className="imm-hero">
+      <section className="imm-hero" lang={isInternational ? 'id' : undefined}>
         <div className="imm-hero__content">
           <span className="imm-hero__eyebrow">{hero.eyebrow}</span>
           {hero.headlineScript ? (
@@ -102,6 +102,10 @@ const ProductStory = ({ product, story }) => {
           {/* h2, not h1: the page's h1 is the perfume's name, in the product block above. */}
           <h2 className="imm-hero__title">{hero.headline}</h2>
           <p className="imm-hero__subtitle">{hero.subtitle}</p>
+          {/* The story is Dekito's own words and stays in Indonesian, as the journal does. Said, the way the
+              journal says it, so an English reader is not left wondering why the page changed language
+              (visitor audit, 13 Nov 2026: six perfumes). */}
+          {isInternational ? <p lang="en" className="imm-hero__subtitle">{t('imm.storyIndonesian')}</p> : null}
         </div>
 
         {music.src ? (
@@ -117,7 +121,7 @@ const ProductStory = ({ product, story }) => {
       ) : null}
 
       {/* ── Story sections ── */}
-      <div className="imm-story">
+      <div className="imm-story" lang={isInternational ? 'id' : undefined}>
         {sections.map((section, i) => {
           if (section.type === 'quote') {
             return (

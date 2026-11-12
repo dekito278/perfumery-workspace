@@ -2,6 +2,7 @@ import React from 'react';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { REGION_ID } from '@/utils/storefrontRegion.js';
+import { detectOverseasVisitor } from '@/utils/overseasVisitor.js';
 
 /**
  * The way back, for the reader the region guessed wrong about.
@@ -20,6 +21,10 @@ const SwitchToIndonesiaHint = ({ className = '' }) => {
   const { setRegion } = useStorefrontRegion();
 
   if (!isInternational) return null;
+  // Only for a browser that looks Indonesian (zone or language). Shown to everyone, it sent a buyer in
+  // Singapore from US$95 to "Rp 569.000" — about US$35 — in one tap, for a parcel that cannot leave
+  // Indonesia at that price (audit, 13 Nov 2026). The header switch still reaches the other shop.
+  if (detectOverseasVisitor()) return null;
 
   return (
     <p className={`text-xs font-semibold leading-relaxed text-ng-dust ${className}`}>

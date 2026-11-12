@@ -83,7 +83,7 @@ assert.ok(qrisStillBehindFlag,
   'QRIS left its env flag — a third way to pay is live and answers.paymentA still names two. Rewrite it.');
 
 // --- 4. The English shop is not told about the Indonesian till ----------------------------------------
-// The overseas flow is a cart in dollars, a destination, DHL shipping, and WhatsApp as the till. Naming
+// The overseas flow is a cart in dollars, a destination, DHL shipping, and (since #587) the cart as the till. Naming
 // a domestic courier or a rupiah transfer there describes a checkout that cannot serve that buyer.
 const FORBIDDEN_ABROAD = /\b(DOKU|rekening|bank account|kurir|courier(?!ed))\b/i;
 for (const language of ['id', 'en']) {
@@ -93,8 +93,12 @@ for (const language of ['id', 'en']) {
     assert.doesNotMatch(answer, FORBIDDEN_ABROAD,
       `${language}.${key} describes the domestic checkout to an overseas buyer: ${answer}`);
   }
-  assert.match(MESSAGES[language]['answers.payIntlA'], /WhatsApp/,
-    `${language}: the overseas order is settled on WhatsApp and the answer must say so`);
+  // Since #587 the English cart places the order itself; "settled over WhatsApp" sent buyers away from it
+  // (visitor audit, 13 Nov 2026). The answer names the cart and how a dollar payment is made.
+  assert.doesNotMatch(MESSAGES[language]['answers.payIntlA'], /WhatsApp/,
+    `${language}: the overseas order is placed in the cart, not settled on WhatsApp`);
+  assert.match(MESSAGES[language]['answers.payIntlA'], /(cart|keranjang)[\s\S]*Wise[\s\S]*Western Union/i,
+    `${language}: the answer names the cart and the ways to pay in dollars`);
   assert.match(MESSAGES[language]['answers.shippingIntlA'], /DHL/,
     `${language}: one courier carries the overseas parcels and the answer must name it`);
 }

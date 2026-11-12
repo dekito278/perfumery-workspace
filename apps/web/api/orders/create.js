@@ -31,6 +31,7 @@ import { isInternalErrorMessage } from '../../src/utils/publicErrorMessage.js';
 import { randomBytes } from 'node:crypto';
 import { quoteInternationalOrder } from '../../src/utils/internationalOrder.js';
 import { countryNameFor } from '../../src/utils/shippingDestination.js';
+import { composeInternationalAddress, missingInternationalField } from '../../src/utils/internationalAddress.js';
 import { createPaymentToken } from '../../src/utils/paymentLinkToken.js';
 
 const jsonResponse = (res, status, body) => {
@@ -748,7 +749,7 @@ export default async function handler(req, res) {
 
 // One line on purpose: priceIsNotGuessed reads every line shaped `  ['…',` in this file as a voucher
 // refusal signature.
-const INTERNATIONAL_FIELDS = [['name', 120], ['email', 200], ['phone', 40], ['address', 600], ['city', 120], ['postcode', 20]];
+const INTERNATIONAL_FIELDS = [['name', 120], ['email', 200], ['phone', 40], ['address', 600], ['city', 120], ['region', 120], ['postcode', 20]];
 
 const readExportPolicy = async () => {
   const rows = await sbSelectOptional('storefront_export_shipping_settings?id=eq.default&select=*');
@@ -799,7 +800,7 @@ const createInternationalOrder = async (res, input, clientContext) => {
   const fields = Object.fromEntries(INTERNATIONAL_FIELDS.map(([key]) => [key, String(buyer[key] || '').trim()]));
   const tooLong = INTERNATIONAL_FIELDS.find(([key, limit]) => fields[key].length > limit);
   if (tooLong) return jsonResponse(res, 422, { message: `The ${tooLong[0]} field is too long.`, field: tooLong[0] });
-  const missing = ['name', 'email', 'address', 'city'].find((key) => !fields[key]);
+  const missing = missingInternationalField(fields, buyer.country);
   if (missing) return jsonResponse(res, 422, { message: `Please fill in your ${missing}.`, field: missing });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
     return jsonResponse(res, 422, { message: 'Please check your email address.', field: 'email' });
@@ -814,7 +815,7 @@ const createInternationalOrder = async (res, input, clientContext) => {
 
   const countryName = countryNameFor(quote.country, 'en');
   const contact = [fields.email, fields.phone].filter(Boolean).join(' · ');
-  const deliveryAddress = [fields.address, [fields.postcode, fields.city].filter(Boolean).join(' '), countryName].join('\n');
+  const deliveryAddress = composeInternationalAddress(fields, countryName);
   const customerArgs = {
     p_customer_code: null,
     p_customer_name: fields.name,
