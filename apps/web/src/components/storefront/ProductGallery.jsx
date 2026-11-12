@@ -211,7 +211,8 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
                   srcSet={getStorageImageSrcSet(image, THUMB_WIDTHS)}
                   sizes="64px"
                   alt=""
-                  className="h-full w-full object-cover"
+                  // !h-full: the shop's `img { height: auto }` outranks a plain class (see ProductVisual).
+                  className="!h-full !w-full object-cover"
                   loading="lazy"
                   decoding="async"
                   width="96"
