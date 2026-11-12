@@ -34,12 +34,16 @@ const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
     if (!code.trim() || busy) return;
     setBusy(true);
     setMessage('');
-    const { result, codeName: joined } = await redeemMemberCode(code);
+    const { result, codeName: joined, memberPercent: percent } = await redeemMemberCode(code);
     if (result === 'ok') {
       // Same session, new tier: nothing else would reload the prices on the page and in the cart.
       await refreshTierPrices();
       setCode('');
       setMessage(t('member.codeJoined', { name: joined }));
+    } else if (result === 'smaller') {
+      // A real code with a smaller percentage: the member keeps the one they have, and is told which.
+      setCode('');
+      setMessage(t('member.codeSmaller', { name: joined, percent }));
     } else {
       setMessage(t(RESULT_KEYS[result] || 'member.codeFailed'));
     }

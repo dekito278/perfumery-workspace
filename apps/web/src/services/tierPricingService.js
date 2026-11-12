@@ -60,7 +60,8 @@ export const getMyPriceTier = async () => {
 
 /**
  * Turns a member code into membership for the signed-in caller. Answers with a result word, never throws:
- * 'ok' | 'unknown' (no such active code) | 'too_many' (ten wrong tries this hour) | 'signin' |
+ * 'ok' | 'smaller' (a real code below the one held; codeName/memberPercent then name the code KEPT) |
+ * 'unknown' (no such active code) | 'too_many' (ten wrong tries this hour) | 'signin' |
  * 'unavailable' (migration not run yet) | 'failed'.
  */
 export const redeemMemberCode = async (code) => {

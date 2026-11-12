@@ -19,6 +19,11 @@
 --     order on, and the percentage Dekito set for it would mean nothing.
 -- Everyone else who holds a code pays exactly its percentage, as #591 decided.
 --
+-- AND BETWEEN CODES. A member who holds a code and types one with a SMALLER percentage is told so, and
+-- keeps the code they have (result 'smaller'). An equal or larger code still replaces it, as before.
+-- Refused rather than "kept the cheaper quietly", so one account stays in one community with one
+-- percentage and the Studio count per code stays true (Dekito, 13 Nov 2026).
+--
 -- ONE RULE, TWO READERS, as before. storefront_member_status gains a fourth column, keeps_member_price.
 -- The storefront (tierPricingService.getMyPriceTier) and api/orders/create.js both read it, and both read a
 -- missing column as false, so before this file runs they keep agreeing on today's rule.
@@ -120,6 +125,74 @@ $$;
 
 revoke all on function public.storefront_my_member_status() from public;
 grant execute on function public.storefront_my_member_status() to anon, authenticated;
+
+-- 3. Redeeming: a smaller code no longer replaces a larger one ------------------------------------------
+-- Same signature as 20261110120000, so create or replace is enough. On 'smaller' code_name and
+-- member_percent describe the code the member KEEPS, which is what the message names.
+create or replace function public.storefront_redeem_member_code(p_code text)
+returns table (result text, code_name text, member_percent numeric)
+language plpgsql
+security definer
+set search_path = public
+as $$
+#variable_conflict use_column
+declare
+    caller uuid := auth.uid();
+    wanted text := upper(btrim(coalesce(p_code, '')));
+    matched public.storefront_member_codes%rowtype;
+    held_name text;
+    held_percent numeric;
+    recent_failures integer;
+begin
+    if caller is null then
+        return query select 'signin'::text, null::text, null::numeric;
+        return;
+    end if;
+
+    select count(*) into recent_failures
+      from public.storefront_member_code_attempts t
+     where t.auth_user_id = caller
+       and t.attempted_at > now() - interval '1 hour';
+    if recent_failures >= 10 then
+        return query select 'too_many'::text, null::text, null::numeric;
+        return;
+    end if;
+
+    select * into matched
+      from public.storefront_member_codes k
+     where k.code = wanted
+       and k.active;
+    if not found then
+        insert into public.storefront_member_code_attempts (auth_user_id) values (caller);
+        return query select 'unknown'::text, null::text, null::numeric;
+        return;
+    end if;
+
+    -- The code the account holds now, switched off or not: switching a code off keeps its members' price.
+    select k.name, k.discount_percent into held_name, held_percent
+      from public.storefront_member_accounts a
+      join public.storefront_member_codes k on k.id = a.member_code_id
+     where a.auth_user_id = caller;
+    -- A real code, so not a wrong guess: nothing is logged against the rate limit.
+    if held_percent is not null and matched.discount_percent < held_percent then
+        return query select 'smaller'::text, held_name, held_percent;
+        return;
+    end if;
+
+    -- An equal or larger code wins. Holding two codes has no meaning, and the percentage has to come from one.
+    insert into public.storefront_member_accounts (auth_user_id, member_code_id, source)
+    values (caller, matched.id, 'code')
+    on conflict (auth_user_id) do update
+        set member_code_id = excluded.member_code_id,
+            source = 'code',
+            updated_at = now();
+
+    return query select 'ok'::text, matched.name, matched.discount_percent;
+end;
+$$;
+
+revoke all on function public.storefront_redeem_member_code(text) from public, anon;
+grant execute on function public.storefront_redeem_member_code(text) to authenticated;
 
 commit;
 

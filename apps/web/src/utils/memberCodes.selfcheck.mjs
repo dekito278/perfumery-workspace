@@ -202,4 +202,25 @@ assert.match(endpoint, /memberPercent,\s*keepsMemberPrice,\s*\}\);/, 'and passes
 assert.match(hook, /applyTierPrices\(products, tier, index, formatRupiah, memberPercent, keepsMemberPrice\)/,
   'the catalogue a buyer sees is priced with it');
 
-console.log('memberCodes selfcheck OK (a code\'s percentage prices the line; it never raises an existing member\'s price)');
+// Between codes: a smaller one is refused with a word, and the code held stays (Dekito, 13 Nov 2026).
+const fixRedeem = fix.slice(fix.indexOf('create or replace function public.storefront_redeem_member_code('),
+  fix.indexOf('$$;', fix.indexOf('create or replace function public.storefront_redeem_member_code(')));
+assert.ok(fixRedeem.length > 100, '20261113090000 must redefine storefront_redeem_member_code');
+assert.match(fixRedeem, /matched\.discount_percent < held_percent then\s*return query select 'smaller'::text, held_name, held_percent;\s*return;/,
+  'a smaller code answers "smaller" with the code KEPT, and stops before anything is written');
+assert.ok(fixRedeem.indexOf("'smaller'::text") < fixRedeem.indexOf('insert into public.storefront_member_accounts'),
+  'the refusal comes before the account row is touched');
+assert.ok(fixRedeem.indexOf("'smaller'::text") > fixRedeem.indexOf('insert into public.storefront_member_code_attempts'),
+  'a real code is not logged as a wrong guess');
+assert.doesNotMatch(fixRedeem, /\braise\b/i, 'it answers with a word, never raises — a raise rolls back the logged wrong guess');
+for (const needle of ["recent_failures >= 10", 'k.active', "'unknown'::text", "'signin'::text"]) {
+  assert.ok(fixRedeem.includes(needle), `the rewrite keeps ${needle} from 20261110120000`);
+}
+assert.match(fix, /revoke all on function public\.storefront_redeem_member_code\(text\) from public, anon;\s*grant execute on function public\.storefront_redeem_member_code\(text\) to authenticated;/);
+for (const language of ['id', 'en']) {
+  assert.match(MESSAGES[language]['member.codeSmaller'], /\{name\}[\s\S]*\{percent\}%/, `${language}: the refusal names the code kept and its percentage`);
+}
+assert.match(panel, /result === 'smaller'\) \{[\s\S]{0,200}t\('member\.codeSmaller', \{ name: joined, percent \}\)/,
+  'the panel says why the code did not change anything');
+
+console.log('memberCodes selfcheck OK (a code\'s percentage prices the line; it never raises an existing member\'s price, and a smaller code never replaces a larger one)');
