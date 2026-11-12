@@ -38,6 +38,7 @@ const staticPublicPages = [
     // The body a reader without JavaScript gets: the live page's own h1 and lead, in each shop's language.
     headingKey: 'home.ngTitle',
     leadKey: 'home.ngLead',
+    idTitleKey: 'home.tab',
     idDescriptionKey: 'home.meta',
     title: 'SOLIVAGANT - Artisan Perfumery Atelier by Dekito',
     description: 'SOLIVAGANT is an artisan perfumery atelier by Dekito, crafting quiet fragrance objects from raw materials, memory, and personal ritual.',
@@ -325,16 +326,23 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = [], facts = DE
   if (shellPage) {
     const shareImage = siteUrl ? `${siteUrl}${SHARE_IMAGE_PATH}` : SHARE_IMAGE_PATH;
     let shell = baseHtml;
-    shell = replaceMetaContent(shell, 'name="description"', shellPage.description);
+    // The shell answers the bare domain, and the bare domain is the INDONESIAN shop: it speaks Indonesian
+    // in a link preview too (Dekito, 13 Nov 2026 — WhatsApp showed "SOLIVAGANT is an artisan perfumery
+    // atelier…" for solivagantscent.com). Same words as /home, from the one message file.
+    const shellTitle = MESSAGES.id[shellPage.idTitleKey] || shellPage.title;
+    const shellDescription = MESSAGES.id[shellPage.idDescriptionKey] || shellPage.description;
+    shell = shell.replace(/<title>.*?<\/title>/, `<title>${escapeHtml(shellTitle)}</title>`);
+    shell = replaceMetaContent(shell, 'name="description"', shellDescription);
     shell = replaceMetaContent(shell, 'property="og:type"', 'website');
     shell = replaceMetaContent(shell, 'property="og:site_name"', 'SOLIVAGANT');
-    shell = replaceMetaContent(shell, 'property="og:title"', shellPage.title);
-    shell = replaceMetaContent(shell, 'property="og:description"', shellPage.description);
+    shell = replaceMetaContent(shell, 'property="og:locale"', 'id_ID');
+    shell = replaceMetaContent(shell, 'property="og:title"', shellTitle);
+    shell = replaceMetaContent(shell, 'property="og:description"', shellDescription);
     shell = replaceMetaContent(shell, 'property="og:image"', shareImage);
     shell = replaceMetaContent(shell, 'name="twitter:image"', shareImage);
     shell = replaceMetaContent(shell, 'name="twitter:card"', 'summary_large_image');
-    shell = replaceMetaContent(shell, 'name="twitter:title"', shellPage.title);
-    shell = replaceMetaContent(shell, 'name="twitter:description"', shellPage.description);
+    shell = replaceMetaContent(shell, 'name="twitter:title"', shellTitle);
+    shell = replaceMetaContent(shell, 'name="twitter:description"', shellDescription);
     fs.writeFileSync(indexPath, shell);
     console.log(`[seo] Shell meta filled in (share image ${siteUrl ? 'absolute' : 'relative — no site URL configured'}).`);
   }

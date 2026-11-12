@@ -355,7 +355,7 @@ export const MESSAGES = {
     'why.whatsapp.body': 'Ragu antara dua aroma, atau mau tanya stok? WhatsApp atelier dibalas oleh orang yang meraciknya.',
     'why.whatsapp.cta': 'Chat WhatsApp',
 
-    'home.tab': 'SOLIVAGANT - Artisan Perfumery Atelier by Dekito',
+    'home.tab': 'SOLIVAGANT - Atelier Parfum Artisan oleh Dekito',
     'home.eyebrow': 'ATELIER PARFUM ARTISAN',
     'home.heroTitle': 'Aroma sebagai\nobjek kenangan.',
     'home.lead': 'Karya olfaktori yang tenang dari raw material, kenangan, dan ritual.',

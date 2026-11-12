@@ -25,6 +25,13 @@ for (const tag of ['name="description"', 'property="og:title"', 'property="og:im
 }
 assert.match(block, /siteUrl \? `\$\{siteUrl\}\$\{SHARE_IMAGE_PATH\}` : SHARE_IMAGE_PATH/,
   'the share image must be absolute; a relative og:image is silently dropped by every crawler');
+// The bare domain is the Indonesian shop, and its WhatsApp card says so (Dekito, 13 Nov 2026).
+assert.match(block, /const shellTitle = MESSAGES\.id\[shellPage\.idTitleKey\]/, 'the shell title is the Indonesian home title');
+assert.match(block, /const shellDescription = MESSAGES\.id\[shellPage\.idDescriptionKey\]/, 'and its description the Indonesian one');
+assert.match(block, /'property="og:locale"', 'id_ID'/, 'with og:locale id_ID');
+assert.doesNotMatch(block, /shellPage\.(title|description)\)/, 'the English literals no longer reach the shell');
+const homeEntry = build.slice(build.indexOf("route: '/home'"), build.indexOf("route: '/home'") + 400);
+assert.match(homeEntry, /idTitleKey: 'home\.tab'/, 'the /home entry names its Indonesian title key');
 assert.doesNotMatch(block, /upsertCanonical|rel="canonical"/,
   'the shell answers /cart, /checkout and every unknown path — a canonical here would claim they are all '
   + 'the home page');
@@ -60,6 +67,7 @@ if (existsSync(join(dist, 'index.html'))) {
   const image = (shell.match(/property="og:image"[^>]*content="([^"]*)"/) || [])[1] || '';
   assert.ok(image.startsWith('http'), `the built shell still has a relative og:image: ${image}`);
   assert.match(shell, /name="description"[^>]*content="[^"]{20,}"/, 'the built shell needs a real description');
+  assert.match(shell, /property="og:description" content="SOLIVAGANT adalah/, 'the built shell previews in Indonesian');
   assert.doesNotMatch(shell, /rel="canonical"/, 'the built shell must not claim a canonical');
 
   // And the four static pages must still have theirs — they are single URLs, so they do.
