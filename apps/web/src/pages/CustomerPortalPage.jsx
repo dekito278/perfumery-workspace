@@ -1325,7 +1325,7 @@ const CustomerPortalPage = () => {
         <PublicHeader />
 
         <section className="ng-section !border-b-0 !pt-10 md:!pt-16">
-        <div className="ng-container grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
+        <div className="ng-container grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)]">
           <div className="space-y-5">
             <div className="rounded-none border border-ng-bone/10 bg-transparent p-6">
               <p className="ng-eyebrow ng-mono m-0">{t('cust.eyebrow')}</p>
@@ -1619,7 +1619,7 @@ const CustomerPortalPage = () => {
               </>
             ) : (
               <section className="overflow-hidden rounded-none border border-ng-bone/10 bg-transparent">
-                <div className="grid gap-0 lg:grid-cols-[1fr_0.9fr]">
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
                   <div className="grid min-h-[236px] place-items-center border-b border-ng-bone/10 bg-ng-deep px-6 py-8 text-center lg:border-b-0 lg:border-r">
                     <StateBlock
                       className="border-0 bg-transparent p-0 shadow-none"
