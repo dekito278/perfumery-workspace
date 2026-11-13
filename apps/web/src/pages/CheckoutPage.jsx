@@ -144,6 +144,18 @@ const CheckoutPage = () => {
     autoCalculateShipping({ searchText: destinationSearchText({ areaText: destinationSearch, address: deliveryAddress }), autoSelectBest: true });
   };
 
+  // The area chips disappear once one is chosen, taking the keyboard focus with them to <body> (seventh
+  // visitor audit, 13 Nov 2026). It goes to the rate that was chosen, else the first rate, else the courier.
+  const pickArea = async (destination) => {
+    await loadShippingRates(destination, { autoSelectCheapest: true });
+    window.requestAnimationFrame(() => {
+      const target = document.querySelector('#checkout-form .ng-choice[aria-pressed="true"]')
+        || document.querySelector('#checkout-form .ng-choice')
+        || document.querySelector('#checkout-form select');
+      target?.focus();
+    });
+  };
+
   const submitCheckout = (event) => {
     event.preventDefault();
     submitOrder();
@@ -295,7 +307,7 @@ const CheckoutPage = () => {
                       <span className="ng-mono text-ng-ash">{t('mcheckout.pickOtherArea')}</span>
                       <div className="flex flex-wrap gap-2">
                         {destinationOptions.map((destination) => (
-                          <button key={destination.id || destination.label} type="button" className="ng-chip ng-chip--plain" aria-pressed={selectedDestination?.label === destination.label} onClick={() => loadShippingRates(destination, { autoSelectCheapest: true })}>
+                          <button key={destination.id || destination.label} type="button" className="ng-chip ng-chip--plain" aria-pressed={selectedDestination?.label === destination.label} onClick={() => pickArea(destination)}>
                             {destination.label}
                           </button>
                         ))}

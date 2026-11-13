@@ -24,7 +24,7 @@ for (const page of ['PublicProductDetailPage.jsx', 'CatalogPage.jsx']) {
 assert.match(read('pages', 'PublicProductDetailPage.jsx'), /maxStock: variantStock/, 'the cap is the chosen size\'s stock');
 for (const page of ['CartPage.jsx', 'InternationalCartPage.jsx']) {
   const source = read('pages', page);
-  assert.match(source, /disabled=\{(item|line)\.quantity <= 1\}/, `${page}: "−" is off at one`);
+  assert.match(source, /disabled=\{(item|line)\.quantity <= 1\}|canDecrease=\{(item|line)\.quantity > 1\}/, `${page}: "−" is off at one`);
   assert.match(source, /atStockCap\((item|line)\) \? <span[^>]*>\{t\('cart\.stockLeft'/, `${page}: the cap is said`);
 }
 
@@ -40,4 +40,18 @@ for (const language of ['id', 'en']) {
 assert.match(read('pages', 'CartPage.jsx'), /if \(voucher\.message\) codeMessageRef\.current\?\.scrollIntoView\?\.\(\{ block: 'center'/,
   'the answer to a code is brought out from under the sticky bar');
 
+// The stepper's ends stay focusable (aria-disabled) and refuse the press (seventh audit, 13 Nov 2026).
+{
+  const stepper = read('components', 'storefront', 'CartQuantityStepper.jsx');
+  assert.doesNotMatch(stepper, /\sdisabled=/, 'a disabled button drops the keyboard focus to <body>');
+  assert.match(stepper, /onClick=\{\(\) => \{ if \(canDecrease\) onDecrease\(\); \}\}/);
+  assert.match(stepper, /onClick=\{\(\) => \{ if \(canIncrease\) onIncrease\(\); \}\}/);
+  assert.match(stepper, /aria-live="polite">\{t\('cart\.qtyNow', \{ name, count: quantity \}\)\}/, 'the count is announced with the name');
+  for (const page of ['CartPage.jsx', 'InternationalCartPage.jsx']) {
+    const source = read('pages', page);
+    assert.match(source, /useCartLineRemoval\(removeItem, /, `${page}: removing a line keeps the focus and says so`);
+    assert.match(source, /data-cart-empty-heading/, `${page}: the empty cart's heading can take the focus`);
+  }
+}
+assert.match(read('pages', 'CheckoutPage.jsx'), /const pickArea = async \(destination\) => \{[\s\S]{0,600}target\?\.focus\(\);/, 'checkout: choosing an area keeps the focus');
 console.log('stockAndSoldOut selfcheck OK (an add the stock stops is said; a sold-out page offers a way back)');

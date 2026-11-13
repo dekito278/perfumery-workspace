@@ -68,7 +68,9 @@ const raw = [];
 for (const [rel, body] of steppers) {
   for (const match of body.matchAll(/updateQuantity\([^)]*\.quantity \+ 1\)/g)) raw.push(`${rel}: ${match[0]}`);
   assert.match(body, /nextQuantityUp\(/, `${rel} steps a quantity without the shared cap`);
-  assert.match(body, /disabled=\{atStockCap\(/, `${rel} leaves + clickable at the cap, so a press does nothing and says nothing`);
+  // Since 13 Nov 2026 the carts' "+" is aria-disabled through CartQuantityStepper (a disabled button under
+  // the keyboard's focus dropped it to <body>); still off at the cap, still announced as unavailable.
+  assert.match(body, /disabled=\{atStockCap\(|canIncrease=\{!atStockCap\(/, `${rel} leaves + clickable at the cap, so a press does nothing and says nothing`);
 }
 assert.deepEqual(raw, [],
   `these raise a quantity without asking the stock:\n  ${raw.join('\n  ')}`);
