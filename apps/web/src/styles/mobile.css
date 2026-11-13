@@ -30,7 +30,10 @@
     overscroll-behavior-y: none;
   }
 
-  input,
+  /* Not checkboxes or radios: with their native look removed and nothing drawn instead they were invisible —
+     the bespoke page's required pre-order box could not be seen, and a buyer was refused for not ticking it
+     (visitor audit, 13 Nov 2026). */
+  input:not([type="checkbox"]):not([type="radio"]),
 textarea,
 select,
 [contenteditable="true"],

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -6,17 +6,34 @@ import { clearCart } from '@/services/cartService.js';
 import { placeInternationalOrder } from '@/services/orderService.js';
 import { regionRequiredFor } from '@/utils/internationalAddress.js';
 
+// maxLength = the endpoint's own limits (INTERNATIONAL_FIELDS in api/orders/create.js), so a too-long field
+// is stopped while typing rather than refused after "Place order". Patterns: a phone is digits with a + and
+// separators, not "call me maybe"; an email has a domain with a dot, as the endpoint requires (visitor
+// audit, 13 Nov 2026 — both were accepted by the form and only refused by the server).
 const FIELDS = [
-  { key: 'name', label: 'cart.intl.formName', autoComplete: 'name', required: true },
-  { key: 'email', label: 'cart.intl.formEmail', autoComplete: 'email', type: 'email', required: true },
+  { key: 'name', label: 'cart.intl.formName', autoComplete: 'name', required: true, maxLength: 120 },
+  { key: 'email', label: 'cart.intl.formEmail', autoComplete: 'email', type: 'email', required: true, maxLength: 200, pattern: '[^\\s@]+@[^\\s@]+\\.[^\\s@]+' },
   // Required: DHL asks for a phone on every international waybill (internationalAddress.js).
-  { key: 'phone', label: 'cart.intl.formPhone', autoComplete: 'tel', type: 'tel', required: true },
-  { key: 'address', label: 'cart.intl.formAddress', autoComplete: 'street-address', hint: 'cart.intl.formAddressHint', required: true, multiline: true },
-  { key: 'city', label: 'cart.intl.formCity', autoComplete: 'address-level2', required: true },
+  { key: 'phone', label: 'cart.intl.formPhone', autoComplete: 'tel', type: 'tel', required: true, maxLength: 40, pattern: '[+]?[0-9 \\.\\-\\/\\(\\)]{6,40}', hint: 'cart.intl.formPhoneHint' },
+  { key: 'address', label: 'cart.intl.formAddress', autoComplete: 'street-address', hint: 'cart.intl.formAddressHint', required: true, multiline: true, maxLength: 600 },
+  { key: 'city', label: 'cart.intl.formCity', autoComplete: 'address-level2', required: true, maxLength: 120 },
   // Required only where DHL needs it (US, CA, AU); asked of everyone, since most addresses have one.
-  { key: 'region', label: 'cart.intl.formRegion', autoComplete: 'address-level1', requiredFor: regionRequiredFor },
-  { key: 'postcode', label: 'cart.intl.formPostcode', autoComplete: 'postal-code' },
+  { key: 'region', label: 'cart.intl.formRegion', autoComplete: 'address-level1', requiredFor: regionRequiredFor, maxLength: 120 },
+  { key: 'postcode', label: 'cart.intl.formPostcode', autoComplete: 'postal-code', maxLength: 20 },
 ];
+
+// What was typed survives a reload (the audit lost a whole address to one). Per browser, cleared once the
+// order is placed; a blocked store simply does not remember.
+const DRAFT_KEY = 'solivagant.intlOrderDraft.v1';
+const EMPTY_BUYER = { name: '', email: '', phone: '', address: '', city: '', region: '', postcode: '' };
+const readDraft = () => {
+  try { return { ...EMPTY_BUYER, ...(JSON.parse(window.localStorage.getItem(DRAFT_KEY) || '{}') || {}) }; } catch { return EMPTY_BUYER; }
+};
+const writeDraft = (value) => { try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify(value)); } catch { /* not remembered */ } };
+const clearDraft = () => { try { window.localStorage.removeItem(DRAFT_KEY); } catch { /* nothing to clear */ } };
+
+// DHL prints the waybill in Latin letters; an address in another script is accepted, with a word of warning.
+const NON_LATIN = /[^\u0000-\u024F\u1E00-\u1EFF\s]/;
 
 /**
  * The English cart's till (Dekito, 10 Nov 2026): the buyer's address, and the order is written by the
@@ -30,7 +47,8 @@ const FIELDS = [
 const InternationalOrderForm = ({ quote }) => {
   const { t } = useTranslate();
   const navigate = useNavigate();
-  const [buyer, setBuyer] = useState({ name: '', email: '', phone: '', address: '', city: '', region: '', postcode: '' });
+  const [buyer, setBuyer] = useState(readDraft);
+  useEffect(() => { writeDraft(buyer); }, [buyer]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,6 +64,7 @@ const InternationalOrderForm = ({ quote }) => {
         items: [...quote.lines, ...(quote.gift ? [quote.gift] : [])],
       });
       clearCart();
+      clearDraft();
       navigate(`/pay/${paymentToken}`);
     } catch (failure) {
       setError(failure?.message || t('cart.intl.placeFailed'));
@@ -70,7 +89,13 @@ const InternationalOrderForm = ({ quote }) => {
               placeholder={field.hint ? t(field.hint) : undefined}
               autoComplete={field.autoComplete}
               required={field.required || Boolean(field.requiredFor?.(quote.country))}
+              maxLength={field.maxLength}
+              pattern={field.pattern}
+              inputMode={field.type === 'tel' ? 'tel' : undefined}
             />
+            {(field.key === 'address' || field.key === 'city') && NON_LATIN.test(buyer[field.key]) ? (
+              <span className="text-sm text-ng-sand" role="status">{t('cart.intl.formLatin')}</span>
+            ) : null}
           </label>
         );
       })}

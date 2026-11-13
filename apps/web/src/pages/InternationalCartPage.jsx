@@ -166,7 +166,10 @@ const InternationalCartPage = () => {
                       ) : null}
                     </>
                   ) : null}
-                  {!canPlaceHere ? <p className="m-0 text-sm leading-relaxed text-ng-dust">{t('cart.intl.howItWorks')}</p> : null}
+                  {/* Only once a country is chosen and the cart still cannot take the order (another country, 7+
+                      bottles): before a country it read "We confirm on WhatsApp … nothing is reserved" under a lead
+                      saying the order is placed right here (visitor audit, 13 Nov 2026). */}
+                  {!canPlaceHere && !needsDestination ? <p className="m-0 text-sm leading-relaxed text-ng-dust">{t('cart.intl.howItWorks')}</p> : null}
                   {canPlaceHere ? null : lines.length ? (
                     <a
                       href={canOrder ? buildWhatsAppCheckoutUrl(message, phone) : '#'}

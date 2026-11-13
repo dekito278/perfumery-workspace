@@ -44,6 +44,7 @@ import { getScarcityLabel } from '@/utils/stockScarcity.js';
 import { isPlaceholderMood } from '@/utils/productMood.js';
 import { describeWear } from '@/utils/productWear.js';
 import { nearestSlug } from '@/utils/nearestSlug.js';
+import { useShippingDestination } from '@/hooks/useShippingDestination.js';
 
 
 
@@ -82,6 +83,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
   // useOverseasPrice, not useExportPrice: the second hands the export price to the Indonesian shop too.
   const exportPrice = useOverseasPrice(product, selectedVariant);
+  // The English shop's quote block has a bottle count ("3 bottles · US$285 … total US$395"), and the button
+  // added ONE (visitor audit, 13 Nov 2026): the buyer believed they had ordered three. The count chosen there
+  // is what goes in the cart, and the button says so. The Indonesian shop has no such count.
+  const { bottles: chosenBottles } = useShippingDestination();
+  const addCount = isInternational ? Math.max(1, Math.round(Number(chosenBottles) || 1)) : 1;
 
   // Reveal a compact sticky buy-bar once the main add-to-cart button scrolls out of view.
   useEffect(() => {
@@ -164,9 +170,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
       size: selectedSize,
       price: selectedPriceLabel,
       priceNumber: selectedPrice,
-    }, 1);
+    }, addCount);
     setLastAddedSlug(product.slug);
-    toast.success(t('pdp.addedToast', { name: `${product.name} (${selectedSize})` }), {
+    toast.success(t('pdp.addedToast', { name: `${product.name} (${selectedSize})${addCount > 1 ? ` ×${addCount}` : ''}` }), {
       description: t('pdp.cartUpdated'),
       action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
       // Top, not the default bottom: on a phone the gift prompt this add opens is a bottom sheet, and a
@@ -337,7 +343,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                     ) : lastAddedSlug === product.slug ? (
                       <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.inCart')}</>
                     ) : (
-                      <><ShoppingBag className="h-4 w-4" aria-hidden="true" /> {t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') })}</>
+                      <><ShoppingBag className="h-4 w-4" aria-hidden="true" /> {addCount > 1 && exportPrice
+                        ? t('pdp.addManyToCartWithPrice', { count: addCount, price: `US$${usdPriceFor(exportPrice) * addCount}` })
+                        : t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') })}</>
                     )}
                   </button>
                   <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />
