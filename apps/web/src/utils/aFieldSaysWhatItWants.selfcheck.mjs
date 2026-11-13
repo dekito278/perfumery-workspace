@@ -154,7 +154,7 @@ assert.ok(voucherFields >= 3,
   for (const cap of ['maxLength={100} value={customerName}', 'maxLength={24} value={contact}', 'maxLength={500} value={deliveryAddress}']) {
     assert.ok(checkout.includes(cap), `checkout caps: ${cap}`);
   }
-  assert.match(checkout, /if \(!canSubmitCheckout\) \{[\s\S]{0,700}?return;\s*\}\s*submitCheckout\(event\);/, 'an incomplete form is answered by its fields, not a toast');
+  assert.match(checkout, /if \(!canSubmitCheckout(?: \|\| voucher\.unappliedCode)?\) \{[\s\S]{0,700}?return;\s*\}\s*submitCheckout\(event\);/, 'an incomplete form is answered by its fields, not a toast');
   assert.match(readFileSync(new URL('../components/ui/sonner.jsx', import.meta.url), 'utf8'), /position="top-center"/, 'toasts never lie over the sticky pay bar');
   assert.doesNotMatch(readFileSync(new URL('../hooks/useCheckoutFlow.js', import.meta.url), 'utf8'), /toast\.error\([^)]*RajaOngkir/, 'no vendor name in a buyer message');
 }

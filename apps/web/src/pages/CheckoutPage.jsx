@@ -104,7 +104,7 @@ const CheckoutPage = () => {
   };
   const handleSubmitAttempt = (event) => {
     setTriedSubmit(true);
-    if (!canSubmitCheckout) {
+    if (!canSubmitCheckout || voucher.unappliedCode) {
       // Take the buyer to the first field that needs them, once the errors have rendered — the fields say
       // what is missing, so no toast repeats it. With no field to point at (a rate or a payment method not
       // chosen yet), the summary line that names what is left.
@@ -366,6 +366,7 @@ const CheckoutPage = () => {
                         autoCapitalize="characters"
                         spellCheck={false}
                         disabled={!items.length || voucher.loading}
+                        aria-invalid={triedSubmit && voucher.unappliedCode && !voucher.loading ? 'true' : undefined}
                       />
                       <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
                         <BadgePercent className="h-4 w-4" aria-hidden="true" />
@@ -373,6 +374,7 @@ const CheckoutPage = () => {
                       </button>
                     </div>
                     {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
+                    {triedSubmit && voucher.unappliedCode && !voucher.loading ? <span className="ng-error text-sm" role="alert">{t('checkout.errVoucherUnapplied', { code: voucher.unappliedCode })}</span> : null}
                     {voucher.appliedVoucher ? (
                       <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
                         <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
