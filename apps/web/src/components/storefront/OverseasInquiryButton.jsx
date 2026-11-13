@@ -95,6 +95,11 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
         {/* The dollar, like everywhere else this buyer looks — see the note in InternationalPrice.jsx. */}
         <strong className="font-bold text-ng-bone">{quoted}</strong>
         {' '}{t('export.notIncluded')}
+        {/* Tenth visitor audit, 13 Nov 2026: this line sits on the Indonesian product page, whose cart has no
+            country and whose checkout only knows Indonesian couriers — "dihitung di keranjang" sent the buyer
+            to a cart that cannot do it. The international cart can, and it reads the same saved cart. A
+            plain link: it lives under the /en basename, outside this shop's router. */}
+        {' '}<a href="/en/cart" className="ng-link whitespace-nowrap">{t('export.intlCartLink')}</a>
       </p>
       {link}
     </div>

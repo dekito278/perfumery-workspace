@@ -489,7 +489,10 @@ assert.match(MESSAGES.id['export.priceLine'], /Harga untuk pengiriman ke luar ne
 // Rp 670.500 to send against a US$80 price, while four bottles cost the same Rp 670.500. The line is
 // charged from the published card now, on every destination.
 // Still on top, said as where it appears (audit, 13 Nov 2026): "quoted separately" read as a manual quote.
-assert.match(MESSAGES.id['export.notIncluded'], /ongkir[\s\S]*dihitung di keranjang/);
+assert.match(MESSAGES.id['export.notIncluded'], /ongkir[\s\S]*dihitung di keranjang internasional/);
+// And the line takes them there: the Indonesian cart has no country (tenth visitor audit, 13 Nov 2026).
+assert.match(button, /<a href="\/en\/cart" className="ng-link whitespace-nowrap">\{t\('export\.intlCartLink'\)\}<\/a>/,
+  'the Indonesian line promises an overseas quote "in the cart" without a way to the cart that gives one');
 assert.match(MESSAGES.en['export.notIncluded'], /shipping[\s\S]*added in the cart/i,
   'and the English must say it too — a buyer surprised by a second bill after paying is the complaint this line prevents');
 for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
