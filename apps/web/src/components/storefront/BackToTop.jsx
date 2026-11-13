@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
 const BackToTop = () => {
   const { t } = useTranslate();
+  const { pathname } = useLocation();
   const [visible, setVisible] = useState(false);
+  // Not on the pages where a form ends in a button: it floated over "Buat order & bayar" on the bespoke
+  // checkout (third visitor audit, 13 Nov 2026). Those pages are read top to bottom anyway.
+  const onFormPage = /^\/(cart|checkout|bespoke|payment|pay)(\/|$)/.test(pathname);
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 600);
@@ -17,6 +22,8 @@ const BackToTop = () => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
   };
+
+  if (onFormPage) return null;
 
   return (
     <button
