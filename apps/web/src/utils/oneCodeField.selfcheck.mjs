@@ -56,4 +56,11 @@ for (const language of ['id', 'en']) {
   assert.match(MESSAGES[language]['code.unknown'], /\{code\}/, `${language}.code.unknown names the code typed`);
 }
 
+// A typed, unapplied code survives a reload (fifth audit, 13 Nov 2026).
+{
+  const hook = readFileSync(new URL('../hooks/useAppliedVoucher.js', import.meta.url), 'utf8');
+  assert.match(hook, /useState\(\(\) => getAppliedVoucherCode\(\) \|\| readCodeDraft\(\)\)/, 'the field starts from the applied code, else the draft');
+  assert.match(hook, /useEffect\(\(\) => \{ writeCodeDraft\(inputCode\); \}, \[inputCode\]\);/, 'and the draft follows the typing');
+  assert.match(hook, /window\.sessionStorage/, 'per tab, not forever');
+}
 console.log('oneCodeField selfcheck OK (one field takes a voucher or a member code; the checkout asks for nothing else)');
