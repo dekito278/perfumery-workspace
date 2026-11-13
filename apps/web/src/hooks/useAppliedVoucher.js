@@ -49,6 +49,10 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
   const [inputCode, setInputCode] = useState(() => getAppliedVoucherCode() || readCodeDraft());
   useEffect(() => { writeCodeDraft(inputCode); }, [inputCode]);
   const [message, setMessage] = useState('');
+  // The code the message is ABOUT. Tenth visitor audit, 13 Nov 2026: a refusal ("AUDITFAKE bukan
+  // voucher") stayed under the box after the buyer cleared it or typed another code. A message is shown
+  // only while the field still holds the code it answered.
+  const [checkedCode, setCheckedCode] = useState('');
   const [result, setResult] = useState({
     valid: false,
     voucher: null,
@@ -122,6 +126,7 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
   useEffect(() => {
     if (voucherCode && !result.valid) {
       setMessage(result.message);
+      setCheckedCode(voucherCode);
     }
   }, [result.message, result.valid, voucherCode]);
 
@@ -151,6 +156,7 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
 
   const applyVoucher = async () => {
     const nextCode = normalizeVoucherCode(inputCode);
+    setCheckedCode(nextCode);
     setLoading(true);
     setMemberJoined(false);
     try {
@@ -197,11 +203,17 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
   // nothing said so. The page refuses the order until the code is applied or the field is cleared.
   const typedCode = normalizeVoucherCode(inputCode);
   const unappliedCode = typedCode && typedCode !== (result.valid ? voucherCode : '') ? typedCode : '';
+  // Tried and refused — pressing "Pakai" again will not help, so the page asks for the field to be cleared
+  // instead of telling the buyer to press a button they already pressed.
+  const codeRefused = Boolean(unappliedCode) && unappliedCode === checkedCode && !loading;
+  // A member code that was taken clears the field and keeps its good news.
+  const visibleMessage = memberJoined || (typedCode && typedCode === checkedCode) ? message : '';
 
   return {
     inputCode,
     setInputCode,
     unappliedCode,
+    codeRefused,
     appliedCode: voucherCode,
     appliedVoucher: result.valid ? result.voucher : null,
     discountAmount: result.valid ? result.discountAmount : 0,
@@ -209,7 +221,7 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
     eligibleItems: result.valid ? result.eligibleItems || items : [],
     eligibleSubtotal: result.valid ? result.eligibleSubtotal || Number(subtotal || 0) : 0,
     eligibleQuantity: result.valid ? result.eligibleQuantity || 0 : 0,
-    message,
+    message: visibleMessage,
     // Paint the message as good news: a voucher that applied, or a member code that was taken.
     codeAccepted: memberJoined || Boolean(result.valid),
     loading,

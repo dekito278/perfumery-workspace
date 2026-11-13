@@ -150,11 +150,11 @@ assert.ok(voucherFields >= 3,
   const checkout = readFileSync(new URL('../pages/CheckoutPage.jsx', import.meta.url), 'utf8');
   assert.match(checkout, /aria-invalid=\{triedSubmit && fieldErrors\.courier \? 'true' : undefined\}/, 'the courier says it is missing');
   assert.match(checkout, /aria-invalid=\{triedSubmit && fieldErrors\.destination \? 'true' : undefined\}/, 'so does the area');
-  assert.match(checkout, /const field = form\.querySelector\('\[aria-invalid="true"\]'\);\s*if \(field\) field\.focus\(\);/, 'focus goes to the first field that needs the buyer');
+  assert.match(checkout, /const field = form\.querySelector\('\[aria-invalid="true"\]'\);\s*if \(field\) (?:field\.focus\(\);|\{ field\.scrollIntoView\(\{ block: 'center' \}\); field\.focus\(\{ preventScroll: true \}\); \})/, 'focus goes to the first field that needs the buyer');
   for (const cap of ['maxLength={100} value={customerName}', 'maxLength={24} value={contact}', 'maxLength={500} value={deliveryAddress}']) {
     assert.ok(checkout.includes(cap), `checkout caps: ${cap}`);
   }
-  assert.match(checkout, /if \(!canSubmitCheckout(?: \|\| voucher\.unappliedCode)?\) \{[\s\S]{0,700}?return;\s*\}\s*submitCheckout\(event\);/, 'an incomplete form is answered by its fields, not a toast');
+  assert.match(checkout, /if \(!canSubmitCheckout(?: \|\| voucher\.unappliedCode)?\) \{[\s\S]{0,1000}?return;\s*\}\s*submitCheckout\(event\);/, 'an incomplete form is answered by its fields, not a toast');
   assert.match(readFileSync(new URL('../components/ui/sonner.jsx', import.meta.url), 'utf8'), /position="top-center"/, 'toasts never lie over the sticky pay bar');
   assert.doesNotMatch(readFileSync(new URL('../hooks/useCheckoutFlow.js', import.meta.url), 'utf8'), /toast\.error\([^)]*RajaOngkir/, 'no vendor name in a buyer message');
 }

@@ -598,7 +598,7 @@ const BespokePage = () => {
     if (!selectedShipping) return t('bsp.errService');
     if (!form.preorderAcknowledged) return t('bsp.errPreorder');
     // A typed code that is not the one applied would be dropped without a word (ninth visitor audit).
-    if (voucher.unappliedCode && !voucher.loading) return t('checkout.errVoucherUnapplied', { code: voucher.unappliedCode });
+    if (voucher.unappliedCode && !voucher.loading) return t(voucher.codeRefused ? 'checkout.errVoucherRefused' : 'checkout.errVoucherUnapplied', { code: voucher.unappliedCode });
     return '';
   };
 

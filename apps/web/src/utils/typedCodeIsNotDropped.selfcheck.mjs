@@ -43,12 +43,27 @@ const checkout = read('pages', 'CheckoutPage.jsx');
 assert.match(checkout, /if \(!canSubmitCheckout \|\| voucher\.unappliedCode\) \{/, 'the checkout places an order over a typed, unapplied code');
 assert.match(checkout, /id="checkout-voucher"[\s\S]{0,900}aria-invalid=\{triedSubmit && voucher\.unappliedCode && !voucher\.loading \? 'true' : undefined\}/,
   'the code field is not marked, so the focus step cannot take the buyer to it');
-assert.match(checkout, /role="alert">\{t\('checkout\.errVoucherUnapplied', \{ code: voucher\.unappliedCode \}\)\}/,
+assert.match(checkout, /role="alert">\{t\(voucher\.codeRefused \? 'checkout\.errVoucherRefused' : 'checkout\.errVoucherUnapplied', \{ code: voucher\.unappliedCode \}\)\}/,
   'nothing beside the field says the code has not been applied');
 
 // --- 3. The bespoke order, the other page with a code field, refuses the same way -------------------------
 const bespoke = read('pages', 'BespokePage.jsx');
-assert.match(bespoke, /if \(voucher\.unappliedCode && !voucher\.loading\) return t\('checkout\.errVoucherUnapplied', \{ code: voucher\.unappliedCode \}\);/);
+assert.match(bespoke, /if \(voucher\.unappliedCode && !voucher\.loading\) return t\(voucher\.codeRefused \? 'checkout\.errVoucherRefused' : 'checkout\.errVoucherUnapplied', \{ code: voucher\.unappliedCode \}\);/);
+
+// --- 4. A refused code is not told to press the button again; a stale answer leaves with its code -----------
+// Tenth visitor audit, 13 Nov 2026: after "Pakai" refused AUDITFAKE the page still said "Tekan Pakai", and
+// the refusal stayed under the box once it was emptied.
+assert.match(hook, /const codeRefused = Boolean\(unappliedCode\) && unappliedCode === checkedCode && !loading;/);
+assert.match(hook, /const visibleMessage = memberJoined \|\| \(typedCode && typedCode === checkedCode\) \? message : '';/,
+  'a message must leave when the field no longer holds the code it answered');
+assert.match(hook, /message: visibleMessage,/);
+assert.match(hook, /const nextCode = normalizeVoucherCode\(inputCode\);\s*setCheckedCode\(nextCode\);/);
+const visible = (memberJoined, typed, checked, message) => (memberJoined || (typed && typed === checked) ? message : '');
+assert.equal(visible(false, '', 'AUDITFAKE', 'bukan voucher'), '', 'cleared field, refusal gone');
+assert.equal(visible(false, 'LAIN', 'AUDITFAKE', 'bukan voucher'), '', 'another code, refusal gone');
+assert.equal(visible(false, 'AUDITFAKE', 'AUDITFAKE', 'bukan voucher'), 'bukan voucher');
+assert.equal(visible(true, '', 'SOLI', 'Bergabung'), 'Bergabung', 'a member code taken keeps its good news');
+for (const language of ['id', 'en']) assert.ok(MESSAGES[language]['checkout.errVoucherRefused']?.includes('{code}'));
 
 for (const language of ['id', 'en']) {
   const text = MESSAGES[language]['checkout.errVoucherUnapplied'];
