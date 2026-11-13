@@ -1687,6 +1687,27 @@ main :is(a, figure, picture, div, span):has(> img) {
   transform: translateY(0);
 }
 
+/* The story honours "reduce motion" like the rest of the shop (eighth visitor audit, 13 Nov 2026: its
+   sections still slid in over 800 ms and the hero lines faded up over a second). Shown at once, in place. */
+@media (prefers-reduced-motion: reduce) {
+  .imm-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  [class^="imm-"],
+  [class*=" imm-"] {
+    animation: none !important;
+  }
+  /* These start at opacity 0 and only the animation brought them in. */
+  .imm-hero__eyebrow,
+  .imm-hero__script,
+  .imm-hero__title,
+  .imm-hero__subtitle {
+    opacity: 1;
+  }
+}
+
 .imm-quote {
   text-align: center;
   border-top: 1px solid var(--imm-border);

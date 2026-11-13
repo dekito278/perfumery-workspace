@@ -388,6 +388,15 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
   user-select: none;
 }
 
+/* In forced colours the 6% tint is replaced by the system text colour, and the watermark became solid
+   letters over the product photo and the bespoke heading (eighth visitor audit, 13 Nov 2026). It is
+   ornament (aria-hidden), so it stands down there; the perfume's script name is still printed under it. */
+@media (forced-colors: active) {
+  .ng-script-mark {
+    display: none;
+  }
+}
+
 /* --- Header ---------------------------------------------------------------------------------------- */
 
 .ng-header-wrap {

@@ -53,6 +53,16 @@ assert.match(header, /heading\.focus\(\);/, 'and it moves the focus, not only th
 assert.match(read('pages', 'HomePage.jsx'), /srcSet=\{srcSet\(siteImages\['home-newsletter'\]\) \|\| FALLBACK_LIBRARY_SRCSET\}/, 'the bundled photo has a phone-size copy');
 assert.doesNotMatch(read('pages', 'CheckoutPage.jsx'), /aria-label=\{t\('checkout\.namePlaceholder'\)\}/, 'the name field is named by its visible label');
 
+// Eighth audit, 13 Nov 2026.
+assert.match(read('pages', 'HomePage.jsx'), /<textPath href="#ng-ring-path" textLength="829" lengthAdjust="spacing">\{t\('home\.ngRing'\)\}<\/textPath>/, 'the ring is written once, fitted to its circle');
+for (const page of ['CartPage.jsx', 'CheckoutPage.jsx']) {
+  assert.match(read('pages', page), /<span className="whitespace-nowrap text-lg">\{formatTotal\(/, `${page}: the pay bar total keeps its line at 320 px`);
+}
+const naskah = readFileSync(join(src, 'styles', 'naskah.css'), 'utf8');
+assert.match(naskah, /@media \(forced-colors: active\) \{\s*\.ng-script-mark \{\s*display: none;/, 'the script watermark stands down in forced colours');
+const storefrontCss = readFileSync(join(src, 'styles', 'storefront.css'), 'utf8');
+assert.match(storefrontCss, /@media \(prefers-reduced-motion: reduce\) \{\s*\.imm-section \{\s*opacity: 1;/, 'the product story honours reduced motion');
+
 const backToTop = read('components', 'storefront', 'BackToTop.jsx');
 assert.match(backToTop, /\/\^\\\/\(cart\|checkout\|bespoke\|payment\|pay\)\(\\\/\|\$\)\/\.test\(pathname\)/, 'no floating button on the pages that end in a form button');
 assert.match(backToTop, /if \(onFormPage\) return null;/);
