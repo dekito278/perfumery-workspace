@@ -187,7 +187,7 @@ const shell = readFileSync(join(root, '..', 'index.html'), 'utf8');
 const bootSource = shell.match(/var EN_PREFIX[\s\S]*?(?=\n\t*renderPublicBootFallback\(\);)/);
 const recoverySource = shell.match(/function renderManualRecovery\(\) \{[\s\S]*?\n\t\t\t\t\}/);
 assert.ok(bootSource && recoverySource, 'the boot screen could not be found in index.html — the derivation broke');
-const bootAt = (pathname, { shop, noscript = '' }) => {
+const bootAt = (pathname, { shop, noscript = '', canonical = '' }) => {
   const page = { innerHTML: '', querySelector: (selector) => (selector === 'noscript' && noscript ? { textContent: noscript } : null) };
   // Enough of an element for the boot script to read a heading and a lead out of the <noscript> markup.
   const createElement = () => ({
@@ -198,7 +198,11 @@ const bootAt = (pathname, { shop, noscript = '' }) => {
       return found ? { innerHTML: found[1] } : null;
     },
   });
-  const fakeDocument = { getElementById: () => page, createElement, documentElement: { classList: { contains: (name) => shop && name === 'boot-shop' } } };
+  const fakeDocument = {
+    getElementById: () => page,
+    createElement,
+    querySelector: (selector) => (selector === 'link[rel=canonical]' && canonical ? { href: canonical } : null),
+    documentElement: { classList: { contains: (name) => shop && name === 'boot-shop' } } };
   const run = new Function('window', 'document', `${bootSource[0]}\n${recoverySource[0]}\n`
     + 'renderPublicBootFallback(); var boot = arguments[2].innerHTML; renderManualRecovery();'
     + ' return { boot: boot, recovery: arguments[2].innerHTML };');
@@ -216,6 +220,11 @@ const prerendered = '<main class="app-boot-fallback" aria-label="SOLIVAGANT" dat
   + '<p class="app-boot-description">Objek parfum terbatas.</p><p class="app-boot-description">Toko ini butuh JavaScript.</p></div></main>';
 assert.equal(bootAt('/catalog', { shop: true, noscript: prerendered }).boot, 'SOLIVAGANT Koleksi Objek parfum terbatas.',
   'a prerendered page says where the buyer is while it loads');
+assert.equal(bootAt('/catalog', { shop: true, noscript: prerendered, canonical: 'https://www.solivagantscent.com/catalog' }).boot,
+  'SOLIVAGANT Koleksi Objek parfum terbatas.', 'its own address');
+// The English shell also answers /en/cart (eighth audit, 13 Nov 2026): its home words are not the cart's.
+assert.equal(bootAt('/en/cart', { shop: true, noscript: prerendered, canonical: 'https://www.solivagantscent.com/en/home' }).boot, 'SOLIVAGANT',
+  'a file served for another address shows the wordmark alone');
 assert.equal(bootAt('/catalog', { shop: true, noscript: prerendered.replace(' data-boot-page', '') }).boot, 'SOLIVAGANT',
   'and only a page the build marked as its own — the generic shell keeps the wordmark alone');
 assert.match(bootAt('/studio', { shop: false }).boot, /Memuat Studio/, 'the Studio keeps its own boot screen');

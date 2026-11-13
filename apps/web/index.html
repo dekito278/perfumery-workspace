@@ -297,15 +297,22 @@
 	<body>
 		<div id="root">
 			<noscript>
-				<main class="app-boot-fallback" aria-label="Solivagant app requires JavaScript">
-					<div class="app-boot-shell">
-						<section class="app-boot-status">
-							<div>
-								<p>App initialization</p>
-								<h1>JavaScript diperlukan</h1>
-								<p class="app-boot-description">Aktifkan JavaScript untuk membuka storefront, studio, cart, checkout, dan tracking order.</p>
-							</div>
-						</section>
+				<!-- The page every address without its own prerendered file falls back to (cart, checkout, tracking,
+				     a perfume added after the last build). It said "App initialization / JavaScript diperlukan /
+				     storefront, studio, cart…": Studio's words, half English, and no way on (eighth visitor audit,
+				     13 Nov 2026). The shop's own words in both languages, and the pages that read without JavaScript. -->
+				<main class="app-boot-fallback" aria-label="SOLIVAGANT">
+					<div>
+						<p>SOLIVAGANT</p>
+						<h1>Parfum artisan oleh Dekito</h1>
+						<p class="app-boot-description">Keranjang, checkout, dan lacak pesanan butuh JavaScript. Aktifkan JavaScript di browsermu, atau mulai dari halaman berikut.</p>
+						<p class="app-boot-description" lang="en">The cart, checkout and order tracking need JavaScript. Turn it on in your browser, or start from these pages.</p>
+						<div class="app-boot-links">
+							<a href="/home">Beranda</a>
+							<a href="/catalog">Katalog</a>
+							<a href="/help">Bantuan</a>
+							<a href="/en/home" lang="en">English shop</a>
+						</div>
 					</div>
 				</main>
 			</noscript>
@@ -334,7 +341,18 @@
 					if (document.documentElement.classList.contains('boot-shop')) {
 						var pageWords = '';
 						var slot = root.querySelector('noscript');
-						if (slot && slot.textContent.indexOf('data-boot-page') !== -1) {
+						// Only on the page the file was written for: the English shell also answers /en/cart and the
+						// Indonesian journal file answers /en/journal, and their words would name another page.
+						var canonical = document.querySelector('link[rel=canonical]');
+						var here = window.location.pathname.replace(/\/$/, '') || '/';
+						var own = true;
+						if (canonical) {
+							try {
+								var there = new URL(canonical.href).pathname.replace(/\/$/, '') || '/';
+								own = there === here || (here === EN_PREFIX && there === EN_PREFIX + '/home');
+							} catch (e) { own = false; }
+						}
+						if (own && slot && slot.textContent.indexOf('data-boot-page') !== -1) {
 							var holder = document.createElement('div');
 							holder.innerHTML = slot.textContent;
 							var heading = holder.querySelector('h1');
