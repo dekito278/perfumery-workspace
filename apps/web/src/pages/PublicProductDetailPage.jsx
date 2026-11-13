@@ -280,8 +280,12 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               <span className="text-ng-bone">{named.name}</span>
             </nav>
 
-            <div className="grid items-start gap-10 md:grid-cols-2 md:gap-[72px]">
-              <div className="relative">
+            {/* grid-cols-1 (= minmax(0,1fr)) and min-w-0: with no column template on a phone the column grew to
+                its widest child — Wongka's seven-thumbnail strip, a 56px title — and the page ran 444-516px
+                wide on a 390px screen, cutting off the description and "Tambah ke keranjang" (third visitor
+                audit, 13 Nov 2026). */}
+            <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-2 md:gap-[72px]">
+              <div className="relative min-w-0">
                 {/* Every photo the product has, with zoom — the gallery the phone page always had and the
                     desktop page never showed. One page for both now, so both get it. */}
                 <ProductGallery product={product} visualClassName="aspect-[4/5]" imageFit="cover" priority />
@@ -290,10 +294,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 ) : null}
               </div>
 
-              <div className="ng-pdp__info flex flex-col gap-7">
+              <div className="ng-pdp__info flex min-w-0 flex-col gap-7">
                 <p className="ng-mono m-0 text-ng-ember">{cardLabels(product).join(' · ')}</p>
                 <div>
-                  <h1 className="ng-display text-[56px] font-normal md:text-[88px]">{named.name}</h1>
+                  <h1 className="ng-display text-[clamp(38px,12vw,56px)] font-normal [overflow-wrap:anywhere] md:text-[clamp(56px,6.5vw,88px)]">{named.name}</h1>
                   {named.script ? <p className="m-0 mt-2.5 font-ng-java text-[28px] text-ng-ash">{named.script}</p> : null}
                 </div>
 
