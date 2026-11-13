@@ -54,4 +54,14 @@ assert.match(read('pages', 'CartPage.jsx'), /if \(voucher\.message\) codeMessage
   }
 }
 assert.match(read('pages', 'CheckoutPage.jsx'), /const pickArea = async \(destination\) => \{[\s\S]{0,600}target\?\.focus\(\);/, 'checkout: choosing an area keeps the focus');
+// Seventh audit, 13 Nov 2026: with every bottle of a size in the basket the product page button says so and
+// leads to the cart; the gift dialog that holds the focus after an add offers the way to the cart itself.
+{
+  const pdp = read('pages', 'PublicProductDetailPage.jsx');
+  assert.match(pdp, /const allInCart = !soldOut && Number\.isFinite\(variantStockCap\) && variantStockCap > 0 && inCartQty >= variantStockCap;/);
+  assert.match(pdp, /if \(allInCart\) \{\s*navigate\('\/cart'\);/, 'a press at the cap opens the cart');
+  const prompt = read('components', 'storefront', 'FreeVialPrompt.jsx');
+  assert.match(prompt, /<Link to="\/cart"[\s\S]{0,120}\{t\('pdp\.viewCart'\)\}/, 'the gift dialog has a way to the cart');
+  assert.match(prompt, /querySelectorAll\('button:not\(\[disabled\]\), a\[href\]'\)/, 'inside its focus loop');
+}
 console.log('stockAndSoldOut selfcheck OK (an add the stock stops is said; a sold-out page offers a way back)');

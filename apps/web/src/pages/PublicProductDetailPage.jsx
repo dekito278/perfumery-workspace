@@ -67,7 +67,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const copy = productCopyFor(product, region);
   const productsLoading = Boolean(studioProducts.loading);
   const { story: supabaseStory, loading: storyLoading } = useProductStory(slug);
-  const { addItem } = useCart();
+  const { addItem, items: cartItems } = useCart();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
   const [selectedVariantId, setSelectedVariantId] = useState('');
@@ -161,8 +161,19 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
   const soldOut = !selectedAvailable;
   const scarcity = soldOut ? '' : getScarcityLabel(selectedVariant?.stock, t);
+  // Every bottle of this size is already in the basket (seventh visitor audit, 13 Nov 2026: the button
+  // went back to "Tambah ke keranjang" beside "Tersisa 2 botol" with both in the cart, and a press said
+  // nothing changed). Said on the button, which stays focusable and points to the cart.
+  const thisCartSlug = `${product.slug}-${selectedVariant?.id || selectedSize}`;
+  const inCartQty = (cartItems || []).filter((item) => item.slug === thisCartSlug).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const variantStockCap = Number(selectedVariant?.stock);
+  const allInCart = !soldOut && Number.isFinite(variantStockCap) && variantStockCap > 0 && inCartQty >= variantStockCap;
 
   const handleAddToCart = () => {
+    if (allInCart) {
+      navigate('/cart');
+      return;
+    }
     if (soldOut) {
       toast.error(t('catalog.outOfStockToast', { name: plainName(product.name) }));
       return;
@@ -358,6 +369,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                   <button ref={addBtnRef} type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => handleAddToCart()} disabled={soldOut}>
                     {soldOut ? (
                       <>{t('pdp.soldOut')}</>
+                    ) : allInCart ? (
+                      <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.allInCart')}</>
                     ) : lastAddedSlug === product.slug ? (
                       <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.inCart')}</>
                     ) : (
