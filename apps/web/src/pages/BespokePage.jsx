@@ -36,6 +36,8 @@ import { onEnter } from '@/utils/onEnter.js';
 import { areaQueryFromAddress, destinationSearchText, pickConfidentDestination } from '@/utils/areaFromAddress.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { getCustomerAccount } from '@/services/customerService.js';
+import { useShippingDestination } from '@/hooks/useShippingDestination.js';
+import { countryNameFor, destinationOptions as countryGroups } from '@/utils/shippingDestination.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -506,6 +508,7 @@ const BespokePage = () => {
   // filed under the customer it belongs to rather than a fresh code; a guest's history is matched by the
   // order server as before. A draft or anything already typed is never overwritten.
   const { currentUser } = useAuth();
+  const { country: destinationCountry, setCountry: setDestinationCountry } = useShippingDestination();
   useEffect(() => {
     if (!currentUser) return undefined;
     let cancelled = false;
@@ -841,7 +844,7 @@ const BespokePage = () => {
             <div className="ng-panel grid items-end gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" data-reveal>
               <div className="flex flex-col gap-5">
                 <p className="ng-mono m-0 text-ng-ash">{t('bsp.summaryEyebrow')}</p>
-                <p className="m-0 font-ng-display text-[36px] italic leading-tight">{form.perfumeName || t('bsp.notFilled')}</p>
+                <p className="m-0 font-ng-display text-[36px] italic leading-tight">{form.perfumeName || t('bsp.untitled')}</p>
                 <dl className="m-0 flex flex-col gap-3 border-t border-ng-bone/15 pt-4 text-[15px]">
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.scent')}</dt><dd className="m-0 text-right">{form.scentDescription || t('bsp.notFilled')}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.bottle')}</dt><dd className="m-0 text-right">{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
@@ -865,9 +868,23 @@ const BespokePage = () => {
                 ) : (
                   <>
                     <p className="m-0">{t('bsp.waOrderWhy')}</p>
+                    {/* Where it goes: the brief asked for "shipping to my address" and never said which country
+                        (third visitor audit, 13 Nov 2026). The same shared choice the cart's picker writes. */}
+                    <label className="ng-label">
+                      <span className="ng-mono text-ng-dust">{t('intlQuote.countryLabel')}</span>
+                      <select className="ng-field" value={destinationCountry} onChange={(event) => setDestinationCountry(event.target.value)} aria-label={t('intlQuote.countryLabel')}>
+                        <option value="">{t('intlQuote.selectCountry')}</option>
+                        {countryGroups('en').map((group) => (
+                          <optgroup key={group.key} label={group.label}>
+                            {group.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </label>
                     <a
                       href={buildWhatsAppCheckoutUrl(buildBespokeEnquiryDraft({
                         t,
+                        destination: destinationCountry ? countryNameFor(destinationCountry, 'en') : '',
                         perfumeName: form.perfumeName,
                         scent: form.scentDescription || form.mood,
                         occasion: bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions),
@@ -876,7 +893,10 @@ const BespokePage = () => {
                       }), getStorefrontWhatsAppNumber())}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(event) => { if (needsScentFirst()) event.preventDefault(); }}
+                      onClick={(event) => {
+                        if (needsScentFirst()) { event.preventDefault(); return; }
+                        if (!destinationCountry) { event.preventDefault(); toast.error(t('intlQuote.pickFirst')); }
+                      }}
                       className="ng-btn ng-btn--lg ng-btn--block"
                     >
                       {t('bsp.waOrder')}

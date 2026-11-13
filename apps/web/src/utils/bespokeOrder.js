@@ -234,10 +234,11 @@ export const bespokeOccasionLabel = (t, value, options = []) => {
   return label || value || '';
 };
 
-export const buildBespokeEnquiryDraft = ({ t, perfumeName = '', scent = '', occasion = '', bottle = '', price = '' } = {}) => {
+export const buildBespokeEnquiryDraft = ({ t, perfumeName = '', scent = '', occasion = '', bottle = '', price = '', destination = '' } = {}) => {
   if (typeof t !== 'function') return '';
   const filled = (value) => String(value || '').trim() || '-';
   return t('bsp.waOrderDraft', {
+    destination: filled(destination),
     name: filled(perfumeName),
     scent: filled(scent),
     occasion: filled(occasion),

@@ -17,7 +17,11 @@ assert.doesNotMatch(page, /t\('bsp\.customerCode'\)|lookupCustomerByCode/, 'no S
 assert.match(page, /<input type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value=\{form\.contact\}/, 'the contact is a WhatsApp number');
 assert.match(page, /t\(isManualPayment \? 'bsp\.transferTotal' : 'checkout\.total'\)/, '"Total transfer" only when paying by transfer');
 assert.match(page, /onClick=\{\(\) => \{ if \(needsScentFirst\(\)\) return; setCheckoutOpen\(true\); \}\}/, 'no payment form for an empty brief');
-assert.match(page, /onClick=\{\(event\) => \{ if \(needsScentFirst\(\)\) event\.preventDefault\(\); \}\}/, 'and no WhatsApp brief saying "Scent: -"');
+assert.match(page, /if \(needsScentFirst\(\)\) \{ event\.preventDefault\(\); return; \}\s*if \(!destinationCountry\) \{ event\.preventDefault\(\); toast\.error\(t\('intlQuote\.pickFirst'\)\); \}/,
+  'and no WhatsApp brief saying "Scent: -" or going to no country (third audit: the brief never said where)');
+assert.match(page, /destination: destinationCountry \? countryNameFor\(destinationCountry, 'en'\) : ''/, 'the brief names the destination');
+assert.match(page, /\{countryGroups\('en'\)\.map/, 'from the country list — not the area-search results that share the old name');
+for (const language of ['id', 'en']) assert.match(MESSAGES[language]['bsp.waOrderDraft'], /\{destination\}/, `${language}: the brief has a destination line`);
 for (const language of ['id', 'en']) {
   assert.match(MESSAGES[language]['bsp.contact'], /WhatsApp/, `${language}: the field is named for WhatsApp`);
   assert.doesNotMatch(MESSAGES[language]['bsp.contactSectionBody'], /desain|design is chosen/i, `${language}: the lead describes the order, not the interface`);
