@@ -30,7 +30,7 @@ const vitePackageJsonPath = require.resolve('vite/package.json', {
 const viteBinPath = path.join(path.dirname(vitePackageJsonPath), 'bin', 'vite.js');
 const viteResult = runNode([viteBinPath, 'build', '--outDir', 'dist']);
 
-const BRAND_SUMMARY = 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual. Public storefront with a fragrance collection, bespoke consultation, and an editorial journal.';
+const BRAND_SUMMARY = 'Artisan perfume by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual. Public storefront with a fragrance collection, bespoke consultation, and an editorial journal.';
 
 const staticPublicPages = [
   {
@@ -40,16 +40,16 @@ const staticPublicPages = [
     leadKey: 'home.ngLead',
     idTitleKey: 'home.tab',
     idDescriptionKey: 'home.meta',
-    title: 'SOLIVAGANT - Artisan Perfumery Atelier by Dekito',
-    description: 'SOLIVAGANT is an artisan perfumery atelier by Dekito, crafting quiet fragrance objects from raw materials, memory, and personal ritual.',
+    title: 'SOLIVAGANT — Artisan perfume by Dekito',
+    description: 'SOLIVAGANT is artisan perfume by Dekito, crafting quiet fragrance objects from raw materials, memory, and personal ritual.',
     heading: 'SOLIVAGANT',
-    intro: 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.',
+    intro: 'Artisan perfume by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.',
     sections: [
       ['Fragrance Collection', 'A public catalog of perfume objects with notes, concentration, size variants, price, and availability.'],
       // Was "Request parfum custom through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari."
       // on the English home: half Indonesian, and a lead time Studio can now change (2026-11-03).
-      ['Bespoke Consultation', 'A perfume composed to order: tell the atelier the direction, choose the size, and send the request.'],
-      ['Journal', 'Editorial notes on scent memory, materials, atelier process, product stories, and perfumery culture.'],
+      ['Bespoke Consultation', 'A perfume composed to order: tell Dekito the direction, choose the size, and send the request.'],
+      ['Journal', 'Editorial notes on scent memory, materials, the blending process, product stories, and perfumery culture.'],
     ],
   },
   {
@@ -102,15 +102,15 @@ const staticPublicPages = [
     leadKey: 'about.p1',
     idTitleKey: 'about.tab',
     idDescriptionKey: 'about.meta',
-    title: 'About SOLIVAGANT - Artisan Perfume Atelier',
+    title: 'About SOLIVAGANT — Artisan perfume by Dekito',
     // The page a fragrance database editor reads before entering the house, so the prerendered copy
     // carries the same facts the live page does and states no founding year, because nobody has.
-    description: 'SOLIVAGANT is the artisan perfume atelier of Dekito, in Indonesia. Every bottle is blended and packed in the atelier and sold straight to the person who wears it.',
+    description: 'SOLIVAGANT is artisan perfume by Dekito, in Indonesia. Every bottle is blended and packed by Dekito and sold straight to the person who wears it.',
     heading: 'About SOLIVAGANT',
-    intro: 'SOLIVAGANT is the artisan perfume atelier of Dekito: scents built from raw materials, memory and ritual, blended and packed by the perfumer and sold straight from the atelier in Indonesia and abroad.',
+    intro: 'SOLIVAGANT is artisan perfume by Dekito: scents built from raw materials, memory and ritual, blended and packed by the perfumer and sold straight from Dekito\'s workbench in Indonesia and abroad.',
     sections: [
       ['The work', 'A scent is built from raw materials, memory and ritual, then tried again until it reads true.'],
-      ['Bespoke', 'For a scent that is not in the collection, the atelier composes one to order.'],
+      ['Bespoke', 'For a scent that is not in the collection, Dekito composes one to order.'],
     ],
   },
   {
@@ -121,7 +121,7 @@ const staticPublicPages = [
     idTitleKey: 'help.tab',
     idDescriptionKey: 'help.meta',
     title: 'Help & Policies - SOLIVAGANT',
-    description: 'How to order and pay, shipping, tracking, a damaged parcel, privacy, and how to reach the SOLIVAGANT atelier.',
+    description: 'How to order and pay, shipping, tracking, a damaged parcel, privacy, and how to reach Dekito at SOLIVAGANT.',
     heading: 'Help & policies',
     intro: 'Everything about an order at SOLIVAGANT, on one page.',
     sections: [
@@ -137,16 +137,16 @@ const staticPublicPages = [
     idTitleKey: 'journal.tab',
     idDescriptionKey: 'journal.meta',
     title: 'Journal - SOLIVAGANT',
-    description: 'SOLIVAGANT public editorial journal about scent memory, raw materials, atelier process, product stories, and perfumery culture.',
+    description: 'SOLIVAGANT public editorial journal about scent memory, raw materials, the blending process, product stories, and perfumery culture.',
     heading: 'Journal',
-    intro: 'Editorial notes from SOLIVAGANT on scent memory, raw materials, atelier process, product stories, and the culture of wearing fragrance.',
+    intro: 'Editorial notes from SOLIVAGANT on scent memory, raw materials, the blending process, product stories, and the culture of wearing fragrance.',
     // Replaced at build time by the live journal, for the same reason the catalogue above stopped
     // enumerating: these four titles were written once and the journal has moved on — measured
     // 30 Sep 2026, it held ONE published article and none of these was it. This stays only for a build
     // that cannot reach Supabase, so it names no articles.
     sections: [
       ['Scent memory', 'How a place, a gesture, or a remembered person becomes the structure of a brief.'],
-      ['Atelier process', 'Notes on materials, weighing, resting, and finishing a small perfume batch.'],
+      ['The blending process', 'Notes on materials, weighing, resting, and finishing a small perfume batch.'],
     ],
   },
 ];
