@@ -138,9 +138,27 @@ export const useCheckoutFlow = ({
   // Changing quantity changes the parcel weight, which changes the courier price. The previously quoted
   // rate stayed selected, so the buyer saw (and agreed to) an old shipping fee while the order was created
   // with it — force a re-quote instead (audit round 7).
+  //
+  // And re-quoted, not just cleared. Ninth visitor audit, 13 Nov 2026: a line the shop corrected down to its
+  // stock changed the weight after the area was chosen; the rate vanished, nothing asked again, and the page
+  // still said "Kami pilihkan ongkir paling hemat" over an empty list. With an area and a courier in hand,
+  // the parcel is priced again at its new weight — keeping the buyer's service when it is still offered.
+  const quotedWeightRef = useRef(shippingWeight);
   useEffect(() => {
+    const weightChanged = quotedWeightRef.current !== shippingWeight;
+    quotedWeightRef.current = shippingWeight;
+    const previousRate = selectedShipping;
     setSelectedShipping(null);
     setShippingOptions([]);
+    setShippingNotice('');
+    if (!weightChanged || !selectedDestination?.id || !selectedCourier || !items.length) return;
+    loadShippingRates(selectedDestination, {
+      autoSelectCheapest: true,
+      prefer: previousRate,
+      notice: 'Jumlah barang berubah, jadi ongkir dihitung ulang untuk berat paket yang baru.',
+    });
+    // Only the weight decides; the rest is read as it stands when it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shippingWeight]);
   const validPhoneContact = hasValidWhatsAppPhoneNumber(contact);
   // reconcileCartLines flags lines whose product left the catalog or ran out of stock. Letting them
@@ -317,7 +335,11 @@ export const useCheckoutFlow = ({
     }
   };
 
-  const loadShippingRates = async (destination, { courierCode = selectedCourier, autoSelectCheapest = false } = {}) => {
+  // Each quote gets a number; an answer for an older one (another weight, another area) is dropped, so a
+  // slow reply can never put back a rate the page has already replaced.
+  const shippingRequestRef = useRef(0);
+  const loadShippingRates = async (destination, { courierCode = selectedCourier, autoSelectCheapest = false, prefer = null, notice = '' } = {}) => {
+    const request = ++shippingRequestRef.current;
     setSelectedDestination(destination);
     setDeliveryArea(destination.label);
     setDestinationSearch(destination.label);
@@ -340,19 +362,24 @@ export const useCheckoutFlow = ({
         weight: shippingWeight,
         couriers: [courierCode],
       });
+      if (request !== shippingRequestRef.current) return;
       const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
       setShippingOptions(sortedRates);
-      if (autoSelectCheapest && sortedRates.length) {
-        setSelectedShipping(sortedRates[0]);
-        setShippingNotice(`Kami pilihkan ongkir paling hemat dari alamat: ${destination.label}. Kamu tetap bisa ganti layanan.`);
+      const sameService = prefer
+        ? sortedRates.find((rate) => rate.courierCode === prefer.courierCode && rate.service === prefer.service)
+        : null;
+      if ((sameService || autoSelectCheapest) && sortedRates.length) {
+        setSelectedShipping(sameService || sortedRates[0]);
+        setShippingNotice(notice || `Kami pilihkan ongkir paling hemat dari alamat: ${destination.label}. Kamu tetap bisa ganti layanan.`);
       }
       if (!sortedRates.length) {
         setShippingError('Belum ada ongkir untuk area ini');
       }
     } catch (error) {
+      if (request !== shippingRequestRef.current) return;
       setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pilih area atau kurir lain.'));
     } finally {
-      setShippingLoading(false);
+      if (request === shippingRequestRef.current) setShippingLoading(false);
     }
   };
 
@@ -383,6 +410,7 @@ export const useCheckoutFlow = ({
 
     try {
       if (selectedDestination?.id && String(selectedDestination.label || '').trim() === search) {
+        const request = ++shippingRequestRef.current;
         const rates = await getShippingRates({
           destinationId: selectedDestination.id,
           destination: selectedDestination,
@@ -391,6 +419,7 @@ export const useCheckoutFlow = ({
           weight: shippingWeight,
           couriers: [courierCode],
         });
+        if (request !== shippingRequestRef.current) return;
 
         if (rates.length) {
           const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
