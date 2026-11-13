@@ -535,7 +535,12 @@ export const finalizeRobots = (distRoot, siteUrl) => {
   const robotsPath = path.join(distRoot, 'robots.txt');
   if (!fs.existsSync(robotsPath)) return;
   const absolute = `Sitemap: ${siteUrl}/sitemap.xml`;
-  const current = fs.readFileSync(robotsPath, 'utf8');
+  // The reasoning stays in public/robots.txt for whoever edits it; the published file carries the rules
+  // only. Its comments described the private side to anyone who read it ("the mobile Studio (batches,
+  // formulas, raw materials, production costing)") — sixth visitor audit, 13 Nov 2026.
+  const current = fs.readFileSync(robotsPath, 'utf8')
+    .split('\n').filter((line) => !line.trimStart().startsWith('#')).join('\n')
+    .replace(/\n{3,}/g, '\n\n').trimStart();
   const next = /^Sitemap:.*/m.test(current)
     ? current.replace(/^Sitemap:.*/m, absolute)
     : `${current.trimEnd()}\n${absolute}\n`;

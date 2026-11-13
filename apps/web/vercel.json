@@ -204,6 +204,14 @@
       "destination": "/en/bespoke/index.html"
     },
     {
+      "source": "/en/journal",
+      "destination": "/journal/index.html"
+    },
+    {
+      "source": "/en/articles/:slug",
+      "destination": "/articles/:slug/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

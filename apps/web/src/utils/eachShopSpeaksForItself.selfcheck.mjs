@@ -119,6 +119,17 @@ for (const { route, body } of pageBlocks) {
 }
 assert.ok(bilingual >= 4, `only ${bilingual} prerendered pages describe themselves per shop`);
 
+// Sixth visitor audit, 13 Nov 2026: a shared /en/journal or /en/articles/<slug> link previewed as the
+// Indonesian HOME card, because the generic shell answered it. The English journal is still not a twin
+// (no English columns); the edge serves the article's own page, whose canonical names the Indonesian one.
+{
+  const vercel = JSON.parse(readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8'));
+  const rewrites = vercel.rewrites || [];
+  const at = (source) => rewrites.findIndex((rule) => rule.source === source);
+  assert.equal(rewrites[at('/en/articles/:slug')]?.destination, '/articles/:slug/index.html');
+  assert.equal(rewrites[at('/en/journal')]?.destination, '/journal/index.html');
+  assert.ok(at('/en/articles/:slug') < at('/(.*)') && at('/en/journal') < at('/(.*)'), 'before the catch-all');
+}
 console.log(`eachShopSpeaksForItself: ok (${checked} buyer canonicals, ${journalExempt} Indonesian on `
   + `purpose because there is no English journal; ${bilingual} prerendered pages describe themselves in `
   + 'their own language)');
