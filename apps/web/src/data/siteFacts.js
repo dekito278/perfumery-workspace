@@ -1,3 +1,4 @@
+import { normalizeProcessImages } from '../utils/processImages.js';
 // The shop's own facts that Dekito changes in Studio (Pengaturan toko), stored as one jsonb object in
 // storefront_site_settings. Until 2026-11-03 each was typed into the code, so only a developer could
 // change them ("cari kolom-kolom yang harusnya bisa saya edit tapi masih statis").
@@ -35,6 +36,8 @@ export const DEFAULT_SITE_FACTS = {
   brandCity: 'Bogor',
   brandFoundedYear: 2023,
   footerOwner: 'SOLIVAGANT by Dekito',
+  // Up to four of Dekito's own photos of the work, shown on About when set (brief P2-6). Never stock photos.
+  aboutProcessImages: [],
   journalCategories: DEFAULT_JOURNAL_CATEGORIES,
 };
 
@@ -83,6 +86,7 @@ export const normalizeSiteFacts = (input = {}) => {
     brandCity: text(raw.brandCity, DEFAULT_SITE_FACTS.brandCity),
     brandFoundedYear: whole(raw.brandFoundedYear, DEFAULT_SITE_FACTS.brandFoundedYear, 1900, 2100),
     footerOwner: text(raw.footerOwner, DEFAULT_SITE_FACTS.footerOwner),
+    aboutProcessImages: normalizeProcessImages(raw.aboutProcessImages),
     journalCategories: categories(raw.journalCategories),
   };
 };

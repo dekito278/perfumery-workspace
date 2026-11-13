@@ -64,6 +64,9 @@ export const emptyProduct = {
   mood: '',
   intensity: 'Medium',
   launchYear: '',
+  batchLabel: '',
+  batchSize: '',
+  processImages: [],
   wear: {},
   featured: true,
   limited: false,
@@ -385,6 +388,21 @@ const ProductForm = ({ product = null, onSaved, backTo = '' }) => {
             <span className={caption}>Tahun rilis</span>
             <input type="number" inputMode="numeric" min="1900" max="2100" value={form.launchYear ?? ''} onChange={(event) => updateField('launchYear', event.target.value)} placeholder="Contoh: 2025" className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <span className={hint}>Tampil di halaman produk sebagai &quot;Rilis …&quot;. Kosongkan bila belum pasti — tidak ditampilkan.</span>
+          </label>
+          <label>
+            <span className={caption}>Label batch</span>
+            <input value={form.batchLabel || ''} maxLength={40} onChange={(event) => updateField('batchLabel', event.target.value)} placeholder="Contoh: Batch 03" className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <span className={hint}>Tampil di dekat info stok, mis. &quot;Batch 03 · 40 botol&quot;. Kosongkan bila tidak dipakai.</span>
+          </label>
+          <label>
+            <span className={caption}>Jumlah botol per batch</span>
+            <input type="number" inputMode="numeric" min="1" max="99999" value={form.batchSize ?? ''} onChange={(event) => updateField('batchSize', event.target.value)} placeholder="Contoh: 40" className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <span className={hint}>Kosongkan bila tidak dipakai.</span>
+          </label>
+          <label className="md:col-span-2">
+            <span className={caption}>Foto proses (maks. 4, satu tautan per baris)</span>
+            <textarea value={(Array.isArray(form.processImages) ? form.processImages : []).join('\n')} onChange={(event) => updateField('processImages', event.target.value.split('\n'))} rows={3} placeholder={'https://.../menimbang.jpg\nhttps://.../packing.jpg'} className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <span className={hint}>Foto pengerjaan parfum ini oleh Dekito — menimbang, meracik, packing. Jangan foto stok. Tampil di halaman produk sebagai galeri kecil bila diisi.</span>
           </label>
           <label>
             <span className={caption}>Konsentrasi</span>

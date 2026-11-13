@@ -11,6 +11,7 @@ import { isFreeVialProduct } from '@/utils/freeVial.js';
 import { withoutNotesHeading } from '@/utils/shortNoteList.js';
 import { deleteProductImages } from '@/services/productImageStorageService.js';
 import { toLaunchYear } from '@/utils/launchYear.js';
+import { batchParts, normalizeProcessImages } from '@/utils/processImages.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
@@ -574,6 +575,12 @@ export const normalizeProduct = (input, existingProducts = []) => {
     // getPublicFragranceCatalog and still never appeared on a page: four explicit allowlists between
     // the row and the screen, and the field has to be written into every one of them.
     launchYear: toLaunchYear(input.launchYear),
+    // "Parfum karya" (P2-6): the batch this bottle comes from and photos of the work. All optional; a
+    // page shows them only when they are filled in.
+    batchLabel: batchParts(input).name,
+    batchSize: batchParts(input).size,
+    processImages: normalizeProcessImages(input.processImages),
+    hasBatchColumns: Boolean(input.hasBatchColumns),
     // "Kamu mungkin suka", picked in Studio (related_slugs). Was only ever set in the static seed file,
     // so for every live product the same-family rule was the whole feature.
     relatedFragrances: splitList(input.relatedFragrances),
@@ -626,6 +633,13 @@ const toDatabasePayload = (product) => ({
   base_notes_en: product.baseNotesEn,
   concentration: product.concentration,
   launch_year: product.launchYear ?? null,
+  // Only once the columns exist (supabase/manual/20261115110000_batch_and_process_photos.sql), or when the
+  // form holds a value: sending an unknown column would refuse EVERY product save until the SQL is run.
+  ...((product.hasBatchColumns || product.batchLabel || product.batchSize || product.processImages?.length) ? {
+    batch_label: product.batchLabel || null,
+    batch_size: product.batchSize ?? null,
+    process_image_urls: product.processImages || [],
+  } : {}),
   related_slugs: product.relatedFragrances || [],
   stock: product.stock,
   variants: product.variants,
@@ -669,6 +683,10 @@ const fromDatabaseRow = (row) => normalizeProduct({
   // Null until the atelier states it. Never derived from created_at, which is when this row was made
   // in this app and not when the perfume was released — the two are years apart on the older ones.
   launchYear: row.launch_year ?? null,
+  batchLabel: row.batch_label || '',
+  batchSize: row.batch_size ?? null,
+  processImages: normalizeProcessImages(row.process_image_urls),
+  hasBatchColumns: Object.prototype.hasOwnProperty.call(row || {}, 'batch_label'),
   stock: row.stock,
   variants: row.variants,
   tags: row.tags,

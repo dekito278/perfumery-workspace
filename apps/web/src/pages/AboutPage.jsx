@@ -1,4 +1,5 @@
 import { useSiteFacts } from '@/hooks/useSiteFacts.js';
+import ProcessGallery from '@/components/storefront/ProcessGallery.jsx';
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { brandFacts } from '@/data/brandProfile.js';
@@ -76,6 +77,7 @@ const AboutContent = () => {
 };
 
 const AboutPage = () => {
+  const siteFacts = useSiteFacts();
   const { t, region } = useTranslate();
   const head = (
     <Helmet>
@@ -96,6 +98,7 @@ const AboutPage = () => {
             <AboutContent />
           </div>
         </section>
+        <ProcessGallery images={siteFacts.aboutProcessImages} subject="SOLIVAGANT" headingKey="about.processHeading" />
         <StorefrontFooter />
       </main>
     </>

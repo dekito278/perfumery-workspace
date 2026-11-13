@@ -75,6 +75,11 @@ const SiteFactsForm = () => {
           <input value={form.footerOwner} onChange={(event) => update('footerOwner', event.target.value)} placeholder="SOLIVAGANT by Dekito" className={field} />
           <span className={hint}>Baris "© tahun …" di bawah setiap halaman toko.</span>
         </label>
+        <label className="grid gap-1.5 sm:col-span-2">
+          <span className={label}>Foto proses di halaman Tentang (maks. 4, satu tautan per baris)</span>
+          <textarea value={(Array.isArray(form.aboutProcessImages) ? form.aboutProcessImages : []).join('\n')} onChange={(event) => update('aboutProcessImages', event.target.value.split('\n'))} rows={3} placeholder={'https://.../meja-kerja.jpg'} className={`${field} !h-auto py-2`} />
+          <span className={hint}>Foto Dekito saat menimbang, meracik, atau packing. Jangan foto stok. Kosong = tidak ditampilkan.</span>
+        </label>
       </section>
 
       {/* Each of these is a promise to a buyer on the help page (/help). Empty = the sentence is not shown,
