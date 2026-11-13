@@ -32,4 +32,13 @@ for (const form of ['ProductForm.jsx', 'MobileProductForm.jsx']) {
   assert.match(source, /onClick=\{\(\) => makeCover\(image\)\}/, `${form}: every photo but the cover offers it`);
 }
 
+// Sixth visitor audit, 13 Nov 2026: every photo had the same alt, the strip did not say which was shown,
+// a 3x phone got 720px for a ~1050px slot, and the structured data listed one image of up to seven.
+{
+  const gallery = readFileSync(new URL('../components/storefront/ProductGallery.jsx', import.meta.url), 'utf8');
+  assert.match(gallery, /t\('a11y\.galleryPhoto', \{ number: activeIndex \+ 1, total: images\.length \}\)/, 'each photo names its place');
+  assert.match(gallery, /aria-current=\{index === activeIndex \? 'true' : undefined\}/, 'the shown thumbnail is marked');
+  assert.match(readFileSync(new URL('../services/productImageStorageService.js', import.meta.url), 'utf8'), /const PRODUCT_IMAGE_WIDTHS = \[[^\]]*1080\]/, 'a 1080w source exists');
+  assert.match(readFileSync(new URL('./seo.js', import.meta.url), 'utf8'), /image: images\.length \? images : undefined,/, 'JSON-LD lists every photo');
+}
 console.log('productImagesFillFrame selfcheck OK (photos fill their frame; the cover is one tap in Studio)');

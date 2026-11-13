@@ -170,6 +170,8 @@ export const buildBreadcrumbJsonLd = (crumbs = [], origin = getSiteOrigin(), pre
 export const buildProductJsonLd = (product, { origin = getSiteOrigin(), canonicalUrl, offer = null, description = '' } = {}) => {
   if (!product) return null;
   const image = toAbsoluteUrl(product.imageUrl || product.images?.[0] || DEFAULT_SHARE_IMAGE, origin);
+  // Every photo the gallery shows, the cover first (sixth visitor audit, 13 Nov 2026: one of up to seven).
+  const images = [...new Set([image, ...(product.images || []).map((url) => toAbsoluteUrl(url, origin))].filter(Boolean))];
   const url = canonicalUrl || toAbsoluteUrl(`/catalog/${product.slug}`, origin);
   const priceNumber = Number(product.priceNumber || 0);
 
@@ -178,7 +180,7 @@ export const buildProductJsonLd = (product, { origin = getSiteOrigin(), canonica
     '@type': 'Product',
     name: product.name,
     description: description || product.description || product.story || product.subtitle,
-    image: image ? [image] : undefined,
+    image: images.length ? images : undefined,
     category: product.category || product.publicCategory || undefined,
     brand: { '@type': 'Brand', name: SITE_NAME },
     url,

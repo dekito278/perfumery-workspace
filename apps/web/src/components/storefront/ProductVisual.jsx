@@ -33,6 +33,8 @@ const ProductVisual = ({
   priority = false,
   sizes = '(max-width: 767px) 46vw, 320px',
   imageFit = 'contain',
+  // The gallery names each photo's place ("foto 2 dari 5"); everywhere else the product names itself.
+  alt = '',
 }) => {
   const { t } = useTranslate();
   const [imageFailed, setImageFailed] = useState(false);
@@ -71,7 +73,7 @@ const ProductVisual = ({
       {hasImage ? (
         <img
           src={optimizedImageUrl}
-          alt={product?.name ? `${product.name}${product.category ? ` — ${product.category}` : ''}` : 'Solivagant fragrance'}
+          alt={alt || (product?.name ? `${product.name}${product.category ? ` — ${product.category}` : ''}` : 'Solivagant fragrance')}
           // !h-full, not h-full: `.solivagant-editorial-home img { height: auto }` (storefront.css) outranks a
           // single class, so every product photo took its FILE's height instead of the frame's — a square
           // photo in a 4:5 frame left a dark band under it (Aquilaria, visitor audit 13 Nov 2026).
