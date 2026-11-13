@@ -18,10 +18,12 @@ assert.match(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'p
 // live in the address now.
 {
   const catalog = readFileSync(new URL('../pages/CatalogPage.jsx', import.meta.url), 'utf8');
+  assert.match(catalog, /filteredProducts\.length !== products\.length \? t\('catalog\.ngEyebrowFiltered'/, 'a narrowed list says how many of how many');
   assert.match(catalog, /const familyParam = searchParams\.get\('family'\) \|\| '';/, 'the family is read from the address');
   for (const key of ['q', 'occasion', 'time', 'weather']) {
     assert.match(catalog, new RegExp(`write\\('${key}', `), `${key} is written back to the address`);
   }
-  assert.match(catalog, /\}, \{ replace: true \}\);\s*\}, \[searchTerm, wearSelection, setSearchParams\]\);/, 'without a history entry per keystroke');
+  assert.match(catalog, /if \(next\.toString\(\) !== searchParams\.toString\(\)\) setSearchParams\(next, \{ replace: true \}\);/,
+    'without a history entry per keystroke, and never for an unchanged address — that navigation cancelled the scroll restore on Back');
 }
 console.log('catalogSearch selfcheck OK (the shop\'s words and the catalogue\'s words find each other)');
