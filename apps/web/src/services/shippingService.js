@@ -4,6 +4,7 @@ import {
 } from '@/services/shippingPromotionService.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '@/utils/itemWeight.js';
 import { weighFreeVialLines } from '@/utils/freeVial.js';
+import { courierAreaSpelling, rankDestinations, resultsNameTheArea } from '@/utils/areaFromAddress.js';
 
 // A body that is not JSON is a BROKEN service, never an empty result.
 //
@@ -36,14 +37,38 @@ const requestJson = async (url, options = {}) => {
   return data;
 };
 
+const fetchDestinations = async (search) => {
+  const data = await requestJson(`/api/shipping/destinations?search=${encodeURIComponent(search)}`);
+  return Array.isArray(data.destinations) ? data.destinations : [];
+};
+
+// "Not found" from the courier is an answer (an empty list), not a broken service.
+const fetchDestinationsOrNone = (search) => fetchDestinations(search).catch((error) => {
+  if (/not found/i.test(String(error?.message || ''))) return [];
+  throw error;
+});
+
+/**
+ * The destination search, in the courier list's spelling and with what the buyer typed first
+ * (utils/areaFromAddress.js). "Gedongtengen, Yogyakarta" came back as Tegalrejo and Jetis: the courier
+ * search leans on the city when it cannot place the kecamatan. When no result names the kecamatan, the
+ * kecamatan is searched on its own too and both lists are offered, best first.
+ */
 export const searchShippingDestinations = async (query) => {
-  const search = String(query || '').trim();
+  const search = courierAreaSpelling(String(query || '').trim());
   if (search.length < 3) {
     return [];
   }
 
-  const data = await requestJson(`/api/shipping/destinations?search=${encodeURIComponent(search)}`);
-  return Array.isArray(data.destinations) ? data.destinations : [];
+  const found = await fetchDestinationsOrNone(search);
+  const firstPart = search.split(',')[0].trim();
+  let combined = found;
+  if (search.includes(',') && firstPart.length >= 3 && !resultsNameTheArea(search, found)) {
+    const more = await fetchDestinationsOrNone(firstPart).catch(() => []);
+    const seen = new Set(found.map((destination) => destination.id));
+    combined = [...found, ...more.filter((destination) => !seen.has(destination.id))];
+  }
+  return rankDestinations(search, combined);
 };
 
 export const getShippingRates = async ({
