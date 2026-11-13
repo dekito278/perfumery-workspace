@@ -117,6 +117,13 @@ const PublicHeader = () => {
   }, [megaOpen]);
 
   const toggleMega = useCallback(() => setMegaOpen((prev) => !prev), []);
+  const skipToHeading = useCallback((event) => {
+    const heading = document.querySelector('main h1') || document.querySelector('h1');
+    if (!heading) return;
+    event.preventDefault();
+    if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+    heading.focus();
+  }, []);
 
   // Three quick taps on the wordmark are the OWNER's way into Studio — the gesture the phone storefront's
   // header carried until it retired (2026-10-31), now on the one header every screen shares. The first
@@ -141,6 +148,10 @@ const PublicHeader = () => {
 
   return (
     <div ref={menuRef} className={`ng-header-wrap${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`}>
+      {/* The first tab stop on every shop page: past the header to the page's own heading (seventh visitor
+          audit, 13 Nov 2026: 19 presses to reach "Tambah ke keranjang", 10 to the first checkout field; only
+          the catalogue had a skip link). Invisible until focused. */}
+      <a href="#main-heading" className="skip-to-results" onClick={skipToHeading}>{t('nav.skipToContent')}</a>
       <PriceChangeNotice />
       <SwitchToEnglishHint />
       <header className="ng-header">

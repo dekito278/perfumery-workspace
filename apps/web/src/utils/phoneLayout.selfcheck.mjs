@@ -45,6 +45,10 @@ assert.match(read('pages', 'PublicJournalPage.jsx'), /<h2 className="m-0 font-ng
 assert.match(read('pages', 'CartPage.jsx'), /className="inline-flex min-h-\[44px\] items-center self-start font-ng-display/, 'the cart name link is 44px tall');
 assert.match(read('pages', 'BespokePage.jsx'), /<p className="m-0 flex max-w-\[62ch\] flex-col gap-1 text-\[15px\] text-ng-dust">/, 'the bespoke floor note keeps a measure');
 
+// Every shop page starts with a way past the header (seventh audit, 13 Nov 2026).
+assert.match(header, /<a href="#main-heading" className="skip-to-results" onClick=\{skipToHeading\}>\{t\('nav\.skipToContent'\)\}<\/a>/);
+assert.match(header, /heading\.focus\(\);/, 'and it moves the focus, not only the scroll');
+
 const backToTop = read('components', 'storefront', 'BackToTop.jsx');
 assert.match(backToTop, /\/\^\\\/\(cart\|checkout\|bespoke\|payment\|pay\)\(\\\/\|\$\)\/\.test\(pathname\)/, 'no floating button on the pages that end in a form button');
 assert.match(backToTop, /if \(onFormPage\) return null;/);
