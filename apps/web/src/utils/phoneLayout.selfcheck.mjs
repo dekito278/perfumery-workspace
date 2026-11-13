@@ -28,6 +28,16 @@ assert.match(home, /<div className="ng-container grid grid-cols-1 items-center g
   'the featured block has a column template on a phone');
 assert.match(home, /<h2 id="home-featured-title" className="ng-display text-\[clamp\(38px,12vw,56px\)\][^"]*\[overflow-wrap:anywhere\]/, 'and its name scales and wraps');
 
+// The site menu (fourth audit, 13 Nov 2026): a panel of links, not role="menu"; Tab out of it closes it;
+// Escape hands focus back to the button; on a phone the page behind it does not scroll.
+const header = read('components', 'storefront', 'PublicHeader.jsx');
+assert.doesNotMatch(header, /role="menu(item)?"/, 'the menu is links in a <nav>, not an application menu');
+assert.match(header, /<nav id="site-menu" className="ng-menu" aria-label=\{t\('nav\.siteMenu'\)\}>/);
+assert.match(header, /aria-controls="site-menu"/);
+assert.match(header, /handleFocusOut[\s\S]{0,160}!menuRef\.current\.contains\(e\.relatedTarget\)\) setMegaOpen\(false\)/, 'focus leaving the menu closes it');
+assert.match(header, /setMegaOpen\(false\);\s*menuButtonRef\.current\?\.focus\(\);/, 'Escape returns focus to the button');
+assert.match(header, /if \(phone\) \{\s*const release = lockBodyScroll\(\);/, 'the page behind a phone menu stays put');
+
 const backToTop = read('components', 'storefront', 'BackToTop.jsx');
 assert.match(backToTop, /\/\^\\\/\(cart\|checkout\|bespoke\|payment\|pay\)\(\\\/\|\$\)\/\.test\(pathname\)/, 'no floating button on the pages that end in a form button');
 assert.match(backToTop, /if \(onFormPage\) return null;/);
