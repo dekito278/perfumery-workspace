@@ -31,7 +31,11 @@ export const relatedFor = (product, catalog = [], limit = 4) => {
   sameCategory.forEach((item) => taken.add(item.slug));
   const rest = others.filter((item) => !taken.has(item.slug));
 
-  return [...explicit, ...sameCategory, ...rest].slice(0, limit);
+  // A perfume that cannot be bought goes to the back (sixth visitor audit, 13 Nov 2026: Sudra, "Stok habis",
+  // was one of four suggestions on .Wayback). Kept, not dropped, so a small catalogue still fills the row.
+  const buyable = (item) => !item.publicStatus || item.publicStatus === 'Available';
+  const ordered = [...explicit, ...sameCategory, ...rest];
+  return [...ordered.filter(buyable), ...ordered.filter((item) => !buyable(item))].slice(0, limit);
 };
 
 export default relatedFor;

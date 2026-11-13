@@ -224,6 +224,10 @@ const PaymentTotalBreakdown = ({ session }) => {
 // Shared success state. A paid order must never be shown a live payment panel again — the DOKU return
 // URL lands back here with the order already paid, and the iframe invited a second payment for the same
 // invoice (audit round 7).
+// "Lacak pesanan" goes to the tracking page with the order already looked up — not to the account page,
+// where a guest met a Google sign-in (sixth visitor audit, 13 Nov 2026).
+const trackingPathFor = (orderNumber) => (orderNumber ? `/track-order/${encodeURIComponent(orderNumber)}` : '/track-order');
+
 const PaymentSuccessPanel = ({ orderNumber, customerCode, method }) => {
   const { t } = useTranslate();
   return (
@@ -237,8 +241,8 @@ const PaymentSuccessPanel = ({ orderNumber, customerCode, method }) => {
         {t('pay.thanks', { method: method ? ` ${method}` : '', order: orderNumber })}
       </p>
       <div className="mt-5 flex justify-center gap-2">
-        {customerCode ? (
-          <Link to={`/customer?code=${customerCode}`} className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
+        {orderNumber ? (
+          <Link to={trackingPathFor(orderNumber)} className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
             {t('track.title')}
           </Link>
         ) : null}
@@ -306,7 +310,7 @@ const PaymentFrame = ({ session }) => {
     },
   }[frameStatus];
   const customerCode = session.customerCode || '';
-  const orderTrackingPath = `/customer?code=${customerCode}`;
+  const orderTrackingPath = trackingPathFor(session.orderNumber || session.invoiceNumber);
   const currentPaymentTone = paymentStatusTone[session.paymentStatus || 'pending'] || paymentStatusTone.pending;
   // Not session.paymentExpiresAt: manual transfer never has one, and it is the path where somebody is
   // about to move money into a reservation that expires.
@@ -553,7 +557,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
   const [proofFile, setProofFile] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const customerCode = session.customerCode || '';
-  const orderTrackingPath = `/customer?code=${customerCode}`;
+  const orderTrackingPath = trackingPathFor(session.orderNumber || session.invoiceNumber);
   const orderNumber = session.orderNumber || session.invoiceNumber;
   // One source for the number, the same one the footer reads. Rendered only when configured.
   const whatsappNumber = getStorefrontWhatsAppNumber();
@@ -917,7 +921,7 @@ const EmptyPaymentState = ({ orderNumber, orderFound = null, loading = false, on
       <Link to="/catalog" className="inline-flex h-11 items-center rounded-none bg-ng-bone px-5 text-sm font-bold text-ng-ink">
         {t('mcheckout.openCatalog')}
       </Link>
-      <Link to="/customer" className="inline-flex h-11 items-center rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
+      <Link to={trackingPathFor(orderNumber)} className="inline-flex h-11 items-center rounded-none border border-ng-bone/30 bg-transparent px-5 text-sm font-bold text-ng-bone">
         {t('track.title')}
       </Link>
       {orderNumber && onRefresh ? (

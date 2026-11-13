@@ -9,28 +9,29 @@ import assert from 'node:assert/strict';
 import {
   SCHEMA_IN_STOCK,
   SCHEMA_OUT_OF_STOCK,
-  SCHEMA_PRE_ORDER,
   schemaAvailability,
 } from './schemaAvailability.js';
 
 // The two products that started this.
-assert.equal(schemaAvailability({ stock: 0, variants: [{ size: '30 ml', stock: 0 }] }), SCHEMA_PRE_ORDER,
-  'a product with no stock is sold made-to-order, and must not be advertised as in stock');
+// Since 13 Nov 2026 an empty perfume is not sold at all ("Stok habis", the button off), so the data says
+// OutOfStock — it said PreOrder for Sudra while the page said sold out (sixth visitor audit).
+assert.equal(schemaAvailability({ stock: 0, variants: [{ size: '30 ml', stock: 0 }] }), SCHEMA_OUT_OF_STOCK,
+  'a product with no stock is sold out, as its page says, and must not be advertised as in stock or pre-order');
 assert.equal(schemaAvailability({ stock: 12, variants: [{ size: '30 ml', stock: 12 }] }), SCHEMA_IN_STOCK);
 
 // Variant stock is the real total; a stale product-level count must not override it either way.
 assert.equal(schemaAvailability({ stock: 0, variants: [{ stock: 0 }, { stock: 3 }] }), SCHEMA_IN_STOCK,
   'one variant in stock means the product can be bought today');
-assert.equal(schemaAvailability({ stock: 9, variants: [{ stock: 0 }, { stock: 0 }] }), SCHEMA_PRE_ORDER,
+assert.equal(schemaAvailability({ stock: 9, variants: [{ stock: 0 }, { stock: 0 }] }), SCHEMA_OUT_OF_STOCK,
   'every variant empty means nothing ships today, whatever the product row says');
 
-// Discontinued is the one case that is genuinely unavailable rather than made to order.
+// Discontinued reads the same.
 assert.equal(schemaAvailability({ stock: 0, variants: [], status: 'Habis' }), SCHEMA_OUT_OF_STOCK);
 assert.equal(schemaAvailability({ stock: 0, variants: [], status: 'Discontinued' }), SCHEMA_OUT_OF_STOCK);
 
 // With no numbers at all, fall back to the storefront's words.
-assert.equal(schemaAvailability({ status: 'Made to order' }), SCHEMA_PRE_ORDER);
-assert.equal(schemaAvailability({ status: 'Inquire' }), SCHEMA_PRE_ORDER,
+assert.equal(schemaAvailability({ status: 'Made to order' }), SCHEMA_OUT_OF_STOCK);
+assert.equal(schemaAvailability({ status: 'Inquire' }), SCHEMA_OUT_OF_STOCK,
   "'Inquire' is what a variant with no stock is called — it is not availability");
 assert.equal(schemaAvailability({ status: 'Available' }), SCHEMA_IN_STOCK);
 assert.equal(schemaAvailability({}), SCHEMA_IN_STOCK, 'nothing known at all stays optimistic, as before');
