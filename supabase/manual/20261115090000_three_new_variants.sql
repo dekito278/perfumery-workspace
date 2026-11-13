@@ -7,7 +7,9 @@
 --   Ambar Segara  30 ml   Rp2.980.000 member = same      US$180   stock 0  (not given yet) — Solivagant Reserve
 --
 -- WHAT IS DELIBERATELY EMPTY — Dekito fills these in Studio; nothing about the scent is invented here:
---   description / description_en, notes, the note pyramid, mood, launch year. The cover image is a plain
+--   description / description_en, the note pyramid, mood, launch year. `notes` must not be blank
+--   (storefront_products_notes_not_blank), so it holds 'Eau de Parfum' — true, and no claim about the scent —
+--   until Dekito writes the real notes in Studio. The cover image is a plain
 --   name card (SOLIVAGANT · name · line), served from the site at /brand/covers/<slug>.jpg. Replace it with
 --   a bottle photo in Studio when there is one.
 --
@@ -26,7 +28,7 @@ insert into public.storefront_products (
   slug, name, category, price_number, size, notes, concentration, stock, variants, tags, limited, reserve,
   featured, popularity, intensity, image_url, image_urls, source
 )
-select v.slug, v.name, v.category, v.price, '30 ml', '', 'Eau de Parfum', v.stock,
+select v.slug, v.name, v.category, v.price, '30 ml', 'Eau de Parfum', 'Eau de Parfum', v.stock,
        jsonb_build_array(jsonb_build_object('id', '30-ml', 'size', '30 ml', 'stock', v.stock, 'priceNumber', v.price, 'compareAtPriceNumber', 0)),
        '[]'::jsonb, v.limited, v.reserve, false, 70, 'Medium',
        v.cover, jsonb_build_array(v.cover), 'custom'
