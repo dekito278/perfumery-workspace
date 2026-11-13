@@ -1741,6 +1741,24 @@ body:has(.ng-buybar.is-visible) .back-to-top {
   }
 }
 
+/* A phone held sideways has ~390 px of height, and the bar took a fifth of it (eighth visitor audit,
+   13 Nov 2026: header and bar 146 of 390 px on cart and checkout). Compact there: one line, a 44 px button. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .ng-buybar__inner {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .ng-buybar__inner .ng-mono,
+  .ng-buybar__inner .text-xs {
+    display: none;
+  }
+  .ng-buybar__inner .ng-btn {
+    min-height: 44px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
 /* --- Immersive story page ------------------------------------------------------------------------- */
 
 /* The first paint, in the shop's colours. Each story then sets its own colour world inline from its

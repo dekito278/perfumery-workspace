@@ -63,6 +63,8 @@ assert.match(naskah, /@media \(forced-colors: active\) \{\s*\.ng-script-mark \{\
 const storefrontCss = readFileSync(join(src, 'styles', 'storefront.css'), 'utf8');
 assert.match(storefrontCss, /@media \(prefers-reduced-motion: reduce\) \{\s*\.imm-section \{\s*opacity: 1;/, 'the product story honours reduced motion');
 
+assert.match(naskah, /@media \(max-height: 480px\) and \(orientation: landscape\) \{\s*\.ng-buybar__inner \{/, 'the pay bar is compact on a phone held sideways');
+
 const backToTop = read('components', 'storefront', 'BackToTop.jsx');
 assert.match(backToTop, /\/\^\\\/\(cart\|checkout\|bespoke\|payment\|pay\)\(\\\/\|\$\)\/\.test\(pathname\)/, 'no floating button on the pages that end in a form button');
 assert.match(backToTop, /if \(onFormPage\) return null;/);
