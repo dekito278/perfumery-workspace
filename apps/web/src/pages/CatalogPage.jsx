@@ -117,18 +117,18 @@ const CatalogPage = () => {
       return next;
     }, { replace: true });
   }, [setSearchParams]);
-  // The search and the wear filters, written back to the address as they change.
+  // The search and the wear filters, written back to the address as they change — and ONLY when they
+  // change it. Writing an unchanged address is still a navigation, and that REPLACE cancelled the scroll
+  // restore on Back: the buyer landed ~600px above the perfume they had opened (fifth visitor audit).
   useEffect(() => {
-    setSearchParams((previous) => {
-      const next = new URLSearchParams(previous);
-      const write = (key, value) => (value ? next.set(key, value) : next.delete(key));
-      write('q', searchTerm.trim());
-      write('occasion', wearSelection.occasions);
-      write('time', wearSelection.times);
-      write('weather', wearSelection.weather);
-      return next.toString() === previous.toString() ? previous : next;
-    }, { replace: true });
-  }, [searchTerm, wearSelection, setSearchParams]);
+    const next = new URLSearchParams(searchParams);
+    const write = (key, value) => (value ? next.set(key, value) : next.delete(key));
+    write('q', searchTerm.trim());
+    write('occasion', wearSelection.occasions);
+    write('time', wearSelection.times);
+    write('weather', wearSelection.weather);
+    if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true });
+  }, [searchTerm, wearSelection, searchParams, setSearchParams]);
 
   // Everything EXCEPT the category, kept separate so the pills can count what they would show. A pill
   // counted against the whole catalogue would read "FLORAL 8" to someone who has typed "vanilla" and
@@ -200,7 +200,11 @@ const CatalogPage = () => {
         <header className="ng-section !pb-8 !pt-8 md:!pb-14 md:!pt-24">
           <div className="ng-container flex flex-wrap items-end justify-between gap-4 md:gap-8">
             <div className="flex flex-col gap-5">
-              <p className="ng-eyebrow ng-mono m-0">{products.length ? t('catalog.ngEyebrow', { count: products.length }) : t('catalog.ngEyebrowBare')}</p>
+              <p className="ng-eyebrow ng-mono m-0">{/* "19 KARYA" over a single search result read as a count of what is shown (fifth visitor
+                  audit, 13 Nov 2026): a narrowed list says how many of how many. */}
+                {!products.length ? t('catalog.ngEyebrowBare')
+                  : filteredProducts.length !== products.length ? t('catalog.ngEyebrowFiltered', { shown: filteredProducts.length, count: products.length })
+                    : t('catalog.ngEyebrow', { count: products.length })}</p>
               <h1 className="ng-display ng-h1">{t('catalog.title')}</h1>
             </div>
             <p className="ng-lead max-w-[440px] !text-base">{t('catalog.ngLead')}</p>
