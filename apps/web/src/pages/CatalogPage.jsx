@@ -26,6 +26,7 @@ import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
 import { splitScriptName } from '@/utils/scriptName.js';
 import { productCopyFor } from '@/utils/productCopy.js';
+import { matchesCatalogSearch } from '@/utils/catalogSearch.js';
 
 // Three notes is what fits on a card at phone width without wrapping to a third line.
 const CARD_NOTE_LIMIT = 3;
@@ -114,7 +115,8 @@ const CatalogPage = () => {
       // And the English words, so "vanilla" finds what "vanila" names.
       product.descriptionEn, product.notesEn, ...(product.topNotesEn || []), ...(product.heartNotesEn || []), ...(product.baseNotesEn || []),
     ].join(' ').toLowerCase();
-    return searchable.includes(query);
+    // "segar" finds FRESH, "fresh" finds "segar" (utils/catalogSearch.js).
+    return matchesCatalogSearch(searchable, query);
   }, [searchTerm, wearSelection]);
 
   const narrowedProducts = useMemo(() => products.filter(matchesSearchAndWear), [products, matchesSearchAndWear]);

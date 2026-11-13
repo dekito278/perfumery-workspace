@@ -57,6 +57,10 @@ const HelpContent = () => {
 
         <Section id="help-shipping" title={t('help.shipTitle')}>
           <p className="m-0">{isInternational ? t('help.shipEn') : t('help.shipId', { couriers })}</p>
+          {/* What a buyer abroad worries about before paying a stranger (second audit, 13 Nov 2026): duties —
+              the cart's own sentence, word for word — and why a second bottle can ship for less. */}
+          {isInternational ? <p className="m-0">{t('intlQuote.duties')}</p> : null}
+          {isInternational ? <p className="m-0">{t('help.shipEnShare')}</p> : null}
           {facts.dispatchDays ? <p className="m-0">{t('help.dispatch', { days: facts.dispatchDays })}</p> : null}
           <p className="m-0">{t('help.vial')}</p>
         </Section>
