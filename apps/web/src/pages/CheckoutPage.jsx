@@ -218,14 +218,18 @@ const CheckoutPage = () => {
               <p className="ng-lead">{t('checkout.lead')}</p>
             </div>
 
-            <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-[72px]">
-              <form id="checkout-form" className="flex flex-col gap-14" onSubmit={handleSubmitAttempt} noValidate>
+            {/* minmax(0,1fr) on the phone too, and min-w-0 on the form. A grid with no columns sizes its one
+                column to the content, and the signed-in line ("Masuk sebagai <email> — data terisi otomatis",
+                one line by design) pushed the whole form to 501px on a 390px phone — every field ran off the
+                right edge (Dekito's screenshot, 14 Nov 2026). */}
+            <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-[72px]">
+              <form id="checkout-form" className="flex min-w-0 flex-col gap-14" onSubmit={handleSubmitAttempt} noValidate>
                 {/* Customer info */}
                 <fieldset className="ng-fieldset">
                   <legend className="ng-legend"><span className="ng-mono text-ng-ember">I</span>{t('checkout.buyerInfo')}</legend>
                   {currentUser ? (
                     <div className="flex items-center justify-between gap-3 border border-ng-bone/20 px-4 py-3 text-sm">
-                      <span className="min-w-0 truncate text-ng-sand">{t('checkout.signedInAuto', { email: currentUser.email })}</span>
+                      <span className="min-w-0 text-ng-sand [overflow-wrap:anywhere]">{t('checkout.signedInAuto', { email: currentUser.email })}</span>
                       <button type="button" onClick={signOut} className="ng-link ng-mono min-h-[44px] shrink-0 border-0 bg-transparent p-0 underline underline-offset-4">{t('checkout.signOut')}</button>
                     </div>
                   ) : (

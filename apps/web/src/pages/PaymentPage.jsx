@@ -691,7 +691,7 @@ const ManualTransferPanel = ({ session, onProofSubmitted }) => {
         <PaymentTotalBreakdown session={session} />
       </div>
 
-      <div className="grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
 
         {awaitingShippingQuote ? (
           <div className="rounded-none border border-ng-ember/40 bg-transparent p-4 text-ng-ember">

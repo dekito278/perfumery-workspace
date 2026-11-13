@@ -904,7 +904,7 @@ const BespokePage = () => {
                     "choose a category" offered a single tab: the group names itself instead. */}
                 <h3 className="ng-display m-0 text-[36px] md:text-[44px]">{bespokeChoiceGroups.length > 1 ? t('bsp.visualBody') : activeChoice.title}</h3>
               </div>
-              <div className="grid items-start gap-10 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+              <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <BespokeBottlePreview
                   activeGroup={activeChoice.key}
                   bottle={selectedBottle}
@@ -955,7 +955,7 @@ const BespokePage = () => {
               </div>
             </div>
 
-            <div className="ng-panel grid items-end gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" data-reveal>
+            <div className="ng-panel grid grid-cols-[minmax(0,1fr)] items-end gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" data-reveal>
               <div className="flex flex-col gap-5">
                 <p className="ng-mono m-0 text-ng-ash">{t('bsp.summaryEyebrow')}</p>
                 <p className="m-0 font-ng-display text-[36px] italic leading-tight">{form.perfumeName || t('bsp.untitled')}</p>
