@@ -455,7 +455,7 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
     if (image) {
       html = upsertMeta(html, 'property', 'og:image', image);
       // Same words the live page writes (PublicJournalArticlePage), so the two heads cannot disagree.
-      html = upsertMeta(html, 'property', 'og:image:alt', post.image ? (post.imageAlt || post.title) : 'Solivagant perfumery journal');
+      html = upsertMeta(html, 'property', 'og:image:alt', post.imageAlt || post.title);
       html = upsertMeta(html, 'name', 'twitter:image', image);
     }
     // Only claim a large image card when there is actually an image to show.

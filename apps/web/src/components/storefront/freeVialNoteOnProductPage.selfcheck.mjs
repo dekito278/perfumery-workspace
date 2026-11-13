@@ -101,3 +101,5 @@ assert.match(note, /freeVialChoices\([^)]*\)\.length === 0\) return null;/,
 // first thing to drift, and the shop would then describe the same gift two slightly different ways.
 assert.match(note, /t\('cart\.giftTitle'\)/, 'the note reuses the cart string');
 assert.match(note, /t\('cart\.giftBody'\)/, 'the note reuses the cart string');
+// Plus where the choice is made — information the cart line does not need, not a second wording of it.
+assert.match(note, /t\('pdp\.giftWhere'\)/, 'the note says the scent is picked in the cart');
