@@ -230,12 +230,12 @@ const CheckoutPage = () => {
                   <div className="grid gap-5 md:grid-cols-2">
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.fullName')}</span>
-                      <input type="text" className="ng-field" maxLength={100} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} aria-label={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
+                      <input type="text" className="ng-field" maxLength={100} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
                       {triedSubmit && fieldErrors.customerName ? <span className="ng-error text-sm" role="alert">{fieldErrors.customerName}</span> : null}
                     </label>
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.whatsapp')}</span>
-                      <input type="tel" className="ng-field" maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" aria-label={t('checkout.whatsappAria')} autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
+                      <input type="tel" className="ng-field" maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
                       {triedSubmit && fieldErrors.contact ? <span className="ng-error text-sm" role="alert">{fieldErrors.contact}</span> : null}
                     </label>
                   </div>
