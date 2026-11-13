@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Gift, X } from 'lucide-react';
 import FreeVialChoices from '@/components/storefront/FreeVialChoices.jsx';
 import { useCart } from '@/hooks/useCart.js';
@@ -68,13 +68,42 @@ const FreeVialPrompt = () => {
     if (item) setOpen(false);
   }, [setGift]);
 
-  if (!shouldOfferFreeVial({ opened: open, vialProduct, gift, bought })) return null;
+  const visible = shouldOfferFreeVial({ opened: open, vialProduct, gift, bought });
+  const sheetRef = useRef(null);
+  // A real modal for a keyboard (visitor audit, 13 Nov 2026: focus stayed on the page behind, Tab walked the
+  // hidden page, Escape did nothing). Focus moves in, Tab stays in, Escape declines like the X, and focus
+  // returns to where it was — the add-to-cart button.
+  useEffect(() => {
+    if (!visible) return undefined;
+    const before = document.activeElement;
+    const sheet = sheetRef.current;
+    const focusables = () => [...(sheet?.querySelectorAll('button:not([disabled])') || [])];
+    (focusables()[1] || focusables()[0])?.focus();
+    const onKey = (event) => {
+      if (event.key === 'Escape') { event.preventDefault(); dismiss(); return; }
+      if (event.key !== 'Tab') return;
+      const list = focusables();
+      if (!list.length) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      else if (!sheet.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (before && typeof before.focus === 'function') before.focus();
+    };
+  }, [visible, dismiss]);
+
+  if (!visible) return null;
 
   return (
     <div className="free-vial-prompt" role="dialog" aria-modal="true" aria-label={t('cart.giftTitle')}>
       {/* The backdrop closes it. A gift nobody asked for must never be able to trap anyone. */}
       <button type="button" className="free-vial-prompt__scrim" aria-label={t('cart.giftLater')} onClick={dismiss} />
-      <div className="free-vial-prompt__sheet">
+      <div className="free-vial-prompt__sheet" ref={sheetRef}>
         <button type="button" className="free-vial-prompt__close" aria-label={t('cart.giftLater')} onClick={dismiss}>
           <X className="h-4 w-4" aria-hidden="true" />
         </button>

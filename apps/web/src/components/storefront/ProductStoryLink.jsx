@@ -22,7 +22,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * heading with an empty space under it is worse than no heading.
  */
 const ProductStoryLink = ({ product, className = "" }) => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const [post, setPost] = useState(null);
   const slug = String(product?.slug || '').trim();
 
@@ -52,8 +52,11 @@ const ProductStoryLink = ({ product, className = "" }) => {
     <aside className={`product-story-link flex flex-col gap-4 ${className}`.trim()}>
       <p className="ng-mono m-0 text-ng-ash">{t('pdp.storyEyebrow')}</p>
       <Link to={path} className="ng-specimen !min-h-0">
-        <strong className="font-ng-display text-[30px] font-normal leading-tight">{post.title}</strong>
-        {post.excerpt ? <span className="text-[15px] leading-relaxed text-ng-dust">{post.excerpt}</span> : null}
+        {/* The journal is written in Indonesian. Marked as such on /en, as the article itself says when opened
+            (visitor audit, 13 Nov 2026: five teasers in Indonesian with no word why). */}
+        <strong lang={isInternational ? 'id' : undefined} className="font-ng-display text-[30px] font-normal leading-tight">{post.title}</strong>
+        {post.excerpt ? <span lang={isInternational ? 'id' : undefined} className="text-[15px] leading-relaxed text-ng-dust">{post.excerpt}</span> : null}
+        {isInternational ? <span className="text-sm text-ng-ash">{t('journal.articleIndonesian')}</span> : null}
         <span className="ng-mono inline-flex items-center gap-2">
           {t('pdp.storyCta')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
