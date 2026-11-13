@@ -345,7 +345,8 @@
 						// Indonesian journal file answers /en/journal, and their words would name another page.
 						var canonical = document.querySelector('link[rel=canonical]');
 						var here = window.location.pathname.replace(/\/$/, '') || '/';
-						var own = true;
+						// No canonical means a shell that answers many addresses: its words belong to none of them.
+						var own = false;
 						if (canonical) {
 							try {
 								var there = new URL(canonical.href).pathname.replace(/\/$/, '') || '/';

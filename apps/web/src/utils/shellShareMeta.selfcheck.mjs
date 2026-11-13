@@ -61,8 +61,18 @@ for (const tag of ['property="og:image"', 'name="twitter:image"']) {
 }
 
 // /en is the English home, and its file says so (audit, 13 Nov 2026).
-assert.match(build, /if \(page\.route === '\/home'\) fs\.writeFileSync\(path\.join\(distRoot, EN_PREFIX\.slice\(1\), 'index\.html'\), enHtml\);/,
-  'the bare /en address gets the English home page file, not the Indonesian shell');
+// Tenth audit, 13 Nov 2026: that file also answered /en/cart, /en/track-order and every English 404, each
+// declaring itself /en/home. The English SHELL is now the English home without its canonical and twins,
+// and the bare /en address is rewritten to the English home's own file.
+assert.match(build, /const enShell = enHtml\s*\.replace\(\/\[\\t \]\*<link rel="canonical"/,
+  'the English shell keeps the English home\'s canonical, so every English app page claims to be the home page');
+{
+  const vercel = JSON.parse(readFileSync(join(webRoot, 'vercel.json'), 'utf8'));
+  const rewrites = vercel.rewrites || [];
+  const at = (source) => rewrites.findIndex((rule) => rule.source === source);
+  assert.equal(rewrites[at('/en')]?.destination, '/en/home/index.html', 'the bare /en address must get the English home page file');
+  assert.ok(at('/en') > -1 && at('/en') < at('/en/:path*'), 'and before the English shell answers it');
+}
 
 // If a build is present, hold the output to the same rule.
 const dist = join(webRoot, 'dist');
@@ -78,6 +88,7 @@ if (existsSync(join(dist, 'index.html'))) {
     const en = readFileSync(enIndex, 'utf8');
     assert.match(en, /<html lang="en"/, 'dist/en/index.html is English');
     assert.match(en, /property="og:locale" content="en_US"/, 'and previews as English');
+    assert.doesNotMatch(en, /rel="canonical"|rel="alternate"/, 'the English shell answers many addresses and must claim none of them');
   }
 
   // And the four static pages must still have theirs — they are single URLs, so they do.
