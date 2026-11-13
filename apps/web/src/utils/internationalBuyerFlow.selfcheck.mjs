@@ -101,4 +101,10 @@ assert.match(read('components', 'storefront', 'ProductStoryLink.jsx'), /\{isInte
   assert.ok(zip.test('94105') && zip.test('94105-1234') && !zip.test('ABCDE'), 'a US ZIP is five digits');
   assert.equal(postcodePatternFor('ZZ'), undefined, 'an unlisted country is checked for presence only');
 }
+// The error sits beside the field, not inside its label (eighth audit, 13 Nov 2026: read twice).
+{
+  const form = readFileSync(new URL('../components/storefront/InternationalOrderForm.jsx', import.meta.url), 'utf8');
+  assert.match(form, /<label htmlFor=\{`intl-\$\{field\.key\}`\} className="ng-mono text-ng-dust">/, 'the label holds only the label');
+  assert.match(form, /id=\{`intl-\$\{field\.key\}`\}/);
+}
 console.log('internationalBuyerFlow selfcheck OK (bottle count reaches the cart; the form checks what the server checks)');
