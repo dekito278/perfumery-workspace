@@ -10,6 +10,7 @@ import PriceChangeNotice from '@/components/storefront/PriceChangeNotice.jsx';
 import SwitchToEnglishHint from '@/components/storefront/SwitchToEnglishHint.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { isMobileBrowser } from '@/utils/deviceRouting.js';
+import { lockBodyScroll } from '@/utils/bodyScrollLock.js';
 
 // `titleKey`/`labelKey` go through the message file; a category name is product data, not copy, so it
 // stays as it is written in Studio.
@@ -56,6 +57,7 @@ const PublicHeader = () => {
   const [headerHidden, setHeaderHidden] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
   const lastScrollY = useRef(0);
   const location = useLocation();
 
@@ -79,18 +81,38 @@ const PublicHeader = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, [megaOpen]);
 
-  // Close on outside click
+  // Close on outside click, on Escape (focus back on the button), and when keyboard focus leaves the
+  // header and its menu. Fourth visitor audit, 13 Nov 2026: Tab walked out of the open menu onto
+  // "LIHAT PARFUMNYA", hidden underneath it, and the page behind scrolled under the finger on a phone.
   useEffect(() => {
-    if (!megaOpen) return;
+    if (!megaOpen) return undefined;
     const handleClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setMegaOpen(false);
     };
-    const handleEscape = (e) => { if (e.key === 'Escape') setMegaOpen(false); };
+    const handleEscape = (e) => {
+      if (e.key !== 'Escape') return;
+      setMegaOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    const handleFocusOut = (e) => {
+      if (e.relatedTarget && menuRef.current && !menuRef.current.contains(e.relatedTarget)) setMegaOpen(false);
+    };
+    const wrap = menuRef.current;
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleEscape);
+    wrap?.addEventListener('focusout', handleFocusOut);
+    // On a phone the menu covers the screen: the page behind it stays put while it is open.
+    const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches;
+    let unlockScroll = null;
+    if (phone) {
+      const release = lockBodyScroll();
+      unlockScroll = release;
+    }
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('keydown', handleEscape);
+      wrap?.removeEventListener('focusout', handleFocusOut);
+      unlockScroll?.();
     };
   }, [megaOpen]);
 
@@ -162,11 +184,12 @@ const PublicHeader = () => {
             <span className="ng-header__cart-count">{summary.boughtQuantity}</span>
           </Link>
           <button
+            ref={menuButtonRef}
             type="button"
             className="ng-header__menu-button"
             onClick={toggleMega}
             aria-expanded={megaOpen}
-            aria-haspopup="true"
+            aria-controls="site-menu"
             aria-label={t(megaOpen ? 'nav.closeMenu' : 'nav.openMenu')}
           >
             {megaOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -175,13 +198,15 @@ const PublicHeader = () => {
       </header>
 
       {megaOpen && (
-        <div className="ng-menu" role="menu">
+        // A panel of links, not an application menu: the ARIA menu role promised arrow-key behaviour it never
+        // had, and told a screen reader the links were not links.
+        <nav id="site-menu" className="ng-menu" aria-label={t('nav.siteMenu')}>
           <div className="ng-menu__inner">
             {megaMenuColumns.map((col) => (
               <div key={col.titleKey} className="ng-menu__column">
                 <span className="ng-menu__heading ng-mono">{t(col.titleKey)}</span>
                 {col.links.map((link) => (
-                  <Link key={`${col.titleKey}-${link.to}`} to={link.to} role="menuitem" aria-current={isCurrent(link.to) ? 'page' : undefined} onClick={() => setMegaOpen(false)}>
+                  <Link key={`${col.titleKey}-${link.to}`} to={link.to} aria-current={isCurrent(link.to) ? 'page' : undefined} onClick={() => setMegaOpen(false)}>
                     {link.labelKey ? t(link.labelKey) : link.label}
                   </Link>
                 ))}
@@ -192,7 +217,7 @@ const PublicHeader = () => {
               <RegionSwitch />
             </div>
           </div>
-        </div>
+        </nav>
       )}
 
       <BackToTop />
