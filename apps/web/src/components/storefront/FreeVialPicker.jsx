@@ -3,6 +3,7 @@ import { Gift } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import FreeVialChoices from '@/components/storefront/FreeVialChoices.jsx';
 import {
+  boughtNames,
   freeVialChoices,
   isFreeVialProduct,
   splitFreeVialLines,
@@ -23,7 +24,8 @@ import {
 const FreeVialPicker = ({ items = [], products = [], onPick }) => {
   const { t } = useTranslate();
   const vialProduct = products.find(isFreeVialProduct);
-  const choices = freeVialChoices(vialProduct);
+  const bought = boughtNames(items);
+  const choices = freeVialChoices(vialProduct, bought);
   const { lines, gift } = splitFreeVialLines(items);
 
   if (!vialProduct || !choices.length || !lines.length) return null;
@@ -35,7 +37,7 @@ const FreeVialPicker = ({ items = [], products = [], onPick }) => {
         {t('cart.giftTitle')}
       </p>
       <p className="m-0 text-[15px] leading-relaxed text-ng-dust" role="status">{gift ? t('cart.giftChosen', { name: gift.size }) : t('cart.giftBody')}</p>
-      <FreeVialChoices vialProduct={vialProduct} gift={gift} onPick={onPick} />
+      <FreeVialChoices vialProduct={vialProduct} gift={gift} onPick={onPick} bought={bought} />
       {gift ? (
         <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => onPick(null)}>
           {t('cart.giftRemove')}

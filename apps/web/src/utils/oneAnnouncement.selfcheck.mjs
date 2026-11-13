@@ -71,7 +71,7 @@ assert.match(cart, /addItem: \(product, quantity, \{ announcedByScreen = false \
 assert.match(cart, /CART_ITEM_ADDED_EVENT, \{ detail: \{ announcedByScreen \} \}/,
   'the flag is not carried on the event, so nothing downstream can read it');
 const prompt = read('components', 'storefront', 'FreeVialPrompt.jsx');
-assert.match(prompt, /if \(event\.detail\?\.announcedByScreen\) return;/,
+assert.match(prompt, /if \(event\.detail\?\.announcedByScreen( \|\| wasDismissed\(\))?\) return;/,
   'the gift prompt opens even when the screen has already announced the add — two modals for one event');
 
 console.log(`oneAnnouncement selfcheck OK (${adders.length} screens add to the cart, each with one toast at the top, clear of the gift sheet)`);

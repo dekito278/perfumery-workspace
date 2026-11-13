@@ -18,7 +18,7 @@ import {
   FREE_VIAL_SIZE, FREE_VIAL_TAG, FREE_VIAL_WEIGHT_GRAM, FREE_VIALS_PER_ORDER,
   FREE_VIAL_PRICE_LABEL,
   buildFreeVialCartItem, dropUnfulfillableGift, freeVialChoices, isFreeVialLine, isFreeVialProduct,
-  splitFreeVialLines, weighFreeVialLines,
+  boughtNames, shouldOfferFreeVial, splitFreeVialLines, weighFreeVialLines,
 } from './freeVial.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, isWeighedSize, itemWeightGram, totalItemWeightGram } from './itemWeight.js';
 import { planAutoTierPrices } from './autoTierPrices.js';
@@ -428,5 +428,30 @@ assert.match(portalSource, /const productItems = splitFreeVialLines\(\w+\(order\
   '"Pesan lagi" must take the bought lines out of the past order, not every line in it');
 assert.match(portalSource, /import \{ splitFreeVialLines \} from '@\/utils\/freeVial\.js';/,
   'and it must be the real helper, so the rule stays in one place');
+
+// --- The gift is never a sample of what is being bought (visitor audit, 13 Nov 2026) -------------------------
+// Production's vial aromas and bottle names, as written on 13 Nov: each bottle removes exactly its own aroma,
+// whatever the apostrophe, the degree sign or the aksara.
+{
+  const vial = { variants: ['HUG N°1', 'J’adore la Vanille', 'Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)', 'Wongka!', 'La Rose'].map((size, i) => ({ id: `v${i}`, size, stock: 3 })) };
+  const left = (bought) => freeVialChoices(vial, bought).map((choice) => choice.label);
+  assert.deepEqual(left(["J'adore la Vanille"]), ['HUG N°1', 'Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)', 'Wongka!', 'La Rose'], 'a straight apostrophe is the same perfume');
+  assert.deepEqual(left(['Hug No1']), ['J’adore la Vanille', 'Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)', 'Wongka!', 'La Rose'], 'N° and No are one name');
+  assert.ok(!left(['Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)']).some((label) => label.startsWith('Ayang')), 'the aksara does not hide the match');
+  assert.equal(left([]).length, 5, 'nothing bought, everything offered');
+  assert.equal(left(['La Rosette']).length, 5, 'a different name is not the same perfume');
+  const one = { variants: [{ id: 'a', size: 'La Rose', stock: 2 }] };
+  assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: one, bought: ['La Rose'] }), false,
+    'when the only aroma left is the bottle being bought, nothing is offered');
+  const cart = [{ name: 'La Rose', quantity: 1 }, buildFreeVialCartItem({ vialProduct: { id: 'vial', slug: 'vial-hadiah', name: 'Vial', variants: one.variants }, choice: { variantId: 'a', label: 'La Rose' } })];
+  assert.deepEqual(boughtNames(cart), ['La Rose'], 'the gift line is not counted as bought');
+}
+// Both doors pass what was bought, and the prompt stays quiet once declined in a visit.
+const promptSource = read('components', 'storefront', 'FreeVialPrompt.jsx');
+const pickerSource = read('components', 'storefront', 'FreeVialPicker.jsx');
+assert.match(promptSource, /shouldOfferFreeVial\(\{ opened: open, vialProduct, gift, bought \}\)/, 'the prompt leaves out what is bought');
+assert.match(pickerSource, /freeVialChoices\(vialProduct, bought\)/, 'and so does the cart panel');
+assert.match(promptSource, /event\.detail\?\.announcedByScreen \|\| wasDismissed\(\)/, 'a declined prompt does not reopen on the next bottle');
+assert.equal((promptSource.match(/onClick=\{dismiss\}/g) || []).length, 3, 'the backdrop, the X and "Nanti saja" all count as declining');
 
 console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);
