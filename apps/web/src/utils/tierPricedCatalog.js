@@ -36,7 +36,9 @@ export const applyTierPrices = (
       tier,
       // overseas is a destination, not a visitor. Those orders are quoted by hand and never priced here.
       overseas: false,
-      memberPercent,
+      // A Reserve bottle takes no member-code percentage: its member price is its price (Dekito, 14 Nov
+      // 2026, for Ambar Segara). Explicit member rows, if Studio ever sets one, still apply.
+      memberPercent: product.reserve ? null : memberPercent,
       keepsMemberPrice,
     });
 

@@ -198,7 +198,7 @@ assert.match(service, /keepsMemberPrice: row\?\.keeps_member_price === true/, 't
 assert.match(endpoint, /keepsMemberPrice: row\?\.keeps_member_price === true/, 'and the order endpoint reads it the same way');
 assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier, buyer\.memberPercent, buyer\.keepsMemberPrice\)/,
   'the order endpoint charges with it');
-assert.match(endpoint, /memberPercent,\s*keepsMemberPrice,\s*\}\);/, 'and passes it to resolveTierPrice');
+assert.match(endpoint, /memberPercent(?:: lineMemberPercent)?,\s*keepsMemberPrice,\s*\}\);/, 'and passes it to resolveTierPrice (a Reserve bottle passes null — reserveTakesNoMemberCode)');
 assert.match(hook, /applyTierPrices\(products, tier, index, formatRupiah, memberPercent, keepsMemberPrice\)/,
   'the catalogue a buyer sees is priced with it');
 

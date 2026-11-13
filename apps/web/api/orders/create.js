@@ -234,7 +234,7 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
       throw new Error(`Quantity out of range for ${slug || 'item'} (max ${MAX_LINE_QUANTITY})`);
     }
     if (!slug) throw new Error('Item missing productSlug');
-    const rows = await sbSelect(`storefront_products?slug=eq.${encodeURIComponent(slug)}&select=id,slug,name,category,price_number,variants,tags`);
+    const rows = await sbSelect(`storefront_products?slug=eq.${encodeURIComponent(slug)}&select=id,slug,name,category,price_number,variants,tags,reserve`);
     const product = rows?.[0];
     if (!product) throw new Error(`Unknown product: ${slug}`);
     let unitPrice = Number(product.price_number || 0);
@@ -269,8 +269,11 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
     const scheduledRows = await sbSelectOptional(
       `storefront_price_schedule?product_id=eq.${encodeURIComponent(product.id)}&select=*`,
     );
-    // A member code prices from retail alone, so it applies even to a product with no tier rows at all.
-    if (tierRows.length || scheduledRows.length || (buyerTier === 'member' && memberPercent)) {
+    // A member code prices from retail alone, so it applies even to a product with no tier rows at all —
+    // except a Reserve bottle, whose member price is its price (Dekito, 14 Nov 2026, for Ambar Segara).
+    // The catalogue the buyer sees applies the same exception (utils/tierPricedCatalog.js).
+    const lineMemberPercent = product.reserve ? null : memberPercent;
+    if (tierRows.length || scheduledRows.length || (buyerTier === 'member' && lineMemberPercent)) {
       // The SERVER's clock decides when a price changes, never the buyer's device. indexTierPrices drops
       // rows whose effective_at has not arrived and, among those in force, keeps the latest — without
       // that second rule the winner was whichever row this query happened to return last.
@@ -283,7 +286,7 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
         tierPrices: tierPricesForLine(index, slug, variant?.id || ''),
         tier: buyerTier,
         overseas: false,
-        memberPercent,
+        memberPercent: lineMemberPercent,
         keepsMemberPrice,
       });
     }
