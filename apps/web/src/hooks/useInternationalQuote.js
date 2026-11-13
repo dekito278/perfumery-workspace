@@ -12,6 +12,7 @@ import { internationalPriceFor } from '@/utils/shippingRegion.js';
 import { tierPricesForLine } from '@/utils/tierPrice.js';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML } from '@/data/internationalShippingRates.js';
+import { plainName } from '@/utils/scriptName.js';
 
 /**
  * One international total, computed once, for every surface that shows or sends it.
@@ -221,7 +222,7 @@ export const useCartInternationalQuote = (items = []) => {
   // see, and leaving it out of the message would hand over a basket missing a bottle.
   const lineText = [
     ...lines.map((line) => t('export.waCartLine', {
-      name: line.name,
+      name: plainName(line.name),
       size: line.size || '',
       quantity: line.quantity,
       price: line.lineUsd ? `US$${line.lineUsd}` : t('intlQuote.onRequest.destination'),

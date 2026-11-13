@@ -8,6 +8,7 @@ import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 import { LineVessel } from '@/components/line/LineArt.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { showsSoldOutBadge } from '@/utils/soldOutBadge.js';
+import { plainName } from '@/utils/scriptName.js';
 
 // One dark ground for every product without a photo. The pastel gradients this replaced were picked per
 // slug for the light storefront; on the dark one they read as six unrelated colour swatches.
@@ -73,7 +74,7 @@ const ProductVisual = ({
       {hasImage ? (
         <img
           src={optimizedImageUrl}
-          alt={alt || (product?.name ? `${product.name}${product.category ? ` — ${product.category}` : ''}` : 'Solivagant fragrance')}
+          alt={alt || (product?.name ? `${plainName(product.name)}${product.category ? ` — ${product.category}` : ''}` : 'Solivagant fragrance')}
           // !h-full, not h-full: `.solivagant-editorial-home img { height: auto }` (storefront.css) outranks a
           // single class, so every product photo took its FILE's height instead of the frame's — a square
           // photo in a 4:5 frame left a dark band under it (Aquilaria, visitor audit 13 Nov 2026).

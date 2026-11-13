@@ -19,7 +19,7 @@ import { SHIPPING_QUOTA_MESSAGE, checkoutCourierOptions, useCheckoutFlow } from 
 import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
-import { splitScriptName } from '@/utils/scriptName.js';
+import { splitScriptName, plainName } from '@/utils/scriptName.js';
 import { onEnter } from '@/utils/onEnter.js';
 import { destinationSearchText } from '@/utils/areaFromAddress.js';
 
@@ -75,7 +75,7 @@ const CheckoutPage = () => {
     !selectedPaymentMethod ? t('checkout.fieldPayment') : '',
     // canSubmitCheckout also refuses lines whose product is gone or sold out; name them, otherwise the
     // notice names nothing to act on (audit round 9).
-    blockedItems.length ? t('checkout.fieldBlocked', { names: blockedItems.map((item) => item.name).join(', ') }) : '',
+    blockedItems.length ? t('checkout.fieldBlocked', { names: blockedItems.map((item) => plainName(item.name)).join(', ') }) : '',
   ].filter(Boolean).join(', ');
 
   const handleGoogleLogin = async () => {
@@ -299,7 +299,7 @@ const CheckoutPage = () => {
                       className="self-start"
                       labelKey="checkout.orderOnWhatsApp"
                       draftKey="checkout.waShippingDraft"
-                      draftVars={{ items: items.map((item) => `${item.name} × ${item.quantity}`).join(', ') }}
+                      draftVars={{ items: items.map((item) => `${plainName(item.name)} × ${item.quantity}`).join(', ') }}
                     />
                   ) : null}
                   {destinationOptions.length ? (

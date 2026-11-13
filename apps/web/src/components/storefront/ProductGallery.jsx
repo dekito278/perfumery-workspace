@@ -11,6 +11,7 @@ import { lockBodyScroll } from '@/utils/bodyScrollLock.js';
 const THUMB_WIDTHS = [96, 192];
 const FOCUSABLE = 'a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])';
 import { cn } from '@/lib/utils.js';
+import { plainName } from '@/utils/scriptName.js';
 
 const ProductGallery = ({ product, className = '', visualClassName = '', compact = false, priority = false, imageFit = 'contain' }) => {
   const images = useMemo(() => {
@@ -171,7 +172,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
             label={false}
             imageFit={imageFit}
             // Each photo says which it is: seven photos all read ".Wayback — Woody" (sixth audit, 13 Nov 2026).
-            alt={hasMultipleImages && product?.name ? `${product.name} — ${t('a11y.galleryPhoto', { number: activeIndex + 1, total: images.length })}` : ''}
+            alt={hasMultipleImages && product?.name ? `${plainName(product.name)} — ${t('a11y.galleryPhoto', { number: activeIndex + 1, total: images.length })}` : ''}
           />
           {activeImage ? (
             // A real button, not the div this used to be. The whole image opens the zoom on click, but a
