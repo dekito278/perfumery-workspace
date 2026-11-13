@@ -162,17 +162,20 @@ const HomePage = () => {
         {/* ── The first bottle of the curated set, set large ── */}
         {featured ? (
           <section className="ng-section" aria-labelledby="home-featured-title" data-reveal>
-            <div className="ng-container grid items-center gap-10 md:grid-cols-2 md:gap-[72px]">
-              <Link to={`/catalog/${featured.slug}`} className="relative block" tabIndex={-1} aria-hidden="true">
+            {/* grid-cols-1 on a phone: without a template the one column grew to its widest child and the
+                block ran 11px past a 360px screen, cutting off "Maskumambang" and its price (fourth visitor
+                audit, 13 Nov 2026) — the same fault the product page had (phoneLayout.selfcheck.mjs). */}
+            <div className="ng-container grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-[72px]">
+              <Link to={`/catalog/${featured.slug}`} className="relative block min-w-0" tabIndex={-1} aria-hidden="true">
                 <ProductVisual product={featured} label={false} imageFit="cover" priority className="aspect-[4/5] w-full" sizes="(max-width: 767px) 100vw, 640px" />
                 {featuredName.script ? (
                   <span className="ng-script-mark absolute left-6 top-5 text-[96px] md:text-[120px]">{featuredName.script}</span>
                 ) : null}
               </Link>
-              <div className="flex flex-col gap-7">
+              <div className="flex min-w-0 flex-col gap-7">
                 <p className="ng-mono m-0 text-ng-ember">{t('home.ngFeatNo', { family: familyLine(featured) })}</p>
                 <div>
-                  <h2 id="home-featured-title" className="ng-display text-[56px] font-normal md:text-[84px]">{featuredName.name}</h2>
+                  <h2 id="home-featured-title" className="ng-display text-[clamp(38px,12vw,56px)] font-normal [overflow-wrap:anywhere] md:text-[84px]">{featuredName.name}</h2>
                   {featuredName.script ? <p className="m-0 mt-2.5 font-ng-java text-[28px] text-ng-ash">{featuredName.script}</p> : null}
                 </div>
                 {/* The product's words in the shop's language: /en/home read "Dari seri Macapat." over an English
@@ -277,7 +280,7 @@ const HomePage = () => {
                   {isInternational ? <p className="m-0 text-sm text-ng-dust">{t('journal.indonesianOnly')}</p> : null}
                 </div>
               </div>
-              <div className="grid gap-6 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 {publishedArticles.map((article, index) => (
                   <Link key={article.id} to={getJournalPublicPath(article)} className="ng-specimen">
                     <span className="ng-mono flex justify-between gap-4 text-ng-ash">
