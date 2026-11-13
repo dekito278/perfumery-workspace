@@ -671,6 +671,14 @@ const BespokePage = () => {
       // Charge the order's authoritative subtotal. On the direct-insert path this equals checkoutTotalDue;
       // on the endpoint path it's the server recompute, so the buyer is charged exactly what was stored.
       const paymentAmount = Number(order.subtotal) || checkoutTotalDue;
+      // The payment page's breakdown is the server's too, and a total that moved is said before the buyer
+      // pays it — the same rule the cart checkout follows (tenth visitor audit, 13 Nov 2026).
+      const charged = order.serverTotals || {};
+      const chargedShippingFee = charged.shippingFee == null ? shippingFee : Number(charged.shippingFee);
+      const chargedDiscount = charged.voucherDiscount == null ? checkoutVoucherDiscount : Number(charged.voucherDiscount);
+      if (paymentAmount !== checkoutTotalDue) {
+        toast.warning(t('bsp.totalMoved', { total: formatRupiah(paymentAmount) }), { duration: 12000 });
+      }
 
       if (isManualPayment) {
         const manualTransfer = {
@@ -697,9 +705,9 @@ const BespokePage = () => {
           paymentStatus: 'pending',
           manualTransfer,
           shippingSummary,
-          shippingFee,
+          shippingFee: chargedShippingFee,
           voucherCode: voucherSnapshot?.code || '',
-          voucherDiscount: checkoutVoucherDiscount,
+          voucherDiscount: chargedDiscount,
           voucherSnapshot,
           createdAt: new Date().toISOString(),
         }));
@@ -733,9 +741,9 @@ const BespokePage = () => {
         paymentExpiresAt: checkout.paymentExpiresAt || '',
         paymentSessionId: checkout.paymentSessionId || '',
         shippingSummary,
-        shippingFee,
+        shippingFee: chargedShippingFee,
         voucherCode: voucherSnapshot?.code || '',
-        voucherDiscount: checkoutVoucherDiscount,
+        voucherDiscount: chargedDiscount,
         voucherSnapshot,
         createdAt: new Date().toISOString(),
       }));
