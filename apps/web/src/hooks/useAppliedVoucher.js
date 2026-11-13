@@ -192,9 +192,16 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
     setMemberJoined(false);
   };
 
+  // A code typed into the field that is not the one taking money off. Ninth visitor audit, 13 Nov 2026:
+  // a buyer who typed a voucher and went straight to "Buat Pesanan" placed the order at full price, and
+  // nothing said so. The page refuses the order until the code is applied or the field is cleared.
+  const typedCode = normalizeVoucherCode(inputCode);
+  const unappliedCode = typedCode && typedCode !== (result.valid ? voucherCode : '') ? typedCode : '';
+
   return {
     inputCode,
     setInputCode,
+    unappliedCode,
     appliedCode: voucherCode,
     appliedVoucher: result.valid ? result.voucher : null,
     discountAmount: result.valid ? result.discountAmount : 0,

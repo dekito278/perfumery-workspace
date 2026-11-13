@@ -522,6 +522,7 @@ export const MESSAGES = {
     'checkout.errPhoneInvalid': 'Nomor WhatsApp belum valid.',
     'checkout.errAddress': 'Alamat pengiriman wajib diisi.',
     'checkout.errCourier': 'Pilih kurir dulu.',
+    'checkout.errVoucherUnapplied': 'Kode {code} belum terpakai. Tekan Pakai, atau kosongkan kolom ini bila tidak jadi.',
     'checkout.errDestination': 'Cari lalu pilih area tujuan.',
     'checkout.signInSaving': 'Masuk dengan Google — data terisi otomatis, dan kode member bisa dipakai',
     'checkout.signInPlain': 'Masuk dengan Google — alamat & data terisi otomatis',
@@ -1730,6 +1731,7 @@ export const MESSAGES = {
     'checkout.errPhoneInvalid': 'That WhatsApp number is not valid.',
     'checkout.errAddress': 'A delivery address is required.',
     'checkout.errCourier': 'Choose a courier.',
+    'checkout.errVoucherUnapplied': 'Code {code} has not been applied. Press Apply, or clear this field if you do not need it.',
     'checkout.errDestination': 'Search for and choose the destination area.',
     // The member price IS true here, unlike on the welcome page and the why-direct card. Anyone
     // completing this form is shipping to an Indonesian address — the notice above it says so — and a
