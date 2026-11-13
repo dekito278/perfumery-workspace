@@ -161,7 +161,8 @@ export const MESSAGES = {
     'stock.many': 'Tersisa {count} botol',
 
     'export.priceLine': 'Harga untuk pengiriman ke luar negeri:',
-    'export.notIncluded': '— ongkir ke negara tujuan dihitung di keranjang.',
+    'export.notIncluded': '— ongkir ke negara tujuan dihitung di keranjang internasional.',
+    'export.intlCartLink': 'Buka keranjang internasional (bahasa Inggris)',
     'export.ask': 'Kirim ke luar negeri? Tanya di WhatsApp',
     // The WhatsApp draft. It leaves the page, so it is the one piece of copy a buyer keeps after they
     // close the tab — and the only one they are expected to SEND. A draft in a language the sender
@@ -1377,6 +1378,7 @@ export const MESSAGES = {
 
     'export.priceLine': 'International price:',
     'export.notIncluded': '— shipping to your country is added in the cart.',
+    'export.intlCartLink': 'Open the international cart',
     'export.ask': 'A question first? Ask on WhatsApp',
     'export.waDraft': 'Hello SOLIVAGANT, I would like to ask about sending {item} to my country.{line}\nCould you let me know the final total and how long it takes to arrive?\nI understand this enquiry does not reserve a bottle.',
     'export.waDraftPrice': '\nThe international price shown on your site: {price}.',
