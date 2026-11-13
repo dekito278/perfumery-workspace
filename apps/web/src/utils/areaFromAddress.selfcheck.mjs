@@ -12,7 +12,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { areaQueryFromAddress, destinationSearchText, isConfidentAreaMatch, pickConfidentDestination } from './areaFromAddress.js';
+import {
+  areaQueryFromAddress, courierAreaSpelling, destinationSearchText, isConfidentAreaMatch, pickConfidentDestination, rankDestinations,
+  resultsNameTheArea,
+} from './areaFromAddress.js';
 
 const src = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...parts) => readFileSync(join(src, ...parts), 'utf8');
@@ -63,5 +66,36 @@ assert.doesNotMatch(read('pages', 'CheckoutPage.jsx'), /destinationSearch\.trim\
 // A pick made from the address is dropped when the address names another area.
 assert.match(flow, /areaGuessedFromRef\.current && areaQueryFromAddress\(value\) !== areaGuessedFromRef\.current/,
   'changing the address drops an area that was read from the old one');
+
+// --- 4. The courier's spelling, and what the buyer typed first (fourth audit, 13 Nov 2026) ----------------
+// Results copied from the live search that day.
+const L = (label, id = label) => ({ id, label });
+assert.equal(courierAreaSpelling('Gedongtengen, Jogja'), 'Gedong Tengen, Yogyakarta');
+assert.equal(courierAreaSpelling('Tebet, Jaksel'), 'Tebet, Jakarta Selatan');
+assert.equal(courierAreaSpelling('Coblong, Bandung'), 'Coblong, Bandung', 'an ordinary name is left alone');
+const kuta = [
+  L('KUTA ALAM, KUTA ALAM, BANDA ACEH, NANGGROE ACEH DARUSSALAM (NAD), 23121'),
+  L('KULU KUTA, KUTA BLANG, BIREUEN, NANGGROE ACEH DARUSSALAM (NAD), 24356'),
+  L('KUTA, KUTA, BADUNG, BALI, 80361'),
+  L('KUTA BULUH, KUTA BULUH, KARO, SUMATERA UTARA, 22155'),
+];
+assert.equal(rankDestinations('Kuta', kuta)[0].label, 'KUTA, KUTA, BADUNG, BALI, 80361', '"Kuta" puts Kuta, Badung first');
+assert.equal(rankDestinations('Kuta', kuta).length, kuta.length, 'nothing is dropped');
+const kebayoranResults = [
+  L('KEBAYORAN LAMA SELATAN, KEBAYORAN LAMA, JAKARTA SELATAN, DKI JAKARTA, 12240'),
+  L('KEBAYORAN LAMA UTARA, KEBAYORAN LAMA, JAKARTA SELATAN, DKI JAKARTA, 12240'),
+  L('CIPETE UTARA, KEBAYORAN BARU, JAKARTA SELATAN, DKI JAKARTA, 12150'),
+];
+assert.match(rankDestinations('Kebayoran Baru, Jakarta Selatan', kebayoranResults)[0].label, /, KEBAYORAN BARU,/, 'Kebayoran Baru before Kebayoran Lama');
+const yogya = [L('BENER, TEGALREJO, YOGYAKARTA, DI YOGYAKARTA, 55243'), L('BUMIJO, JETIS, YOGYAKARTA, DI YOGYAKARTA, 55231')];
+assert.equal(resultsNameTheArea('Gedong Tengen, Yogyakarta', yogya), false, 'a list that never names the kecamatan asks again');
+assert.equal(resultsNameTheArea('Kuta', kuta), true);
+assert.equal(pickConfidentDestination('Gedongtengen, Yogyakarta', [L('SOSROMENDURAN, GEDONG TENGEN, YOGYAKARTA, DI YOGYAKARTA, 55271')])?.label,
+  'SOSROMENDURAN, GEDONG TENGEN, YOGYAKARTA, DI YOGYAKARTA, 55271', 'the written-together spelling is still a confident match');
+const service = read('services', 'shippingService.js');
+assert.match(service, /const search = courierAreaSpelling\(/, 'the search goes out in the courier\'s spelling');
+assert.match(service, /return rankDestinations\(search, combined\);/, 'and comes back ranked');
+assert.doesNotMatch(read('pages', 'CheckoutPage.jsx'), /destinationOptions\.slice\(0, 4\)/, 'the checkout shows every result, not the first four');
+assert.match(read('..', 'api', 'shipping', 'rates.js'), /rajaResponse\.status === 404 && \/not found\/i[\s\S]{0,120}destinations: \[\]/, 'no match is an empty list, not a 404');
 
 console.log('areaFromAddress selfcheck OK (the area comes from the kecamatan and city, and is picked only when it matches)');

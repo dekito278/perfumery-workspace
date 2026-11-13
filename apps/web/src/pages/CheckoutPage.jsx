@@ -264,7 +264,7 @@ const CheckoutPage = () => {
                     <div className="flex flex-col gap-2">
                       <span className="ng-mono text-ng-ash">{t('mcheckout.pickOtherArea')}</span>
                       <div className="flex flex-wrap gap-2">
-                        {destinationOptions.slice(0, 4).map((destination) => (
+                        {destinationOptions.map((destination) => (
                           <button key={destination.id || destination.label} type="button" className="ng-chip ng-chip--plain" aria-pressed={selectedDestination?.label === destination.label} onClick={() => loadShippingRates(destination, { autoSelectCheapest: true })}>
                             {destination.label}
                           </button>

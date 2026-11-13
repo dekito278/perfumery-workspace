@@ -170,6 +170,13 @@ export default async function handler(request, response) {
     });
     const data = await rajaResponse.json().catch(() => ({}));
 
+    // The courier answers a search that matched nothing with 404 "Domestic Destinations Data not found".
+    // That is an answer — no such area — not a failure, so the buyer's browser is not shown a red 404 for
+    // a typo (fourth visitor audit, 13 Nov 2026). Any other failure still fails.
+    if (rajaResponse.status === 404 && /not found/i.test(String(data?.meta?.message || data?.message || ''))) {
+      return jsonResponse(response, 200, { destinations: [] });
+    }
+
     if (!rajaResponse.ok) {
       return jsonResponse(response, rajaResponse.status, {
         message: data?.meta?.message || data?.message || 'Failed to search shipping destination',

@@ -276,7 +276,9 @@ assert.match(read('pages/RawMaterialsPage.jsx'), /checkFailed=\{page\.deleteDepe
   const { writeFileSync, unlinkSync } = await import('node:fs');
   // Multi-line imports too: this file opens with a braced import spanning four lines, and a per-line
   // regex leaves the tail behind — which loads as a bare '@/services' specifier Node cannot resolve.
-  writeFileSync(shim, source.replace(/^import\s[\s\S]*?from\s+'[^']+';$/gm, ''));
+  // The one import-free helper the search uses (area spelling and ranking, 13 Nov 2026) is put back by path.
+  const areaHelpers = `import { courierAreaSpelling, rankDestinations, resultsNameTheArea } from '${join(srcRoot, 'utils', 'areaFromAddress.js')}';\n`;
+  writeFileSync(shim, areaHelpers + source.replace(/^import\s[\s\S]*?from\s+'[^']+';$/gm, ''));
   const stub = (body, { ok = true, status = 200 } = {}) => {
     globalThis.fetch = async () => ({ ok, status, text: async () => body });
   };

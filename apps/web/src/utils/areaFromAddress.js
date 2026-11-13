@@ -72,7 +72,9 @@ export const isConfidentAreaMatch = (query, label) => {
  * Only for an area of TWO parts (kecamatan and city). "Denpasar" alone matches all four Denpasar districts
  * equally well, and taking the first would be the original bug with better manners.
  */
-export const pickConfidentDestination = (query, destinations = [], address = '') => {
+export const pickConfidentDestination = (typed, destinations = [], address = '') => {
+  // Compared in the courier's spelling, the same one the search was made in ("Gedongtengen").
+  const query = courierAreaSpelling(typed);
   const parts = String(query || '').split(',').map((part) => part.trim()).filter(Boolean);
   if (parts.length < 2) return null;
   const confident = (Array.isArray(destinations) ? destinations : []).filter((destination) => isConfidentAreaMatch(query, destination?.label));
@@ -95,4 +97,65 @@ export const destinationSearchText = ({ areaText = '', address = '' } = {}) => {
   const area = String(areaText || '').trim();
   if (area) return area;
   return areaQueryFromAddress(address);
+};
+
+// --- What the courier list calls a place, and which results to show first ------------------------------
+//
+// Fourth visitor audit, 13 Nov 2026: "Gedongtengen" found nothing (the courier list writes GEDONG TENGEN),
+// "Jogja" offered a village in Aceh, "Kuta" listed five Aceh villages before Kuta in Badung, and
+// "Kebayoran Baru" put Kebayoran Lama first. The search behind it is the courier's; what the shop can do
+// is ask it in the courier's spelling, and show the results that name what the buyer typed first.
+
+// Only names a buyer commonly writes and the courier list spells otherwise. Each is a fact about the
+// courier data (checked against the live search), never a guess at what a buyer meant.
+const AREA_SPELLINGS = [
+  [/\b(jogja|jogjakarta|jogya|yogya)\b/gi, 'Yogyakarta'],
+  [/\bgedongtengen\b/gi, 'Gedong Tengen'],
+  [/\bjaksel\b/gi, 'Jakarta Selatan'],
+  [/\bjakpus\b/gi, 'Jakarta Pusat'],
+  [/\bjakbar\b/gi, 'Jakarta Barat'],
+  [/\bjaktim\b/gi, 'Jakarta Timur'],
+  [/\bjakut\b/gi, 'Jakarta Utara'],
+];
+
+/** The area text in the courier list's spelling: "Gedongtengen, Jogja" -> "Gedong Tengen, Yogyakarta". */
+export const courierAreaSpelling = (text = '') => AREA_SPELLINGS
+  .reduce((value, [pattern, replacement]) => value.replace(pattern, replacement), String(text || ''));
+
+const squash = (text) => String(text || '').toUpperCase().replace(/[^A-Z0-9]+/g, '');
+
+/** The first part of the area the buyer typed (the kecamatan, or the only word), spaces ignored. */
+const firstAreaPart = (query) => squash(String(query || '').split(',')[0]);
+
+/** Whether some result names the buyer's first area part as its kelurahan or kecamatan. */
+export const resultsNameTheArea = (query, destinations = []) => {
+  const wanted = firstAreaPart(query);
+  if (!wanted) return true;
+  return (Array.isArray(destinations) ? destinations : []).some((destination) => {
+    const [village, district] = String(destination?.label || '').split(',');
+    return squash(village) === wanted || squash(district) === wanted;
+  });
+};
+
+/**
+ * The results with what the buyer typed first: the kecamatan named exactly, then the kelurahan, then a
+ * label holding every word, then one naming the city. Ties keep the courier's order. Nothing is dropped.
+ */
+export const rankDestinations = (query, destinations = []) => {
+  const list = Array.isArray(destinations) ? destinations : [];
+  const wanted = firstAreaPart(query);
+  const cityPart = String(query || '').split(',').slice(1).map(squash).filter(Boolean);
+  const score = (destination) => {
+    const parts = String(destination?.label || '').split(',').map(squash);
+    let points = 0;
+    if (wanted && parts[1] === wanted) points += 8;
+    if (wanted && parts[0] === wanted) points += 4;
+    if (isConfidentAreaMatch(query, destination?.label)) points += 2;
+    if (cityPart.length && cityPart.every((city) => parts.slice(1).includes(city))) points += 1;
+    return points;
+  };
+  return list
+    .map((destination, index) => ({ destination, index, points: score(destination) }))
+    .sort((a, b) => (b.points - a.points) || (a.index - b.index))
+    .map(({ destination }) => destination);
 };
