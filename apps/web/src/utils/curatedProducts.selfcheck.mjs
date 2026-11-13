@@ -57,7 +57,7 @@ assert.doesNotMatch(home, /publicCatalog\.slice\(0, 8\)/, 'and not take the firs
 // The hero line moved into the message file when the storefront learned English. Both surfaces must
 // still carry a reason to buy here, and the second CTA must still follow the session.
 assert.match(home, /\{t\('home\.note'\)\}/, 'desktop hero must give the reason to buy here');
-assert.match(MESSAGES.id['home.note'], /Harga member, langsung dari atelier\./, 'and in Indonesian it is the member price');
+assert.match(MESSAGES.id['home.note'], /Harga member, langsung dari meja kerja Dekito\./, 'and in Indonesian it is the member price');
 // In English it cannot be the member price: an international order does not get one. It still has to say
 // something — a hero with no reason is the state this guard was written to prevent.
 assert.doesNotMatch(MESSAGES.en['home.note'], /member/i, 'the English hero must not promise a member price');

@@ -140,7 +140,7 @@ export const toPublicFragrance = (product = {}) => {
     subtitle: product.subtitle || product.notes || product.mood || 'A quiet SOLIVAGANT fragrance object.',
     description: product.description || product.notes || 'A quiet SOLIVAGANT fragrance object for skin, atmosphere, and ritual.',
     story: product.story || product.description || 'A public SOLIVAGANT fragrance composed through raw materials, memory, and careful evaluation.',
-    category: product.category || product.collection || tags[0] || 'Atelier fragrance',
+    category: product.category || product.collection || tags[0] || 'Fragrance',
     publicCategory,
     badge: inferPublicBadge(product, tags),
     // The LIMITED badge, carried as its own field so the catalogue card can print it beside the scent
@@ -151,9 +151,9 @@ export const toPublicFragrance = (product = {}) => {
     // Carried, not dropped: deadProductInputs refused the field until it reached a buyer, which is the
     // whole point of typing it. Normalised here too, so a malformed row never reaches the page.
     testimonials: normalizeTestimonials(product.testimonials),
-    collection: product.collection || product.category || 'SOLIVAGANT Atelier',
+    collection: product.collection || product.category || 'SOLIVAGANT',
     topNotes: topNotes.length ? topNotes : ['Opening impression'],
-    heartNotes: heartNotes.length ? heartNotes : ['Atelier heart'],
+    heartNotes: heartNotes.length ? heartNotes : ['Heart'],
     baseNotes: baseNotes.length ? baseNotes : ['Lasting trace'],
     notes: product.notes || [...topNotes.slice(0, 1), ...heartNotes.slice(0, 1), ...baseNotes.slice(0, 1)].filter(Boolean).join(', '),
     // The English copy, carried through untouched and WITHOUT a fallback: an empty string here means

@@ -47,6 +47,7 @@ for (const language of ['id', 'en']) {
 // So the exemption is now a named list: every entry is a word that is genuinely the same in both
 // languages, and adding one is a decision somebody has to write down.
 const IDENTICAL_ON_PURPOSE = new Set([
+  'nav.whatsapp', // "WhatsApp Dekito" — a name and a brand, the same in both (no "atelier", Dekito's brief 14 Nov 2026)
   'pdp.rawMaterials', // the perfumery term, printed in English on the Indonesian page already
   'pdp.checkout',     // the word Indonesian buyers use for this button
   'price.memberIs',   // "Member Rp 675.000" — "member" is the loanword in both

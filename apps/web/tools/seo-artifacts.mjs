@@ -157,7 +157,7 @@ export const fetchPublicProducts = async (env) => {
     .map((row) => ({
       slug: String(row.slug),
       name: String(row.name).trim(),
-      category: row.category || 'Atelier fragrance',
+      category: row.category || 'Fragrance',
       priceNumber: Number(row.price_number || 0),
       // Carried so the Offer can state real availability instead of assuming every product is in stock.
       stock: row.stock,

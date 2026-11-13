@@ -291,7 +291,7 @@ const CatalogPage = () => {
                         {/* A heading per perfume, so a screen reader can move through the list by name (fifth
                             visitor audit, 13 Nov 2026: 19 perfumes under one h1 and nothing else). */}
                         <h2 className="m-0 font-ng-display text-[28px] font-normal leading-none [overflow-wrap:anywhere] md:text-[34px]">{named.name}</h2>
-                        <span className="ng-cat-row__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || 'Atelier'}</span>
+                        <span className="ng-cat-row__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || t('catalog.cardFallbackLabel')}</span>
                       </Link>
                       {/* What it smells of, in three words. The field holds the full material list since
                           2026-10-07 — far too long for a row — so this reuses the clamp the cart lines

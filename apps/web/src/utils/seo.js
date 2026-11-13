@@ -57,7 +57,7 @@ export const stripTrailingBrand = (title, brand = SITE_NAME) => {
   return stripped || text;
 };
 
-export const SITE_TAGLINE = 'Atelier Parfum Artisan oleh Dekito';
+export const SITE_TAGLINE = 'Parfum artisan oleh Dekito';
 export const BRAND_LOGO_PATH = '/brand/solivagant-logo.png';
 // One share image for the whole site. There used to be two — seo.js pointed at the raw-material photo
 // while the journal page had its own — so a link preview looked different depending on what was shared.
