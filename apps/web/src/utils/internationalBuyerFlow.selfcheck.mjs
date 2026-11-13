@@ -68,4 +68,20 @@ assert.match(prompt, /if \(before && typeof before\.focus === 'function'\) befor
 assert.match(read('components', 'storefront', 'ProductStoryLink.jsx'), /\{isInternational \? <span className="text-sm text-ng-ash">\{t\('journal\.articleIndonesian'\)\}<\/span> : null\}/,
   'a story teaser on /en says it is written in Indonesian');
 
+// --- 6. Postcode where the country uses one; the country's own words (third audit, 13 Nov 2026) ---------------
+{
+  const address = await import('./internationalAddress.js');
+  for (const code of ['US', 'CA', 'DE', 'GB', 'SG', 'AU', 'JP']) assert.ok(address.postcodeRequiredFor(code), `${code}: a postcode is required`);
+  for (const code of ['HK', 'AE', 'QA', 'MO']) assert.ok(!address.postcodeRequiredFor(code), `${code}: no postcode in use, none demanded`);
+  assert.equal(address.missingInternationalField({ name: 'a', email: 'a@b.co', phone: '+1 212', address: 'x', city: 'y', region: 'NY' }, 'US'), 'postcode',
+    'the endpoint refuses a US address without its ZIP, by the same rule');
+  assert.equal(address.missingInternationalField({ name: 'a', email: 'a@b.co', phone: '+852 9', address: 'x', city: 'y' }, 'HK'), '');
+  assert.match(address.phoneExampleFor('US'), /^\+1 /, 'a US buyer sees a US phone example, not a Singapore one');
+  assert.match(form, /key: 'postcode'[^\n]*requiredFor: postcodeRequiredFor/, 'the form asks the same rule');
+  assert.match(form, /field\.labelFor \? field\.labelFor\(quote\.country\) : field\.label/, 'and labels the lines in the country\'s words');
+  for (const language of ['id', 'en']) for (const key of ['cart.intl.formState', 'cart.intl.formProvince', 'cart.intl.formZip', 'cart.intl.formPostcodeRequired']) {
+    assert.ok(MESSAGES[language][key], `${language}.${key}`);
+  }
+}
+
 console.log('internationalBuyerFlow selfcheck OK (bottle count reaches the cart; the form checks what the server checks)');

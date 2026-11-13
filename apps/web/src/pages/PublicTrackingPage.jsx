@@ -249,7 +249,7 @@ const PublicTrackingPage = () => {
                 <p>{foundNothing ? t("track.checkNumber") : t("track.whereNumber")}</p>
                 {/* A number that finds nothing is often a typo or a lost payment page: a person can look it up
                     (visitor audit, 13 Nov 2026 — the page offered no way to ask). */}
-                {foundNothing ? <AskAtelierButton className="mt-4" /> : null}
+                {foundNothing ? <AskAtelierButton orderNumber={lookup.trim()} className="mt-4" /> : null}
               </div>
             )}
             {error ? <p className="ng-notice ng-notice--error mt-4" role="alert">{error}</p> : null}
