@@ -15,7 +15,8 @@ import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
-import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
+import { SHIPPING_QUOTA_MESSAGE, checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
+import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { splitScriptName } from '@/utils/scriptName.js';
@@ -260,6 +261,16 @@ const CheckoutPage = () => {
                   {shippingLoading ? <p role="status" className="ng-notice">{t('checkout.searchingRates')}</p> : null}
                   {shippingNotice ? <p role="status" className="ng-notice">{shippingNotice}</p> : null}
                   {shippingError ? <p role="status" className="ng-notice ng-notice--error">{shippingError}</p> : null}
+                  {/* The calculator is out for the day, not the buyer's address: the order goes by WhatsApp,
+                      with the basket already written in the message. */}
+                  {shippingError === SHIPPING_QUOTA_MESSAGE ? (
+                    <AskAtelierButton
+                      className="self-start"
+                      labelKey="checkout.orderOnWhatsApp"
+                      draftKey="checkout.waShippingDraft"
+                      draftVars={{ items: items.map((item) => `${item.name} × ${item.quantity}`).join(', ') }}
+                    />
+                  ) : null}
                   {destinationOptions.length ? (
                     <div className="flex flex-col gap-2">
                       <span className="ng-mono text-ng-ash">{t('mcheckout.pickOtherArea')}</span>

@@ -31,7 +31,12 @@ const requestJson = async (url, options = {}) => {
   }
 
   if (!response.ok) {
-    throw new Error(data.message || 'Shipping service is unavailable');
+    // The code travels with the error: 'shipping_quota' is the courier's daily limit, which the page says
+    // as such instead of asking the buyer to retype an address (fifth visitor audit, 13 Nov 2026).
+    const error = new Error(data.message || 'Shipping service is unavailable');
+    error.code = data.code || '';
+    error.status = response.status;
+    throw error;
   }
 
   return data;

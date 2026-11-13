@@ -68,6 +68,8 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
 // Returns a message KEY, never a sentence. This is a module-level helper, so it cannot call t() — and a
 // default that returned Indonesian would put it into the English shop with nothing to flag it.
 const getFriendlyShippingErrorKey = (error, fallbackKey = 'bsp.areaSearchFailed') => {
+  // The courier's daily quota (fifth visitor audit, 13 Nov 2026): no area will help; WhatsApp will.
+  if (error?.code === 'shipping_quota') return 'bsp.shippingQuota';
   const message = String(error?.message || error || '').trim();
   if (/destination|domestic|data not found|not found/i.test(message)) {
     return 'bsp.areaNotFound';
