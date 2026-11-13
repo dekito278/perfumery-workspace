@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Gift, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import FreeVialChoices from '@/components/storefront/FreeVialChoices.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
@@ -77,7 +78,7 @@ const FreeVialPrompt = () => {
     if (!visible) return undefined;
     const before = document.activeElement;
     const sheet = sheetRef.current;
-    const focusables = () => [...(sheet?.querySelectorAll('button:not([disabled])') || [])];
+    const focusables = () => [...(sheet?.querySelectorAll('button:not([disabled]), a[href]') || [])];
     (focusables()[1] || focusables()[0])?.focus();
     const onKey = (event) => {
       if (event.key === 'Escape') { event.preventDefault(); dismiss(); return; }
@@ -116,6 +117,12 @@ const FreeVialPrompt = () => {
         <button type="button" className="free-vial__clear" onClick={dismiss}>
           {t('cart.giftLater')}
         </button>
+        {/* The add-to-cart toast's "Lihat keranjang" sits behind this dialog while it holds the focus, and
+            is gone by the time the dialog closes (seventh visitor audit, 13 Nov 2026): the way to the cart is
+            offered here too. */}
+        <Link to="/cart" className="free-vial__clear" onClick={() => setOpen(false)}>
+          {t('pdp.viewCart')}
+        </Link>
       </div>
     </div>
   );
