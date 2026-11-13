@@ -337,6 +337,9 @@ const CustomerInvoicePage = () => {
       // Same rule as the portal: a dropped connection must not be reported as a code that
       // does not exist. See customerService.getCustomerPortalByCode.
       console.warn('Invoice lookup failed:', error?.message || error);
+      // Nor as "not found" under the field: the toast said the code is fine while the line beneath it said
+      // nothing matched (tenth visitor audit, 13 Nov 2026). A failed lookup is not a search that came back.
+      setSearched(false);
       toast.error(t('inv.codeLookupFailed'));
       return;
     } finally {
