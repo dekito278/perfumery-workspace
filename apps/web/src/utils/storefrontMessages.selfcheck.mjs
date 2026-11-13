@@ -75,7 +75,7 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // pay.tab left this list on 13 Nov 2026: the Indonesian payment tab is 'Pembayaran' now (third audit).
   // (journal.tab / .meta / .eyebrow left this list on 2026-11-02: since the redesign the Indonesian journal
   // is headed "Catatan Atelier", so an English tab and an English search snippet were no longer its name.)
-  'pay.refresh', // the same word in both
+  // pay.refresh left this list on 13 Nov 2026: the Indonesian button reads 'Muat ulang' (eighth audit).
   'pay.status',  // Status is Status
   // Payment providers are named, not translated: DOKU is DOKU and QRIS is QRIS on both sides.
   'paymethod.doku', 'paymethod.qris',

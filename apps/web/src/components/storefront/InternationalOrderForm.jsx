@@ -102,14 +102,17 @@ const InternationalOrderForm = ({ quote }) => {
       {FIELDS.map((field) => {
         const Input = field.multiline ? 'textarea' : 'input';
         return (
-          <label key={field.key} className="ng-label">
-            <span className="ng-mono text-ng-dust">{t(field.labelFor ? field.labelFor(quote.country) : field.label)}</span>
+          // The label holds only the label: the error used to sit inside it too, so a screen reader read it
+          // as part of the field's name AND again as its description (eighth visitor audit, 13 Nov 2026).
+          <div key={field.key} className="ng-label">
+            <label htmlFor={`intl-${field.key}`} className="ng-mono text-ng-dust">{t(field.labelFor ? field.labelFor(quote.country) : field.label)}</label>
             <Input
               className="ng-field"
               type={field.multiline ? undefined : (field.type || 'text')}
               rows={field.multiline ? 3 : undefined}
               value={buyer[field.key]}
               name={field.key}
+              id={`intl-${field.key}`}
               onChange={(event) => {
                 const { value } = event.target;
                 setBuyer((current) => ({ ...current, [field.key]: value }));
@@ -140,7 +143,7 @@ const InternationalOrderForm = ({ quote }) => {
             {(field.key === 'address' || field.key === 'city') && NON_LATIN.test(buyer[field.key]) ? (
               <span className="text-sm text-ng-sand" role="status">{t('cart.intl.formLatin')}</span>
             ) : null}
-          </label>
+          </div>
         );
       })}
       <p className="m-0 text-sm text-ng-dust">{t('cart.intl.formCountry', { country: quote.destination })}</p>
