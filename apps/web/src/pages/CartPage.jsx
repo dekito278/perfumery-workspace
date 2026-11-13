@@ -122,7 +122,7 @@ const CartPage = () => {
                             <ProductVisual product={item} className="h-full w-full" imageFit="cover" label={false} sizes="96px" />
                           </Link>
                           <div className="flex min-w-0 flex-col gap-2">
-                            <Link to={`/catalog/${item.productSlug || item.slug}`} className="font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(item.name).name}</Link>
+                            <Link to={`/catalog/${item.productSlug || item.slug}`} className="inline-flex min-h-[44px] items-center self-start font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(item.name).name}</Link>
                             <span className="ng-mono text-ng-ash">{[shortNoteList(item.notes), item.size].filter(Boolean).join(' · ')}</span>
                             <span className="text-sm text-ng-dust">{item.price}</span>
                             <CartPriceChange item={item} className="mt-1" />

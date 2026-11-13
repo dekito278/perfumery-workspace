@@ -207,7 +207,7 @@ const PublicJournalPage = () => {
                     {featured.cover_image_url ? <JournalCoverFrame post={featured} className="ng-cover border-ng-bone/10" imageClassName="aspect-[5/4]" /> : null}
                     <span className="flex flex-col gap-5">
                       <span className="ng-mono text-ng-ember">{getJournalCategoryShopLabel(featured.category, t)} · {formatDate(featured.published_at || featured.updated || featured.created, t('fmt.dateLocale'))}</span>
-                      <span className="font-ng-display text-[40px] leading-[1.02] md:text-[60px]">{featured.title}</span>
+                      <h2 className="m-0 font-ng-display text-[40px] font-normal leading-[1.02] md:text-[60px]">{featured.title}</h2>
                       <span className="max-w-[520px] text-[17px] leading-relaxed text-ng-dust">{getExcerpt(featured)}</span>
                       <span className="ng-mono inline-flex items-center gap-2">{t('journal.read')} <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
                     </span>
@@ -220,7 +220,7 @@ const PublicJournalPage = () => {
                     {remaining.map((article) => (
                       <Link key={article.id} to={getJournalPublicPath(article)} className="ng-journal-row">
                         <span className="ng-mono text-ng-ash">{getJournalCategoryShopLabel(article.category, t)}</span>
-                        <span className="font-ng-display text-[28px] leading-[1.1] md:text-[32px]">{article.title}</span>
+                        <h2 className="m-0 font-ng-display text-[28px] font-normal leading-[1.1] md:text-[32px]">{article.title}</h2>
                         <span className="text-[15px] leading-relaxed text-ng-dust">{getExcerpt(article)}</span>
                         <time className="ng-mono text-ng-ash">{formatDate(article.published_at || article.updated || article.created, t('fmt.dateLocale'))}</time>
                       </Link>

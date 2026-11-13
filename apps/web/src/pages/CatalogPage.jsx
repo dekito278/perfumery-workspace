@@ -288,7 +288,9 @@ const CatalogPage = () => {
                         />
                       </Link>
                       <Link to={`/catalog/${product.slug}`} className="ng-cat-row__name">
-                        <span className="font-ng-display text-[28px] leading-none [overflow-wrap:anywhere] md:text-[34px]">{named.name}</span>
+                        {/* A heading per perfume, so a screen reader can move through the list by name (fifth
+                            visitor audit, 13 Nov 2026: 19 perfumes under one h1 and nothing else). */}
+                        <h2 className="m-0 font-ng-display text-[28px] font-normal leading-none [overflow-wrap:anywhere] md:text-[34px]">{named.name}</h2>
                         <span className="ng-cat-row__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || 'Atelier'}</span>
                       </Link>
                       {/* What it smells of, in three words. The field holds the full material list since
