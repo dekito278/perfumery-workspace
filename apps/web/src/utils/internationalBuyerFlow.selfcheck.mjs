@@ -84,4 +84,21 @@ assert.match(read('components', 'storefront', 'ProductStoryLink.jsx'), /\{isInte
   }
 }
 
+// Fifth visitor audit, 13 Nov 2026: the address form relied on the browser's own bubbles ("Please match the
+// requested format.", in the browser's language), and "ABCDE" passed as a US ZIP.
+{
+  const form = readFileSync(new URL('../components/storefront/InternationalOrderForm.jsx', import.meta.url), 'utf8');
+  assert.match(form, /onSubmit=\{submit\} aria-labelledby="intl-order-form" noValidate>/, 'the page, not the browser, says what is wrong');
+  assert.match(form, /aria-invalid=\{fieldErrors\[field\.key\] \? 'true' : undefined\}/);
+  assert.match(form, /form\.elements\.namedItem\(firstBad\.key\)\?\.focus\(\);\s*return;/, 'and takes the buyer to the first field to fix');
+  for (const language of ['id', 'en']) {
+    for (const key of ['cart.intl.errRequired', 'cart.intl.errEmail', 'cart.intl.errPhone', 'cart.intl.errPostcode']) {
+      assert.ok(MESSAGES[language][key], `${language}: ${key}`);
+    }
+  }
+  const { postcodePatternFor } = await import('./internationalAddress.js');
+  const zip = new RegExp(`^(?:${postcodePatternFor('US')})$`, 'v');
+  assert.ok(zip.test('94105') && zip.test('94105-1234') && !zip.test('ABCDE'), 'a US ZIP is five digits');
+  assert.equal(postcodePatternFor('ZZ'), undefined, 'an unlisted country is checked for presence only');
+}
 console.log('internationalBuyerFlow selfcheck OK (bottle count reaches the cart; the form checks what the server checks)');

@@ -4,7 +4,9 @@ import { Loader2 } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { clearCart } from '@/services/cartService.js';
 import { placeInternationalOrder } from '@/services/orderService.js';
-import { phoneExampleFor, postcodeLabelKeyFor, postcodeRequiredFor, regionLabelKeyFor, regionRequiredFor } from '@/utils/internationalAddress.js';
+import {
+  phoneExampleFor, postcodeLabelKeyFor, postcodePatternFor, postcodeRequiredFor, regionLabelKeyFor, regionRequiredFor,
+} from '@/utils/internationalAddress.js';
 
 // maxLength = the endpoint's own limits (INTERNATIONAL_FIELDS in api/orders/create.js), so a too-long field
 // is stopped while typing rather than refused after "Place order". Patterns: a phone is digits with a + and
@@ -12,15 +14,15 @@ import { phoneExampleFor, postcodeLabelKeyFor, postcodeRequiredFor, regionLabelK
 // audit, 13 Nov 2026 — both were accepted by the form and only refused by the server).
 const FIELDS = [
   { key: 'name', label: 'cart.intl.formName', autoComplete: 'name', required: true, maxLength: 120 },
-  { key: 'email', label: 'cart.intl.formEmail', autoComplete: 'email', type: 'email', required: true, maxLength: 200, pattern: '[^\\s@]+@[^\\s@]+\\.[^\\s@]+' },
+  { key: 'email', label: 'cart.intl.formEmail', autoComplete: 'email', type: 'email', required: true, maxLength: 200, pattern: '[^\\s@]+@[^\\s@]+\\.[^\\s@]+', formatError: 'cart.intl.errEmail' },
   // Required: DHL asks for a phone on every international waybill (internationalAddress.js).
-  { key: 'phone', label: 'cart.intl.formPhone', autoComplete: 'tel', type: 'tel', required: true, maxLength: 40, pattern: '[+]?[0-9 \\.\\-\\/\\(\\)]{6,40}', hint: 'cart.intl.formPhoneHint' },
+  { key: 'phone', label: 'cart.intl.formPhone', autoComplete: 'tel', type: 'tel', required: true, maxLength: 40, pattern: '[+]?[0-9 \\.\\-\\/\\(\\)]{6,40}', hint: 'cart.intl.formPhoneHint', formatError: 'cart.intl.errPhone' },
   { key: 'address', label: 'cart.intl.formAddress', autoComplete: 'street-address', hint: 'cart.intl.formAddressHint', required: true, multiline: true, maxLength: 600 },
   { key: 'city', label: 'cart.intl.formCity', autoComplete: 'address-level2', required: true, maxLength: 120 },
   // Required only where DHL needs it (US, CA, AU); asked of everyone, since most addresses have one.
   { key: 'region', label: 'cart.intl.formRegion', labelFor: regionLabelKeyFor, autoComplete: 'address-level1', requiredFor: regionRequiredFor, maxLength: 120 },
   // Required where the country uses postcodes (internationalAddress.js); labelled in the country's own words.
-  { key: 'postcode', label: 'cart.intl.formPostcode', labelFor: postcodeLabelKeyFor, autoComplete: 'postal-code', maxLength: 20, requiredFor: postcodeRequiredFor },
+  { key: 'postcode', label: 'cart.intl.formPostcode', labelFor: postcodeLabelKeyFor, autoComplete: 'postal-code', maxLength: 20, requiredFor: postcodeRequiredFor, patternFor: postcodePatternFor, formatError: 'cart.intl.errPostcode' },
 ];
 
 // What was typed survives a reload (the audit lost a whole address to one). Per browser, cleared once the
@@ -52,10 +54,31 @@ const InternationalOrderForm = ({ quote }) => {
   useEffect(() => { writeDraft(buyer); }, [buyer]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // The form says what is wrong beside the field, in the page's language (fifth visitor audit, 13 Nov
+  // 2026: it relied on the browser's own bubble — "Please match the requested format.", in the browser's
+  // language, gone in a second, with no hint of the format). noValidate keeps the browser's checks
+  // (validity) and drops its bubbles; the messages below replace them.
+  const [fieldErrors, setFieldErrors] = useState({});
+  const errorFor = (field, element) => {
+    if (!element || element.validity.valid) return '';
+    return element.validity.valueMissing ? 'cart.intl.errRequired' : (field.formatError || 'cart.intl.errRequired');
+  };
 
   const submit = async (event) => {
     event.preventDefault();
     if (saving) return;
+    const form = event.currentTarget;
+    const found = {};
+    for (const field of FIELDS) {
+      const message = errorFor(field, form.elements.namedItem(field.key));
+      if (message) found[field.key] = message;
+    }
+    setFieldErrors(found);
+    const firstBad = FIELDS.find((field) => found[field.key]);
+    if (firstBad) {
+      form.elements.namedItem(firstBad.key)?.focus();
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -74,7 +97,7 @@ const InternationalOrderForm = ({ quote }) => {
   };
 
   return (
-    <form className="flex flex-col gap-4 border-t border-ng-bone/15 pt-6" onSubmit={submit} aria-labelledby="intl-order-form">
+    <form className="flex flex-col gap-4 border-t border-ng-bone/15 pt-6" onSubmit={submit} aria-labelledby="intl-order-form" noValidate>
       <h3 id="intl-order-form" className="ng-mono m-0 text-ng-bone">{t('cart.intl.formTitle')}</h3>
       {FIELDS.map((field) => {
         const Input = field.multiline ? 'textarea' : 'input';
@@ -86,15 +109,34 @@ const InternationalOrderForm = ({ quote }) => {
               type={field.multiline ? undefined : (field.type || 'text')}
               rows={field.multiline ? 3 : undefined}
               value={buyer[field.key]}
-              onChange={(event) => setBuyer((current) => ({ ...current, [field.key]: event.target.value }))}
+              name={field.key}
+              onChange={(event) => {
+                const { value } = event.target;
+                setBuyer((current) => ({ ...current, [field.key]: value }));
+                // Once a field has been flagged, its message follows the typing — and clears when it is right.
+                if (fieldErrors[field.key]) {
+                  const message = errorFor(field, event.target);
+                  setFieldErrors((current) => ({ ...current, [field.key]: message }));
+                }
+              }}
               // The phone example in the buyer's own calling code: a US buyer was shown "+65 9123 4567".
               placeholder={field.key === 'phone' && phoneExampleFor(quote.country) ? phoneExampleFor(quote.country) : (field.hint ? t(field.hint) : undefined)}
               autoComplete={field.autoComplete}
               required={field.required || Boolean(field.requiredFor?.(quote.country))}
               maxLength={field.maxLength}
-              pattern={field.pattern}
+              pattern={field.patternFor ? field.patternFor(quote.country) : field.pattern}
               inputMode={field.type === 'tel' ? 'tel' : undefined}
+              aria-invalid={fieldErrors[field.key] ? 'true' : undefined}
+              aria-describedby={fieldErrors[field.key] ? `intl-${field.key}-error` : undefined}
             />
+            {fieldErrors[field.key] ? (
+              <span id={`intl-${field.key}-error`} className="ng-error text-sm" role="alert">
+                {t(fieldErrors[field.key], {
+                  example: phoneExampleFor(quote.country) || '+1 415 555 0100',
+                  country: quote.destination,
+                })}
+              </span>
+            ) : null}
             {(field.key === 'address' || field.key === 'city') && NON_LATIN.test(buyer[field.key]) ? (
               <span className="text-sm text-ng-sand" role="status">{t('cart.intl.formLatin')}</span>
             ) : null}
