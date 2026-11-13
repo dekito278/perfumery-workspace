@@ -568,8 +568,15 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
   left: 0;
   right: 0;
   z-index: 50;
-  max-height: calc(100vh - 80px);
+  /* The VISIBLE height (dvh: the screen with the browser's bars showing), less where the panel starts —
+     measured by PublicHeader as --ng-menu-top. 100vh is the screen with the bars hidden, and on an
+     iPhone that put the end of the menu under the address bar, where no scroll could reach it. vh is
+     the fallback for a browser without dvh. */
+  max-height: calc(100vh - var(--ng-menu-top, 80px));
+  max-height: calc(100dvh - var(--ng-menu-top, 80px));
   overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   border-bottom: 1px solid var(--ng-line);
   background: var(--ng-ink);
   color: var(--ng-bone);
