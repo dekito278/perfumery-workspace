@@ -16,6 +16,13 @@ module.exports = {
       },
     },
     extend: {
+      // Steps the storefront and Studio already write (bg-black/92, border-ng-bone/12, bg-white/88 ...) but
+      // Tailwind's default scale lacks, so they compiled to NOTHING: the photo zoom opened with no backdrop
+      // over the page (fourth visitor audit, 13 Nov 2026) and the Help/About dividers never showed.
+      // tools: src/utils/opacitySteps.selfcheck.mjs checks every such class against this list.
+      opacity: {
+        8: '0.08', 12: '0.12', 14: '0.14', 72: '0.72', 78: '0.78', 86: '0.86', 88: '0.88', 92: '0.92', 96: '0.96',
+      },
       colors: {
         // Editorial storefront palette (mirrors --editorial-* tokens in styles/storefront.css).
         // Registered so pages can use `text-editorial-charcoal` etc. instead of inline

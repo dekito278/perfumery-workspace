@@ -355,6 +355,18 @@ select.ng-field option {
   color: var(--ng-faint);
 }
 
+/* The browser's own clear button in a search field is a blue × on this dark page (fourth visitor audit,
+   13 Nov 2026). Drawn in the page's own colour instead: a thin cross in --ng-dust. */
+input[type="search"].ng-field::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  background: linear-gradient(45deg, transparent 45%, var(--ng-dust) 45%, var(--ng-dust) 55%, transparent 55%),
+    linear-gradient(-45deg, transparent 45%, var(--ng-dust) 45%, var(--ng-dust) 55%, transparent 55%);
+}
+
 .ng-field:focus {
   outline: 2px solid var(--ng-bone);
   outline-offset: 2px;

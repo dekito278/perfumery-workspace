@@ -14,9 +14,9 @@ const Metric = ({ label, value, helper, tone = 'neutral' }) => {
 
   return (
     <div className={`rounded-2xl px-3 py-2 ring-1 ${tones[tone] || tones.neutral}`}>
-      <div className="text-[10px] font-bold uppercase text-current/70">{label}</div>
+      <div className="text-[10px] font-bold uppercase opacity-70">{label}</div>
       <div className="mt-1 truncate text-sm font-bold">{value}</div>
-      {helper ? <div className="mt-0.5 truncate text-[11px] font-semibold text-current/70">{helper}</div> : null}
+      {helper ? <div className="mt-0.5 truncate text-[11px] font-semibold opacity-70">{helper}</div> : null}
     </div>
   );
 };

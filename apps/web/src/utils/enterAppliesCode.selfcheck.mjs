@@ -43,4 +43,8 @@ for (const file of files) {
 }
 assert.ok(found >= 3, `the sweep must see the cart, checkout and bespoke voucher fields (saw ${found})`);
 assert.deepEqual(missing, [], 'a code field with its own apply button must apply on Enter (onKeyDown={onEnter(...)})');
+// The area search sits inside the order form too: Enter there SEARCHES (fourth audit, 13 Nov 2026 — it
+// submitted the order with the area picked before).
+assert.match(readFileSync(new URL('../pages/CheckoutPage.jsx', import.meta.url), 'utf8'), /aria-label=\{t\('checkout\.destinationAria'\)\}[^>]*onKeyDown=\{onEnter\(searchArea\)\}/, 'checkout: Enter in the area field searches');
+assert.match(readFileSync(new URL('../pages/BespokePage.jsx', import.meta.url), 'utf8'), /aria-label=\{t\('bsp\.areaAria'\)\}\s*enterKeyHint="search"\s*onKeyDown=\{onEnter\(/, 'bespoke: Enter in the area field searches');
 console.log(`enterAppliesCode: ${found} code field(s) apply on Enter`);
