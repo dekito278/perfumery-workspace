@@ -6,7 +6,6 @@ import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BadgePercent, CheckCircle2, CreditCard, Globe, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { lookupCustomerByCode } from '@/services/customerService.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
@@ -35,6 +34,8 @@ import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } f
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { onEnter } from '@/utils/onEnter.js';
 import { areaQueryFromAddress, destinationSearchText, pickConfidentDestination } from '@/utils/areaFromAddress.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import { getCustomerAccount } from '@/services/customerService.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -204,7 +205,6 @@ const BespokePage = () => {
   const defaultCap = cheapestEnabled(capDesignOptions);
   const defaultLabel = cheapestEnabled(labelDesignOptions);
   const [saving, setSaving] = useState(false);
-  const [codeLoading, setCodeLoading] = useState(false);
   const [destinationSearch, setDestinationSearch] = useState('');
   const [destinationOptions, setDestinationOptions] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState(null);
@@ -501,43 +501,37 @@ const BespokePage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- defaults are derived from the option arrays already in deps
   }, [bottleSizeOptions, bottleTypeOptions, capDesignOptions, labelDesignOptions, exoticMaterialOptions, defaultSize.value, defaultBottle.value, defaultCap.value, defaultLabel.value]);
 
-  // Mirrors MobileBespokePage.lookupCustomer, including the three answers it tells apart: a code that was
-  // not given, a code the server looked for and did not find, and a lookup that could not run at all.
-  // lookupCustomerByCode rethrows on failure now (#367), so "belum bisa dicek" is a real branch rather
-  // than a null that reads as "does not exist".
-  const lookupCustomer = useCallback(async () => {
-    if (!form.customerCode.trim()) {
-      toast.error(t('bsp.codeRequired'));
-      return;
-    }
+  // A returning customer's code, from the account they are signed in with — as the main checkout does
+  // (useCheckoutFlow). The typed SOLI field left both checkouts (#595), so this is how a bespoke order is
+  // filed under the customer it belongs to rather than a fresh code; a guest's history is matched by the
+  // order server as before. A draft or anything already typed is never overwritten.
+  const { currentUser } = useAuth();
+  useEffect(() => {
+    if (!currentUser) return undefined;
+    let cancelled = false;
+    getCustomerAccount().then((account) => {
+      const customer = account?.customer;
+      if (cancelled || !customer) return;
+      setForm((current) => ({
+        ...current,
+        customerCode: current.customerCode || customer.customerCode || '',
+        customerName: current.customerName || (customer.customerName !== 'Customer' ? customer.customerName : '') || '',
+        contact: current.contact || (customer.contact && customer.contact !== '-' ? customer.contact : ''),
+        deliveryAddress: current.deliveryAddress || customer.deliveryAddress || '',
+      }));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentUser]);
 
-    setCodeLoading(true);
-    let customer = null;
-    try {
-      customer = await lookupCustomerByCode(form.customerCode);
-    } catch (error) {
-      console.warn('Bespoke customer lookup failed:', error?.message || error);
-      toast.error(t('bsp.codeLookupFailed'));
-      return;
-    } finally {
-      setCodeLoading(false);
-    }
-    if (!customer) {
-      toast.error(t('bsp.codeNotFound'));
-      return;
-    }
-
-    setForm((current) => ({
-      ...current,
-      customerCode: customer.customerCode,
-      customerName: customer.customerName,
-      // The public lookup no longer returns contact/address (they were harvestable by code guessing — see
-      // 20260819120000_customer_lookup_pii_lockdown.sql), so keep whatever the buyer already typed.
-      contact: customer.contact && customer.contact !== '-' ? customer.contact : current.contact,
-      deliveryAddress: customer.deliveryAddress || current.deliveryAddress,
-    }));
-    toast.success(t('bsp.codeLoaded', { code: customer.customerCode }));
-  }, [form.customerCode, t]);
+  // The scent direction is the brief. It was only asked for at the very end of checkout, so "Lanjut ke
+  // checkout" opened a payment form for an empty brief, and the English WhatsApp button sent "Scent: -"
+  // (visitor audit, 13 Nov 2026). Asked for here, where it is typed.
+  const needsScentFirst = () => {
+    if (form.scentDescription.trim()) return false;
+    toast.error(t('bsp.errScent'));
+    document.getElementById('bespoke-scent')?.focus();
+    return true;
+  };
 
   const validateForm = () => {
     if (!form.customerName.trim()) return t('bsp.errName');
@@ -754,7 +748,7 @@ const BespokePage = () => {
                 </label>
                 <label className="ng-label">
                   <span className="ng-mono text-ng-dust">{t('bsp.scentDirection')}</span>
-                  <textarea rows="4" className="ng-field" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} aria-label={t('bsp.scentDirection')} />
+                  <textarea id="bespoke-scent" rows="4" className="ng-field" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} aria-label={t('bsp.scentDirection')} />
                   <div className="flex flex-wrap gap-2" aria-label={t('bsp.scentShortcuts')}>
                     {scentDirectionPrompts.map((prompt) => (
                       <button
@@ -863,7 +857,7 @@ const BespokePage = () => {
                 {bespokeTakesPayment(isInternational) ? (
                   <>
                     <p className="m-0">{t('bsp.designOk')}</p>
-                    <button type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => setCheckoutOpen(true)}>
+                    <button type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => { if (needsScentFirst()) return; setCheckoutOpen(true); }}>
                       {t('bsp.toCheckout')}
                       <CreditCard className="h-4 w-4" />
                     </button>
@@ -882,6 +876,7 @@ const BespokePage = () => {
                       }), getStorefrontWhatsAppNumber())}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(event) => { if (needsScentFirst()) event.preventDefault(); }}
                       className="ng-btn ng-btn--lg ng-btn--block"
                     >
                       {t('bsp.waOrder')}
@@ -903,26 +898,10 @@ const BespokePage = () => {
                     same dead end waits here: a foreign city returns an empty area list with no error. */}
                 <InternationalCheckoutNotice quotedOnRequest className="mb-4" />
                 <div className="grid gap-5 md:grid-cols-2">
-                  {/* Optional, and above the name on purpose: filling it fills the two fields below. The
-                      phone's version has a Paste button as well; on a laptop that is Ctrl+V. */}
-                  <label className="ng-label md:col-span-2">
-                    <span className="ng-mono text-ng-dust">{t('bsp.customerCode')}</span>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={form.customerCode}
-                        onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())}
-                        placeholder={t('bsp.customerCodeField')}
-                        aria-label={t('bsp.customerCodeField')}
-                        className="ng-field uppercase placeholder:normal-case"
-                      />
-                      <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={lookupCustomer} disabled={codeLoading}>
-                        {codeLoading ? t('bsp.checking') : t('bsp.check')}
-                      </button>
-                    </div>
-                  </label>
+                  {/* No SOLI customer code here any more, as in the main checkout (#595): signing in fills the
+                      details, and a guest just types them. */}
                   <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input type="text" className="ng-field" autoComplete="name" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} /></label>
-                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input type="text" className="ng-field" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} /></label>
+                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} /></label>
                   <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} /></label>
                 </div>
                 <div className="ng-fieldset">
@@ -1027,7 +1006,7 @@ const BespokePage = () => {
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
                   {discountAmount ? <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.voucher')}</dt><dd className="m-0 text-ng-sand">-{formatRupiah(discountAmount)}</dd></div> : null}
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.shipping')}</dt><dd className="m-0">{shippingFee ? formatRupiah(shippingFee) : '-'}</dd></div>
-                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.transferTotal')}</dt><dd className="m-0 font-ng-display text-[34px]">{priceReady ? formatRupiah(totalDue) : '—'}</dd></div>
+                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t(isManualPayment ? 'bsp.transferTotal' : 'checkout.total')}</dt><dd className="m-0 font-ng-display text-[34px]">{priceReady ? formatRupiah(totalDue) : '—'}</dd></div>
                 </dl>
                 <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.payment')}</span><select className="ng-field" value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
                 <label className="flex items-start gap-3 text-[15px] leading-relaxed text-ng-sand">

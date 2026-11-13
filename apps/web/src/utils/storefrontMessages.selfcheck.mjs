@@ -81,7 +81,7 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'paymethod.doku', 'paymethod.qris',
   'checkout.sizeQty', // "30ml · Qty 2" — two numbers and an abbreviation used in both
   // Bespoke: perfumery and commerce terms that are the same word on an Indonesian bottle.
-  'bsp.contact', 'bsp.label', 'bsp.material', 'bsp.addonMaterial', 'bsp.optionGroups', 'bsp.cap',
+  'bsp.label', 'bsp.material', 'bsp.addonMaterial', 'bsp.optionGroups', 'bsp.cap',
   'bsp.preorder', 'bsp.studioOrder', 'bsp.materialLabel', 'bsp.budgetLabel', 'bsp.preorderLabel',
   // The service's name in the menu and the footer, the same two words in both shops. The Indonesian
   // side read "Bespoke Ritual" until 2026-11-06, a capital none of the links beside it has.

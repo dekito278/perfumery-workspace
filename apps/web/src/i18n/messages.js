@@ -18,7 +18,7 @@
 export const MESSAGES = {
   id: {
     "a11y.breadcrumb": "Jejak navigasi",
-    "bsp.contactPlaceholder": "nama@email.com / +62...",
+    "bsp.contactPlaceholder": "081234567890",
     "a11y.backToTop": "Kembali ke atas",
     "a11y.galleryPrevImage": "Foto produk sebelumnya",
     "a11y.galleryNextImage": "Foto produk berikutnya",
@@ -624,7 +624,6 @@ export const MESSAGES = {
     "pay.orderReturned": "Order {order} sudah kembali ke Solivagant. Status final akan mengikuti notifikasi pembayaran.",
     "bsp.saved": "Request bespoke tersimpan: {order}",
     "bsp.voucherApplied": "{code} diterapkan",
-    "bsp.codeLoaded": "{code} dimuat",
     "bsp.voucher": "Kode",
     "fmt.dateLocale": "id-ID",
     "cust.accountAddress": "Akun & alamat",
@@ -904,9 +903,9 @@ export const MESSAGES = {
     "bsp.waOrderDraft": "Halo SOLIVAGANT, saya mau pesan parfum bespoke.\n\nNama: {name}\nAroma: {scent}\nMomen: {occasion}\nBotol: {bottle}\nHarga tertera: {price}\n\nBoleh dibantu konfirmasi ongkir ke alamat saya?\nSaya mengerti belum ada yang ditahan sampai kita sepakat.",
     "bsp.waOrderWhy": "Bespoke ke luar negeri diatur lewat WhatsApp: harganya dikutip per botol dan ongkirnya dihitung tangan untuk negaramu.",
     "bsp.contactSection": "Data kontak, pengiriman, dan pembayaran.",
-    "bsp.contactSectionBody": "Bagian ini baru muncul setelah desain dipilih, supaya proses awal tetap fokus ke perfume ritualnya.",
+    "bsp.contactSectionBody": "Isi alamat dan pilih pembayaran. Setelah pembayaran masuk, kami menghubungi nomormu untuk mengonfirmasi brief sebelum mulai meracik.",
     "bsp.name": "Nama",
-    "bsp.contact": "Email / WhatsApp",
+    "bsp.contact": "Nomor WhatsApp",
     "bsp.address": "Alamat pengiriman",
     "bsp.pickArea": "Pilih area dan layanan pengiriman",
     "bsp.pickCourier": "Pilih kurir",
@@ -941,7 +940,7 @@ export const MESSAGES = {
     "bsp.pickAreaThenService": "Pilih area tujuan yang paling sesuai, lalu pilih layanan ongkir.",
     "bsp.rateFailedArea": "Gagal menghitung ongkir. Coba pakai nama kecamatan atau kota.",
     "bsp.errName": "Nama wajib diisi.",
-    "bsp.errContact": "Email atau WhatsApp wajib diisi.",
+    "bsp.errContact": "Nomor WhatsApp wajib diisi.",
     "bsp.errScent": "Ceritakan arah aroma dulu.",
     "bsp.errSize": "Pilih ukuran botol.",
     "bsp.errPrice": "Harga bespoke belum terhitung. Pilih ulang opsi botol.",
@@ -975,8 +974,6 @@ export const MESSAGES = {
     "bsp.voucherPlaceholder": "Kode voucher / member",
     "bsp.voucherRemove": "Hapus voucher",
     "bsp.cap": "Cap",
-    "bsp.check": "Cek",
-
     // Step 1 showed no number at all on the most expensive thing this atelier sells. The figure is
     // derived from the cheapest enabled option in each required group — never typed here, or the copy
     // becomes a second source of truth that goes stale the day a price changes in Studio.
@@ -985,11 +982,6 @@ export const MESSAGES = {
     // What this option adds over the cheapest in its own group, beside the option itself. A plus sign
     // and a rupiah figure read the same in both shops, so the two halves are identical on purpose.
     "bsp.optionExtra": "+{price}",
-    "bsp.customerCode": "Kode customer:",
-    "bsp.codeRequired": "Kode customer wajib diisi",
-    "bsp.codeNotFound": "Kode customer tidak ditemukan",
-    "bsp.codeLookupFailed": "Kodenya belum bisa dicek — koneksi bermasalah. Coba lagi sebentar; kodenya tidak salah.",
-    "bsp.customerCodeField": "Kode customer",
     "bsp.previewFocus": "Preview fokus",
     "mcheckout.manualAreaHint": "Pakai ini hanya kalau alamat lengkap belum menemukan area ongkir yang tepat.",
     "track.cancelledLead": "Pesanan ini dibatalkan.",
@@ -1217,7 +1209,7 @@ export const MESSAGES = {
   },
   en: {
     "a11y.breadcrumb": "Breadcrumb",
-    "bsp.contactPlaceholder": "name@email.com / phone number",
+    "bsp.contactPlaceholder": "WhatsApp number",
     "a11y.backToTop": "Back to top",
     "a11y.galleryPrevImage": "Previous product image",
     "a11y.galleryNextImage": "Next product image",
@@ -1818,7 +1810,6 @@ export const MESSAGES = {
     "pay.orderReturned": "Order {order} has come back to Solivagant. The final status will follow the payment notification.",
     "bsp.saved": "Bespoke request saved: {order}",
     "bsp.voucherApplied": "{code} applied",
-    "bsp.codeLoaded": "{code} loaded",
     "bsp.voucher": "Voucher",
     "fmt.dateLocale": "en-GB",
     "cust.accountAddress": "Account & address",
@@ -2093,9 +2084,9 @@ export const MESSAGES = {
     "bsp.waOrderDraft": "Hello SOLIVAGANT, I would like a bespoke perfume.\n\nName: {name}\nScent: {scent}\nOccasion: {occasion}\nBottle: {bottle}\nPrice shown: {price}\n\nCould you confirm the shipping and how long it takes to reach my address?\nI understand nothing is reserved until we confirm.",
     "bsp.waOrderWhy": "A bespoke perfume going abroad is arranged on WhatsApp: send the brief, and the shipping to your country is confirmed with you before anything is paid.",
     "bsp.contactSection": "Contact, delivery and payment.",
-    "bsp.contactSectionBody": "This appears once the design is chosen, so the first part stays about the perfume.",
+    "bsp.contactSectionBody": "Fill in the address and choose how to pay. Once the payment arrives, we contact you on that number to confirm the brief before blending.",
     "bsp.name": "Name",
-    "bsp.contact": "Email / WhatsApp",
+    "bsp.contact": "WhatsApp number",
     "bsp.address": "Delivery address",
     "bsp.pickArea": "Choose a delivery area and service",
     "bsp.pickCourier": "Choose a courier",
@@ -2130,7 +2121,7 @@ export const MESSAGES = {
     "bsp.pickAreaThenService": "Choose the closest matching area, then choose a shipping service.",
     "bsp.rateFailedArea": "Shipping could not be calculated. Try a district or city name.",
     "bsp.errName": "Your name is required.",
-    "bsp.errContact": "An email or WhatsApp number is required.",
+    "bsp.errContact": "A WhatsApp number is required.",
     "bsp.errScent": "Tell us the scent direction first.",
     "bsp.errSize": "Choose a bottle size.",
     "bsp.errPrice": "The bespoke price has not been calculated. Choose the bottle options again.",
@@ -2164,8 +2155,6 @@ export const MESSAGES = {
     "bsp.voucherPlaceholder": "Voucher code",
     "bsp.voucherRemove": "Remove voucher",
     "bsp.cap": "Cap",
-    "bsp.check": "Check",
-
     // NOT the same sentence. These prices are one domestic set with no international variant, and the
     // English shop takes no payment for a bespoke bottle — so a rupiah floor here would be the exact
     // promise buildBespokeEnquiryDraft exists to avoid. The block is gated to the Indonesian shop; this
@@ -2173,11 +2162,6 @@ export const MESSAGES = {
     "bsp.floor": "From {price}",
     "bsp.floorNote": "Before shipping. It rises with the options you choose, and the shipping to your country is confirmed on WhatsApp.",
     "bsp.optionExtra": "+{price}",
-    "bsp.customerCode": "Customer code:",
-    "bsp.codeRequired": "A customer code is required",
-    "bsp.codeNotFound": "That customer code was not found",
-    "bsp.codeLookupFailed": "We could not check that code — the connection failed. Try again in a moment; your code is not wrong.",
-    "bsp.customerCodeField": "Customer code",
     "bsp.previewFocus": "Focused preview",
     "mcheckout.manualAreaHint": "Use this only if your full address has not found the right shipping area.",
     "track.cancelledLead": "This order was cancelled.",

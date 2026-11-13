@@ -59,37 +59,21 @@ assert.ok(flows.length >= 1,
   `expected the desktop and phone bespoke flows; found ${flows.length}: ${flows.join(', ')}. A third one `
   + 'has to be caught by this too.');
 
-// --- 2. Each offers the code, and something writes it -------------------------------------------------
-const missing = [];
-const unwritten = [];
-const silent = [];
+// --- 2. Each files the order under the customer's own code -----------------------------------------------
+// Since #595 neither checkout asks a buyer to type a SOLI code. The main checkout fills it from the signed-in
+// account (useCheckoutFlow); the bespoke checkout does the same, and must — or a returning customer's bespoke
+// order is filed under a fresh code and their history splits, which is what this guard was written for.
+const unfilled = [];
 for (const rel of flows) {
   const source = strip(readFileSync(join(src, rel), 'utf8'));
-  if (!/lookupCustomerByCode\(/.test(source)) { missing.push(rel); continue; }
-
-  // #380's lesson: state with no writer reads like it preserves something. A field the buyer can type
-  // into is what makes the code reachable at all.
-  if (!/updateField\('customerCode'|updateForm\('customerCode'/.test(source)) unwritten.push(rel);
-
-  // The three answers, each distinct. A lookup that could not run must not be reported as a code that
-  // does not exist — lookupCustomerByCode rethrows for exactly that (#367).
-  const body = lookupBody(source);
-  assert.ok(body.includes('lookupCustomerByCode('), `${rel}: lookupCustomer does not call the lookup`);
-  const said = [...body.matchAll(/t\('(bsp\.code\w+)'/g)].map((match) => match[1]);
-  const distinct = new Set(said);
-  if (!distinct.has('bsp.codeLookupFailed') || !distinct.has('bsp.codeNotFound') || distinct.size < 3) {
-    silent.push(`${rel}: ${[...distinct].join(', ') || '(none)'}`);
-  }
+  const fills = /getCustomerAccount\(\)/.test(source) && /customerCode: current\.customerCode \|\| customer\.customerCode/.test(source);
+  const asks = /lookupCustomerByCode\(/.test(source) && /updateField\('customerCode'|updateForm\('customerCode'/.test(source);
+  if (!fills && !asks) unfilled.push(rel);
 }
-assert.deepEqual(missing, [],
-  'these bespoke flows never let a returning customer give their code, so their order is filed under a '
-  + 'new one and their history splits:\n  ' + missing.join('\n  '));
-assert.deepEqual(unwritten, [],
-  'these read a customer code that nothing writes — the state is there and the field is not, which is '
-  + 'exactly what #380 deleted:\n  ' + unwritten.join('\n  '));
-assert.deepEqual(silent, [],
-  'these do not tell the three answers apart — a code not given, a code looked for and not found, and a '
-  + 'lookup that could not run. The third must never read as the second:\n  ' + silent.join('\n  '));
+assert.deepEqual(unfilled, [],
+  'these bespoke flows neither ask for a returning customer\'s code nor fill it from their account, so the '
+  + 'order is filed under a new one and their history splits:\n  ' + unfilled.join('\n  '));
+
 
 // --- 3. And the code the buyer gave reaches the order -------------------------------------------------
 // Collected and then dropped on the way to the order is the shape this repo has shipped before.
@@ -111,20 +95,4 @@ assert.deepEqual(orphaned, [],
   'these build the order\'s customer code without the one the buyer typed, so a code given on the form is '
   + 'collected and then dropped on the way to the order:\n  ' + orphaned.join('\n  '));
 
-// --- 4. Every message it can show exists in BOTH shops ------------------------------------------------
-const messages = readFileSync(join(src, 'i18n', 'messages.js'), 'utf8');
-const keys = new Set();
-for (const rel of flows) {
-  for (const match of lookupBody(strip(readFileSync(join(src, rel), 'utf8'))).matchAll(/t\('(bsp\.\w+)'/g)) {
-    keys.add(match[1]);
-  }
-}
-console.log(`  messages the lookup can show: ${[...keys].sort().join(', ')}`);
-for (const key of keys) {
-  const count = messages.split(`"${key}":`).length - 1;
-  assert.equal(count, 2,
-    `${key} appears ${count} time(s) in messages.js — it must exist in both the Indonesian and the English `
-    + 'catalogue, or the English shop shows a raw key');
-}
-
-console.log(`bothBespokeFlowsAskForTheCode selfcheck OK (${flows.length} flows, each asking, each telling the three answers apart)`);
+console.log(`bothBespokeFlowsAskForTheCode selfcheck OK (${flows.length} flow(s), each filing the order under the customer's own code)`);
