@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -53,6 +53,8 @@ const InternationalOrderForm = ({ quote }) => {
   const [buyer, setBuyer] = useState(readDraft);
   useEffect(() => { writeDraft(buyer); }, [buyer]);
   const [saving, setSaving] = useState(false);
+  // Set the moment a request starts, so taps that land before the re-render cannot send a second one.
+  const submittingRef = useRef(false);
   const [error, setError] = useState('');
   // The form says what is wrong beside the field, in the page's language (fifth visitor audit, 13 Nov
   // 2026: it relied on the browser's own bubble — "Please match the requested format.", in the browser's
@@ -66,7 +68,7 @@ const InternationalOrderForm = ({ quote }) => {
 
   const submit = async (event) => {
     event.preventDefault();
-    if (saving) return;
+    if (saving || submittingRef.current) return;
     const form = event.currentTarget;
     const found = {};
     for (const field of FIELDS) {
@@ -79,6 +81,7 @@ const InternationalOrderForm = ({ quote }) => {
       form.elements.namedItem(firstBad.key)?.focus();
       return;
     }
+    submittingRef.current = true;
     setSaving(true);
     setError('');
     try {
@@ -92,6 +95,7 @@ const InternationalOrderForm = ({ quote }) => {
       navigate(`/pay/${paymentToken}`);
     } catch (failure) {
       setError(failure?.message || t('cart.intl.placeFailed'));
+      submittingRef.current = false;
       setSaving(false);
     }
   };
