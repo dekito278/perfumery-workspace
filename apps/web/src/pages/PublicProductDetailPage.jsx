@@ -35,7 +35,6 @@ import FreeVialNote from '@/components/storefront/FreeVialNote.jsx';
 import BuyerAnswers from '@/components/storefront/BuyerAnswers.jsx';
 import ProductTestimonials from '@/components/storefront/ProductTestimonials.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
-import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import { DEFAULT_SHARE_IMAGE, buildBreadcrumbJsonLd, buildProductJsonLd, getSiteOrigin, productMetaDescription, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
@@ -321,6 +320,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                       which was theirs, which is what Dekito saw on a phone. */}
                   {exportPrice ? (
                     <InternationalPrice price={exportPrice} />
+                  ) : isInternational ? (
+                    // No export price for this bottle: the English shop never shows the rupiah price instead.
+                    <p className="m-0 font-ng-display text-[40px] leading-none">{t('price.onRequest')}</p>
                   ) : (
                     <>
                       <p className="m-0 font-ng-display text-[40px] leading-none">{product.price}</p>
@@ -376,16 +378,23 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                     ) : (
                       <><ShoppingBag className="h-4 w-4" aria-hidden="true" /> {addCount > 1 && exportPrice
                         ? t('pdp.addManyToCartWithPrice', { count: addCount, price: `US$${usdPriceFor(exportPrice) * addCount}` })
-                        : t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') })}</>
+                        : (isInternational && !exportPrice ? t('pdp.addToCart') : t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') }))}</>
                     )}
                   </button>
                   {soldOut ? (
                     <AskAtelierButton labelKey="pdp.restockAsk" draftKey="pdp.restockDraft" draftVars={{ name: `${plainName(product.name)} (${selectedSize})` }} className="w-full" />
-                  ) : (
+                  ) : isInternational ? (
                     <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />
+                  ) : (
+                    // One currency per shop (Dekito's brief, 14 Nov 2026): the Indonesian page names no dollar
+                    // figure, it points to the international version of this same perfume. A plain link —
+                    // /en lives under the other router's basename.
+                    <p className="m-0 text-sm text-ng-dust">
+                      {t('pdp.shipAbroad')}{' '}
+                      <a href={`/en/catalog/${product.slug}`} className="ng-link inline-flex min-h-[44px] items-center">{t('pdp.seeIntlVersion')}</a>
+                    </p>
                   )}
                   <ShareProductButton product={product} />
-                  <SwitchToIndonesiaHint />
                 </div>
 
                 {/* Under the buy button for the reason written out on the phone page: the form stood between
@@ -494,7 +503,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               {/* The dollar, for the same reason the headline shows it — see the note at the top of
                   InternationalPrice.jsx. The rupiah of an export price is Dekito's book figure, not the
                   amount the buyer is asked to send. */}
-              <span className="text-sm text-ng-dust">{quotedInternationalPrice(exportPrice, selectedPriceLabel)}</span>
+              <span className="text-sm text-ng-dust">{isInternational && !exportPrice ? t('price.onRequest') : quotedInternationalPrice(exportPrice, selectedPriceLabel)}</span>
             </div>
           </div>
           {/* The sticky bar is a second add-to-cart, in both shops. From 18 Sep to 6 Oct 2026 it carried

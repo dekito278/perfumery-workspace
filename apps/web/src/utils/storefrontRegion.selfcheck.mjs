@@ -218,10 +218,14 @@ for (const path of ['/home', '/en/home', '/en/catalog/hug-n-1', '/cart']) {
 // bundle loads — the words the build wrote for it, in its language. The second line ("needs JavaScript") is not.
 const prerendered = '<main class="app-boot-fallback" aria-label="SOLIVAGANT" data-boot-page><div><h1>Koleksi</h1>'
   + '<p class="app-boot-description">Objek parfum terbatas.</p><p class="app-boot-description">Toko ini butuh JavaScript.</p></div></main>';
-assert.equal(bootAt('/catalog', { shop: true, noscript: prerendered }).boot, 'SOLIVAGANT Koleksi Objek parfum terbatas.',
-  'a prerendered page says where the buyer is while it loads');
 assert.equal(bootAt('/catalog', { shop: true, noscript: prerendered, canonical: 'https://www.solivagantscent.com/catalog' }).boot,
-  'SOLIVAGANT Koleksi Objek parfum terbatas.', 'its own address');
+  'SOLIVAGANT Koleksi Objek parfum terbatas.', 'a prerendered page says where the buyer is while it loads, at its own address');
+// Tenth audit, 13 Nov 2026: the English shell lost its canonical (it answers /en/cart, /en/track-order, an
+// English 404) and still carries the home's words. A file that names no address names none of them.
+assert.equal(bootAt('/en/cart', { shop: true, noscript: prerendered }).boot, 'SOLIVAGANT',
+  'a file without a canonical answers many addresses — its words belong to none of them');
+assert.equal(bootAt('/en', { shop: true, noscript: prerendered, canonical: 'https://www.solivagantscent.com/en/home' }).boot,
+  'SOLIVAGANT Koleksi Objek parfum terbatas.', 'the bare /en address is the English home');
 // The English shell also answers /en/cart (eighth audit, 13 Nov 2026): its home words are not the cart's.
 assert.equal(bootAt('/en/cart', { shop: true, noscript: prerendered, canonical: 'https://www.solivagantscent.com/en/home' }).boot, 'SOLIVAGANT',
   'a file served for another address shows the wordmark alone');

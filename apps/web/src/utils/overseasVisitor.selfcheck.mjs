@@ -190,8 +190,10 @@ assert.doesNotMatch(hook, /detectOverseasVisitor/,
   // Both hints, and nothing else: the guess may offer the way to the other shop, in either direction, but
   // never decide what a page says. The Indonesian-shop hint uses it to stay away from browsers abroad
   // (audit, 13 Nov 2026: it sent a buyer in Singapore from US$95 to "Rp 569.000").
-  assert.deepEqual(callers.sort(), [join('components', 'storefront', 'SwitchToEnglishHint.jsx'), join('components', 'storefront', 'SwitchToIndonesiaHint.jsx')].sort(),
-    'the guess reaches the page only as the hints between the two shops');
+  // The way back from the English shop is gone (Dekito's brief, 14 Nov 2026): a buyer in Indonesia uses the
+  // ID/EN switch in the header. What remains is the hint toward the English shop.
+  assert.deepEqual(callers.sort(), [join('components', 'storefront', 'SwitchToEnglishHint.jsx')],
+    'the guess reaches the page only as the hint toward the English shop');
   const hint = read('components', 'storefront', 'SwitchToEnglishHint.jsx');
   assert.match(hint, /!readRegionFromPath\(\) && detectOverseasVisitor\(\)/, 'shown only on an Indonesian address');
   assert.match(hint, /setRegion\(REGION_EN\)/, 'and what it does is go to the English address');
@@ -274,8 +276,10 @@ for (const page of [
   const source = read(...page);
   assert.match(source, /<InternationalPrice price=\{exportPrice\}/,
     `${page.join('/')} leads with the international price — desktop and mobile drifting apart is this repo's commonest defect`);
-  assert.match(source, /<SwitchToIndonesiaHint/,
-    `${page.join('/')} keeps the way back for a domestic buyer reading English`);
+  // "Shopping from Indonesia? See Indonesian prices" put the rupiah one tap under the dollar price; the
+  // header's ID/EN switch is the way between shops now (Dekito's brief, 14 Nov 2026).
+  assert.doesNotMatch(source, /SwitchToIndonesiaHint|intl\.switchToId/,
+    `${page.join('/')} points an English reader at the Indonesian prices again`);
   assert.doesNotMatch(source, /<OverseasPriceNote/, 'and does not repeat the same number in a second panel');
 }
 // And all three offer the cart to EVERY reader since 2026-10-06. From 18 Sep to 6 Oct the rule here was
@@ -475,29 +479,21 @@ assert.match(cardPrice, /getPrimaryVariant\(Array\.isArray\(product\?\.variants\
 // Detection decides who gets the English panel. It must not decide who is allowed to know the price at
 // all: a visitor abroad behind a VPN or on a browser reporting no timezone would otherwise have to open
 // WhatsApp to find out, and Dekito could never check the shop's export prices from Indonesia.
-assert.match(button, /const \{ price: exportPrice, overseasVisitor \} = useExportPrice\(product, variant\);/,
-  'the always-visible enquiry button knows the export price');
-assert.match(button, /const showExportPrice = Boolean\(exportPrice\) && !english && !overseasVisitor;/,
-  'shown exactly when the English panel is not already showing it');
-assert.match(button, /t\('export\.priceLine'\)/, 'the price line is translated');
-assert.match(MESSAGES.id['export.priceLine'], /Harga untuk pengiriman ke luar negeri/, 'in Indonesian, on the Indonesian button');
-// Whether the shipping is in the price is a money statement, so it has to survive translation. It has
-// flipped twice — inside the price on 19 Sep 2026, back out on 25 Sep — and each time the half that got
-// missed was a language, not a rule. Both tables are checked, in the same direction, every time.
-//
-// Out again because RaySpeed bills a one-kilo MINIMUM: a single 30 ml bottle to Los Angeles costs
-// Rp 670.500 to send against a US$80 price, while four bottles cost the same Rp 670.500. The line is
-// charged from the published card now, on every destination.
-// Still on top, said as where it appears (audit, 13 Nov 2026): "quoted separately" read as a manual quote.
-assert.match(MESSAGES.id['export.notIncluded'], /ongkir[\s\S]*dihitung di keranjang internasional/);
-// And the line takes them there: the Indonesian cart has no country (tenth visitor audit, 13 Nov 2026).
-assert.match(button, /<a href="\/en\/cart" className="ng-link whitespace-nowrap">\{t\('export\.intlCartLink'\)\}<\/a>/,
-  'the Indonesian line promises an overseas quote "in the cart" without a way to the cart that gives one');
-assert.match(MESSAGES.en['export.notIncluded'], /shipping[\s\S]*added in the cart/i,
-  'and the English must say it too — a buyer surprised by a second bill after paying is the complaint this line prevents');
-for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
-  assert.doesNotMatch(table['export.notIncluded'], /sudah termasuk|shipping included|included to/i,
-    `the ${lang} line still says the freight is in the price, which it is not`);
+// Superseded by Dekito's brief of 14 Nov 2026: ONE CURRENCY PER SHOP. Stockists buy at a wholesale dollar
+// price above the Indonesian retail price, and the Indonesian product page set the two side by side —
+// "Rp 479.000" and, under it, "Harga untuk pengiriman ke luar negeri: US$80". The export price stays
+// reachable without the guess, at the English address, which shows it to everyone who opens it.
+assert.doesNotMatch(button, /export\.priceLine|showExportPrice|export\.notIncluded/,
+  'the enquiry button carries a dollar line again — it would show on the Indonesian page');
+for (const key of ['export.priceLine', 'export.notIncluded', 'export.intlCartLink']) {
+  assert.ok(!MESSAGES.id[key] && !MESSAGES.en[key], `${key} is back — the dollar line under the rupiah price`);
+}
+{
+  const pdp = read('pages', 'PublicProductDetailPage.jsx');
+  assert.match(pdp, /\) : isInternational \? \(\s*<OverseasInquiryButton/, 'the dollar enquiry belongs to the English shop only');
+  assert.match(pdp, /<a href=\{`\/en\/catalog\/\$\{product\.slug\}`\}[^>]*>\{t\('pdp\.seeIntlVersion'\)\}<\/a>/,
+    'the Indonesian page points to the international version of the same perfume, with no figure');
+  for (const language of ['id', 'en']) assert.doesNotMatch(MESSAGES[language]['pdp.shipAbroad'] + MESSAGES[language]['pdp.seeIntlVersion'], /\d|US\$|Rp/);
 }
 
 // THE SAME PROMISE, EVERYWHERE, NOT JUST IN THE KEY THIS SECTION WAS WRITTEN AROUND.

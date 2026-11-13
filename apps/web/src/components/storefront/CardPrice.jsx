@@ -15,7 +15,7 @@ import { usdPriceFor } from '@/utils/usdPrice.js';
  * so a product-level lookup finds nothing and the card would quietly fall back to the Indonesian price.
  */
 const CardPrice = ({ product, className = '' }) => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const variant = getPrimaryVariant(Array.isArray(product?.variants) ? product.variants : []);
   // useOverseasPrice, NOT useExportPrice: the second returns the export price to EVERYONE, and using
   // it here put the international price on the Indonesian shop's cards. Caught on the phone, not by a
@@ -28,6 +28,10 @@ const CardPrice = ({ product, className = '' }) => {
     // there is no dollar to show at all.
     return <span className={className}>{usd ? `US$${usd}` : formatRupiah(exportPrice)}</span>;
   }
+
+  // One currency per shop (Dekito's brief, 14 Nov 2026): an English card with no export price says so
+  // rather than showing the Indonesian price.
+  if (isInternational) return <span className={className}>{t('price.onRequest')}</span>;
 
   // No member price on a card (Dekito, 12 Nov 2026): it differs per community code, so any one number
   // is wrong for most members and a free discount sheet for everyone else.

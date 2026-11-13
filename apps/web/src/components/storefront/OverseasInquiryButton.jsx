@@ -24,7 +24,7 @@ import { plainName } from '@/utils/scriptName.js';
  * Hidden when no WhatsApp number is configured (VITE_STOREFRONT_WHATSAPP_NUMBER). A button inviting a
  * buyer to ask a question, which opens WhatsApp with no one to send it to, is worse than no button.
  */
-const OverseasInquiryButton = ({ product, variant = null, size = '', price = '', className = '', compact = false, english = false }) => {
+const OverseasInquiryButton = ({ product, variant = null, size = '', price = '', className = '', compact = false }) => {
   const phoneNumber = getStorefrontWhatsAppNumber();
   // The export price belongs to the product, not to a guess about the reader. Detection decides who gets
   // the English panel; it must not decide who is allowed to know the price at all — a visitor abroad
@@ -33,7 +33,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   //
   // Shown here only when the English panel is NOT already showing it, which is exactly the two cases
   // this component is used in: the panel passes english, everything else does not.
-  const { price: exportPrice, overseasVisitor } = useExportPrice(product, variant);
+  const { price: exportPrice } = useExportPrice(product, variant);
   const { t } = useTranslate();
   // The total the quote block settled, when it settled one. Null until the buyer picks a destination,
   // and then the draft quotes the total instead of the bare bottle price — see buildOverseasDraft.
@@ -41,7 +41,6 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // same figures the buyer saw. No gate here since 2026-10-06: this is an ENQUIRY in both shops, and the
   // ORDER — with the gate — lives in the English cart.
   const { draft: internationalDraft } = useInternationalQuote({ price: exportPrice, product, variant });
-  const showExportPrice = Boolean(exportPrice) && !english && !overseasVisitor;
 
   if (!phoneNumber || !product?.name) return null;
 
@@ -86,24 +85,11 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
     </a>
   );
 
-  if (!showExportPrice) return link;
-
-  return (
-    <div>
-      <p className="mb-2 mt-3 text-xs font-semibold leading-relaxed text-ng-dust">
-        {t('export.priceLine')}{' '}
-        {/* The dollar, like everywhere else this buyer looks — see the note in InternationalPrice.jsx. */}
-        <strong className="font-bold text-ng-bone">{quoted}</strong>
-        {' '}{t('export.notIncluded')}
-        {/* Tenth visitor audit, 13 Nov 2026: this line sits on the Indonesian product page, whose cart has no
-            country and whose checkout only knows Indonesian couriers — "dihitung di keranjang" sent the buyer
-            to a cart that cannot do it. The international cart can, and it reads the same saved cart. A
-            plain link: it lives under the /en basename, outside this shop's router. */}
-        {' '}<a href="/en/cart" className="ng-link whitespace-nowrap">{t('export.intlCartLink')}</a>
-      </p>
-      {link}
-    </div>
-  );
+  // No price line under it any more. It stood on the Indonesian product page — "Harga untuk pengiriman
+  // ke luar negeri: US$80" under Rp 479.000 — and stockists who buy at a wholesale dollar price read the
+  // two side by side (Dekito's brief, 14 Nov 2026: one currency per shop). The Indonesian page now links
+  // to the international version instead, and this button lives only in the English shop.
+  return link;
 };
 
 export default OverseasInquiryButton;
