@@ -129,6 +129,11 @@ assert.ok(bilingual >= 4, `only ${bilingual} prerendered pages describe themselv
   assert.equal(rewrites[at('/en/articles/:slug')]?.destination, '/articles/:slug/index.html');
   assert.equal(rewrites[at('/en/journal')]?.destination, '/journal/index.html');
   assert.ok(at('/en/articles/:slug') < at('/(.*)') && at('/en/journal') < at('/(.*)'), 'before the catch-all');
+  // Eighth audit, 13 Nov 2026: /en/cart, /en/track-order, /en/articles … fell to the Indonesian shell (lang=id,
+  // the Indonesian home card). Every other English address answers with the English shell first.
+  assert.equal(rewrites[at('/en/:path*')]?.destination, '/en/index.html');
+  assert.ok(at('/en/articles/:slug') < at('/en/:path*') && at('/en/journal') < at('/en/:path*') && at('/en/:path*') < at('/(.*)'),
+    'after the English pages that have their own file, before the Indonesian catch-all');
 }
 console.log(`eachShopSpeaksForItself: ok (${checked} buyer canonicals, ${journalExempt} Indonesian on `
   + `purpose because there is no English journal; ${bilingual} prerendered pages describe themselves in `

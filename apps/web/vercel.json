@@ -212,6 +212,10 @@
       "destination": "/articles/:slug/index.html"
     },
     {
+      "source": "/en/:path*",
+      "destination": "/en/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
