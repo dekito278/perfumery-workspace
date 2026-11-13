@@ -39,14 +39,19 @@ const CatalogPage = () => {
   // customer was shown all six with prices, and clicking one landed on "Halaman tidak ditemukan". An
   // honest empty state is better than a shop that appears to stock things it does not.
   const allProducts = fetchedProducts;
-  const [searchParams] = useSearchParams();
-  const initialFamily = searchParams.get('family') || '';
-  // Start at 'All'; the effect below promotes it to the URL family only when that
-  // family is a real catalog category, so an unknown ?family= never yields an empty list.
-  const [activeCategory, setActiveCategory] = useState('All');
-  // ?q= starts the search (the 404 page's search box sends the buyer here with what they typed).
+  // THE ADDRESS HOLDS THE FILTERS (fourth visitor audit, 13 Nov 2026). Woody + "gaharu", open a perfume,
+  // Back — and the catalogue was "Semua 19" with an empty search box, because the choices lived only in
+  // this page's state and the page was mounted afresh. Now the family is read from ?family=, and the
+  // search and the wear filters are written to ?q= / ?occasion= / ?time= / ?weather= as they change
+  // (replace, so typing adds no history entries). Back restores them; the address can also be shared.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const familyParam = searchParams.get('family') || '';
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
-  const [wearSelection, setWearSelection] = useState({ occasions: '', times: '', weather: '' });
+  const [wearSelection, setWearSelection] = useState(() => ({
+    occasions: searchParams.get('occasion') || '',
+    times: searchParams.get('time') || '',
+    weather: searchParams.get('weather') || '',
+  }));
   const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
   const revealRef = useScrollReveal();
   const { addItem } = useCart();
@@ -99,6 +104,31 @@ const CatalogPage = () => {
   }, [allProducts]);
 
   const catalogCategories = useMemo(() => catalogCategoryPills(products), [products]);
+  // A family the catalogue really has, else 'All' — an unknown ?family= never yields an empty list.
+  const activeCategory = useMemo(() => {
+    const capitalized = familyParam.charAt(0).toUpperCase() + familyParam.slice(1);
+    return catalogCategories.includes(capitalized) ? capitalized : 'All';
+  }, [familyParam, catalogCategories]);
+  const setActiveCategory = useCallback((category) => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (category === 'All') next.delete('family');
+      else next.set('family', category.toLowerCase());
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+  // The search and the wear filters, written back to the address as they change.
+  useEffect(() => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      const write = (key, value) => (value ? next.set(key, value) : next.delete(key));
+      write('q', searchTerm.trim());
+      write('occasion', wearSelection.occasions);
+      write('time', wearSelection.times);
+      write('weather', wearSelection.weather);
+      return next.toString() === previous.toString() ? previous : next;
+    }, { replace: true });
+  }, [searchTerm, wearSelection, setSearchParams]);
 
   // Everything EXCEPT the category, kept separate so the pills can count what they would show. A pill
   // counted against the whole catalogue would read "FLORAL 8" to someone who has typed "vanilla" and
@@ -134,15 +164,6 @@ const CatalogPage = () => {
 
   useEffect(() => { setVisibleCount(CATALOG_PAGE_SIZE); }, [activeCategory, searchTerm, wearSelection]);
 
-  // Sync family param from homepage mood cards
-  useEffect(() => {
-    if (initialFamily) {
-      const capitalized = initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1);
-      if (catalogCategories.includes(capitalized)) {
-        setActiveCategory(capitalized);
-      }
-    }
-  }, [initialFamily, catalogCategories]);
 
   const siteOrigin = getSiteOrigin();
   const catalogCanonical = shopCanonicalUrl('/catalog', region, siteOrigin);
