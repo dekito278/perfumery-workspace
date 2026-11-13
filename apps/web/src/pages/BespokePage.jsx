@@ -3,7 +3,7 @@ import InternationalCheckoutNotice from '@/components/storefront/InternationalCh
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { BadgePercent, CheckCircle2, CreditCard, Globe, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
@@ -59,6 +59,15 @@ const checkoutCourierOptions = [
 ];
 
 const scentDirectionPrompts = ['Woody', 'Floral', 'Fresh', 'Gourmand', 'Smoky', 'Clean musk'];
+// The brief as comma-separated parts: a direction is "chosen" when it is one of them, and tapping it again
+// takes it out. What the buyer typed in their own words is never touched.
+const briefParts = (text) => String(text || '').split(',').map((part) => part.trim()).filter(Boolean);
+const scentDirectionChosen = (text, prompt) => briefParts(text).some((part) => part.toLowerCase() === prompt.toLowerCase());
+const toggleScentDirection = (text, prompt) => {
+  const parts = briefParts(text);
+  const kept = parts.filter((part) => part.toLowerCase() !== prompt.toLowerCase());
+  return (kept.length === parts.length ? [...parts, prompt] : kept).join(', ');
+};
 
 const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
   ...labels,
@@ -173,12 +182,38 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
   );
 };
 
+// THE BRIEF SURVIVES (sixth visitor audit, 13 Nov 2026). A name, a scent and 50 ml, then a reload — or a
+// look at WhatsApp, or a tap on the footer and Back — and the page was "Tanpa nama / Belum diisi / 30 ml"
+// again. The design and the contact are kept per tab; the pre-order acknowledgement is not (it is asked
+// again), and a brief started from another perfume (?reference=) does not inherit this one.
+const BESPOKE_DRAFT_KEY = 'solivagant.bespokeDraft.v1';
+const NOT_REMEMBERED = ['preorderAcknowledged', 'customerCode'];
+const readBespokeDraft = (reference) => {
+  try {
+    const draft = JSON.parse(window.sessionStorage.getItem(BESPOKE_DRAFT_KEY) || 'null');
+    if (!draft || typeof draft !== 'object' || (draft.reference || '') !== (reference || '')) return {};
+    const { reference: _ignored, ...fields } = draft;
+    for (const key of NOT_REMEMBERED) delete fields[key];
+    return fields;
+  } catch { return {}; }
+};
+const writeBespokeDraft = (form, reference) => {
+  try {
+    const fields = { ...form, reference: reference || '' };
+    for (const key of NOT_REMEMBERED) delete fields[key];
+    window.sessionStorage.setItem(BESPOKE_DRAFT_KEY, JSON.stringify(fields));
+  } catch { /* not remembered */ }
+};
+const clearBespokeDraft = () => { try { window.sessionStorage.removeItem(BESPOKE_DRAFT_KEY); } catch { /* nothing */ } };
+
 const BespokePage = () => {
   const { t, isInternational } = useTranslate();
   const siteFacts = useSiteFacts();
   const revealRef = useScrollReveal();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const referenceSlug = searchParams.get('reference') || '';
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
   const settings = useBespokeSettings({ forShop: true });
   // The option prices live in the database. Until they arrive, useBespokeSettings hands back the bundled
@@ -218,8 +253,7 @@ const BespokePage = () => {
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
   const [activeChoiceGroup, setActiveChoiceGroup] = useState('size');
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     // Back, and wired this time. It was initialised and read here with no writer at all (#380), which is
     // why it was deleted: the fallback `order.customerCode || form.customerCode` could only ever resolve
     // to '', while reading as if it preserved a code the buyer had typed. The phone has had the field and
@@ -240,7 +274,16 @@ const BespokePage = () => {
     deliveryArea: '',
     paymentMethod: checkoutPaymentMethods[0]?.id || 'manual_transfer_bca',
     preorderAcknowledged: false,
-  });
+    ...readBespokeDraft(referenceSlug),
+  }));
+  useEffect(() => { writeBespokeDraft(form, referenceSlug); }, [form, referenceSlug]);
+  // The contact-and-payment step is a place in history (#checkout), so Back from it returns to the design
+  // instead of leaving the page, and a reload stays on it. Never open on an empty brief.
+  const checkoutOpen = location.hash === '#checkout' && Boolean(form.scentDescription.trim());
+  const setCheckoutOpen = (open) => {
+    if (open && location.hash !== '#checkout') navigate({ search: location.search, hash: 'checkout' });
+    if (!open && location.hash === '#checkout') navigate(-1);
+  };
 
   const selectedSize = bottleSizeOptions.find((option) => optionMatchesValue(option, form.size)) || defaultSize;
   const selectedBottle = bottleTypeOptions.find((option) => optionMatchesValue(option, form.bottleType)) || defaultBottle;
@@ -653,6 +696,7 @@ const BespokePage = () => {
         }));
         (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
         toast.success(t('bsp.saved', { order: order.orderNumber }));
+        clearBespokeDraft();
         navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
         return;
       }
@@ -688,6 +732,7 @@ const BespokePage = () => {
       }));
       (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
       toast.success(t('bsp.saved', { order: order.orderNumber }));
+      clearBespokeDraft();
       navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
     } catch (error) {
       if (createdOrder) {
@@ -756,16 +801,22 @@ const BespokePage = () => {
                   <span className="ng-mono text-ng-dust">{t('bsp.scentDirection')}</span>
                   <textarea id="bespoke-scent" rows="4" className="ng-field" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} aria-label={t('bsp.scentDirection')} />
                   <div className="flex flex-wrap gap-2" aria-label={t('bsp.scentShortcuts')}>
-                    {scentDirectionPrompts.map((prompt) => (
-                      <button
-                        key={prompt}
-                        type="button"
-                        className="ng-btn ng-btn--ghost !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal"
-                        onClick={() => updateField('scentDescription', form.scentDescription.trim() ? `${form.scentDescription.trim()}, ${prompt}` : prompt)}
-                      >
-                        + {prompt}
-                      </button>
-                    ))}
+                    {/* A toggle, not an append (sixth visitor audit, 13 Nov 2026): Woody, Fresh, Woody again read
+                        "…, Woody, Fresh, Woody" in the brief, and nothing showed which were already in it. */}
+                    {scentDirectionPrompts.map((prompt) => {
+                      const chosen = scentDirectionChosen(form.scentDescription, prompt);
+                      return (
+                        <button
+                          key={prompt}
+                          type="button"
+                          aria-pressed={chosen}
+                          className={`ng-btn !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal${chosen ? '' : ' ng-btn--ghost'}`}
+                          onClick={() => updateField('scentDescription', toggleScentDirection(form.scentDescription, prompt))}
+                        >
+                          {chosen ? '✓' : '+'} {prompt}
+                        </button>
+                      );
+                    })}
                   </div>
                 </label>
                 <fieldset className="ng-fieldset !gap-3">
