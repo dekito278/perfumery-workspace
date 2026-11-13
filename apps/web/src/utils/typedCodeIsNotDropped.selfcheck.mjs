@@ -48,7 +48,7 @@ assert.match(checkout, /role="alert">\{t\(voucher\.codeRefused \? 'checkout\.err
 
 // --- 3. The bespoke order, the other page with a code field, refuses the same way -------------------------
 const bespoke = read('pages', 'BespokePage.jsx');
-assert.match(bespoke, /if \(voucher\.unappliedCode && !voucher\.loading\) return t\(voucher\.codeRefused \? 'checkout\.errVoucherRefused' : 'checkout\.errVoucherUnapplied', \{ code: voucher\.unappliedCode \}\);/);
+assert.match(bespoke, /if \(voucher\.unappliedCode && !voucher\.loading\) return fail\('voucher', t\(voucher\.codeRefused \? 'checkout\.errVoucherRefused' : 'checkout\.errVoucherUnapplied', \{ code: voucher\.unappliedCode \}\)\);/);
 
 // --- 4. A refused code is not told to press the button again; a stale answer leaves with its code -----------
 // Tenth visitor audit, 13 Nov 2026: after "Pakai" refused AUDITFAKE the page still said "Tekan Pakai", and

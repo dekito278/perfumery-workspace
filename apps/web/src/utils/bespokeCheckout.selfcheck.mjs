@@ -14,7 +14,7 @@ const src = join(dirname(fileURLToPath(import.meta.url)), '..');
 const page = readFileSync(join(src, 'pages', 'BespokePage.jsx'), 'utf8');
 
 assert.doesNotMatch(page, /t\('bsp\.customerCode'\)|lookupCustomerByCode/, 'no SOLI code field on the bespoke checkout');
-assert.match(page, /<input type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value=\{form\.contact\}/, 'the contact is a WhatsApp number');
+assert.match(page, /<input (?:id="bespoke-contact" )?type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value=\{form\.contact\}/, 'the contact is a WhatsApp number');
 assert.match(page, /t\(isManualPayment \? 'bsp\.transferTotal' : 'checkout\.total'\)/, '"Total transfer" only when paying by transfer');
 assert.match(page, /onClick=\{\(\) => \{ if \(needsScentFirst\(\)\) return; setCheckoutOpen\(true\); \}\}/, 'no payment form for an empty brief');
 assert.match(page, /if \(needsScentFirst\(\)\) \{ event\.preventDefault\(\); return; \}\s*if \(!destinationCountry\) \{ event\.preventDefault\(\); toast\.error\(t\('intlQuote\.pickFirst'\)\); \}/,

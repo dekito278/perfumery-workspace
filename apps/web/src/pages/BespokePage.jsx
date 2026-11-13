@@ -188,6 +188,17 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
 // again), and a brief started from another perfume (?reference=) does not inherit this one.
 const BESPOKE_DRAFT_KEY = 'solivagant.bespokeDraft.v1';
 const NOT_REMEMBERED = ['preorderAcknowledged', 'customerCode'];
+// Where each checkout refusal is said and where focus goes (see validateForm).
+const BESPOKE_FIELD_IDS = {
+  name: 'bespoke-name',
+  contact: 'bespoke-contact',
+  address: 'bespoke-address',
+  area: 'bespoke-area',
+  courier: 'bespoke-courier',
+  service: 'bespoke-rates',
+  preorder: 'bespoke-preorder',
+  voucher: 'bespoke-voucher',
+};
 const readBespokeDraft = (reference) => {
   try {
     const draft = JSON.parse(window.sessionStorage.getItem(BESPOKE_DRAFT_KEY) || 'null');
@@ -586,30 +597,55 @@ const BespokePage = () => {
     return true;
   };
 
+  // Which field each refusal belongs to, so the page can say it THERE. Tenth visitor audit, 13 Nov 2026:
+  // every refusal was a toast at the top of the screen while focus stayed on the button and the field in
+  // question sat out of view — "Pilih layanan ongkir." with the shipping section a screen away.
+  const fail = (key, text) => ({ key, text });
   const validateForm = () => {
-    if (!form.customerName.trim()) return t('bsp.errName');
-    if (!form.contact.trim()) return t('bsp.errContact');
-    if (!form.scentDescription.trim()) return t('bsp.errScent');
-    if (!form.size) return t('bsp.errSize');
-    if (estimatedTotal <= 0) return t('bsp.errPrice');
-    if (!form.deliveryAddress.trim()) return t('bsp.errAddress');
-    if (!selectedDestination) return t('bsp.errArea');
-    if (!selectedCourier) return t('bsp.errCourier');
-    if (!selectedShipping) return t('bsp.errService');
-    if (!form.preorderAcknowledged) return t('bsp.errPreorder');
+    if (!form.customerName.trim()) return fail('name', t('bsp.errName'));
+    if (!form.contact.trim()) return fail('contact', t('bsp.errContact'));
+    if (!form.scentDescription.trim()) return fail('scent', t('bsp.errScent'));
+    if (!form.size) return fail('size', t('bsp.errSize'));
+    if (estimatedTotal <= 0) return fail('price', t('bsp.errPrice'));
+    if (!form.deliveryAddress.trim()) return fail('address', t('bsp.errAddress'));
+    if (!selectedDestination) return fail('area', t('bsp.errArea'));
+    if (!selectedCourier) return fail('courier', t('bsp.errCourier'));
+    if (!selectedShipping) return fail('service', t('bsp.errService'));
+    if (!form.preorderAcknowledged) return fail('preorder', t('bsp.errPreorder'));
     // A typed code that is not the one applied would be dropped without a word (ninth visitor audit).
-    if (voucher.unappliedCode && !voucher.loading) return t(voucher.codeRefused ? 'checkout.errVoucherRefused' : 'checkout.errVoucherUnapplied', { code: voucher.unappliedCode });
-    return '';
+    if (voucher.unappliedCode && !voucher.loading) return fail('voucher', t(voucher.codeRefused ? 'checkout.errVoucherRefused' : 'checkout.errVoucherUnapplied', { code: voucher.unappliedCode }));
+    return null;
   };
+  // The refusal stays beside its field only while that field is still the problem.
+  const [submitError, setSubmitError] = useState(null);
+  const liveError = submitError ? validateForm() : null;
+  const shownError = liveError && liveError.key === submitError?.key ? liveError : null;
+  const errorFor = (key) => (shownError?.key === key
+    ? <span className="ng-error text-sm" role="alert">{shownError.text}</span>
+    : null);
+  const invalidFor = (key) => (shownError?.key === key ? 'true' : undefined);
 
   const submitRequest = async (event) => {
     event.preventDefault();
     if (submittingRef.current) return;
     const validationError = validateForm();
     if (validationError) {
-      toast.error(validationError);
+      setSubmitError(validationError);
+      // Take the buyer to the field; a refusal with no field on this step (scent, size, price) is a toast.
+      const target = document.getElementById(BESPOKE_FIELD_IDS[validationError.key] || '')
+        || (validationError.key === 'service' ? document.getElementById('bespoke-show-rates') : null);
+      if (!target) {
+        toast.error(validationError.text);
+        return;
+      }
+      window.requestAnimationFrame(() => {
+        const field = target.matches('input, select, textarea, button') ? target : (target.querySelector('button, input, select') || target);
+        field.scrollIntoView({ block: 'center' });
+        field.focus({ preventScroll: true });
+      });
       return;
     }
+    setSubmitError(null);
 
     submittingRef.current = true;
     setSaving(true);
@@ -998,9 +1034,9 @@ const BespokePage = () => {
                 <div className="grid gap-5 md:grid-cols-2">
                   {/* No SOLI customer code here any more, as in the main checkout (#595): signing in fills the
                       details, and a guest just types them. */}
-                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input type="text" className="ng-field" autoComplete="name" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} /></label>
-                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} /></label>
-                  <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} /></label>
+                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input id="bespoke-name" type="text" className="ng-field" autoComplete="name" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} aria-invalid={invalidFor('name')} />{errorFor('name')}</label>
+                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input id="bespoke-contact" type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} aria-invalid={invalidFor('contact')} />{errorFor('contact')}</label>
+                  <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea id="bespoke-address" rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-invalid={invalidFor('address')} />{errorFor('address')}</label>
                 </div>
                 <div className="ng-fieldset">
                   <div className="flex flex-col gap-2">
@@ -1009,8 +1045,10 @@ const BespokePage = () => {
                   </div>
                   <div className="flex gap-2">
                     <input
+                      id="bespoke-area"
                       type="text"
                       className="ng-field"
+                      aria-invalid={invalidFor('area')}
                       value={destinationSearch}
                       onChange={(event) => updateDestinationSearch(event.target.value)}
                       placeholder={t('bsp.areaPlaceholder')} aria-label={t('bsp.areaAria')}
@@ -1024,28 +1062,30 @@ const BespokePage = () => {
                   </div>
                   <label className="ng-label">
                     <span className="ng-mono text-ng-dust">{selectedCourier ? courierLabels[selectedCourier] : t('bsp.pickShippingCourier')}</span>
-                    <select className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')}>
+                    <select id="bespoke-courier" className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')} aria-invalid={invalidFor('courier')}>
                       <option value="">{t('bsp.pickCourier')}</option>
                       {checkoutCourierOptions.map((courier) => (
                         <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
                       ))}
                     </select>
                   </label>
-                  <button type="button" className="ng-btn ng-btn--ghost self-start" onClick={() => autoCalculateShipping()} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
+                  {/* The rate is chosen for the buyer, as in the cart checkout: the cheapest, which they can change.
+                      It used to wait for a tap nobody knew they owed, then refuse the order (tenth visitor audit). */}
+                  <button id="bespoke-show-rates" type="button" className="ng-btn ng-btn--ghost self-start" onClick={() => autoCalculateShipping({ autoSelectBest: true })} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
                     {shippingLoading ? t('bsp.calculating') : t('bsp.showRates')}
                   </button>
                   {selectedDestination ? <p className="ng-notice" role="status">{t('ship.area', { area: selectedDestination.label })}</p> : null}
                   {destinationOptions.length && !selectedDestination ? (
                     <div className="flex flex-wrap gap-2">
                       {destinationOptions.map((destination) => (
-                        <button key={destination.id} type="button" className="ng-btn ng-btn--ghost !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal" onClick={() => loadShippingRates(destination)}>
+                        <button key={destination.id} type="button" className="ng-btn ng-btn--ghost !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal" onClick={() => loadShippingRates(destination, { autoSelectCheapest: true })}>
                           {destination.label}
                         </button>
                       ))}
                     </div>
                   ) : null}
                   {visibleShippingOptions.length ? (
-                    <div className="flex flex-col gap-2">
+                    <div id="bespoke-rates" className="flex flex-col gap-2">
                       {visibleShippingOptions.map((rate) => {
                         const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
                         return (
@@ -1069,6 +1109,7 @@ const BespokePage = () => {
                   ) : null}
                   {selectedShipping?.promotionApplied ? <p className="ng-notice" role="status">{selectedShipping.promotionLabel}</p> : null}
                   {shippingError ? <p role="status" className="ng-notice ng-notice--error">{shippingError}</p> : null}
+                  {errorFor('area')}{errorFor('courier')}{errorFor('service')}
                 </div>
                 <div className="ng-fieldset">
                   <div className="flex flex-col gap-2">
@@ -1077,8 +1118,10 @@ const BespokePage = () => {
                   </div>
                   <div className="flex gap-2">
                     <input
+                      id="bespoke-voucher"
                       type="text"
                       className="ng-field uppercase placeholder:normal-case"
+                      aria-invalid={invalidFor('voucher')}
                       value={voucher.inputCode}
                       onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
                       onKeyDown={onEnter(voucher.applyVoucher)}
@@ -1101,6 +1144,7 @@ const BespokePage = () => {
                   ) : voucher.message ? (
                     <p role="status" className={voucher.codeAccepted ? 'ng-notice' : 'ng-notice ng-notice--error'}>{voucher.message}</p>
                   ) : null}
+                  {errorFor('voucher')}
                 </div>
                 <dl className="ng-panel m-0 flex flex-col gap-3 text-[15px]">
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
@@ -1110,9 +1154,10 @@ const BespokePage = () => {
                 </dl>
                 <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.payment')}</span><select className="ng-field" value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
                 <label className="flex items-start gap-3 text-[15px] leading-relaxed text-ng-sand">
-                  <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#d4573a]" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
+                  <input id="bespoke-preorder" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#d4573a]" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} aria-invalid={invalidFor('preorder')} />
                   {t('bsp.preorderConfirm', { days: siteFacts.bespokeDays })}
                 </label>
+                {errorFor('preorder')}
                 <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={saving}>
                   {saving ? t('bsp.saving') : (isManualPayment ? t('bsp.orderUpload') : t('bsp.orderPay'))}
                   {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
