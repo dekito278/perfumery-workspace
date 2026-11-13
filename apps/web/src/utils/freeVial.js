@@ -107,15 +107,31 @@ export const weighFreeVialLines = (lines = []) => (
  * One pool, all of them — Dekito's decision, 2026-09-29. Out of stock simply stops being offered, which
  * is the whole reason the stock is counted per aroma rather than in one lump.
  */
-export const freeVialChoices = (vialProduct = {}) => (
-  (Array.isArray(vialProduct?.variants) ? vialProduct.variants : [])
+// A name as letters and digits only, accents folded: "HUG N°1" and "Hug No 1", "J’adore la Vanille" and
+// "J'adore la Vanille" are one perfume. The aksara half of a script name is dropped with the rest.
+const nameKey = (value) => String(value ?? '')
+  .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/°/g, 'o').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * @param bought  names of the bottles already in the cart. A sample of a perfume the buyer is buying anyway
+ *                is no gift (visitor audit, 13 Nov 2026: the list offered the bottle just added), so those
+ *                aromas are left out. When that leaves nothing, nothing is offered.
+ */
+export const freeVialChoices = (vialProduct = {}, bought = []) => {
+  const owned = new Set((Array.isArray(bought) ? bought : []).map(nameKey).filter(Boolean));
+  return (Array.isArray(vialProduct?.variants) ? vialProduct.variants : [])
     .map((variant) => ({
       variantId: String(variant?.id || ''),
       label: String(variant?.size || variant?.name || variant?.id || '').trim(),
       stock: Math.max(0, Math.round(Number(variant?.stock) || 0)),
     }))
     .filter((choice) => choice.variantId && choice.label && choice.stock > 0)
-);
+    .filter((choice) => !owned.has(nameKey(choice.label)) && !owned.has(nameKey(choice.label.split(/\s+[^\x00-\x7F]/)[0])));
+};
+
+/** The names of the bottles bought in this cart — what freeVialChoices leaves out. */
+export const boughtNames = (items = []) => splitFreeVialLines(items).lines.map((line) => line?.name || line?.productName || '');
 
 
 /**
@@ -201,10 +217,10 @@ export const dropOrphanedGift = (lines = []) => {
  * A pure rule rather than a condition inside the component, so it can be RUN — the component is the one
  * part of this a guard cannot mount.
  */
-export const shouldOfferFreeVial = ({ opened = false, vialProduct = null, gift = null } = {}) => (
+export const shouldOfferFreeVial = ({ opened = false, vialProduct = null, gift = null, bought = [] } = {}) => (
   Boolean(opened)
   && !gift
-  && freeVialChoices(vialProduct).length > 0
+  && freeVialChoices(vialProduct, bought).length > 0
 );
 
 /**

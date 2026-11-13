@@ -5,7 +5,14 @@ import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CART_ITEM_ADDED_EVENT } from '@/services/cartService.js';
-import { isFreeVialProduct, shouldOfferFreeVial, splitFreeVialLines } from '@/utils/freeVial.js';
+import { boughtNames, isFreeVialProduct, shouldOfferFreeVial, splitFreeVialLines } from '@/utils/freeVial.js';
+
+// Once "Nanti saja" (or the X, or the backdrop) has been said, later adds in the same visit stay silent:
+// asking on every bottle turned a thank-you into a toll (visitor audit, 13 Nov 2026). The cart page still
+// offers the same aromas. sessionStorage, so a new visit asks again; a blocked store just asks as before.
+const DISMISSED_KEY = 'solivagant.freeVialPrompt.dismissed';
+const wasDismissed = () => { try { return window.sessionStorage.getItem(DISMISSED_KEY) === '1'; } catch { return false; } };
+const rememberDismissed = () => { try { window.sessionStorage.setItem(DISMISSED_KEY, '1'); } catch { /* asks again next add */ } };
 
 /**
  * The gift, offered at the moment a bottle goes in the basket.
@@ -41,13 +48,15 @@ const FreeVialPrompt = () => {
 
   const vialProduct = catalog.find(isFreeVialProduct);
   const { gift } = splitFreeVialLines(items);
+  const bought = boughtNames(items);
+  const dismiss = useCallback(() => { rememberDismissed(); setOpen(false); }, []);
 
   useEffect(() => {
     // A screen that opens its own sheet for this add says so, and this prompt stands down: two modals for
     // one event put a full-screen panel over the sheet's way forward, and the sheet's own modal machinery
     // marked this one aria-hidden, so a screen reader was never told about the thing covering the screen.
     // The cart page still offers the same aromas, which is where a dismissed prompt sends everyone anyway.
-    const onAdded = (event) => { if (event.detail?.announcedByScreen) return; setOpen(true); };
+    const onAdded = (event) => { if (event.detail?.announcedByScreen || wasDismissed()) return; setOpen(true); };
     window.addEventListener(CART_ITEM_ADDED_EVENT, onAdded);
     return () => window.removeEventListener(CART_ITEM_ADDED_EVENT, onAdded);
   }, []);
@@ -59,14 +68,14 @@ const FreeVialPrompt = () => {
     if (item) setOpen(false);
   }, [setGift]);
 
-  if (!shouldOfferFreeVial({ opened: open, vialProduct, gift })) return null;
+  if (!shouldOfferFreeVial({ opened: open, vialProduct, gift, bought })) return null;
 
   return (
     <div className="free-vial-prompt" role="dialog" aria-modal="true" aria-label={t('cart.giftTitle')}>
       {/* The backdrop closes it. A gift nobody asked for must never be able to trap anyone. */}
-      <button type="button" className="free-vial-prompt__scrim" aria-label={t('cart.giftLater')} onClick={() => setOpen(false)} />
+      <button type="button" className="free-vial-prompt__scrim" aria-label={t('cart.giftLater')} onClick={dismiss} />
       <div className="free-vial-prompt__sheet">
-        <button type="button" className="free-vial-prompt__close" aria-label={t('cart.giftLater')} onClick={() => setOpen(false)}>
+        <button type="button" className="free-vial-prompt__close" aria-label={t('cart.giftLater')} onClick={dismiss}>
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
         <p className="free-vial__head">
@@ -74,8 +83,8 @@ const FreeVialPrompt = () => {
           <strong>{t('cart.giftTitle')}</strong>
         </p>
         <p className="free-vial__body">{t('cart.giftBody')}</p>
-        <FreeVialChoices vialProduct={vialProduct} gift={gift} onPick={pick} />
-        <button type="button" className="free-vial__clear" onClick={() => setOpen(false)}>
+        <FreeVialChoices vialProduct={vialProduct} gift={gift} onPick={pick} bought={bought} />
+        <button type="button" className="free-vial__clear" onClick={dismiss}>
           {t('cart.giftLater')}
         </button>
       </div>

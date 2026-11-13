@@ -13,8 +13,8 @@ import { splitScriptName } from '@/utils/scriptName.js';
  * `onPick` is handed the finished cart line, or null to release. The caller passes cartService's single
  * writer, which drops every vial line before adding, so a second aroma REPLACES rather than stacking.
  */
-const FreeVialChoices = ({ vialProduct, gift, onPick, className = '' }) => {
-  const choices = freeVialChoices(vialProduct);
+const FreeVialChoices = ({ vialProduct, gift, onPick, bought = [], className = '' }) => {
+  const choices = freeVialChoices(vialProduct, bought);
   if (!choices.length) return null;
 
   return (
