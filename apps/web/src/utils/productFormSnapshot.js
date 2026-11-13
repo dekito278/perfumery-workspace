@@ -43,6 +43,9 @@ export const snapshotProductForm = (product = {}) => JSON.stringify({
   intensity: product.intensity || 'Medium',
   // Parsed, not raw: the stored year is 2025 and the box holds '2025', the same answer in two types.
   launchYear: toLaunchYear(product.launchYear),
+  batchLabel: String(product.batchLabel || '').trim(),
+  batchSize: Number(product.batchSize) || null,
+  processImages: (Array.isArray(product.processImages) ? product.processImages : String(product.processImages || '').split('\n')).map((item) => String(item).trim()).filter(Boolean),
   // Buyer quotes are a repeater, so an edit here is several keystrokes of someone else's words. Leaving
   // them out meant typing one and walking away threw it out with no warning at all.
   testimonials: normalizeTestimonials(product.testimonials),

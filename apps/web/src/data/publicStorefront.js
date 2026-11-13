@@ -195,6 +195,9 @@ export const toPublicFragrance = (product = {}) => {
     // single page while the database and the buyer's view both held it. Second mapper, same trap the
     // carts hit the day before.
     launchYear: product.launchYear ?? null,
+    batchLabel: product.batchLabel || '',
+    batchSize: product.batchSize ?? null,
+    processImages: Array.isArray(product.processImages) ? product.processImages : [],
     wear: normalizeWear(product.wear),
     materialHighlights: product.materialHighlights || inferMaterialHighlights(product),
     relatedFragrances: product.relatedFragrances || [],

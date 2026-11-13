@@ -13,6 +13,8 @@ import { splitScriptName, plainName } from '@/utils/scriptName.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScentPyramid from '@/components/storefront/ScentPyramid.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
+import ProcessGallery from '@/components/storefront/ProcessGallery.jsx';
+import { batchParts } from '@/utils/processImages.js';
 import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
@@ -160,6 +162,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
   const soldOut = !selectedAvailable;
   const scarcity = soldOut ? '' : getScarcityLabel(selectedVariant?.stock, t);
+  // "Batch 03 · 40 botol" beside the stock line, only when Studio holds it (brief P2-6).
+  const batch = batchParts(product);
+  const batchLine = [batch.name, batch.size ? t('pdp.batchSize', { count: batch.size }) : ''].filter(Boolean).join(' · ');
   // Every bottle of this size is already in the basket (seventh visitor audit, 13 Nov 2026: the button
   // went back to "Tambah ke keranjang" beside "Tersisa 2 botol" with both in the cart, and a press said
   // nothing changed). Said on the button, which stays focusable and points to the cart.
@@ -330,6 +335,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                     </>
                   )}
                   {scarcity ? <p className="ng-mono m-0 text-ng-ember">{scarcity}</p> : null}
+                  {batchLine ? <p className="ng-mono m-0 text-ng-dust">{batchLine}</p> : null}
                 </div>
 
                 {/* The written description carries blank lines the author typed; a bare {story} collapsed
@@ -414,6 +420,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             other bottle, with the story whole in the middle (Dekito's choice, 2026-11-08). It used to
             REPLACE this page, which left the one perfume with a story shaped like no other. */}
         {productStory ? <ProductStory product={product} story={productStory} /> : null}
+        <ProcessGallery images={product.processImages} subject={named.name} />
 
         <section className="ng-section ng-section--deep" aria-labelledby="pdp-pyramid-heading" data-reveal>
           <div className="ng-container flex flex-col gap-14">

@@ -53,6 +53,9 @@ export const emptyProduct = {
   mood: '',
   intensity: 'Medium',
   launchYear: '',
+  batchLabel: '',
+  batchSize: '',
+  processImages: [],
   wear: {},
   topNotes: '',
   heartNotes: '',
@@ -474,6 +477,20 @@ const MobileProductForm = ({ product = null, onSaved, backTo = '' }) => {
           <ProductInputLabel>Tahun rilis</ProductInputLabel>
           <input type="number" inputMode="numeric" min="1900" max="2100" value={form.launchYear ?? ''} onChange={(event) => updateField('launchYear', event.target.value)} placeholder="Contoh: 2025" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
           <span className={fieldHint}>Tampil di halaman produk sebagai &quot;Rilis …&quot;. Kosongkan bila belum pasti — tidak ditampilkan.</span>
+        </label>
+        <label className="grid gap-1.5">
+          <ProductInputLabel>Label batch</ProductInputLabel>
+          <input value={form.batchLabel || ''} maxLength={40} onChange={(event) => updateField('batchLabel', event.target.value)} placeholder="Contoh: Batch 03" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+          <span className={fieldHint}>Tampil di dekat info stok, mis. &quot;Batch 03 · 40 botol&quot;.</span>
+        </label>
+        <label className="grid gap-1.5">
+          <ProductInputLabel>Jumlah botol per batch</ProductInputLabel>
+          <input type="number" inputMode="numeric" min="1" max="99999" value={form.batchSize ?? ''} onChange={(event) => updateField('batchSize', event.target.value)} placeholder="Contoh: 40" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+        </label>
+        <label className="grid gap-1.5">
+          <ProductInputLabel>Foto proses (maks. 4, satu tautan per baris)</ProductInputLabel>
+          <textarea value={(Array.isArray(form.processImages) ? form.processImages : []).join('\n')} onChange={(event) => updateField('processImages', event.target.value.split('\n'))} rows={3} placeholder={'https://.../menimbang.jpg'} className="rounded-2xl border border-[#e5e7eb] px-3 py-2 text-sm font-semibold outline-none focus:border-amber-300" />
+          <span className={fieldHint}>Foto pengerjaan oleh Dekito sendiri. Jangan foto stok.</span>
         </label>
         <label className="grid gap-1.5">
           <ProductInputLabel>Konsentrasi</ProductInputLabel>
