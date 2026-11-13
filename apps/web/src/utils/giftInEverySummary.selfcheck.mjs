@@ -29,6 +29,14 @@ assert.match(read('hooks', 'useInternationalQuote.js'), /return \{ \.\.\.core, l
 // The Indonesian checkout keeps its row.
 assert.match(read('pages', 'CheckoutPage.jsx'), /isFreeVialLine\(item\) \? FREE_VIAL_PRICE_LABEL/);
 
+// Tenth visitor audit, 13 Nov 2026: a buyer who went from the product page straight to checkout never saw
+// the cart's picker, so the gift the product page promised ("nanti di keranjang") was lost without a word.
+// Checkout offers the same picker while no vial is chosen.
+const checkout = read('pages', 'CheckoutPage.jsx');
+assert.match(checkout, /const \{ gift: chosenGift \} = splitFreeVialLines\(items\);/);
+assert.match(checkout, /\{chosenGift \? null : <FreeVialPicker items=\{items\} products=\{catalogProducts\} onPick=\{setGift\} \/>\}/,
+  'checkout no longer offers the free vial to a buyer who skipped the cart');
+
 for (const language of ['id', 'en']) {
   assert.ok(MESSAGES[language]['intlQuote.giftLine']?.includes('{name}'), `${language}.intlQuote.giftLine must name the aroma`);
   assert.ok(MESSAGES[language]['cart.giftFree'], `${language}.cart.giftFree is missing`);
