@@ -24,7 +24,7 @@ import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import { buildBreadcrumbJsonLd, getSiteOrigin, shopCanonicalUrl } from '@/utils/seo.js';
 import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
-import { splitScriptName } from '@/utils/scriptName.js';
+import { splitScriptName, plainName } from '@/utils/scriptName.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import { matchesCatalogSearch } from '@/utils/catalogSearch.js';
 
@@ -64,7 +64,7 @@ const CatalogPage = () => {
     event.preventDefault();
     event.stopPropagation();
     if (product.publicStatus !== 'Available') {
-      toast.error(t('catalog.outOfStockToast', { name: product.name }));
+      toast.error(t('catalog.outOfStockToast', { name: plainName(product.name) }));
       return;
     }
     // THE VARIANT, which this call used to leave out. Export prices are keyed by (product, variant), so
@@ -82,11 +82,11 @@ const CatalogPage = () => {
       variantId: variant?.id || '',
     }, 1);
     if (added === 0) {
-      toast.info(t('cart.stockAllIn', { name: product.name }), { position: 'top-center' });
+      toast.info(t('cart.stockAllIn', { name: plainName(product.name) }), { position: 'top-center' });
       return;
     }
     setAddedSlug(product.slug);
-    toast.success(t('pdp.addedToast', { name: product.name }), {
+    toast.success(t('pdp.addedToast', { name: plainName(product.name) }), {
       description: t('pdp.cartUpdated'),
       action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
       // Top, not the default bottom: on a phone the gift prompt this add opens is a bottom sheet, and a
@@ -311,7 +311,7 @@ const CatalogPage = () => {
                           type="button"
                           className="ng-btn ng-btn--ghost !min-h-[44px] !px-4"
                           onClick={(event) => handleQuickAdd(event, product)}
-                          aria-label={!available ? t('catalog.soldOutAria', { name: product.name }) : t('catalog.addAria', { name: product.name })}
+                          aria-label={!available ? t('catalog.soldOutAria', { name: plainName(product.name) }) : t('catalog.addAria', { name: plainName(product.name) })}
                           disabled={!available}
                         >
                           {!available ? (

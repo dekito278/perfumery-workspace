@@ -9,7 +9,7 @@ import { CheckCircle2, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
-import { splitScriptName } from '@/utils/scriptName.js';
+import { splitScriptName, plainName } from '@/utils/scriptName.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScentPyramid from '@/components/storefront/ScentPyramid.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
@@ -164,7 +164,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
   const handleAddToCart = () => {
     if (soldOut) {
-      toast.error(t('catalog.outOfStockToast', { name: product.name }));
+      toast.error(t('catalog.outOfStockToast', { name: plainName(product.name) }));
       return;
     }
     const variantStock = Number(selectedVariant?.stock);
@@ -179,11 +179,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
       ...(Number.isFinite(variantStock) && variantStock > 0 ? { maxStock: variantStock } : {}),
     }, addCount);
     if (added === 0) {
-      toast.info(t('cart.stockAllIn', { name: product.name }), { position: 'top-center' });
+      toast.info(t('cart.stockAllIn', { name: plainName(product.name) }), { position: 'top-center' });
       return;
     }
     setLastAddedSlug(product.slug);
-    toast.success(t('pdp.addedToast', { name: `${product.name} (${selectedSize})${added > 1 ? ` ×${added}` : ''}` }), {
+    toast.success(t('pdp.addedToast', { name: `${plainName(product.name)} (${selectedSize})${added > 1 ? ` ×${added}` : ''}` }), {
       description: t('pdp.cartUpdated'),
       action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
       // Top, not the default bottom: on a phone the gift prompt this add opens is a bottom sheet, and a
@@ -367,7 +367,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                     )}
                   </button>
                   {soldOut ? (
-                    <AskAtelierButton labelKey="pdp.restockAsk" draftKey="pdp.restockDraft" draftVars={{ name: `${product.name} (${selectedSize})` }} className="w-full" />
+                    <AskAtelierButton labelKey="pdp.restockAsk" draftKey="pdp.restockDraft" draftVars={{ name: `${plainName(product.name)} (${selectedSize})` }} className="w-full" />
                   ) : (
                     <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />
                   )}

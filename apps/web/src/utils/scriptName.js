@@ -15,4 +15,11 @@ export const splitScriptName = (name) => {
   return { name: match[1].trim() || text, script: match[2].trim() };
 };
 
+// The name to put in a sentence, a label, an alt text or a WhatsApp message: without the Javanese script
+// and without the zero-width characters the name field carries. Seventh visitor audit, 13 Nov 2026:
+// "Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀)" squashed over two lines in the add-to-cart toast, was read out by
+// screen readers, and reached WhatsApp as %E2%80%8B. The page's own headings keep the script.
+const ZERO_WIDTH = /[\u200B-\u200D\u2060\uFEFF]/g;
+export const plainName = (name) => splitScriptName(String(name ?? '').replace(ZERO_WIDTH, '')).name;
+
 export default splitScriptName;

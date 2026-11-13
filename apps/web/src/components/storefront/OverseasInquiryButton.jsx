@@ -5,6 +5,7 @@ import { useExportPrice } from '@/hooks/useOverseasPrice.js';
 import { useInternationalQuote } from '@/hooks/useInternationalQuote.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { buildOverseasDraft, overseasDraftKeys, quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
+import { plainName } from '@/utils/scriptName.js';
 
 /**
  * Asking about an overseas order. Deliberately NOT a checkout — but no longer a question with half the
@@ -66,7 +67,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // Dekito, and a rupiah figure in it then has to be explained before a parcel can be quoted.
   const quoted = quotedInternationalPrice(exportPrice, price);
   const message = buildOverseasDraft({
-    t, name: product.name, size, price: quoted, quote: internationalDraft,
+    t, name: plainName(product.name), size, price: quoted, quote: internationalDraft,
   });
 
   const link = (
