@@ -37,6 +37,17 @@ const CALLING_CODES = {
 };
 export const phoneExampleFor = (countryCode = '') => CALLING_CODES[String(countryCode).toUpperCase()] || '';
 
+// The postcode's shape where it is fixed and well known, so "ABCDE" is not taken as a US ZIP (fifth
+// visitor audit, 13 Nov 2026). Countries not listed are checked for presence only. HTML pattern syntax,
+// anchored by the browser; compiled with the v flag, so nothing here needs escaping beyond \d.
+const POSTCODE_PATTERNS = {
+  US: '\\d{5}(-\\d{4})?', CA: '[A-Za-z]\\d[A-Za-z] ?\\d[A-Za-z]\\d', AU: '\\d{4}', NZ: '\\d{4}', JP: '\\d{3}-?\\d{4}',
+  SG: '\\d{6}', MY: '\\d{5}', TH: '\\d{5}', PH: '\\d{4}', KR: '\\d{5}', TW: '\\d{3}(\\d{2,3})?', CN: '\\d{6}',
+  IN: '\\d{6}', DE: '\\d{5}', FR: '\\d{5}', IT: '\\d{5}', ES: '\\d{5}', NL: '\\d{4} ?[A-Za-z]{2}', BE: '\\d{4}',
+  CH: '\\d{4}', AT: '\\d{4}', SE: '\\d{3} ?\\d{2}', NO: '\\d{4}', DK: '\\d{4}', FI: '\\d{5}',
+};
+export const postcodePatternFor = (countryCode = '') => POSTCODE_PATTERNS[String(countryCode).trim().toUpperCase()];
+
 export const regionRequiredFor = (countryCode = '') => REGION_REQUIRED_COUNTRIES.includes(String(countryCode).trim().toUpperCase());
 
 /** The first field this address is missing, or '' — server and form ask the same question. */
