@@ -489,8 +489,16 @@ export default async function handler(req, res) {
     // on it meant one extra word bought free freight on a cart of bottles. catalog.resolved is this
     // endpoint's own lookup of the items against the database: bottles are being shipped, so they have to
     // be priced. A brief with no bottles is the flow that is genuinely quoted by hand.
-    if (catalog.resolved.length && !ship.destinationId) {
-      return jsonResponse(res, 422, { message: 'Shipping destination is required to price shipping' });
+    //
+    // Rupiah is for delivery inside Indonesia (Dekito's brief, 14 Nov 2026, P0-2), so EVERY order on this
+    // path — bottles or a bespoke brief — must name a domestic courier destination, which the fee below
+    // prices again through the domestic rate API. An address abroad has no such destination; its order
+    // belongs to the international branch above, priced in dollars from the export card.
+    if (!ship.destinationId) {
+      return jsonResponse(res, 422, {
+        message: 'Pilih area tujuan pengiriman di Indonesia. Untuk pengiriman ke luar negeri, pesan lewat keranjang internasional.',
+        reason: 'domestic_destination_required',
+      });
     }
     // This must equal what the browser quoted with, because the fee computed here is the one the order is
     // created at. assertPairedEnvAgrees() in apps/web/tools/build.mjs refuses to build when they differ.

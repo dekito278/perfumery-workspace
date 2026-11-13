@@ -2,6 +2,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import { FREE_VIAL_PRICE_LABEL, isFreeVialLine, splitFreeVialLines } from '@/utils/freeVial.js';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
+import { addressLooksAbroad } from '@/utils/addressAbroad.js';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -261,6 +262,14 @@ const CheckoutPage = () => {
                       </div>
                     ) : null}
                     <textarea id="checkout-address" className="ng-field" maxLength={500} value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
+                    {/* Rupiah is for Indonesia (Dekito's brief, 14 Nov 2026): an address that ends in another country
+                        is told where its order goes, before the buyer hunts for a kecamatan that does not exist. */}
+                    {addressLooksAbroad(deliveryAddress) ? (
+                      <p role="status" className="ng-notice m-0">
+                        {t('checkout.abroadHint')}{' '}
+                        <a href="/en/cart" className="ng-link">{t('checkout.abroadLink')}</a>
+                      </p>
+                    ) : null}
                     {triedSubmit && fieldErrors.deliveryAddress ? <span className="ng-error text-sm" role="alert">{fieldErrors.deliveryAddress}</span> : null}
                   </div>
                 </fieldset>

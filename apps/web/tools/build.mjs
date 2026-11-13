@@ -331,13 +331,16 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = [], facts = DE
       // /en/track-order/…, an English 404. English and with the English card, as the eighth audit asked, but
       // claiming no canonical and no twins: the tenth audit (13 Nov 2026) found all of those pages declaring
       // themselves to be /en/home, with the home page's words in the boot screen. Same rule as the Indonesian
-      // shell below. The bare /en address itself is rewritten to the English home's own file (vercel.json).
+      // shell below. It lives at /en/app.html, NOT /en/index.html: Vercel serves a file that exists before
+      // any rewrite, so a shell at /en/index.html also answered the bare /en address — the English home lost
+      // its canonical (seen live, 13 Nov 2026). /en/index.html stays the English home's own file.
       if (page.route === '/home') {
+        fs.writeFileSync(path.join(distRoot, EN_PREFIX.slice(1), 'index.html'), enHtml);
         const enShell = enHtml
           .replace(/[\t ]*<link rel="canonical"[^>]*>\n?/gi, '')
           .replace(/[\t ]*<link rel="alternate"[^>]*>\n?/gi, '')
           .replace(/[\t ]*<meta property="og:url"[^>]*>\n?/gi, '');
-        fs.writeFileSync(path.join(distRoot, EN_PREFIX.slice(1), 'index.html'), enShell);
+        fs.writeFileSync(path.join(distRoot, EN_PREFIX.slice(1), 'app.html'), enShell);
       }
     }
   });

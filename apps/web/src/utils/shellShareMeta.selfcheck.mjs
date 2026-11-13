@@ -66,12 +66,17 @@ for (const tag of ['property="og:image"', 'name="twitter:image"']) {
 // and the bare /en address is rewritten to the English home's own file.
 assert.match(build, /const enShell = enHtml\s*\.replace\(\/\[\\t \]\*<link rel="canonical"/,
   'the English shell keeps the English home\'s canonical, so every English app page claims to be the home page');
+// Vercel serves an existing file before any rewrite, so the shell cannot be /en/index.html — that file IS
+// the bare /en address. The home keeps it; the shell is /en/app.html, reached only through the rewrite.
+assert.match(build, /fs\.writeFileSync\(path\.join\(distRoot, EN_PREFIX\.slice\(1\), 'index\.html'\), enHtml\);/,
+  'the bare /en address must get the English home page file');
+assert.match(build, /fs\.writeFileSync\(path\.join\(distRoot, EN_PREFIX\.slice\(1\), 'app\.html'\), enShell\);/,
+  'the English shell must not sit at /en/index.html, where it answers /en itself');
 {
   const vercel = JSON.parse(readFileSync(join(webRoot, 'vercel.json'), 'utf8'));
   const rewrites = vercel.rewrites || [];
   const at = (source) => rewrites.findIndex((rule) => rule.source === source);
-  assert.equal(rewrites[at('/en')]?.destination, '/en/home/index.html', 'the bare /en address must get the English home page file');
-  assert.ok(at('/en') > -1 && at('/en') < at('/en/:path*'), 'and before the English shell answers it');
+  assert.equal(rewrites[at('/en/:path*')]?.destination, '/en/app.html', 'English addresses without their own file get the English shell');
 }
 
 // If a build is present, hold the output to the same rule.
@@ -83,10 +88,10 @@ if (existsSync(join(dist, 'index.html'))) {
   assert.match(shell, /name="description"[^>]*content="[^"]{20,}"/, 'the built shell needs a real description');
   assert.match(shell, /property="og:description" content="SOLIVAGANT adalah/, 'the built shell previews in Indonesian');
   assert.doesNotMatch(shell, /rel="canonical"/, 'the built shell must not claim a canonical');
-  const enIndex = join(dist, 'en', 'index.html');
+  const enIndex = join(dist, 'en', 'app.html');
   if (existsSync(enIndex)) {
     const en = readFileSync(enIndex, 'utf8');
-    assert.match(en, /<html lang="en"/, 'dist/en/index.html is English');
+    assert.match(en, /<html lang="en"/, 'dist/en/app.html is English');
     assert.match(en, /property="og:locale" content="en_US"/, 'and previews as English');
     assert.doesNotMatch(en, /rel="canonical"|rel="alternate"/, 'the English shell answers many addresses and must claim none of them');
   }

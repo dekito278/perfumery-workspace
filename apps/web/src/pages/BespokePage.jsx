@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { BadgePercent, CheckCircle2, CreditCard, Globe, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { addressLooksAbroad } from '@/utils/addressAbroad.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
@@ -1036,7 +1037,9 @@ const BespokePage = () => {
                       details, and a guest just types them. */}
                   <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input id="bespoke-name" type="text" className="ng-field" autoComplete="name" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} aria-invalid={invalidFor('name')} />{errorFor('name')}</label>
                   <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input id="bespoke-contact" type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} aria-invalid={invalidFor('contact')} />{errorFor('contact')}</label>
-                  <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea id="bespoke-address" rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-invalid={invalidFor('address')} />{errorFor('address')}</label>
+                  <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea id="bespoke-address" rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-invalid={invalidFor('address')} />{errorFor('address')}{addressLooksAbroad(form.deliveryAddress) ? (
+                    <span role="status" className="ng-notice">{t('checkout.abroadHint')} <a href="/en/bespoke" className="ng-link">{t('bsp.abroadLink')}</a></span>
+                  ) : null}</label>
                 </div>
                 <div className="ng-fieldset">
                   <div className="flex flex-col gap-2">

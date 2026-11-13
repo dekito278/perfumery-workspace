@@ -71,7 +71,8 @@ const line = { productSlug: 'hug-n-1', variantId: 'v1', size: '30 ml', quantity:
 const silent = await post({ customerName: 'Uji', contact: '0800', items: [line] });
 assert.equal(silent.statusCode, 422,
   `an order with no shipping at all was accepted (${silent.statusCode}) — it ships for free`);
-assert.match(silent.body.message, /[Ss]hipping destination/);
+assert.match(silent.body.message, /Pilih area tujuan pengiriman di Indonesia/);
+assert.equal(silent.body.reason, 'domestic_destination_required');
 assert.equal(inserted.length, 0, 'and nothing may be written');
 
 // --- 2. The half that already worked keeps working -----------------------------------------------------
@@ -105,16 +106,29 @@ const mixed = await post({
 });
 assert.equal(mixed.statusCode, 422, 'a brief carrying catalogue bottles still needs a destination');
 
-// --- 5. And a bespoke request may still arrive unshipped -----------------------------------------------
-// Its freight is quoted by hand afterwards; requiring a destination here would break the one flow that
-// legitimately has none. Every bespoke order in the live database carries no courier line.
+// --- 5. A bespoke request needs an Indonesian destination too ----------------------------------------
+// Until 14 Nov 2026 a brief with no bottles could arrive unshipped, "quoted by hand afterwards" — which
+// also meant a rupiah order with any address at all, a parcel abroad at the domestic price, through an
+// unauthenticated endpoint. Dekito's brief (P0-2): rupiah is for delivery inside Indonesia, and the
+// bespoke form has asked for the area, courier and service since #648. Abroad is the international branch.
 const bespoke = await post({
   customerName: 'Uji', contact: '0800', source: 'bespoke',
+  delivery: { address: '123 Orchard Rd, Singapore 238858', area: '' },
   // A priced option on purpose: without one the endpoint refuses at "Order has no priced items", the
   // request never reaches the shipping guard, and this section would pass without testing anything.
   bespoke: { optionIds: { size: 'size-30' }, brief: { aroma: 'kayu' } },
 });
-assert.notEqual(bespoke.statusCode, 422,
-  `a bespoke request without shipping was refused: ${JSON.stringify(bespoke.body)}`);
+assert.equal(bespoke.statusCode, 422, `a rupiah bespoke order with no domestic destination was accepted (${bespoke.statusCode})`);
+assert.equal(bespoke.body.reason, 'domestic_destination_required');
+assert.equal(inserted.length, 0, 'and nothing may be written');
 
-console.log('catalog-order-is-shipped selfcheck OK (anything with bottles in it is priced for freight or refused, whatever the caller calls the order; a brief with no bottles is still quoted by hand)');
+// --- 6. And one addressed in Indonesia still goes through, its freight priced -------------------------
+const shippedBrief = await post({
+  customerName: 'Uji', contact: '0800', source: 'bespoke',
+  bespoke: { optionIds: { size: 'size-30' }, brief: { aroma: 'kayu' } },
+  shipping: { destinationId: '12345', destination: { id: '12345', label: 'Jakarta Selatan' }, courier: 'jne', service: 'REG' },
+});
+assert.notEqual(shippedBrief.statusCode, 422, `a bespoke order addressed in Indonesia was refused: ${JSON.stringify(shippedBrief.body)}`);
+assert.ok(ratesAsked > 0, 'and its shipping must actually be priced');
+
+console.log('catalog-order-is-shipped selfcheck OK (every rupiah order — bottles or a brief, whatever the caller calls it — names an Indonesian destination and is priced for freight, or is refused)');
