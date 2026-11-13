@@ -26,4 +26,20 @@ for (const language of ['id', 'en']) {
   assert.match(MESSAGES[language]['bsp.contact'], /WhatsApp/, `${language}: the field is named for WhatsApp`);
   assert.doesNotMatch(MESSAGES[language]['bsp.contactSectionBody'], /desain|design is chosen/i, `${language}: the lead describes the order, not the interface`);
 }
+// Sixth visitor audit, 13 Nov 2026: the brief was lost on reload or Back, and the scent chips appended
+// duplicates with no sign of what was already chosen.
+assert.match(page, /\.\.\.readBespokeDraft\(referenceSlug\),/, 'the design comes back from the per-tab draft');
+assert.match(page, /useEffect\(\(\) => \{ writeBespokeDraft\(form, referenceSlug\); \}, \[form, referenceSlug\]\);/);
+assert.match(page, /const NOT_REMEMBERED = \['preorderAcknowledged', 'customerCode'\];/, 'consent is asked again, not remembered');
+assert.equal((page.match(/clearBespokeDraft\(\);\s*navigate\(`\/payment/g) || []).length, 2, 'a placed order clears the draft');
+assert.match(page, /const checkoutOpen = location\.hash === '#checkout' && Boolean\(form\.scentDescription\.trim\(\)\);/, 'the checkout step is a place in history, never open on an empty brief');
+assert.match(page, /aria-pressed=\{chosen\}/, 'a scent chip shows when it is in the brief');
+{
+  const body = page.match(/const briefParts = [\s\S]*?\n\};/)[0].replace(/^const /gm, 'var ');
+  const run = new Function(`${body}; return { scentDirectionChosen, toggleScentDirection };`)();
+  assert.equal(run.toggleScentDirection('Hujan sore, teh melati', 'Woody'), 'Hujan sore, teh melati, Woody');
+  assert.equal(run.toggleScentDirection('Hujan sore, teh melati, Woody, Fresh', 'Woody'), 'Hujan sore, teh melati, Fresh', 'a second tap takes it out');
+  assert.equal(run.toggleScentDirection('', 'Fresh'), 'Fresh');
+  assert.ok(run.scentDirectionChosen('woody, fresh', 'Woody'));
+}
 console.log('bespokeCheckout selfcheck OK (one contact, the right total, no checkout without a brief)');
