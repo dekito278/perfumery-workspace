@@ -55,7 +55,6 @@ const AboutContent = () => {
             </div>
           ))}
         </dl>
-        <p className="mt-3 text-xs leading-relaxed text-ng-dust">{t('about.factsNote')}</p>
       </section>
 
       <div className="mt-7 flex flex-wrap gap-3">

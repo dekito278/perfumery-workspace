@@ -44,7 +44,8 @@ const CatalogPage = () => {
   // Start at 'All'; the effect below promotes it to the URL family only when that
   // family is a real catalog category, so an unknown ?family= never yields an empty list.
   const [activeCategory, setActiveCategory] = useState('All');
-  const [searchTerm, setSearchTerm] = useState('');
+  // ?q= starts the search (the 404 page's search box sends the buyer here with what they typed).
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
   const [wearSelection, setWearSelection] = useState({ occasions: '', times: '', weather: '' });
   const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
   const revealRef = useScrollReveal();

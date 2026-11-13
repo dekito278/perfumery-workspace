@@ -46,6 +46,7 @@ import { describeWear } from '@/utils/productWear.js';
 import { nearestSlug } from '@/utils/nearestSlug.js';
 import { useShippingDestination } from '@/hooks/useShippingDestination.js';
 import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
+import NotFoundPage from '@/pages/NotFoundPage.jsx';
 
 
 
@@ -144,7 +145,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
     // letter is the same perfume. Only an address that can mean one perfume is followed (utils/nearestSlug.js).
     const near = nearestSlug(slug, visibleProducts.map((item) => item.slug));
     if (near && near !== slug) return <Navigate to={`/catalog/${near}`} replace />;
-    return <Navigate to="/not-found" replace />;
+    // Shown in place, not by moving to /not-found: the buyer keeps the address they typed and can see the typo
+    // (third visitor audit, 13 Nov 2026).
+    return <NotFoundPage />;
   }
 
   // Pick the selected size variant (default the first), so desktop buyers can choose size and are

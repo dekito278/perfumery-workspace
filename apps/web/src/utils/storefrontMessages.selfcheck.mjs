@@ -72,7 +72,7 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // Checkout: the same word is already used on Indonesian receipts and in Indonesian banking.
   'checkout.tab', 'checkout.eyebrow', 'checkout.title', 'checkout.whatsapp',
   'checkout.subtotal', 'checkout.total', 'mcheckout.auto', 'mcheckout.stepArea',
-  'pay.tab', // the payment tab title is already English on the Indonesian site
+  // pay.tab left this list on 13 Nov 2026: the Indonesian payment tab is 'Pembayaran' now (third audit).
   // (journal.tab / .meta / .eyebrow left this list on 2026-11-02: since the redesign the Indonesian journal
   // is headed "Catatan Atelier", so an English tab and an English search snippet were no longer its name.)
   'pay.refresh', // the same word in both
