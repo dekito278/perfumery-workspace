@@ -33,6 +33,7 @@ import { quoteInternationalOrder } from '../../src/utils/internationalOrder.js';
 import { countryNameFor } from '../../src/utils/shippingDestination.js';
 import { composeInternationalAddress, missingInternationalField } from '../../src/utils/internationalAddress.js';
 import { createPaymentToken } from '../../src/utils/paymentLinkToken.js';
+import { buildServerOrderText, buyerNoteFrom } from '../../src/utils/orderText.js';
 
 const jsonResponse = (res, status, body) => {
   res.statusCode = status;
@@ -305,7 +306,11 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
     subtotal += unitPrice * lineQuantity;
     // Preserve the client line's display fields (image, name, ...) but enforce the DB price AND category —
     // voucher category-restrictions read item.category, so a client-sent category must never be trusted.
-    resolved.push({ ...line, slug, name: line.name || product.name, category: product.category || line.category, quantity: lineQuantity, priceNumber: unitPrice, price: isVial ? FREE_VIAL_PRICE_LABEL : rupiah(unitPrice), size,
+    // Only the display fields the order screens and the invoice read come from the client line — never
+    // its cart bookkeeping (previousPriceNumber, priceChanged, maxStock), which used to be stored on every
+    // order verbatim (ninth visitor audit, 13 Nov 2026). The vial keeps its "<vial> — <aroma>" name.
+    const { previousPriceNumber: _previous, priceChanged: _changed, maxStock: _max, ...display } = line;
+    resolved.push({ ...display, slug, name: isVial ? (line.name || product.name) : (product.name || line.name), category: product.category || line.category, quantity: lineQuantity, priceNumber: unitPrice, price: isVial ? FREE_VIAL_PRICE_LABEL : rupiah(unitPrice), size,
       // ONLY the gift tag, never the product's own. This endpoint reads storefront_products, the base
       // table, whose tags carry the internal ones the public view strips — batch ids, stock corrections,
       // and the per-bottle COGS. Copying them onto an order item would publish Dekito's costs to the
@@ -616,6 +621,25 @@ export default async function handler(req, res) {
       : productItems;
 
     const paymentProvider = input.paymentProvider || 'manual';
+    // What staff read and copy for a cart order, written from what this request actually charges. The
+    // browser's own text was stored before — with its own subtotal, shipping and total — so a courier
+    // rate that moved between quote and submit left Studio showing a total the buyer never paid.
+    const catalogText = isBespoke ? null : buildServerOrderText({
+      customerName: input.customer?.name?.trim() || '',
+      customerCode: customer?.customer_code || asCustomerCode(input.customer?.code) || '',
+      contact: input.customer?.contact?.trim() || '',
+      address: input.delivery?.address || '',
+      area: input.delivery?.area || '',
+      shippingSummary,
+      paymentProvider,
+      lines: catalog.resolved,
+      itemsSubtotal,
+      voucherCode: voucherSnapshot?.code || '',
+      voucherDiscount,
+      shippingFee,
+      total: subtotal,
+      buyerNote: buyerNoteFrom(input),
+    });
     const payload = {
       // High-entropy suffix so order numbers can't be enumerated by guessing timestamps (matches
       // orderService.createOrderNumber). The anon payment-session lookup RPC keys off this number.
@@ -625,11 +649,11 @@ export default async function handler(req, res) {
       customer_code: customer?.customer_code || input.customer?.code || null,
       customer_id: customer?.id || null,
       contact: input.customer?.contact?.trim() || '-',
-      notes: isBespoke ? buildBespokeNotes(briefRequest) : (input.notes || ''),
+      notes: isBespoke ? buildBespokeNotes(briefRequest) : catalogText.notes,
       items,
       quantity: isBespoke ? 1 : (catalog.quantity || 0),
       subtotal,
-      checkout_draft: isBespoke ? buildBespokeCheckoutDraft(briefRequest) : (input.checkoutDraft || ''),
+      checkout_draft: isBespoke ? buildBespokeCheckoutDraft(briefRequest) : catalogText.checkoutDraft,
       payment_provider: paymentProvider,
       // Real provider ids are 'manual_transfer_bca'/'doku'; ['manual','whatsapp'] never matched.
       payment_status: ['manual_transfer_bca', 'manual'].includes(paymentProvider) ? 'pending' : 'unpaid',
