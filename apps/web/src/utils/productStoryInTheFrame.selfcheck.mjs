@@ -57,4 +57,8 @@ const RULE = /isInternational\s*\n?\s*\?\s*getProductStory\(slug, region\)\s*\n?
 assert.match(page, RULE, 'the English shop must never fall back to the Indonesian letter');
 assert.match(page, /if \(storyLoading\)/, 'the page waits to know whether there is a story, so one tap never shows two different pages');
 
+// Seventh visitor audit, 13 Nov 2026: the story's photos were the stored originals (1.8 MB on a phone for
+// Ayang-ayang). They go through the resize endpoint with a srcset, like every other product photo.
+assert.doesNotMatch(story, /<img\s+src=\{section\.image\}/, 'no story photo is served as its original');
+assert.equal((story.match(/srcSet=\{getStorageImageSrcSet\(section\.image, STORY_WIDTHS\)\}/g) || []).length, 2, 'both story layouts offer resized widths');
 console.log('productStoryInTheFrame selfcheck OK (one product page; the story in its middle, selling nothing; never Indonesian in the English shop)');
