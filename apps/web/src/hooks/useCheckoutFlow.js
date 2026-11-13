@@ -102,6 +102,10 @@ export const useCheckoutFlow = ({
   const [deliveryArea, setDeliveryArea] = useState(savedDraft.deliveryArea || '');
   const [notes, setNotes] = useState(savedDraft.notes || '');
   const [saving, setSaving] = useState(false);
+  // The real guard against a second order. `saving` is state, so it is still false for every tap that
+  // lands before React re-renders: the ninth visitor audit (13 Nov 2026) sent three order requests in 2 ms
+  // from three quick taps on "Buat Pesanan". A ref changes the moment it is set.
+  const submittingRef = useRef(false);
   const [submittedOrder, setSubmittedOrder] = useState(null);
   const [securityChallenge, setSecurityChallenge] = useState(null);
   const [securityAnswer, setSecurityAnswer] = useState('');
@@ -531,7 +535,7 @@ export const useCheckoutFlow = ({
   const submitOrder = async ({ onSuccess } = {}) => {
     // Hard idempotency guard: a fast double-tap (or any non-button caller) must not create two orders.
     // The disabled button alone doesn't cover the window before React re-renders.
-    if (saving) return;
+    if (saving || submittingRef.current) return;
     if (!items.length) {
       toast.error('Keranjang masih kosong');
       return;
@@ -562,6 +566,7 @@ export const useCheckoutFlow = ({
       return;
     }
 
+    submittingRef.current = true;
     setSaving(true);
     let createdOrder = null;
     try {
@@ -772,6 +777,7 @@ export const useCheckoutFlow = ({
       toast.error(`Pesanan ${createdOrder.orderNumber} sudah tersimpan, tapi halaman pembayaran belum siap. Jangan checkout ulang — buka halaman pembayaran dan coba lagi.`);
       navigate(`${paymentPath}?order=${encodeURIComponent(createdOrder.orderNumber)}`);
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   };

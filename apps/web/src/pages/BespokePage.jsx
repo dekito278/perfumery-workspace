@@ -1,7 +1,7 @@
 import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { BadgePercent, CheckCircle2, CreditCard, Globe, Search, X } from 'lucide-react';
@@ -244,6 +244,8 @@ const BespokePage = () => {
   const defaultCap = cheapestEnabled(capDesignOptions);
   const defaultLabel = cheapestEnabled(labelDesignOptions);
   const [saving, setSaving] = useState(false);
+  // Set the moment a request starts, so taps that land before the re-render cannot send a second one.
+  const submittingRef = useRef(false);
   const [destinationSearch, setDestinationSearch] = useState('');
   const [destinationOptions, setDestinationOptions] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState(null);
@@ -600,12 +602,14 @@ const BespokePage = () => {
 
   const submitRequest = async (event) => {
     event.preventDefault();
+    if (submittingRef.current) return;
     const validationError = validateForm();
     if (validationError) {
       toast.error(validationError);
       return;
     }
 
+    submittingRef.current = true;
     setSaving(true);
     let createdOrder = null;
     try {
@@ -748,6 +752,7 @@ const BespokePage = () => {
       }
       toast.error(publicErrorMessage(error, t('bsp.saveFailed')));
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   };
