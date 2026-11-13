@@ -34,8 +34,12 @@ assert.equal(nearestSlug('la-rose', ['la-rose', 'la-rosa']), 'la-rose', 'an exac
 assert.equal(nearestSlug('la-rosx', ['la-rose', 'la-rosa']), '', 'two equally near: not a guess');
 
 const pdp = read('pages', 'PublicProductDetailPage.jsx');
-assert.match(pdp, /const near = nearestSlug\(slug, visibleProducts\.map\(\(item\) => item\.slug\)\);\s*if \(near && near !== slug\) return <Navigate to=\{`\/catalog\/\$\{near\}`\} replace \/>;\s*return <Navigate to="\/not-found" replace \/>;/,
-  'the product page follows a certain guess, among VISIBLE products only, before saying not found');
+assert.match(pdp, /const near = nearestSlug\(slug, visibleProducts\.map\(\(item\) => item\.slug\)\);\s*if \(near && near !== slug\) return <Navigate to=\{`\/catalog\/\$\{near\}`\} replace \/>;\s*(?:\/\/[^\n]*\s*)*return <NotFoundPage \/>;/,
+  'the product page follows a certain guess, among VISIBLE products only, before saying not found — in place, '
+  + 'keeping the address the buyer typed (third audit, 13 Nov 2026: it used to move to /not-found)');
+const notFound = read('pages', 'NotFoundPage.jsx');
+assert.match(notFound, /navigate\(q \? `\/catalog\?q=\$\{encodeURIComponent\(q\)\}` : '\/catalog'\)/, 'the 404 page searches the collection');
+assert.match(read('pages', 'CatalogPage.jsx'), /useState\(\(\) => searchParams\.get\('q'\) \|\| ''\)/, 'and the catalogue starts from that search');
 const article = read('pages', 'PublicJournalArticlePage.jsx');
 assert.match(article, /nearestSlug\(slug, \(await getPublishedJournalPosts\(\)\.catch\(\(\) => \[\]\)\)\.map\(\(item\) => item\.slug\)\)/,
   'the article page guesses among PUBLISHED articles only, and a failed list is just "not found"');

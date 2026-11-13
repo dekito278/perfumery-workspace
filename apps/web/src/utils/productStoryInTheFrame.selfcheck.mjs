@@ -24,7 +24,8 @@ const page = stripComments(read('pages', 'PublicProductDetailPage.jsx'));
 const story = stripComments(read('components', 'storefront', 'ProductStory.jsx'));
 
 // --- 1. One product page ------------------------------------------------------------------------------
-assert.doesNotMatch(page, /return <\w+(Page|Story)\b/, 'the product page hands itself over to another component again');
+// The one exception is a product that does not exist: then the 404 page is shown in place (13 Nov 2026).
+assert.doesNotMatch(page, /return <(?!NotFoundPage\b)\w+(Page|Story)\b/, 'the product page hands itself over to another component again');
 assert.match(page, /import ProductStory from '@\/components\/storefront\/ProductStory\.jsx'/, 'the product page renders the story itself');
 
 // --- 2. Between the buy block and the pyramid ----------------------------------------------------------
