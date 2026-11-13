@@ -102,4 +102,17 @@ assert.equal(adder.length, 1, `exactly one migration adds related_slugs, found $
 assert.match(readFileSync(join(migrations, adder[0]), 'utf8'), /create or replace view public\.storefront_products_public/,
   `${adder[0]} adds related_slugs and never recreates the buyer's view, so no buyer would see a pick`);
 
+// A sold-out perfume goes to the back of the row, not out of it (sixth audit, 13 Nov 2026).
+{
+  const shelf = [
+    { slug: 'wayback', category: 'Woody', publicStatus: 'Available' },
+    { slug: 'sudra', category: 'Woody', publicStatus: 'Made to order' },
+    { slug: 'pantura', category: 'Woody', publicStatus: 'Available' },
+    { slug: 'l-iris', category: 'Floral', publicStatus: 'Available' },
+    { slug: 'la-rose', category: 'Floral', publicStatus: 'Available' },
+  ];
+  const picked = relatedFor(shelf[0], shelf).map((item) => item.slug);
+  assert.deepEqual(picked, ['pantura', 'l-iris', 'la-rose', 'sudra'], 'Sudra, sold out, comes last');
+  assert.deepEqual(relatedFor(shelf[0], shelf, 3).map((item) => item.slug), ['pantura', 'l-iris', 'la-rose'], 'and drops out when the row is full');
+}
 console.log('relatedProducts selfcheck OK (a gourmand leads with the other gourmand, both pages ask the same rule)');

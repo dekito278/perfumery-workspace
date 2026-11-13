@@ -7,7 +7,6 @@
 // read first. Two products with no stock were advertised as in stock on the pages Google indexes.
 
 export const SCHEMA_IN_STOCK = 'https://schema.org/InStock';
-export const SCHEMA_PRE_ORDER = 'https://schema.org/PreOrder';
 export const SCHEMA_OUT_OF_STOCK = 'https://schema.org/OutOfStock';
 
 const stockOf = (value) => {
@@ -26,15 +25,13 @@ export const schemaAvailability = ({ status = '', stock, variants } = {}) => {
     : null;
   const counted = variantStock !== null && variants.length ? variantStock : (stock === undefined || stock === null ? null : stockOf(stock));
 
-  if (counted !== null) {
-    if (counted > 0) return SCHEMA_IN_STOCK;
-    // The storefront calls a zero-stock product "Made to order" and sells it as a pre-order, so say that
-    // rather than OutOfStock — unless it is explicitly marked as finished.
-    return /out of stock|habis|sold\s?out|discontinued/i.test(String(status)) ? SCHEMA_OUT_OF_STOCK : SCHEMA_PRE_ORDER;
-  }
+  // SINCE 13 NOV 2026 (sixth visitor audit): zero stock is OUT OF STOCK. The shop stopped selling an empty
+  // perfume as a pre-order — the page says "Stok habis", the button is off and the buyer is offered a word
+  // when it is back — while this still told Google "PreOrder" for Sudra. The page and the data say one thing.
+  if (counted !== null) return counted > 0 ? SCHEMA_IN_STOCK : SCHEMA_OUT_OF_STOCK;
 
   const text = String(status).toLowerCase();
-  if (/made to order|pre.?order|pesan|inquire/.test(text)) return SCHEMA_PRE_ORDER;
-  if (/out|habis|sold/.test(text)) return SCHEMA_OUT_OF_STOCK;
+  if (/^available$/.test(text.trim())) return SCHEMA_IN_STOCK;
+  if (/made to order|pre.?order|pesan|inquire|out|habis|sold|discontinued/.test(text)) return SCHEMA_OUT_OF_STOCK;
   return SCHEMA_IN_STOCK;
 };
