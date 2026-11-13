@@ -111,8 +111,10 @@ const CheckoutPage = () => {
       event.preventDefault();
       const form = event.currentTarget;
       window.requestAnimationFrame(() => {
+        // Centred, then focused without a second jump: on a desktop the browser's own scroll put the voucher
+        // box under the top edge with only the red line below it visible (tenth visitor audit).
         const field = form.querySelector('[aria-invalid="true"]');
-        if (field) field.focus();
+        if (field) { field.scrollIntoView({ block: 'center' }); field.focus({ preventScroll: true }); }
         else document.getElementById('checkout-missing')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       });
       return;
@@ -374,7 +376,7 @@ const CheckoutPage = () => {
                       </button>
                     </div>
                     {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
-                    {triedSubmit && voucher.unappliedCode && !voucher.loading ? <span className="ng-error text-sm" role="alert">{t('checkout.errVoucherUnapplied', { code: voucher.unappliedCode })}</span> : null}
+                    {triedSubmit && voucher.unappliedCode && !voucher.loading ? <span className="ng-error text-sm" role="alert">{t(voucher.codeRefused ? 'checkout.errVoucherRefused' : 'checkout.errVoucherUnapplied', { code: voucher.unappliedCode })}</span> : null}
                     {voucher.appliedVoucher ? (
                       <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
                         <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
