@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { getOptimizedStorageImageUrl, getStorageImageSrcSet } from '@/utils/storageImage.js';
+
+const STORY_WIDTHS = [480, 768, 1080, 1600];
 
 /**
  * A product's story — hero, letter, verses, music, video — told INSIDE the ordinary product page,
@@ -148,7 +151,16 @@ const ProductStory = ({ product, story }) => {
                 </div>
                 {section.image ? (
                   <div className="imm-text-image__visual">
-                    <img src={section.image} alt={section.heading} loading="lazy" />
+                    {/* Through the resize endpoint, like every other product photo: the story sent its
+                        originals, 1.8 MB on a phone for Ayang-ayang (seventh visitor audit, 13 Nov 2026). */}
+                    <img
+                      src={getOptimizedStorageImageUrl(section.image, 1080)}
+                      srcSet={getStorageImageSrcSet(section.image, STORY_WIDTHS)}
+                      sizes="(max-width: 767px) 100vw, 50vw"
+                      alt={section.heading}
+                      loading="lazy"
+                      decoding="async"
+                    />
                   </div>
                 ) : null}
               </section>
@@ -159,7 +171,14 @@ const ProductStory = ({ product, story }) => {
             if (!section.image) return null;
             return (
               <section key={i} className="imm-section imm-full-bleed" data-imm-reveal>
-                <img src={section.image} alt={section.caption || ''} loading="lazy" />
+                <img
+                  src={getOptimizedStorageImageUrl(section.image, 1600)}
+                  srcSet={getStorageImageSrcSet(section.image, STORY_WIDTHS)}
+                  sizes="100vw"
+                  alt={section.caption || ''}
+                  loading="lazy"
+                  decoding="async"
+                />
                 {section.caption ? <p className="imm-full-bleed__caption">{section.caption}</p> : null}
               </section>
             );
