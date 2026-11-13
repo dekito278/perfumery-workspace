@@ -913,6 +913,9 @@ const assertLanguagePairsAreCoherent = (siteUrl, expectedRoutes = []) => {
     const { rewrites = [] } = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
     for (const { source, destination } of rewrites) {
       if (!destination?.endsWith('/index.html') || destination === '/index.html') continue;
+      // A destination with a parameter (/en/articles/:slug -> /articles/:slug/index.html) names a file per
+      // value; one that was not prerendered falls through to the shell, as measured above.
+      if (destination.includes(':')) continue;
       if (!fs.existsSync(path.join(distRoot, destination.slice(1)))) {
         problems.push(`vercel.json rewrites ${source} to ${destination}, which the build does not produce`);
       }
