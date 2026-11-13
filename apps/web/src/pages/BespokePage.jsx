@@ -725,7 +725,8 @@ const BespokePage = () => {
                 rule every perfume abroad is priced with (bespokeUsdPrice). */}
             {/* The price and its condition, each on its own line: run together they read "Mulai dari Rp 569.000
                 Sebelum ongkir…", one sentence that is not one (2026-11-02). */}
-            <p className="m-0 flex flex-col gap-1 text-[15px] text-ng-dust">
+            {/* max-w: at 1920px the note ran ~120 characters a line (fifth visitor audit, 13 Nov 2026). */}
+            <p className="m-0 flex max-w-[62ch] flex-col gap-1 text-[15px] text-ng-dust">
               <strong className="font-medium text-ng-bone">{t('bsp.floor', { price: isInternational ? `US$${bespokeUsdPrice(floorPrice)}` : formatRupiah(floorPrice) })}</strong>
               <span>{t('bsp.floorNote')}</span>
             </p>

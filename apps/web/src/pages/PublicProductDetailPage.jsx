@@ -382,7 +382,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 ) : null}
                 {/* Customs and reviewers read this, not shoppers: a US shipment was held over the word
                     oud. Shown only where the page is quoting internationally. */}
-                {exportPrice ? <p className="pdp-synthetic-accords m-0 text-xs leading-relaxed text-ng-dust">{t('pdp.syntheticAccords')}</p> : null}
+                {exportPrice ? <p className="pdp-synthetic-accords m-0 max-w-[70ch] text-xs leading-relaxed text-ng-dust">{t('pdp.syntheticAccords')}</p> : null}
               </div>
             </div>
           </div>

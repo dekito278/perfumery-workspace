@@ -38,6 +38,13 @@ assert.match(header, /handleFocusOut[\s\S]{0,160}!menuRef\.current\.contains\(e\
 assert.match(header, /setMegaOpen\(false\);\s*menuButtonRef\.current\?\.focus\(\);/, 'Escape returns focus to the button');
 assert.match(header, /if \(phone\) \{\s*const release = lockBodyScroll\(\);/, 'the page behind a phone menu stays put');
 
+// Fifth audit, 13 Nov 2026: names are headings (a screen reader moves through a list by them), the cart's
+// name link is a full touch target, and long notes keep a readable measure on a wide screen.
+assert.match(read('pages', 'CatalogPage.jsx'), /<h2 className="m-0 font-ng-display[^"]*">\{named\.name\}<\/h2>/, 'each perfume in the catalogue is a heading');
+assert.match(read('pages', 'PublicJournalPage.jsx'), /<h2 className="m-0 font-ng-display[^"]*">\{article\.title\}<\/h2>/, 'each article in the journal is a heading');
+assert.match(read('pages', 'CartPage.jsx'), /className="inline-flex min-h-\[44px\] items-center self-start font-ng-display/, 'the cart name link is 44px tall');
+assert.match(read('pages', 'BespokePage.jsx'), /<p className="m-0 flex max-w-\[62ch\] flex-col gap-1 text-\[15px\] text-ng-dust">/, 'the bespoke floor note keeps a measure');
+
 const backToTop = read('components', 'storefront', 'BackToTop.jsx');
 assert.match(backToTop, /\/\^\\\/\(cart\|checkout\|bespoke\|payment\|pay\)\(\\\/\|\$\)\/\.test\(pathname\)/, 'no floating button on the pages that end in a form button');
 assert.match(backToTop, /if \(onFormPage\) return null;/);
