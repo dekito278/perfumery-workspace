@@ -787,7 +787,7 @@ const BespokePage = () => {
             </div>
             <div className="flex flex-col gap-8 border-t border-ng-bone/15 pt-12" data-reveal>
               <div className="flex flex-col gap-3">
-                <p className="ng-mono m-0 text-ng-ash">{t('bsp.visualEyebrow')}</p>
+                <p className="ng-mono m-0 text-ng-ash">{t(bespokeChoiceGroups.length > 1 ? 'bsp.visualEyebrow' : 'bsp.visualEyebrowSingle')}</p>
                 {/* With one group left (size, since the bottle, cap and label options were switched off on 23 Oct)
                     "choose a category" offered a single tab: the group names itself instead. */}
                 <h3 className="ng-display m-0 text-[36px] md:text-[44px]">{bespokeChoiceGroups.length > 1 ? t('bsp.visualBody') : activeChoice.title}</h3>

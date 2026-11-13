@@ -422,7 +422,9 @@ const CheckoutPage = () => {
                       </div>
                       <div className="flex min-w-0 flex-col gap-1">
                         <strong className="truncate font-ng-display text-xl font-normal leading-none">{splitScriptName(item.name).name}</strong>
-                        <span className="text-xs text-ng-ash">{t('checkout.sizeQty', { size: item.size, qty: item.quantity })}</span>
+                        {/* The gift vial's "size" is the scent chosen, already in its name: "Vial hadiah — La Rose"
+                            over "La Rose · Qty 1" said it twice (fifth visitor audit, 13 Nov 2026). */}
+                        {isFreeVialLine(item) ? null : <span className="text-xs text-ng-ash">{t('checkout.sizeQty', { size: item.size, qty: item.quantity })}</span>}
                         <CartPriceChange item={item} />
                       </div>
                       <strong className="text-sm font-normal">{isFreeVialLine(item) ? FREE_VIAL_PRICE_LABEL : formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>

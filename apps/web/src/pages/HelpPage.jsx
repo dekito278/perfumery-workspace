@@ -68,7 +68,7 @@ const HelpContent = () => {
         <Section id="help-tracking" title={t('help.trackTitle')}>
           <p className="m-0">
             {t('help.track')}{' '}
-            <Link to="/track-order" className="underline underline-offset-4">{t('nav.trackOrder')}</Link>
+            <Link to="/track-order" className="underline underline-offset-4">{t('nav.trackOrder')}</Link>.
           </p>
         </Section>
 
@@ -81,8 +81,11 @@ const HelpContent = () => {
 
         <Section id="help-bespoke" title={t('help.bespokeTitle')}>
           <p className="m-0">
-            {t('help.bespoke', { days: facts.bespokeDays })}{' '}
-            <Link to="/bespoke" className="underline underline-offset-4">{t('nav.bespoke')}</Link>
+            {t('help.bespoke', { days: facts.bespokeDays })}
+          </p>
+          {/* Its own line: run on after the sentence it read as one ("…your brief. Bespoke ritual"). */}
+          <p className="m-0">
+            <Link to="/bespoke" className="underline underline-offset-4">{t('nav.bespoke')} →</Link>
           </p>
         </Section>
 
