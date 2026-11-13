@@ -2,7 +2,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BadgePercent, Minus, Plus, ShoppingBag, X } from 'lucide-react';
@@ -35,6 +35,12 @@ const CartPage = () => {
   const offerMemberSignIn = shouldOfferMemberPrice({ saving: memberSaving, isMember: tier === 'member' || tier === 'reseller' });
   const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
+  // On a phone the answer to a code landed under the sticky "Lanjut ke checkout" bar (visitor audit,
+  // 13 Nov 2026): brought to the middle of the screen when it appears.
+  const codeMessageRef = useRef(null);
+  useEffect(() => {
+    if (voucher.message) codeMessageRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+  }, [voucher.message]);
   const subtotal = summary.subtotal;
   const totalAfterVoucher = Math.max(subtotal - voucher.discountAmount, 0);
   // Per line, as the phone cart showed it: what each bottle costs once the voucher is spread over it.
@@ -129,7 +135,7 @@ const CartPage = () => {
                           </div>
                           <div className="ng-cart-line__qty">
                             <div className="ng-stepper">
-                              <button type="button" onClick={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))} aria-label={t('cart.decreaseOf', { name: item.name })}>
+                              <button type="button" onClick={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))} disabled={item.quantity <= 1} aria-label={t('cart.decreaseOf', { name: item.name })}>
                                 <Minus className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
                               <span aria-live="polite">{item.quantity}</span>
@@ -137,6 +143,8 @@ const CartPage = () => {
                                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
                             </div>
+                            {/* The cap said, not only greyed (audit, 13 Nov 2026): "+" just stopped working at 2. */}
+                            {atStockCap(item) ? <span className="text-xs text-ng-ash">{t('cart.stockLeft', { count: item.quantity })}</span> : null}
                           </div>
                           <div className="ng-cart-line__sum flex flex-col items-end gap-1 text-right">
                             {hasLineDiscount ? <span className="text-xs text-ng-ash line-through">{formatTotal(discountedLine.originalTotal)}</span> : null}
@@ -181,7 +189,7 @@ const CartPage = () => {
                         {voucher.loading ? t('cart.voucherChecking') : t('cart.voucherApply')}
                       </button>
                     </div>
-                    {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
+                    {voucher.message ? <p ref={codeMessageRef} role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
                     {voucher.appliedVoucher ? (
                       <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
                         <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}

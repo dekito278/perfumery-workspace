@@ -18,14 +18,14 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 // labelKey/draftKey so the same button can carry the errand of whatever sentence it answers: asking
 // about a parcel on the tracking page, arranging an order from abroad on the account page — where the
 // English shop has no checkout, and WhatsApp is not a help channel but the way to buy at all.
-const AskAtelierButton = ({ orderNumber = '', className = '', labelKey = 'track.askAtelier', draftKey = '' }) => {
+const AskAtelierButton = ({ orderNumber = '', className = '', labelKey = 'track.askAtelier', draftKey = '', draftVars = null }) => {
   const { t } = useTranslate();
   const phoneNumber = getStorefrontWhatsAppNumber();
   if (!phoneNumber) return null;
 
   // One t() call, not a ternary of two: the shop's guard for inline WhatsApp drafts reads the expression
   // handed to buildWhatsAppCheckoutUrl and wants it to start at the message file. It is right to.
-  const message = t(draftKey || (orderNumber ? 'track.waDraft' : 'track.waDraftNoOrder'), { order: orderNumber });
+  const message = t(draftKey || (orderNumber ? 'track.waDraft' : 'track.waDraftNoOrder'), { order: orderNumber, ...(draftVars || {}) });
 
   return (
     <a

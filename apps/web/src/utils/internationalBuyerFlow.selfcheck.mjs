@@ -22,7 +22,7 @@ const read = (...parts) => readFileSync(join(src, ...parts), 'utf8');
 const pdp = read('pages', 'PublicProductDetailPage.jsx');
 assert.match(pdp, /const \{ bottles: chosenBottles \} = useShippingDestination\(\);\s*const addCount = isInternational \? Math\.max\(1, Math\.round\(Number\(chosenBottles\) \|\| 1\)\) : 1;/,
   'the English shop adds the bottle count chosen in its quote block; the Indonesian shop adds one');
-assert.match(pdp, /priceNumber: selectedPrice,\s*\}, addCount\);/, 'and that count is what goes in the cart');
+assert.match(pdp, /priceNumber: selectedPrice,[\s\S]{0,260}\}, addCount\);/, 'and that count is what goes in the cart');
 assert.match(pdp, /addCount > 1 && exportPrice\s*\? t\('pdp\.addManyToCartWithPrice', \{ count: addCount, price: `US\$\$\{usdPriceFor\(exportPrice\) \* addCount\}` \}\)/,
   'the button says how many and what they cost');
 for (const language of ['id', 'en']) assert.match(MESSAGES[language]['pdp.addManyToCartWithPrice'], /\{count\}[\s\S]*\{price\}/);

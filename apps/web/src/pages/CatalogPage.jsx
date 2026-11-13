@@ -69,11 +69,15 @@ const CatalogPage = () => {
     // own rule.
     const variant = getPrimaryVariant(Array.isArray(product?.variants) ? product.variants : []);
     const variantKey = variant?.id || variant?.size || '';
-    addItem({
+    const added = addItem({
       ...product,
       cartSlug: variantKey ? `${product.slug}-${variantKey}` : product.slug,
       variantId: variant?.id || '',
     }, 1);
+    if (added === 0) {
+      toast.info(t('cart.stockAllIn', { name: product.name }), { position: 'top-center' });
+      return;
+    }
     setAddedSlug(product.slug);
     toast.success(t('pdp.addedToast', { name: product.name }), {
       description: t('pdp.cartUpdated'),
