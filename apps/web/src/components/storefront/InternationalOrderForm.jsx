@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { clearCart } from '@/services/cartService.js';
 import { placeInternationalOrder } from '@/services/orderService.js';
-import { regionRequiredFor } from '@/utils/internationalAddress.js';
+import { phoneExampleFor, postcodeLabelKeyFor, postcodeRequiredFor, regionLabelKeyFor, regionRequiredFor } from '@/utils/internationalAddress.js';
 
 // maxLength = the endpoint's own limits (INTERNATIONAL_FIELDS in api/orders/create.js), so a too-long field
 // is stopped while typing rather than refused after "Place order". Patterns: a phone is digits with a + and
@@ -18,8 +18,9 @@ const FIELDS = [
   { key: 'address', label: 'cart.intl.formAddress', autoComplete: 'street-address', hint: 'cart.intl.formAddressHint', required: true, multiline: true, maxLength: 600 },
   { key: 'city', label: 'cart.intl.formCity', autoComplete: 'address-level2', required: true, maxLength: 120 },
   // Required only where DHL needs it (US, CA, AU); asked of everyone, since most addresses have one.
-  { key: 'region', label: 'cart.intl.formRegion', autoComplete: 'address-level1', requiredFor: regionRequiredFor, maxLength: 120 },
-  { key: 'postcode', label: 'cart.intl.formPostcode', autoComplete: 'postal-code', maxLength: 20 },
+  { key: 'region', label: 'cart.intl.formRegion', labelFor: regionLabelKeyFor, autoComplete: 'address-level1', requiredFor: regionRequiredFor, maxLength: 120 },
+  // Required where the country uses postcodes (internationalAddress.js); labelled in the country's own words.
+  { key: 'postcode', label: 'cart.intl.formPostcode', labelFor: postcodeLabelKeyFor, autoComplete: 'postal-code', maxLength: 20, requiredFor: postcodeRequiredFor },
 ];
 
 // What was typed survives a reload (the audit lost a whole address to one). Per browser, cleared once the
@@ -79,14 +80,15 @@ const InternationalOrderForm = ({ quote }) => {
         const Input = field.multiline ? 'textarea' : 'input';
         return (
           <label key={field.key} className="ng-label">
-            <span className="ng-mono text-ng-dust">{t(field.label)}</span>
+            <span className="ng-mono text-ng-dust">{t(field.labelFor ? field.labelFor(quote.country) : field.label)}</span>
             <Input
               className="ng-field"
               type={field.multiline ? undefined : (field.type || 'text')}
               rows={field.multiline ? 3 : undefined}
               value={buyer[field.key]}
               onChange={(event) => setBuyer((current) => ({ ...current, [field.key]: event.target.value }))}
-              placeholder={field.hint ? t(field.hint) : undefined}
+              // The phone example in the buyer's own calling code: a US buyer was shown "+65 9123 4567".
+              placeholder={field.key === 'phone' && phoneExampleFor(quote.country) ? phoneExampleFor(quote.country) : (field.hint ? t(field.hint) : undefined)}
               autoComplete={field.autoComplete}
               required={field.required || Boolean(field.requiredFor?.(quote.country))}
               maxLength={field.maxLength}

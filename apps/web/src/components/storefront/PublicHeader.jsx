@@ -34,6 +34,9 @@ const megaMenuColumns = [
       { labelKey: 'nav.journal', to: '/journal' },
       { labelKey: 'nav.account', to: '/customer' },
       { labelKey: 'nav.trackOrder', to: '/track-order' },
+      // About and Help lived only in the footer, under a long page on a phone (third audit, 13 Nov 2026).
+      { labelKey: 'nav.about', to: '/about' },
+      { labelKey: 'nav.help', to: '/help' },
     ],
   },
 ];
@@ -178,7 +181,7 @@ const PublicHeader = () => {
               <div key={col.titleKey} className="ng-menu__column">
                 <span className="ng-menu__heading ng-mono">{t(col.titleKey)}</span>
                 {col.links.map((link) => (
-                  <Link key={`${col.titleKey}-${link.to}`} to={link.to} role="menuitem" onClick={() => setMegaOpen(false)}>
+                  <Link key={`${col.titleKey}-${link.to}`} to={link.to} role="menuitem" aria-current={isCurrent(link.to) ? 'page' : undefined} onClick={() => setMegaOpen(false)}>
                     {link.labelKey ? t(link.labelKey) : link.label}
                   </Link>
                 ))}

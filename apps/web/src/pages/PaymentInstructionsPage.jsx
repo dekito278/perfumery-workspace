@@ -8,6 +8,7 @@ import { findOrderByPaymentToken } from '@/services/paymentLinkService.js';
 import { paymentAmountUsd } from '@/utils/internationalOrder.js';
 import { submitOrderPaymentProof } from '@/services/orderService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
+import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import {
   PAY_BANK, PAY_CASH, PAY_WIRE, bankIsConfigured, cashIsConfigured, paypalLinkFor, wireIsConfigured,
 } from '@/data/paymentDetails.js';
@@ -128,6 +129,8 @@ const PaymentInstructionsPage = () => {
             <>
               <h1 className="ng-display text-[36px] md:text-[44px]">{t('pay.link.invalidTitle')}</h1>
               <p className="pay-link__note">{t('pay.link.notFound')}</p>
+              {/* "Balas pesan WhatsApp kami" with nothing to tap but the footer (third audit, 13 Nov 2026). */}
+              <AskAtelierButton className="mt-4" />
             </>
           ) : (
             <>
