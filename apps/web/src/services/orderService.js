@@ -1342,6 +1342,9 @@ export const createCatalogOrderViaEndpoint = (orderData, refs = {}) => postAutho
   customer: { name: orderData.customerName || '', code: orderData.customerCode || '', contact: orderData.contact || '' },
   delivery: { address: orderData.deliveryAddress || '', area: orderData.deliveryArea || '' },
   items: (orderData.items || []).filter((item) => item.type !== VOUCHER_DISCOUNT_ITEM_TYPE),
+  // The buyer's own words, on their own. The endpoint writes the order's notes and draft from its own
+  // figures; the two texts below are kept only for the length check and for an older server.
+  buyerNote: orderData.buyerNote || '',
   notes: orderData.notes || '',
   checkoutDraft: orderData.checkoutDraft || '',
   shipping: {
