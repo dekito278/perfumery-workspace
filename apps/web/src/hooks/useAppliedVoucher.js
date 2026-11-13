@@ -28,13 +28,26 @@ const MEMBER_RESULT_KEYS = {
   unavailable: 'code.unknown',
 };
 
+// A code typed but not applied yet survives a reload or a trip back from another tab (fifth visitor audit,
+// 13 Nov 2026: name, phone and address came back after a reload, the half-entered code did not). Per tab,
+// so it never follows the buyer into another session; a blocked store simply does not remember.
+const CODE_DRAFT_KEY = 'solivagant.codeDraft.v1';
+const readCodeDraft = () => { try { return window.sessionStorage.getItem(CODE_DRAFT_KEY) || ''; } catch { return ''; } };
+const writeCodeDraft = (value) => {
+  try {
+    if (value) window.sessionStorage.setItem(CODE_DRAFT_KEY, value);
+    else window.sessionStorage.removeItem(CODE_DRAFT_KEY);
+  } catch { /* not remembered */ }
+};
+
 export const useAppliedVoucher = (subtotal = 0, items = []) => {
   const { t, isInternational } = useTranslate();
   const { currentUser } = useAuth();
   // True while the line under the field reports good news that is not a voucher (a member code taken).
   const [memberJoined, setMemberJoined] = useState(false);
   const [voucherCode, setVoucherCode] = useState(getAppliedVoucherCode);
-  const [inputCode, setInputCode] = useState(getAppliedVoucherCode);
+  const [inputCode, setInputCode] = useState(() => getAppliedVoucherCode() || readCodeDraft());
+  useEffect(() => { writeCodeDraft(inputCode); }, [inputCode]);
   const [message, setMessage] = useState('');
   const [result, setResult] = useState({
     valid: false,
