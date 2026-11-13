@@ -936,6 +936,8 @@ const BespokePage = () => {
                       value={destinationSearch}
                       onChange={(event) => updateDestinationSearch(event.target.value)}
                       placeholder={t('bsp.areaPlaceholder')} aria-label={t('bsp.areaAria')}
+                      enterKeyHint="search"
+                      onKeyDown={onEnter(() => { if (!shippingLoading && destinationSearch.trim().length >= 3) searchDestinations(); })}
                     />
                     <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
                       {shippingLoading ? t('bsp.searching') : t('bsp.search')}

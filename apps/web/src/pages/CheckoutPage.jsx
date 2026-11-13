@@ -119,6 +119,13 @@ const CheckoutPage = () => {
     }
   };
 
+  // Enter (the phone keyboard's "Go") in the area field searches, as the button beside it does. Without
+  // it Enter submitted the ORDER with whatever area was picked before (fourth visitor audit, 13 Nov 2026).
+  const searchArea = () => {
+    if (shippingLoading || !selectedCourier) return;
+    autoCalculateShipping({ searchText: destinationSearchText({ areaText: destinationSearch, address: deliveryAddress }), autoSelectBest: true });
+  };
+
   const submitCheckout = (event) => {
     event.preventDefault();
     submitOrder();
@@ -233,12 +240,12 @@ const CheckoutPage = () => {
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.destination')}</span>
                       <div className="flex gap-2">
-                        <input type="text" className="ng-field" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" />
+                        <input type="text" className="ng-field" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" onKeyDown={onEnter(searchArea)} enterKeyHint="search" />
                         <button
                           type="button"
                           className="ng-btn ng-btn--ghost shrink-0"
                           disabled={shippingLoading || !selectedCourier}
-                          onClick={() => autoCalculateShipping({ searchText: destinationSearchText({ areaText: destinationSearch, address: deliveryAddress }), autoSelectBest: true })}
+                          onClick={searchArea}
                         >
                           <Search className="h-4 w-4" aria-hidden="true" /> {t('checkout.search')}
                         </button>
