@@ -58,7 +58,12 @@ const rememberPaymentSession = (payload) => {
   }
 };
 
+// The courier's daily quota is spent: no address will help, so the page says so and offers WhatsApp
+// (CheckoutPage shows the button beside this exact sentence).
+export const SHIPPING_QUOTA_MESSAGE = 'Kalkulator ongkir sedang tidak bisa dipakai hari ini. Pesan lewat WhatsApp — ongkirnya kami hitungkan untukmu.';
+
 const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. Coba pakai nama kecamatan atau kota.') => {
+  if (error?.code === 'shipping_quota') return SHIPPING_QUOTA_MESSAGE;
   const message = String(error?.message || error || '').trim();
   if (/destination|domestic|data not found|not found/i.test(message)) {
     return 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.';

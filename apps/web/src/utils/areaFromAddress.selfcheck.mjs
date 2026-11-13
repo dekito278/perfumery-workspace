@@ -96,6 +96,6 @@ const service = read('services', 'shippingService.js');
 assert.match(service, /const search = courierAreaSpelling\(/, 'the search goes out in the courier\'s spelling');
 assert.match(service, /return rankDestinations\(search, combined\);/, 'and comes back ranked');
 assert.doesNotMatch(read('pages', 'CheckoutPage.jsx'), /destinationOptions\.slice\(0, 4\)/, 'the checkout shows every result, not the first four');
-assert.match(read('..', 'api', 'shipping', 'rates.js'), /rajaResponse\.status === 404 && \/not found\/i[\s\S]{0,120}destinations: \[\]/, 'no match is an empty list, not a 404');
+assert.match(read('..', 'api', 'shipping', 'rates.js'), /rajaResponse\.status === 404 && \/not found\/i[\s\S]{0,240}destinations: \[\]/, 'no match is an empty list, not a 404');
 
 console.log('areaFromAddress selfcheck OK (the area comes from the kecamatan and city, and is picked only when it matches)');

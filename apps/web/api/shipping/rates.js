@@ -51,6 +51,32 @@ const serviceNames = {
   std: 'Reguler',
 };
 
+// THE COURIER'S DAILY QUOTA (fifth visitor audit, 13 Nov 2026). RajaOngkir allows a fixed number of
+// calls a day; when they run out it answers 429 "Daily limit exceeded", and the checkout passed that on as
+// "Gagal menghitung ongkir. Coba pakai nama kecamatan atau kota." — the buyer was told their typing was
+// wrong while no shipping could be quoted at all. Two things follow:
+//   1. the quota is spent once per question: an area search is the same answer for everyone, so the CDN
+//      keeps it for a week; a rate is kept in this instance's memory for six hours;
+//   2. an exhausted quota is said as such (code 'shipping_quota'), so the page can say the calculator is
+//      unavailable today and offer WhatsApp, instead of blaming the address.
+const QUOTA = { code: 'shipping_quota', message: 'The shipping calculator has reached its daily limit' };
+const isQuotaAnswer = (status, data) => status === 429
+  || /daily limit|limit exceeded|quota/i.test(String(data?.meta?.message || data?.message || ''));
+const RATE_CACHE_MS = 6 * 60 * 60 * 1000;
+const rateCache = new Map();
+const cachedRates = (key) => {
+  const hit = rateCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > RATE_CACHE_MS) { rateCache.delete(key); return null; }
+  return hit.rates;
+};
+const rememberRates = (key, rates) => {
+  if (rateCache.size > 500) rateCache.delete(rateCache.keys().next().value);
+  rateCache.set(key, { at: Date.now(), rates });
+};
+// An area search: the same for every buyer and changes when the courier's map does, so the edge keeps it.
+const CACHE_AREA_SEARCH = 'public, max-age=3600, s-maxage=604800, stale-while-revalidate=86400';
+
 const jsonResponse = (response, status, body) => {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json');
@@ -174,7 +200,12 @@ export default async function handler(request, response) {
     // That is an answer — no such area — not a failure, so the buyer's browser is not shown a red 404 for
     // a typo (fourth visitor audit, 13 Nov 2026). Any other failure still fails.
     if (rajaResponse.status === 404 && /not found/i.test(String(data?.meta?.message || data?.message || ''))) {
+      response.setHeader('Cache-Control', CACHE_AREA_SEARCH);
       return jsonResponse(response, 200, { destinations: [] });
+    }
+
+    if (isQuotaAnswer(rajaResponse.status, data)) {
+      return jsonResponse(response, 503, QUOTA);
     }
 
     if (!rajaResponse.ok) {
@@ -187,6 +218,7 @@ export default async function handler(request, response) {
       .map(normalizeDestination)
       .filter((destination) => destination.id && destination.label);
 
+    response.setHeader('Cache-Control', CACHE_AREA_SEARCH);
     return jsonResponse(response, 200, { destinations });
   } catch (error) {
     return jsonResponse(response, 500, {
@@ -233,6 +265,10 @@ export default async function handler(request, response) {
       return jsonResponse(response, 400, { message: 'Destination and courier are required' });
     }
 
+    const cacheKey = `${origin}|${destinationId}|${Math.round(weight)}|${couriers.join(':')}`;
+    const known = cachedRates(cacheKey);
+    if (known) return jsonResponse(response, 200, { rates: known });
+
     const form = new URLSearchParams({
       origin: String(origin),
       destination: destinationId,
@@ -251,6 +287,10 @@ export default async function handler(request, response) {
     });
     const data = await rajaResponse.json().catch(() => ({}));
 
+    if (isQuotaAnswer(rajaResponse.status, data)) {
+      return jsonResponse(response, 503, QUOTA);
+    }
+
     if (!rajaResponse.ok) {
       return jsonResponse(response, rajaResponse.status, {
         message: data?.meta?.message || data?.message || 'Failed to calculate shipping rates',
@@ -263,6 +303,7 @@ export default async function handler(request, response) {
       .filter(isLightParcelRate)
       .sort((first, second) => first.cost - second.cost);
 
+    if (rates.length) rememberRates(cacheKey, rates);
     return jsonResponse(response, 200, { rates });
   } catch (error) {
     return jsonResponse(response, 500, {
