@@ -20,11 +20,8 @@ import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import HomePage from '@/pages/HomePage.jsx';
 import CatalogPage from '@/pages/CatalogPage.jsx';
 import PublicProductDetailPage from '@/pages/PublicProductDetailPage.jsx';
-import BespokePage from '@/pages/BespokePage.jsx';
 import CartPage from '@/pages/CartPage.jsx';
 import CheckoutPage from '@/pages/CheckoutPage.jsx';
-import PublicTrackingPage from '@/pages/PublicTrackingPage.jsx';
-import PublicJournalPage from '@/pages/PublicJournalPage.jsx';
 import NotFoundPage from '@/pages/NotFoundPage.jsx';
 import { fromRetiredMobileStorefront, isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
@@ -112,6 +109,12 @@ const JournalPage = lazyRoute(() => import('@/pages/JournalPage.jsx'));
 const JournalEditorPage = lazyRoute(() => import('@/pages/JournalEditorPage.jsx'));
 const JournalDetailPage = lazyRoute(() => import('@/pages/JournalDetailPage.jsx'));
 const PublicJournalArticlePage = lazyRoute(() => import('@/pages/PublicJournalArticlePage.jsx'));
+// Loaded when visited, not with every page (seventh visitor audit, 13 Nov 2026: every page shipped the same
+// 449 KB of JavaScript). Rarely the first page anyone opens; the buying path — home, catalogue, product,
+// cart, checkout — stays in the first bundle so it never waits on a second request.
+const BespokePage = lazyRoute(() => import('@/pages/BespokePage.jsx'));
+const PublicTrackingPage = lazyRoute(() => import('@/pages/PublicTrackingPage.jsx'));
+const PublicJournalPage = lazyRoute(() => import('@/pages/PublicJournalPage.jsx'));
 
 const RawMaterialsPage = lazyRoute(() => import('@/pages/RawMaterialsPage.jsx'));
 const RawMaterialAuditPage = lazyRoute(() => import('@/pages/RawMaterialAuditPage.jsx'));

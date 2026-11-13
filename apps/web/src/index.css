@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+/* DM Sans (Studio's face) is linked from index.html without blocking the first paint: an @import here held
+   every shop page's render on a stylesheet the shop never uses (seventh visitor audit, 13 Nov 2026). */
 
 @tailwind base;
 @tailwind components;
