@@ -42,4 +42,8 @@ assert.match(page, /aria-pressed=\{chosen\}/, 'a scent chip shows when it is in 
   assert.equal(run.toggleScentDirection('', 'Fresh'), 'Fresh');
   assert.ok(run.scentDirectionChosen('woody, fresh', 'Woody'));
 }
+// The steps move, and the summary names the moment (sixth audit, 13 Nov 2026).
+assert.match(page, /aria-current=\{index === currentStep \? 'step' : undefined\}/, 'the current step is marked');
+assert.match(page, /const currentStep = !form\.scentDescription\.trim\(\) \? 0/, 'and follows the brief and the checkout');
+assert.match(page, /<dt className="text-ng-dust">\{t\('bsp\.moment'\)\}<\/dt><dd className="m-0 text-right">\{bespokeOccasionLabel\(/, 'the summary names the moment');
 console.log('bespokeCheckout selfcheck OK (one contact, the right total, no checkout without a brief)');

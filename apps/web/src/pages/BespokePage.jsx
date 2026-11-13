@@ -280,6 +280,9 @@ const BespokePage = () => {
   // The contact-and-payment step is a place in history (#checkout), so Back from it returns to the design
   // instead of leaving the page, and a reload stays on it. Never open on an empty brief.
   const checkoutOpen = location.hash === '#checkout' && Boolean(form.scentDescription.trim());
+  const currentStep = !form.scentDescription.trim() ? 0
+    : !checkoutOpen ? 2
+      : !form.deliveryAddress.trim() ? 3 : 4;
   const setCheckoutOpen = (open) => {
     if (open && location.hash !== '#checkout') navigate({ search: location.search, hash: 'checkout' });
     if (!open && location.hash === '#checkout') navigate(-1);
@@ -775,9 +778,14 @@ const BespokePage = () => {
               <strong className="font-medium text-ng-bone">{t('bsp.floor', { price: isInternational ? `US$${bespokeUsdPrice(floorPrice)}` : formatRupiah(floorPrice) })}</strong>
               <span>{t('bsp.floorNote')}</span>
             </p>
+            {/* The steps say where the buyer is (sixth visitor audit, 13 Nov 2026: every label stayed the same
+                grey before and after "Lanjut ke checkout"). Scent first; the moment and the size have
+                defaults, so a written brief is at the size; the checkout step is the address, then payment. */}
             <ol className="ng-mono m-0 mt-2 flex list-none flex-wrap gap-x-8 gap-y-3 p-0 text-ng-ash">
               {bespokeStepKeys(stepKeys, isInternational).map((stepKey, index) => (
-                <li key={stepKey}><span className="mr-2 text-ng-ember">{ROMAN_STEPS[index] || index + 1}</span>{t(stepKey)}</li>
+                <li key={stepKey} aria-current={index === currentStep ? 'step' : undefined} className={index < currentStep ? 'text-ng-dust' : index === currentStep ? 'text-ng-bone' : undefined}>
+                  <span className="mr-2 text-ng-ember">{index < currentStep ? '✓' : (ROMAN_STEPS[index] || index + 1)}</span>{t(stepKey)}
+                </li>
               ))}
             </ol>
           </div>
@@ -901,6 +909,7 @@ const BespokePage = () => {
                 <p className="m-0 font-ng-display text-[36px] italic leading-tight">{form.perfumeName || t('bsp.untitled')}</p>
                 <dl className="m-0 flex flex-col gap-3 border-t border-ng-bone/15 pt-4 text-[15px]">
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.scent')}</dt><dd className="m-0 text-right">{form.scentDescription || t('bsp.notFilled')}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.moment')}</dt><dd className="m-0 text-right">{bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions) || '-'}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.bottle')}</dt><dd className="m-0 text-right">{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
                   <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0 shrink-0 whitespace-nowrap font-ng-display text-[32px]">{priceReady ? (isInternational ? `US$${bespokeUsdPrice(estimatedTotal)}` : formatRupiah(estimatedTotal)) : '—'}</dd></div>
                 </dl>
