@@ -45,6 +45,7 @@ import { isPlaceholderMood } from '@/utils/productMood.js';
 import { describeWear } from '@/utils/productWear.js';
 import { nearestSlug } from '@/utils/nearestSlug.js';
 import { useShippingDestination } from '@/hooks/useShippingDestination.js';
+import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 
 
 
@@ -163,16 +164,23 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
       toast.error(t('catalog.outOfStockToast', { name: product.name }));
       return;
     }
-    addItem({
+    const variantStock = Number(selectedVariant?.stock);
+    const added = addItem({
       ...product,
       cartSlug: `${product.slug}-${selectedVariant?.id || selectedSize}`,
       variantId: selectedVariant?.id || '',
       size: selectedSize,
       price: selectedPriceLabel,
       priceNumber: selectedPrice,
+      // The size's own stock, not the product's total across sizes, is the cap for this line.
+      ...(Number.isFinite(variantStock) && variantStock > 0 ? { maxStock: variantStock } : {}),
     }, addCount);
+    if (added === 0) {
+      toast.info(t('cart.stockAllIn', { name: product.name }), { position: 'top-center' });
+      return;
+    }
     setLastAddedSlug(product.slug);
-    toast.success(t('pdp.addedToast', { name: `${product.name} (${selectedSize})${addCount > 1 ? ` ×${addCount}` : ''}` }), {
+    toast.success(t('pdp.addedToast', { name: `${product.name} (${selectedSize})${added > 1 ? ` ×${added}` : ''}` }), {
       description: t('pdp.cartUpdated'),
       action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
       // Top, not the default bottom: on a phone the gift prompt this add opens is a bottom sheet, and a
@@ -336,7 +344,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                       asks for the destination and hands the order to WhatsApp; it never reaches the domestic
                       checkout. The gate that hid this button in the English shop from 18 Sep to 6 Oct is gone
                       with the reason for it. */}
-                  <FreeVialNote products={studioProducts} />
+                  {/* Sold out: no gift offer, no shipping quote, no overseas enquiry for a bottle that cannot be
+                      bought — and a way to hear when it is back instead (visitor audit, 13 Nov 2026: Sudra offered
+                      a free vial and a "US$95 to my country?" draft beside a disabled button). */}
+                  {soldOut ? null : <FreeVialNote products={studioProducts} />}
                   <button ref={addBtnRef} type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => handleAddToCart()} disabled={soldOut}>
                     {soldOut ? (
                       <>{t('pdp.soldOut')}</>
@@ -348,14 +359,18 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                         : t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') })}</>
                     )}
                   </button>
-                  <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />
+                  {soldOut ? (
+                    <AskAtelierButton labelKey="pdp.restockAsk" draftKey="pdp.restockDraft" draftVars={{ name: `${product.name} (${selectedSize})` }} className="w-full" />
+                  ) : (
+                    <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />
+                  )}
                   <ShareProductButton product={product} />
                   <SwitchToIndonesiaHint />
                 </div>
 
                 {/* Under the buy button for the reason written out on the phone page: the form stood between
                     the price and the first word about the perfume. */}
-                {exportPrice ? (
+                {exportPrice && !soldOut ? (
                   <InternationalShippingQuote product={product} variant={selectedVariant} />
                 ) : null}
                 {/* Customs and reviewers read this, not shoppers: a US shipment was held over the word

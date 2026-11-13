@@ -91,7 +91,7 @@ assert.match(button, /buildWhatsAppCheckoutUrl/, 'it opens WhatsApp');
 assert.match(button, /if \(!phoneNumber\) return null;/,
   'and disappears when no number is configured — a chat with nobody is worse than no button');
 assert.match(button, /'track\.waDraft'/, 'the draft comes from the message file, in the shop\'s language');
-assert.match(button, /\{ order: orderNumber \}/,
+assert.match(button, /\{ order: orderNumber(, \.\.\.\(draftVars \|\| \{\}\))? \}/,
   'and names the order, so the first thing the atelier reads is the number it needs');
 for (const language of ['id', 'en']) {
   assert.match(MESSAGES[language]['track.waDraft'], /\{order\}/, `${language} draft must carry the order number`);

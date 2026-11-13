@@ -51,9 +51,18 @@ export const useCart = () => {
     // other — the full-screen prompt over the sheet's own "Lanjut belanja"/"Lihat keranjang", with the
     // prompt marked aria-hidden by the sheet's modal machinery, so a reader was told the thing covering
     // their screen was not there. Same rule the toast lost to in 2026-09-21: one event, one announcement.
+    // Returns how many bottles actually went in. The cart stops at the stock, and the screens used to
+    // announce "masuk ke keranjang" on an add that added nothing (visitor audit, 13 Nov 2026: a third
+    // Maskumambang with two in stock). Nothing added, nothing announced — the screen says why instead.
     addItem: (product, quantity, { announcedByScreen = false } = {}) => {
-      setStoredItems(addCartItem(product, quantity));
-      window.dispatchEvent(new CustomEvent(CART_ITEM_ADDED_EVENT, { detail: { announcedByScreen } }));
+      const cartSlug = product?.cartSlug || product?.slug;
+      const lineQuantity = (items) => Number(items.find((item) => item.productId === product?.id && item.slug === cartSlug)?.quantity || 0);
+      const before = lineQuantity(getCartItems());
+      const next = addCartItem(product, quantity);
+      setStoredItems(next);
+      const added = Math.max(0, lineQuantity(next) - before);
+      if (added > 0) window.dispatchEvent(new CustomEvent(CART_ITEM_ADDED_EVENT, { detail: { announcedByScreen } }));
+      return added;
     },
     updateQuantity: (slug, quantity) => setStoredItems(updateCartQuantity(slug, quantity)),
     removeItem: (slug) => setStoredItems(removeCartItem(slug)),

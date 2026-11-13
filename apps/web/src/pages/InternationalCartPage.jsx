@@ -121,7 +121,7 @@ const InternationalCartPage = () => {
                         </div>
                         <div className="ng-cart-line__qty">
                           <div className="ng-stepper">
-                            <button type="button" onClick={() => updateQuantity(line.slug, Math.max(1, line.quantity - 1))} aria-label={t('cart.decreaseOf', { name: line.name })}>
+                            <button type="button" onClick={() => updateQuantity(line.slug, Math.max(1, line.quantity - 1))} disabled={line.quantity <= 1} aria-label={t('cart.decreaseOf', { name: line.name })}>
                               <Minus className="h-3.5 w-3.5" aria-hidden="true" />
                             </button>
                             <span aria-live="polite">{line.quantity}</span>
@@ -129,6 +129,8 @@ const InternationalCartPage = () => {
                               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                             </button>
                           </div>
+                            {/* The cap said, not only greyed (audit, 13 Nov 2026): "+" just stopped working at 2. */}
+                            {atStockCap(line) ? <span className="text-xs text-ng-ash">{t('cart.stockLeft', { count: line.quantity })}</span> : null}
                         </div>
                         {/* The dollar alone, per bottle and for the line — see the note at the top of
                             InternationalPrice.jsx for why the rupiah is not beside it. */}

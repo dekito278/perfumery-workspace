@@ -52,7 +52,7 @@ for (const key of ['pdp.addedToast', 'pdp.cartUpdated', 'pdp.viewCart']) {
   for (const language of ['id', 'en']) assert.ok(MESSAGES[language][key], `${language}.${key} is missing`);
 }
 // The product page names the size, because two sizes of one perfume are two different lines.
-assert.match(read('pages', 'PublicProductDetailPage.jsx'), /t\('pdp\.addedToast', \{ name: `\$\{product\.name\} \(\$\{selectedSize\}\)(\$\{addCount > 1 \? ` ×\$\{addCount\}` : ''\})?` \}\)/,
+assert.match(read('pages', 'PublicProductDetailPage.jsx'), /t\('pdp\.addedToast', \{ name: `\$\{product\.name\} \(\$\{selectedSize\}\)(\$\{(addCount|added) > 1 \? ` ×\$\{(addCount|added)\}` : ''\})?` \}\)/,
   'the product page toast must say which size went in');
 
 // --- 2. The prompt is a bottom sheet on a phone — which is why the toast moved ---------------------------
