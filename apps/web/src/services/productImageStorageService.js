@@ -8,7 +8,9 @@ const MAX_IMAGE_DIMENSION = 1600;
 const MIN_IMAGE_DIMENSION = 760;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const PRODUCT_STORAGE_PUBLIC_PATH = `/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/`;
-const PRODUCT_IMAGE_WIDTHS = [240, 360, 520, 720];
+// 1080 for the product page on a 3x phone, whose ~350 CSS px frame wants ~1050 device pixels (sixth visitor
+// audit, 13 Nov 2026: the largest offered was 720w). Cards stay small: `sizes` picks the width per slot.
+const PRODUCT_IMAGE_WIDTHS = [240, 360, 520, 720, 1080];
 
 const canvasToBlob = (canvas, type, quality) => new Promise((resolve, reject) => {
   canvas.toBlob((blob) => {

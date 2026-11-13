@@ -162,7 +162,17 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
     <>
       <div className={cn('space-y-3', className)}>
         <div className="group relative cursor-zoom-in" ref={galleryRef} onClick={activeImage ? openLightbox : undefined}>
-          <ProductVisual product={previewProduct} className={visualClassName || 'aspect-square'} priority={priority} sizes="(max-width: 767px) 100vw, 640px" soldOut={false} label={false} imageFit={imageFit} />
+          <ProductVisual
+            product={previewProduct}
+            className={visualClassName || 'aspect-square'}
+            priority={priority}
+            sizes="(max-width: 767px) 100vw, 640px"
+            soldOut={false}
+            label={false}
+            imageFit={imageFit}
+            // Each photo says which it is: seven photos all read ".Wayback — Woody" (sixth audit, 13 Nov 2026).
+            alt={hasMultipleImages && product?.name ? `${product.name} — ${t('a11y.galleryPhoto', { number: activeIndex + 1, total: images.length })}` : ''}
+          />
           {activeImage ? (
             // A real button, not the div this used to be. The whole image opens the zoom on click, but a
             // div with an onClick is reachable by mouse and touch only: a keyboard never lands on it and
@@ -202,7 +212,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
         {hasMultipleImages ? (
           <div className={cn('flex gap-2 overflow-x-auto pb-1', compact ? 'px-0' : '')}>
             {images.map((image, index) => (
-              <button key={image} type="button" onClick={() => setActiveIndex(index)} className={cn('h-20 w-16 shrink-0 overflow-hidden border bg-ng-card', index === activeIndex ? 'border-ng-bone' : 'border-ng-bone/15')} aria-label={t('a11y.gallerySelectImage', { number: index + 1 })}>
+              <button key={image} type="button" onClick={() => setActiveIndex(index)} className={cn('h-20 w-16 shrink-0 overflow-hidden border bg-ng-card', index === activeIndex ? 'border-ng-bone' : 'border-ng-bone/15')} aria-label={t('a11y.gallerySelectImage', { number: index + 1 })} aria-current={index === activeIndex ? 'true' : undefined}>
                 {/* These render at 64 CSS px. They used to be the RAW storage object: on
                     /mobile/products/patchouli-so-sexy that was five originals, 4.9 MB, for a strip of
                     thumbnails — the main image beside them went through the transform all along. */}
