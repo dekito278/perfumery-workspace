@@ -11,12 +11,23 @@ const BackToTop = () => {
   // checkout (third visitor audit, 13 Nov 2026). Those pages are read top to bottom anyway.
   const onFormPage = /^\/(cart|checkout|bespoke|payment|pay)(\/|$)/.test(pathname);
 
+  // Stands aside once the footer is on screen: it sat on the footer's email button while scrolling
+  // (seventh visitor audit, 13 Nov 2026), and at the footer the top is one swipe away anyway.
+  const [footerInView, setFooterInView] = useState(false);
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 600);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+  useEffect(() => {
+    const footer = document.querySelector('footer');
+    if (!footer || typeof IntersectionObserver === 'undefined') return undefined;
+    const observer = new IntersectionObserver(([entry]) => setFooterInView(entry.isIntersecting));
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, [pathname]);
+  const shown = visible && !footerInView;
 
   const scrollUp = () => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -28,10 +39,10 @@ const BackToTop = () => {
   return (
     <button
       type="button"
-      className={`back-to-top${visible ? ' is-visible' : ''}`}
+      className={`back-to-top${shown ? ' is-visible' : ''}`}
       onClick={scrollUp}
       aria-label={t('a11y.backToTop')}
-      tabIndex={visible ? 0 : -1}
+      tabIndex={shown ? 0 : -1}
     >
       <ArrowUp className="h-4 w-4" />
     </button>

@@ -49,8 +49,13 @@ assert.match(read('pages', 'BespokePage.jsx'), /<p className="m-0 flex max-w-\[6
 assert.match(header, /<a href="#main-heading" className="skip-to-results" onClick=\{skipToHeading\}>\{t\('nav\.skipToContent'\)\}<\/a>/);
 assert.match(header, /heading\.focus\(\);/, 'and it moves the focus, not only the scroll');
 
+// Seventh audit, 13 Nov 2026: small things a phone pays for.
+assert.match(read('pages', 'HomePage.jsx'), /srcSet=\{srcSet\(siteImages\['home-newsletter'\]\) \|\| FALLBACK_LIBRARY_SRCSET\}/, 'the bundled photo has a phone-size copy');
+assert.doesNotMatch(read('pages', 'CheckoutPage.jsx'), /aria-label=\{t\('checkout\.namePlaceholder'\)\}/, 'the name field is named by its visible label');
+
 const backToTop = read('components', 'storefront', 'BackToTop.jsx');
 assert.match(backToTop, /\/\^\\\/\(cart\|checkout\|bespoke\|payment\|pay\)\(\\\/\|\$\)\/\.test\(pathname\)/, 'no floating button on the pages that end in a form button');
 assert.match(backToTop, /if \(onFormPage\) return null;/);
 
+assert.match(backToTop, /const shown = visible && !footerInView;/, 'the back-to-top button stands aside at the footer');
 console.log('phoneLayout selfcheck OK (the product page fits a 360px phone; nothing floats over a pay button)');

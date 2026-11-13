@@ -26,6 +26,10 @@ import { articleExcerpt } from '@/utils/articleExcerpt.js';
 import { splitScriptName } from '@/utils/scriptName.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 
+// The bundled photo behind the hero and the collaboration block when Studio has none set: a 900 px copy for
+// phones beside the 1800 px original (seventh visitor audit, 13 Nov 2026: 303 KB on a 390 px screen).
+const FALLBACK_LIBRARY_SRCSET = '/brand/home/raw-material-library-900.jpg 900w, /brand/home/raw-material-library.jpg 1800w';
+
 // A phone is ~390 CSS px, so sizes="100vw" on a 3x screen asks for ~1170 and the full list answers 1600.
 // The phone home this page replaced (2026-10-31) capped its hero at 900 and its second full-bleed image
 // at 750; those stay the ceilings, so one responsive home is never heavier on a phone than the old one.
@@ -121,7 +125,7 @@ const HomePage = () => {
           {siteImagesLoading ? null : (
             <picture>
               <source media="(max-width: 767px)" srcSet={srcSet(siteImages['home-hero'], PHONE_HERO_WIDTHS)} sizes="100vw" />
-              <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-hero'])} sizes="100vw" alt="" className="ng-hero__image" />
+              <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-hero']) || FALLBACK_LIBRARY_SRCSET} sizes="100vw" alt="" className="ng-hero__image" />
             </picture>
           )}
           <div className="ng-hero__shade" aria-hidden="true" />
@@ -331,7 +335,7 @@ const HomePage = () => {
           {siteImagesLoading ? null : (
             <picture>
               <source media="(max-width: 767px)" srcSet={srcSet(siteImages['home-newsletter'], PHONE_COLLAB_WIDTHS)} sizes="100vw" />
-              <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-newsletter'])} sizes="100vw" loading="lazy" decoding="async" alt="" className="ng-collab__image" />
+              <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-newsletter']) || FALLBACK_LIBRARY_SRCSET} sizes="100vw" loading="lazy" decoding="async" alt="" className="ng-collab__image" />
             </picture>
           )}
           <div className="ng-container relative flex flex-col items-start gap-7">
