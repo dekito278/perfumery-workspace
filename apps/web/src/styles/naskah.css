@@ -1211,7 +1211,8 @@ a.ng-row:hover {
   cursor: pointer;
 }
 
-.ng-stepper button:disabled {
+.ng-stepper button:disabled,
+.ng-stepper button[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.35;
 }

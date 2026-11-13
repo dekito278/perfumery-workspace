@@ -5,7 +5,7 @@ import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BadgePercent, Minus, Plus, ShoppingBag, X } from 'lucide-react';
+import { ArrowRight, BadgePercent, ShoppingBag, X } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
@@ -23,6 +23,8 @@ import { shortNoteList } from '@/utils/shortNoteList.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 import { splitScriptName } from '@/utils/scriptName.js';
 import { onEnter } from '@/utils/onEnter.js';
+import CartQuantityStepper from '@/components/storefront/CartQuantityStepper.jsx';
+import { useCartLineRemoval } from '@/hooks/useCartLineRemoval.js';
 
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -53,6 +55,7 @@ const CartPage = () => {
   // The gift is not a purchase: it has no price to show, no quantity to change and no line of its own in
   // the list. The picker below owns it.
   const { lines: boughtLines, gift } = splitFreeVialLines(items);
+  const { removeLine, removedName } = useCartLineRemoval(removeItem, boughtLines);
 
   const recommendations = useMemo(() => {
     const inCart = new Set(items.map((item) => item.productSlug || item.slug));
@@ -97,10 +100,11 @@ const CartPage = () => {
                       {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
                     </p>
                   ) : null}
+                  <p className="sr-only" role="status">{removedName ? t('cart.removedNotice', { name: removedName }) : ''}</p>
                   {!boughtLines.length ? (
                     <div className="flex flex-col items-start gap-5 border-b border-ng-bone/15 py-14">
                       <ShoppingBag className="h-8 w-8 text-ng-ash" aria-hidden="true" />
-                      <h2 className="ng-display text-[36px] font-normal">{t('cart.empty')}</h2>
+                      <h2 className="ng-display text-[36px] font-normal" tabIndex={-1} data-cart-empty-heading>{t('cart.empty')}</h2>
                       {/* Both doors, as the phone cart always offered: a bottle from the shelf, or one
                           made to order. The desktop cart only ever pointed at the catalogue. */}
                       <p className="m-0 max-w-[480px] text-ng-dust">{t('cart.emptyMobileBody')}</p>
@@ -122,27 +126,26 @@ const CartPage = () => {
                             <ProductVisual product={item} className="h-full w-full" imageFit="cover" label={false} sizes="96px" />
                           </Link>
                           <div className="flex min-w-0 flex-col gap-2">
-                            <Link to={`/catalog/${item.productSlug || item.slug}`} className="inline-flex min-h-[44px] items-center self-start font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(item.name).name}</Link>
+                            <Link to={`/catalog/${item.productSlug || item.slug}`} data-cart-line-name className="inline-flex min-h-[44px] items-center self-start font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(item.name).name}</Link>
                             <span className="ng-mono text-ng-ash">{[shortNoteList(item.notes), item.size].filter(Boolean).join(' · ')}</span>
                             <span className="text-sm text-ng-dust">{item.price}</span>
                             <CartPriceChange item={item} className="mt-1" />
                             {hasLineDiscount ? (
                               <span className="text-sm text-ng-sand">{t('cart.afterVoucherLine', { price: formatTotal(discountedLine.discountedUnitPrice) })}</span>
                             ) : null}
-                            <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeItem(item.slug)} aria-label={t('cart.removeOf', { name: item.name })}>
+                            <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeLine(item.slug, splitScriptName(item.name).name)} aria-label={t('cart.removeOf', { name: splitScriptName(item.name).name })}>
                               {t('cart.removeItem')}
                             </button>
                           </div>
                           <div className="ng-cart-line__qty">
-                            <div className="ng-stepper">
-                              <button type="button" onClick={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))} disabled={item.quantity <= 1} aria-label={t('cart.decreaseOf', { name: item.name })}>
-                                <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-                              </button>
-                              <span aria-live="polite">{item.quantity}</span>
-                              <button type="button" onClick={() => updateQuantity(item.slug, nextQuantityUp(item))} disabled={atStockCap(item)} aria-label={t('cart.increaseOf', { name: item.name })}>
-                                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                              </button>
-                            </div>
+                            <CartQuantityStepper
+                              name={splitScriptName(item.name).name}
+                              quantity={item.quantity}
+                              canDecrease={item.quantity > 1}
+                              canIncrease={!atStockCap(item)}
+                              onDecrease={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))}
+                              onIncrease={() => updateQuantity(item.slug, nextQuantityUp(item))}
+                            />
                             {/* The cap said, not only greyed (audit, 13 Nov 2026): "+" just stopped working at 2. */}
                             {atStockCap(item) ? <span className="text-xs text-ng-ash">{t('cart.stockLeft', { count: item.quantity })}</span> : null}
                           </div>

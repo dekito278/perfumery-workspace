@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Globe, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Globe, ShoppingBag } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import { useCart } from '@/hooks/useCart.js';
@@ -22,6 +22,8 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import { getProductStockTotal, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { productCopyFor } from '@/utils/productCopy.js';
+import CartQuantityStepper from '@/components/storefront/CartQuantityStepper.jsx';
+import { useCartLineRemoval } from '@/hooks/useCartLineRemoval.js';
 
 /**
  * The English shop's cart: the same basket as the Indonesian one, priced in dollars, with the parcel's
@@ -46,6 +48,7 @@ const InternationalCartPage = () => {
   const quote = useCartInternationalQuote(items);
   const phone = getStorefrontWhatsAppNumber();
   const { lines, unpriced, needsDestination, focusDestinationPicker, draft } = quote;
+  const { removeLine, removedName } = useCartLineRemoval(removeItem, lines);
   const message = buildInternationalCartDraft({ t, quote: draft });
   // THE BUTTON IS NEVER DEAD. Until a destination is picked it points at the picker; once one is picked it
   // opens WhatsApp, whether or not the rule could price the parcel. It used to require a SETTLED total, so
@@ -97,10 +100,11 @@ const InternationalCartPage = () => {
                       {t('cart.intl.unpriced', { names: unpriced.map((line) => line.name).join(', ') })}
                     </p>
                   ) : null}
+                  <p className="sr-only" role="status">{removedName ? t('cart.removedNotice', { name: removedName }) : ''}</p>
                   {!lines.length ? (
                     <div className="flex flex-col items-start gap-5 border-b border-ng-bone/15 py-14">
                       <ShoppingBag className="h-8 w-8 text-ng-ash" aria-hidden="true" />
-                      <h2 className="ng-display text-[36px] font-normal">{t('cart.empty')}</h2>
+                      <h2 className="ng-display text-[36px] font-normal" tabIndex={-1} data-cart-empty-heading>{t('cart.empty')}</h2>
                       <p className="m-0 text-ng-dust">{t('cart.emptyBody')}</p>
                       <Link to="/catalog" className="ng-btn">
                         {t('home.seeCollection')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -113,22 +117,21 @@ const InternationalCartPage = () => {
                           <ProductVisual product={line} className="h-full w-full" imageFit="cover" label={false} sizes="96px" />
                         </Link>
                         <div className="flex min-w-0 flex-col gap-2">
-                          <Link to={`/catalog/${line.productSlug}`} className="font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(line.name).name}</Link>
+                          <Link to={`/catalog/${line.productSlug}`} data-cart-line-name className="inline-flex min-h-[44px] items-center self-start font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(line.name).name}</Link>
                           <span className="ng-mono text-ng-ash">{[shortNoteList(productCopyFor(catalog.find((entry) => entry.slug === line.productSlug), 'en').notes || line.notes), line.size].filter(Boolean).join(' · ')}</span>
-                          <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeItem(line.slug)} aria-label={t('cart.removeOf', { name: line.name })}>
+                          <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeLine(line.slug, splitScriptName(line.name).name)} aria-label={t('cart.removeOf', { name: splitScriptName(line.name).name })}>
                             {t('cart.removeItem')}
                           </button>
                         </div>
                         <div className="ng-cart-line__qty">
-                          <div className="ng-stepper">
-                            <button type="button" onClick={() => updateQuantity(line.slug, Math.max(1, line.quantity - 1))} disabled={line.quantity <= 1} aria-label={t('cart.decreaseOf', { name: line.name })}>
-                              <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
-                            <span aria-live="polite">{line.quantity}</span>
-                            <button type="button" onClick={() => updateQuantity(line.slug, nextQuantityUp(line))} disabled={atStockCap(line)} aria-label={t('cart.increaseOf', { name: line.name })}>
-                              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
-                          </div>
+                          <CartQuantityStepper
+                            name={splitScriptName(line.name).name}
+                            quantity={line.quantity}
+                            canDecrease={line.quantity > 1}
+                            canIncrease={!atStockCap(line)}
+                            onDecrease={() => updateQuantity(line.slug, Math.max(1, line.quantity - 1))}
+                            onIncrease={() => updateQuantity(line.slug, nextQuantityUp(line))}
+                          />
                             {/* The cap said, not only greyed (audit, 13 Nov 2026): "+" just stopped working at 2. */}
                             {atStockCap(line) ? <span className="text-xs text-ng-ash">{t('cart.stockLeft', { count: line.quantity })}</span> : null}
                         </div>
