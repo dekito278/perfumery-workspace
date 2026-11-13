@@ -46,4 +46,16 @@ for (const file of pages(join(dist, 'en', 'catalog'))) {
   assert.doesNotMatch(html, /"priceCurrency":"IDR"|product:price:currency" content="IDR"/, `${file} (English) tells search engines a rupiah price`);
 }
 
+// --- 3. Search engines get each shop's own price (brief P2-7): dollars on the English page ----------------
+const seo = read('..', 'tools', 'seo-artifacts.mjs');
+assert.match(seo, /\? \(product\.exportUsd \? \{ currency: 'USD', price: product\.exportUsd \} : null\)/,
+  'the English product page no longer states its dollar price in JSON-LD');
+let usdPages = 0;
+for (const file of pages(join(dist, 'en', 'catalog'))) {
+  if (/"priceCurrency":"USD"/.test(readFileSync(file, 'utf8'))) usdPages += 1;
+}
+if (pages(join(dist, 'en', 'catalog')).length > 5) {
+  assert.ok(usdPages > 0, 'a build with the catalogue gave no English product page a USD offer — the overseas prices were not reached');
+}
+
 console.log(`oneCurrencyPerShop selfcheck OK (rupiah in the Indonesian shop, dollars in the English one; ${scanned} built product pages scanned)`);

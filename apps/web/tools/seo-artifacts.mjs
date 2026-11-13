@@ -9,7 +9,9 @@ import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, brandedTitle, metaSnippet as snippet, productMetaDescription, stripTrailingBrand } from '../src/utils/seo.js';
 import { schemaAvailability } from '../src/utils/schemaAvailability.js';
 import { stripMarkdown } from '../src/utils/articleExcerpt.js';
-import { indexTierPrices } from '../src/utils/tierPrice.js';
+import { indexTierPrices, tierPricesForLine } from '../src/utils/tierPrice.js';
+import { internationalPriceFor } from '../src/utils/shippingRegion.js';
+import { usdPriceFor } from '../src/utils/usdPrice.js';
 import { applyTierPrices } from '../src/utils/tierPricedCatalog.js';
 import { MESSAGES } from '../src/i18n/messages.js';
 import path from 'node:path';
@@ -111,7 +113,20 @@ const priceAsLive = async (env, products) => {
       body: JSON.stringify({ p_slugs: null }),
     });
     if (!res.ok) return products;
-    return applyTierPrices(products, 'retail', indexTierPrices(await res.json()));
+    const index = indexTierPrices(await res.json());
+    // The English page's own price, in dollars — the same rule the English shop runs (useExportPrice):
+    // the overseas row for the primary variant, only when it is above the rupiah price, rounded the
+    // shop's way. Absent when there is none, and then the English page states no price at all.
+    return applyTierPrices(products, 'retail', index).map((product) => {
+      const priced = product.variants.filter((variant) => Number(variant?.priceNumber || 0) > 0);
+      const primary = priced.length
+        ? priced.reduce((cheapest, variant) => (Number(variant.priceNumber) < Number(cheapest.priceNumber) ? variant : cheapest))
+        : product.variants[0] || null;
+      const linePrice = Number(primary?.retailPriceNumber ?? primary?.priceNumber ?? product.priceNumber ?? 0);
+      const exportPrice = internationalPriceFor({ tierPrices: tierPricesForLine(index, product.slug, primary?.id || ''), linePrice });
+      const usd = usdPriceFor(exportPrice);
+      return usd ? { ...product, exportUsd: usd } : product;
+    });
   } catch {
     return products;
   }
@@ -299,7 +314,7 @@ const injectJsonLd = (html, objects) => {
   return html.replace('</head>', `\t\t${scripts}\n\t</head>`);
 };
 
-const productJsonLd = (product, siteUrl, canonical, { withOffer = true, description } = {}) => {
+const productJsonLd = (product, siteUrl, canonical, { english = false, description } = {}) => {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -311,11 +326,16 @@ const productJsonLd = (product, siteUrl, canonical, { withOffer = true, descript
   };
   const image = abs(siteUrl, product.image);
   if (image) jsonLd.image = [image];
-  if (withOffer && product.priceNumber > 0) {
+  // Each shop states its own price, in its own currency (Dekito's brief, 14 Nov 2026, P2-7): rupiah on the
+  // Indonesian page, dollars on the English one — never both, and none where the shop has none.
+  const offer = english
+    ? (product.exportUsd ? { currency: 'USD', price: product.exportUsd } : null)
+    : (product.priceNumber > 0 ? { currency: 'IDR', price: product.priceNumber } : null);
+  if (offer) {
     jsonLd.offers = {
       '@type': 'Offer',
-      priceCurrency: 'IDR',
-      price: product.priceNumber,
+      priceCurrency: offer.currency,
+      price: offer.price,
       availability: schemaAvailability({ stock: product.stock, variants: product.variants }),
       url: canonical,
       seller: { '@type': 'Organization', name: BRAND },
@@ -378,8 +398,14 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
         html = upsertMeta(html, 'property', 'product:price:amount', String(product.priceNumber));
         html = upsertMeta(html, 'property', 'product:price:currency', 'IDR');
       }
+      // The English page now reaches its dollar price at build time (storefront_prices_for_me, the RPC the
+      // English shop itself reads), so it states it — in dollars, never the domestic rupiah.
+      if (english && product.exportUsd) {
+        html = upsertMeta(html, 'property', 'product:price:amount', String(product.exportUsd));
+        html = upsertMeta(html, 'property', 'product:price:currency', 'USD');
+      }
       html = injectJsonLd(html, [
-        productJsonLd(product, siteUrl, canonical, { withOffer: !english, description }),
+        productJsonLd(product, siteUrl, canonical, { english, description }),
         breadcrumbJsonLd(english
           ? [
             { name: 'Home', path: `${EN_PREFIX}/home` },

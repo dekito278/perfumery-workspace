@@ -869,10 +869,11 @@ const assertLanguagePairsAreCoherent = (siteUrl, expectedRoutes = []) => {
       } else if (!alternates.some((tag) => tag.includes(`href="${url}"`))) {
         problems.push(`${route} [${lang}]: the hreflang set never names this page — Google drops a set that is not self-referential`);
       }
-      // price_number is the DOMESTIC price; the English page quotes the export price, which this build
-      // cannot reach. Stating it here would put the wrong number in a search result.
-      if (lang === 'en' && /product:price:amount/.test(html)) {
-        problems.push(`${route} [en]: carries a product:price, which on the English page is the wrong price`);
+      // The English page states its own price in DOLLARS (the overseas row, read at build time through
+      // storefront_prices_for_me — Dekito's brief, 14 Nov 2026, P2-7) or no price at all. A rupiah figure
+      // there is the domestic price list on the international address.
+      if (lang === 'en' && /product:price:currency" content="IDR"|"priceCurrency":"IDR"/.test(html)) {
+        problems.push(`${route} [en]: carries a rupiah price, which on the English page is the wrong price`);
       }
     }
   }
