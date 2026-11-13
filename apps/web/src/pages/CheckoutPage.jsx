@@ -1,5 +1,7 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { FREE_VIAL_PRICE_LABEL, isFreeVialLine } from '@/utils/freeVial.js';
+import { FREE_VIAL_PRICE_LABEL, isFreeVialLine, splitFreeVialLines } from '@/utils/freeVial.js';
+import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -13,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useSignOut } from '@/hooks/useSignOut.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
-import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
+import { useMemberPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { SHIPPING_QUOTA_MESSAGE, checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
@@ -32,7 +34,13 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
 
 const CheckoutPage = () => {
   const { t } = useTranslate();
-  const { items, summary, clear } = useCart();
+  const { items, summary, clear, setGift } = useCart();
+  // The gift, offered here too when it was not chosen in the cart. Tenth visitor audit, 13 Nov 2026: the
+  // product page says the aroma can be chosen "nanti di keranjang"; a buyer who went straight from the
+  // product page to checkout never saw the cart, and the free vial was lost without a word. The same
+  // picker as the cart; it renders nothing when there is no aroma to give.
+  const catalogProducts = useStorefrontProducts();
+  const { gift: chosenGift } = splitFreeVialLines(items);
   const { currentUser, loginWithGoogle } = useAuth();
   // Stays on the page: a buyer signing out mid-checkout keeps their place, and a refused sign-out says so.
   const { signOut } = useSignOut(null);
@@ -198,6 +206,7 @@ const CheckoutPage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home">
+        <StaleCatalogNotice stale={catalogProducts.stale} empty={!catalogProducts.length} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <PublicHeader />
 
         <section className="ng-section !border-b-0 !pt-14 md:!pt-20">
@@ -447,6 +456,7 @@ const CheckoutPage = () => {
                     </div>
                   ))}
                 </div>
+                {chosenGift ? null : <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />}
 
                 <dl className="m-0 flex flex-col gap-3 text-[15px]">
                   <div className="flex justify-between gap-4">
