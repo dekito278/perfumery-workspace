@@ -108,10 +108,20 @@ const PublicHeader = () => {
       const release = lockBodyScroll();
       unlockScroll = release;
     }
+    // Where the panel starts, measured: it hangs below the header, and the header's height is whatever
+    // the phone makes it. A guessed 80px left the last links ("Bantuan & kebijakan") under the browser's
+    // own bottom bar, out of reach of any scroll (Dekito's screenshot, 14 Nov 2026).
+    const placeMenu = () => {
+      const top = Math.max(0, Math.round(wrap?.getBoundingClientRect().bottom || 0));
+      wrap?.style.setProperty('--ng-menu-top', `${top}px`);
+    };
+    placeMenu();
+    window.addEventListener('resize', placeMenu);
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('keydown', handleEscape);
       wrap?.removeEventListener('focusout', handleFocusOut);
+      window.removeEventListener('resize', placeMenu);
       unlockScroll?.();
     };
   }, [megaOpen]);
