@@ -479,11 +479,11 @@ const CheckoutPage = () => {
       {/* The phone's pay bar: the total and the order button, always in reach while the form scrolls. */}
       <div className="ng-buybar is-visible lg:hidden">
         <div className="ng-buybar__inner">
-          <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex shrink-0 flex-col gap-0.5">
             <span className="ng-mono text-ng-ash">{t('cust.itemCount', { count: summary.boughtQuantity })}</span>
-            <span className="text-lg">{formatTotal(totalDue)}</span>
+            <span className="whitespace-nowrap text-lg">{formatTotal(totalDue)}</span>
           </div>
-          <button type="submit" form="checkout-form" className="ng-btn shrink-0" onClick={() => setTriedSubmit(true)} disabled={!items.length || saving}>
+          <button type="submit" form="checkout-form" className="ng-btn min-w-0 !whitespace-normal text-center" onClick={() => setTriedSubmit(true)} disabled={!items.length || saving}>
             {saving ? t('checkout.processing') : t('checkout.placeOrder')}
           </button>
         </div>

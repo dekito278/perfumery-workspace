@@ -134,7 +134,10 @@ const HomePage = () => {
               <defs><path id="ng-ring-path" d="M160,160 m-132,0 a132,132 0 1,1 264,0 a132,132 0 1,1 -264,0" /></defs>
               <circle cx="160" cy="160" r="108" fill="none" stroke="rgba(237,230,214,0.18)" strokeWidth="1" />
               <circle cx="160" cy="160" r="4" fill="#D4573A" />
-              <text className="ng-ring__text"><textPath href="#ng-ring-path">{t('home.ngRing')}{t('home.ngRing')}</textPath></text>
+              {/* Once round the circle, fitted to it: written twice it overran the 829 px path in Indonesian
+                  and the ring read "DIRDIRAKIT TANGAN" where the start of the second copy met the first
+                  (eighth visitor audit, 13 Nov 2026). textLength = 2 x pi x 132. */}
+              <text className="ng-ring__text"><textPath href="#ng-ring-path" textLength="829" lengthAdjust="spacing">{t('home.ngRing')}</textPath></text>
             </svg>
           </div>
 

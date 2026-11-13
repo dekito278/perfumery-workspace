@@ -285,12 +285,14 @@ const CartPage = () => {
       {items.length ? (
         <div className="ng-buybar is-visible lg:hidden">
           <div className="ng-buybar__inner">
-            <div className="flex min-w-0 flex-col gap-0.5">
+            {/* The total keeps its line; the button's label wraps instead. At 320 px "Rp 1.478.000" broke over
+                two lines and its last digit sat under the button (eighth visitor audit, 13 Nov 2026). */}
+            <div className="flex shrink-0 flex-col gap-0.5">
               <span className="ng-mono text-ng-ash">{t('cust.itemCount', { count: summary.boughtQuantity })}</span>
-              <span className="text-lg">{formatTotal(voucher.subtotalAfterDiscount)}</span>
+              <span className="whitespace-nowrap text-lg">{formatTotal(voucher.subtotalAfterDiscount)}</span>
               {voucher.discountAmount ? <span className="text-xs text-ng-sand">{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</span> : null}
             </div>
-            <Link to="/checkout" className="ng-btn shrink-0">{t('cart.payNext')}</Link>
+            <Link to="/checkout" className="ng-btn min-w-0 !whitespace-normal text-center">{t('cart.payNext')}</Link>
           </div>
         </div>
       ) : null}
