@@ -32,7 +32,10 @@ const FreeVialNote = ({ products = [], className = '' }) => {
       <Gift className="mt-0.5 h-4 w-4 shrink-0 text-ng-bone" aria-hidden="true" />
       <span>
         <strong className="font-medium text-ng-bone">{t('cart.giftTitle')}</strong>{' '}
-        {t('cart.giftBody')}
+        {t('cart.giftBody')}{' '}
+        {/* Where the choice is made: "Pilih satu aroma" on a page with nothing to pick read as a broken
+            control (sixth visitor audit, 13 Nov 2026). The picker lives in the cart. */}
+        {t('pdp.giftWhere')}
       </span>
     </p>
   );

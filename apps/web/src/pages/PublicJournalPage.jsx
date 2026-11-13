@@ -136,7 +136,7 @@ const PublicJournalPage = () => {
         <meta property="og:site_name" content="SOLIVAGANT" />
         <meta property="og:url" content={journalCanonical} />
         <meta property="og:title" content={t("journal.tab")} />
-        <meta property="og:description" content="Editorial notes on scent memory, raw materials, atelier process, product stories, and perfumery culture." />
+        <meta property="og:description" content={t("journal.meta")} />
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 

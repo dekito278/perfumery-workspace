@@ -427,7 +427,7 @@ export const useCheckoutFlow = ({
 
   const lookupCustomer = async () => {
     if (!customerCode.trim()) {
-      toast.error('Kode customer wajib diisi');
+      toast.error('Kode pelanggan wajib diisi');
       return;
     }
 
@@ -447,7 +447,7 @@ export const useCheckoutFlow = ({
       setLookupLoading(false);
     }
     if (!customer) {
-      toast.error('Kode customer tidak ditemukan');
+      toast.error('Kode pelanggan tidak ditemukan');
       return;
     }
 

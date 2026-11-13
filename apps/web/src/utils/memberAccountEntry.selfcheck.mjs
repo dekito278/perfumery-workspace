@@ -114,7 +114,8 @@ assert.match(MESSAGES.en['cust.heroBody'], /cart/, 'the English account says whe
 // The rule is that someone holding an old code is still told the box is down there — not the wording.
 // Pinned to the sentence, this failed the day the label was corrected: the field resolves the CUSTOMER
 // code (SOLI...), and calling it an order code is what sent buyers holding DKT-... into a dead end.
-assert.match(MESSAGES.id['cust.heroBody'], /[Kk]ode customer lama/, 'and still points the code-holder somewhere');
+// "pelanggan" since 13 Nov 2026: the page mixed "customer" and "pelanggan" for the same code.
+assert.match(MESSAGES.id['cust.heroBody'], /[Kk]ode (customer|pelanggan) lama/, 'and still points the code-holder somewhere');
 assert.match(MESSAGES.id['cust.heroBody'], /di bawah/, 'saying where the box is');
 
 // --- 6. And the BOOT screen, which a phone sees before the nav exists ----------------------------------
