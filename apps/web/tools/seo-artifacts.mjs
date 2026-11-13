@@ -225,7 +225,7 @@ export const fetchPublishedJournal = async (env) => {
 // static pages already use (build.mjs renderStaticFallback). No price: Dekito's decision of 2026-10-21 —
 // one file answers every country, and the domestic prices are scheduled.
 const noscriptBody = ({ eyebrow, heading, paragraphs, link }) => `<noscript>
-				<main class="app-boot-fallback" aria-label="${escapeHtml(heading)}">
+				<main class="app-boot-fallback" aria-label="${escapeHtml(heading)}" data-boot-page>
 					<div>
 						${eyebrow ? `<p>${escapeHtml(eyebrow)}</p>` : ''}
 						<h1>${escapeHtml(heading)}</h1>

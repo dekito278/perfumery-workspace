@@ -187,9 +187,18 @@ const shell = readFileSync(join(root, '..', 'index.html'), 'utf8');
 const bootSource = shell.match(/var EN_PREFIX[\s\S]*?(?=\n\t*renderPublicBootFallback\(\);)/);
 const recoverySource = shell.match(/function renderManualRecovery\(\) \{[\s\S]*?\n\t\t\t\t\}/);
 assert.ok(bootSource && recoverySource, 'the boot screen could not be found in index.html — the derivation broke');
-const bootAt = (pathname, { shop }) => {
-  const page = { innerHTML: '', querySelector: () => null };
-  const fakeDocument = { getElementById: () => page, documentElement: { classList: { contains: (name) => shop && name === 'boot-shop' } } };
+const bootAt = (pathname, { shop, noscript = '' }) => {
+  const page = { innerHTML: '', querySelector: (selector) => (selector === 'noscript' && noscript ? { textContent: noscript } : null) };
+  // Enough of an element for the boot script to read a heading and a lead out of the <noscript> markup.
+  const createElement = () => ({
+    html: '',
+    set innerHTML(value) { this.html = value; },
+    querySelector(selector) {
+      const found = selector === 'h1' ? this.html.match(/<h1>([\s\S]*?)<\/h1>/) : this.html.match(/class="app-boot-description">([\s\S]*?)<\/p>/);
+      return found ? { innerHTML: found[1] } : null;
+    },
+  });
+  const fakeDocument = { getElementById: () => page, createElement, documentElement: { classList: { contains: (name) => shop && name === 'boot-shop' } } };
   const run = new Function('window', 'document', `${bootSource[0]}\n${recoverySource[0]}\n`
     + 'renderPublicBootFallback(); var boot = arguments[2].innerHTML; renderManualRecovery();'
     + ' return { boot: boot, recovery: arguments[2].innerHTML };');
@@ -201,6 +210,14 @@ for (const path of ['/home', '/en/home', '/en/catalog/hug-n-1', '/cart']) {
   assert.equal(bootAt(path, { shop: true }).boot, 'SOLIVAGANT',
     `${path} must open on the shop's wordmark alone — no Studio words, nothing in the other shop's language`);
 }
+// Fifth audit, 13 Nov 2026: a prerendered page shows its own headline and lead under the wordmark while the
+// bundle loads — the words the build wrote for it, in its language. The second line ("needs JavaScript") is not.
+const prerendered = '<main class="app-boot-fallback" aria-label="SOLIVAGANT" data-boot-page><div><h1>Koleksi</h1>'
+  + '<p class="app-boot-description">Objek parfum terbatas.</p><p class="app-boot-description">Toko ini butuh JavaScript.</p></div></main>';
+assert.equal(bootAt('/catalog', { shop: true, noscript: prerendered }).boot, 'SOLIVAGANT Koleksi Objek parfum terbatas.',
+  'a prerendered page says where the buyer is while it loads');
+assert.equal(bootAt('/catalog', { shop: true, noscript: prerendered.replace(' data-boot-page', '') }).boot, 'SOLIVAGANT',
+  'and only a page the build marked as its own — the generic shell keeps the wordmark alone');
 assert.match(bootAt('/studio', { shop: false }).boot, /Memuat Studio/, 'the Studio keeps its own boot screen');
 assert.match(bootAt('/en/catalog', { shop: true }).recovery, /^The page did not load/, 'the English shop recovers in English');
 assert.doesNotMatch(bootAt('/en/catalog', { shop: true }).recovery, /Cache perlu|berhasil/, 'with no Indonesian in it');

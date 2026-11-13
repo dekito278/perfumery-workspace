@@ -254,6 +254,29 @@
 				font-size: 22px;
 				letter-spacing: 0.32em;
 			}
+			html.boot-shop .app-boot-heading {
+				margin: 0;
+				max-width: 18ch;
+				color: #ede6d6;
+				font-family: "Cormorant Garamond", Georgia, serif;
+				font-size: clamp(38px, 10vw, 64px);
+				font-weight: 400;
+				line-height: 1.05;
+				text-align: center;
+				white-space: pre-line;
+			}
+			html.boot-shop .app-boot-fallback .app-boot-lead {
+				margin: 0;
+				max-width: 46ch;
+				color: #a39b8b;
+				font-family: "Inter", system-ui, sans-serif;
+				font-size: 16px;
+				font-weight: 400;
+				letter-spacing: normal;
+				text-transform: none;
+				line-height: 1.6;
+				text-align: center;
+			}
 			html.boot-shop .app-boot-spinner {
 				border-color: rgba(237, 230, 214, 0.18);
 				border-top-color: #ede6d6;
@@ -301,10 +324,28 @@
 					// grey sidebar skeleton — Indonesian on the English shop too — for as long as a slow phone took to
 					// fetch the bundle. A per-route table of headlines sat beside it, computed and never shown, still
 					// promising "Pre-order 7-14 hari". No words now: nothing to translate, nothing to go stale.
+					//
+					// A prerendered page carries its own headline and lead in the <noscript> slot (the build writes
+					// them, marked data-boot-page, in the page's language). On a slow phone the bundle took 15-25s
+					// over a spinner alone (fifth visitor audit, 13 Nov 2026): those two lines are shown under the
+					// wordmark meanwhile, so the wait already says where the buyer is. Still nothing written here.
 					if (document.documentElement.classList.contains('boot-shop')) {
+						var pageWords = '';
+						var slot = root.querySelector('noscript');
+						if (slot && slot.textContent.indexOf('data-boot-page') !== -1) {
+							var holder = document.createElement('div');
+							holder.innerHTML = slot.textContent;
+							var heading = holder.querySelector('h1');
+							var lead = holder.querySelector('.app-boot-description');
+							if (heading) {
+								pageWords = '<h1 class="app-boot-heading">' + heading.innerHTML + '</h1>'
+									+ (lead ? '<p class="app-boot-lead">' + lead.innerHTML + '</p>' : '');
+							}
+						}
 						root.innerHTML = '<main class="app-boot-fallback app-boot-shop" role="status" aria-live="polite" aria-busy="true" aria-label="SOLIVAGANT">'
-							+ '<span class="app-boot-spinner" aria-hidden="true"></span>'
 							+ '<p class="app-boot-wordmark">SOLIVAGANT</p>'
+							+ pageWords
+							+ '<span class="app-boot-spinner" aria-hidden="true"></span>'
 							+ '</main>';
 						return;
 					}

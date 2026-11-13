@@ -196,7 +196,7 @@ const renderStaticFallback = (page, lang, facts = DEFAULT_SITE_FACTS) => {
     .map(([route, key]) => `<a href="${route === '/journal' ? route : `${prefix}${route}`}">${escapeHtml(M[key])}</a>`).join('\n\t\t\t\t\t\t\t');
 
   return `<noscript>
-\t\t\t\t<main class="app-boot-fallback" aria-label="SOLIVAGANT">
+\t\t\t\t<main class="app-boot-fallback" aria-label="SOLIVAGANT" data-boot-page>
 \t\t\t\t\t<div>
 \t\t\t\t\t\t<h1>${escapeHtml(M[page.headingKey] || page.heading)}</h1>
 \t\t\t\t\t\t<p class="app-boot-description">${escapeHtml(page.leadKey ? translate(lang, page.leadKey, { days: facts.bespokeDays }) : page.intro)}</p>
