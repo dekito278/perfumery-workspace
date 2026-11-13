@@ -1275,7 +1275,11 @@ const postAuthoritativeOrder = async (body) => {
   if (!response.ok || !data?.order) {
     throw new Error(data?.message || 'Authoritative order endpoint failed');
   }
-  return normalizeOrder(data.order);
+  // The figures the server charged, beside the order: the payment page's breakdown is built from them.
+  const serverTotals = ['itemsSubtotal', 'shippingFee', 'voucherDiscount', 'subtotal']
+    .filter((key) => Number.isFinite(Number(data[key])) && data[key] != null)
+    .reduce((totals, key) => ({ ...totals, [key]: Number(data[key]) }), {});
+  return { ...normalizeOrder(data.order), serverTotals };
 };
 
 /**

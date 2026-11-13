@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+const formatRupiahPlain = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Math.round(Number(value) || 0))}`;
 import { areaQueryFromAddress, pickConfidentDestination } from '@/utils/areaFromAddress.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { useNavigate } from 'react-router-dom';
@@ -637,6 +639,17 @@ export const useCheckoutFlow = ({
       createdOrder = order;
       // Charge the order's authoritative subtotal (equals checkoutTotalDue on the direct-insert path).
       const paymentAmount = Number(order.subtotal) || checkoutTotalDue;
+      // The breakdown the payment page shows is the server's too. It showed this page's shipping fee and
+      // discount under the server's total, so when a courier rate moved between quote and submit the lines
+      // did not add up to the amount asked for (ninth visitor audit, 13 Nov 2026).
+      const charged = order.serverTotals || {};
+      const chargedShippingFee = charged.shippingFee == null ? shippingFee : Number(charged.shippingFee);
+      const chargedDiscount = charged.voucherDiscount == null ? checkoutDiscountAmount : Number(charged.voucherDiscount);
+      // And a total that moved is SAID, here, before the buyer is asked to pay it — not discovered when the
+      // transfer amount does not match the number they remember.
+      if (paymentAmount !== checkoutTotalDue) {
+        toast.warning(`Total pesanan disesuaikan menjadi ${formatRupiahPlain(paymentAmount)} mengikuti harga dan ongkir terbaru. Periksa sebelum membayar.`, { duration: 12000 });
+      }
       if (isManualPayment) {
         const manualPaymentResponse = {
           method: paymentMethodDetails.provider,
@@ -660,9 +673,9 @@ export const useCheckoutFlow = ({
           paymentStatus: 'pending',
           manualTransfer: manualPaymentResponse,
           shippingSummary,
-          shippingFee,
+          shippingFee: chargedShippingFee,
           voucherCode,
-          voucherDiscount: checkoutDiscountAmount,
+          voucherDiscount: chargedDiscount,
           voucherSnapshot,
           createdAt: new Date().toISOString(),
         });
@@ -690,9 +703,9 @@ export const useCheckoutFlow = ({
           paymentStatus: 'pending',
           paymentExpiresAt: qris.expiresAt || '',
           shippingSummary,
-          shippingFee,
+          shippingFee: chargedShippingFee,
           voucherCode,
-          voucherDiscount: checkoutDiscountAmount,
+          voucherDiscount: chargedDiscount,
           voucherSnapshot,
           createdAt: new Date().toISOString(),
         });
@@ -730,9 +743,9 @@ export const useCheckoutFlow = ({
         paymentExpiresAt: checkout.paymentExpiresAt || '',
         paymentSessionId: checkout.paymentSessionId || '',
         shippingSummary,
-        shippingFee,
+        shippingFee: chargedShippingFee,
         voucherCode,
-        voucherDiscount: checkoutDiscountAmount,
+        voucherDiscount: chargedDiscount,
         voucherSnapshot,
         createdAt: new Date().toISOString(),
       });
