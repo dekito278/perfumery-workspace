@@ -144,5 +144,19 @@ for (const file of files) {
 assert.ok(voucherFields >= 3,
   `only ${voucherFields} voucher fields found — the scan is broken, not the screens`);
 
+// Fifth visitor audit, 13 Nov 2026: on checkout the courier and the area had no error of their own, focus
+// stayed on the button, nothing capped a 1,875-character address, and a toast named the vendor.
+{
+  const checkout = readFileSync(new URL('../pages/CheckoutPage.jsx', import.meta.url), 'utf8');
+  assert.match(checkout, /aria-invalid=\{triedSubmit && fieldErrors\.courier \? 'true' : undefined\}/, 'the courier says it is missing');
+  assert.match(checkout, /aria-invalid=\{triedSubmit && fieldErrors\.destination \? 'true' : undefined\}/, 'so does the area');
+  assert.match(checkout, /const field = form\.querySelector\('\[aria-invalid="true"\]'\);\s*if \(field\) field\.focus\(\);/, 'focus goes to the first field that needs the buyer');
+  for (const cap of ['maxLength={100} value={customerName}', 'maxLength={24} value={contact}', 'maxLength={500} value={deliveryAddress}']) {
+    assert.ok(checkout.includes(cap), `checkout caps: ${cap}`);
+  }
+  assert.match(checkout, /if \(!canSubmitCheckout\) \{[\s\S]{0,700}?return;\s*\}\s*submitCheckout\(event\);/, 'an incomplete form is answered by its fields, not a toast');
+  assert.match(readFileSync(new URL('../components/ui/sonner.jsx', import.meta.url), 'utf8'), /position="top-center"/, 'toasts never lie over the sticky pay bar');
+  assert.doesNotMatch(readFileSync(new URL('../hooks/useCheckoutFlow.js', import.meta.url), 'utf8'), /toast\.error\([^)]*RajaOngkir/, 'no vendor name in a buyer message');
+}
 console.log(`aFieldSaysWhatItWants selfcheck OK (${codeFields} customer-code fields, the footer's email `
   + `field, ${voucherFields} voucher boxes, and ${wrapped} fields inside a label each carry a name of their own)`);

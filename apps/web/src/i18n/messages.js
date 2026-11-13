@@ -513,6 +513,8 @@ export const MESSAGES = {
     'checkout.errPhone': 'Nomor WhatsApp wajib diisi.',
     'checkout.errPhoneInvalid': 'Nomor WhatsApp belum valid.',
     'checkout.errAddress': 'Alamat pengiriman wajib diisi.',
+    'checkout.errCourier': 'Pilih kurir dulu.',
+    'checkout.errDestination': 'Cari lalu pilih area tujuan.',
     'checkout.signInSaving': 'Masuk dengan Google — data terisi otomatis, dan kode member bisa dipakai',
     'checkout.signInPlain': 'Masuk dengan Google — alamat & data terisi otomatis',
     'checkout.missingFields': 'Lengkapi: {fields}.',
@@ -1708,6 +1710,8 @@ export const MESSAGES = {
     'checkout.errPhone': 'A WhatsApp number is required.',
     'checkout.errPhoneInvalid': 'That WhatsApp number is not valid.',
     'checkout.errAddress': 'A delivery address is required.',
+    'checkout.errCourier': 'Choose a courier.',
+    'checkout.errDestination': 'Search for and choose the destination area.',
     // The member price IS true here, unlike on the welcome page and the why-direct card. Anyone
     // completing this form is shipping to an Indonesian address — the notice above it says so — and a
     // domestic order does get the member price. Same promise, different reader.

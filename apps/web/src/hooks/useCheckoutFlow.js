@@ -550,7 +550,7 @@ export const useCheckoutFlow = ({
       return;
     }
     if (!selectedDestination) {
-      toast.error('Pilih area tujuan dari hasil pencarian RajaOngkir dulu');
+      toast.error('Pilih area tujuan dari hasil pencarian dulu');
       return;
     }
     if (!selectedShipping) {

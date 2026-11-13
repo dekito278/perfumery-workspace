@@ -97,9 +97,26 @@ const CheckoutPage = () => {
     customerName: !customerName.trim() ? t('checkout.errName') : '',
     contact: !contact.trim() ? t('checkout.errPhone') : (!validPhoneContact ? t('checkout.errPhoneInvalid') : ''),
     deliveryAddress: !deliveryAddress.trim() ? t('checkout.errAddress') : '',
+    // Fifth visitor audit, 13 Nov 2026: the courier and the area had no error beside them — only the
+    // summary line at the bottom — and focus stayed on the button.
+    courier: !selectedCourier ? t('checkout.errCourier') : '',
+    destination: selectedCourier && !selectedDestination ? t('checkout.errDestination') : '',
   };
   const handleSubmitAttempt = (event) => {
     setTriedSubmit(true);
+    if (!canSubmitCheckout) {
+      // Take the buyer to the first field that needs them, once the errors have rendered — the fields say
+      // what is missing, so no toast repeats it. With no field to point at (a rate or a payment method not
+      // chosen yet), the summary line that names what is left.
+      event.preventDefault();
+      const form = event.currentTarget;
+      window.requestAnimationFrame(() => {
+        const field = form.querySelector('[aria-invalid="true"]');
+        if (field) field.focus();
+        else document.getElementById('checkout-missing')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+      return;
+    }
     submitCheckout(event);
   };
 
@@ -201,12 +218,12 @@ const CheckoutPage = () => {
                   <div className="grid gap-5 md:grid-cols-2">
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.fullName')}</span>
-                      <input type="text" className="ng-field" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} aria-label={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
+                      <input type="text" className="ng-field" maxLength={100} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} aria-label={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
                       {triedSubmit && fieldErrors.customerName ? <span className="ng-error text-sm" role="alert">{fieldErrors.customerName}</span> : null}
                     </label>
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.whatsapp')}</span>
-                      <input type="tel" className="ng-field" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" aria-label={t('checkout.whatsappAria')} autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
+                      <input type="tel" className="ng-field" maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" aria-label={t('checkout.whatsappAria')} autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
                       {triedSubmit && fieldErrors.contact ? <span className="ng-error text-sm" role="alert">{fieldErrors.contact}</span> : null}
                     </label>
                   </div>
@@ -220,7 +237,7 @@ const CheckoutPage = () => {
                         <button type="button" aria-pressed={repeatAddressMode === 'new'} onClick={useCustomerNewAddress} className="ng-chip ng-chip--plain">{t('mcheckout.useNewAddress')}</button>
                       </div>
                     ) : null}
-                    <textarea id="checkout-address" className="ng-field" value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
+                    <textarea id="checkout-address" className="ng-field" maxLength={500} value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
                     {triedSubmit && fieldErrors.deliveryAddress ? <span className="ng-error text-sm" role="alert">{fieldErrors.deliveryAddress}</span> : null}
                   </div>
                 </fieldset>
@@ -230,18 +247,19 @@ const CheckoutPage = () => {
                   <legend className="ng-legend"><span className="ng-mono text-ng-ember">II</span>{t('checkout.deliveryLegend')}</legend>
                   <label className="ng-label">
                     <span className="ng-mono text-ng-dust">{t('checkout.courier')}</span>
-                    <select className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('checkout.pickCourier')}>
+                    <select className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('checkout.pickCourier')} aria-invalid={triedSubmit && fieldErrors.courier ? 'true' : undefined}>
                       <option value="">{t('checkout.pickCourier')}</option>
                       {checkoutCourierOptions.map((courier) => (
                         <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
                       ))}
                     </select>
+                    {triedSubmit && fieldErrors.courier ? <span className="ng-error text-sm" role="alert">{fieldErrors.courier}</span> : null}
                   </label>
                   {showAreaSearch || manualArea ? (
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.destination')}</span>
                       <div className="flex gap-2">
-                        <input type="text" className="ng-field" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" onKeyDown={onEnter(searchArea)} enterKeyHint="search" />
+                        <input type="text" className="ng-field" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" onKeyDown={onEnter(searchArea)} enterKeyHint="search" aria-invalid={triedSubmit && fieldErrors.destination ? 'true' : undefined} />
                         <button
                           type="button"
                           className="ng-btn ng-btn--ghost shrink-0"
@@ -252,6 +270,7 @@ const CheckoutPage = () => {
                         </button>
                       </div>
                       {manualArea ? <span className="text-sm text-ng-dust">{t('mcheckout.manualAreaHint')}</span> : null}
+                      {triedSubmit && fieldErrors.destination ? <span className="ng-error text-sm" role="alert">{fieldErrors.destination}</span> : null}
                     </label>
                   ) : selectedCourier ? (
                     <button type="button" onClick={() => setManualArea(true)} className="ng-link ng-mono inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4">
@@ -384,7 +403,7 @@ const CheckoutPage = () => {
                 ) : null}
                 {/* A to-do list until the buyer tries to order, an error after: in red on arrival it read as a failure
                     before anything had been typed (2026-11-02). */}
-                {!canSubmitCheckout && items.length ? <p role="status" className={`ng-notice${triedSubmit ? ' ng-notice--error' : ''}`}>{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
+                {!canSubmitCheckout && items.length ? <p id="checkout-missing" role="status" className={`ng-notice${triedSubmit ? ' ng-notice--error' : ''}`}>{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
                 <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={!items.length || saving}>
                   <CreditCard className="h-4 w-4" aria-hidden="true" />
                   {saving ? t('checkout.processing') : t('checkout.placeOrder')}

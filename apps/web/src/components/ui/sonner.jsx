@@ -9,6 +9,10 @@ const Toaster = ({
   return (
     <Sonner
       theme={theme}
+      // At the top, not the bottom: on a phone the bottom is where the checkout's and the cart's sticky
+      // bar sits, and a toast there lay over "Buat Pesanan" and took its taps for four seconds (fifth
+      // visitor audit, 13 Nov 2026).
+      position="top-center"
       className="toaster group"
       toastOptions={{
         classNames: {
