@@ -454,9 +454,14 @@ const ROUTER_BASENAME = routerBasename();
  * cart or a stale link did, and the language switch in the header is the way back for anyone who is
  * actually shipping inside Indonesia.
  */
+//
+// To the CART since 13 Nov 2026, not the catalogue: the English shop has had its own basket since
+// 2026-10-06, and "EN" pressed on /checkout took the buyer to /en/catalog with their order out of sight —
+// and "ID" from there to /catalog, not back to the checkout (fourth visitor audit). The cart is the English
+// page for the same step: the same items, the international quote, and the way to send the order.
 const DomesticOnly = ({ children }) => {
   const { isInternational } = useStorefrontRegion();
-  return isInternational ? <Navigate to="/catalog" replace /> : children;
+  return isInternational ? <Navigate to="/cart" replace /> : children;
 };
 
 /**

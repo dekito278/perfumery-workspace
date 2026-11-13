@@ -280,4 +280,7 @@ assert.equal(buildBespokeEnquiryDraft(), '', 'no translator, no draft');
 assert.equal(buildBespokeEnquiryDraft({ t: (key, vars) => vars.price, price: 'US$125' }), 'US$125', 'the brief carries the price it was given');
 assert.equal(buildBespokeEnquiryDraft({ t: (key, vars) => vars.price }), '-', 'and a dash when the price had not loaded');
 
+// "EN" on /checkout lands on the English cart — the same step in the other shop — not the catalogue
+// (fourth visitor audit, 13 Nov 2026).
+assert.match(app, /return isInternational \? <Navigate to="\/cart" replace \/> : children;/, 'the checkout\'s English twin is the cart');
 console.log(`englishShopOrdersOnWhatsApp selfcheck OK (the English cart is dollars, a destination and WhatsApp; ${payChecked} payment surface(s) still gated; the checkout stays domestic)`);
