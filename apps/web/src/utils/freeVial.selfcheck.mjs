@@ -454,4 +454,7 @@ assert.match(pickerSource, /freeVialChoices\(vialProduct, bought\)/, 'and so doe
 assert.match(promptSource, /event\.detail\?\.announcedByScreen \|\| wasDismissed\(\)/, 'a declined prompt does not reopen on the next bottle');
 assert.equal((promptSource.match(/onClick=\{dismiss\}/g) || []).length, 3, 'the backdrop, the X and "Nanti saja" all count as declining');
 
+// The checkout summary does not repeat the chosen scent under the gift vial's name (fifth audit, 13 Nov 2026).
+assert.match(readFileSync(new URL('../pages/CheckoutPage.jsx', import.meta.url), 'utf8'),
+  /\{isFreeVialLine\(item\) \? null : <span className="text-xs text-ng-ash">\{t\('checkout\.sizeQty'/, 'checkout: no "La Rose / La Rose"');
 console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);
