@@ -44,4 +44,15 @@ assert.match(flow, /if \(paymentAmount !== checkoutTotalDue\) \{\s*toast\.warnin
   'a total that changed between the checkout page and the order is not said');
 assert.ok(!/paymentAmount !== checkoutTotalDue\)[^{]*\{[^}]*throw/.test(flow), 'a moved total must be said, not refused');
 
+// --- 4. The bespoke order follows the same rule (tenth visitor audit, 13 Nov 2026) ------------------------
+const bespoke = read('pages', 'BespokePage.jsx');
+assert.match(bespoke, /const charged = order\.serverTotals \|\| \{\};/, 'the bespoke order drops the charged figures');
+assert.match(bespoke, /if \(paymentAmount !== checkoutTotalDue\) \{\s*toast\.warning\(t\('bsp\.totalMoved'/, 'a moved bespoke total is not said');
+const bespokeSessions = bespoke.slice(bespoke.indexOf('const charged = order.serverTotals')).match(/sessionStorage\.setItem\(PAYMENT_SESSION_KEY, JSON\.stringify\(\{[\s\S]*?\}\)\);/g) || [];
+assert.ok(bespokeSessions.length >= 2, `found ${bespokeSessions.length} bespoke payment sessions — the scan is broken`);
+for (const session of bespokeSessions) {
+  assert.match(session, /shippingFee: chargedShippingFee,/, 'a bespoke payment session shows the page\'s shipping fee under the server\'s total');
+  assert.match(session, /voucherDiscount: chargedDiscount,/, 'a bespoke payment session shows the page\'s discount under the server\'s total');
+}
+
 console.log(`chargedTotalIsSaid selfcheck OK (${sessions.length} payment sessions carry the server's breakdown; a moved total is announced)`);
