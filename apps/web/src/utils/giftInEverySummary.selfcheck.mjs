@@ -22,7 +22,8 @@ assert.match(intl, /t\('intlQuote\.giftLine', \{ name: quote\.gift\.size \|\| qu
 assert.match(intl, /\{t\('cart\.giftFree'\)\}/, 'the gift row must say it is free, in the shop language');
 
 // The form sends the same gift the summary shows.
-assert.match(read('components', 'storefront', 'InternationalOrderForm.jsx'), /\.\.\.\(quote\.gift \? \[quote\.gift\] : \[\]\)/);
+// The WhatsApp order names it too, by its aroma (the English cart orders on WhatsApp since 14 Nov 2026).
+assert.match(read('hooks', 'useInternationalQuote.js'), /\.\.\.\(gift \? \[t\('export\.waCartGiftLine', \{ name: gift\.size \|\| gift\.name \}\)\] : \[\]\)/);
 // The quote exposes it.
 assert.match(read('hooks', 'useInternationalQuote.js'), /return \{ \.\.\.core, lines, gift,/);
 

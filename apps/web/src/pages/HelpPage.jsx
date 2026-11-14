@@ -43,7 +43,7 @@ const HelpContent = () => {
       <div className="mt-8 grid gap-8">
         <Section id="help-order" title={t('help.orderTitle')}>
           {isInternational ? (
-            <p className="m-0">{t('help.orderEn', { hours: PAYMENT_RESERVATION_TTL_HOURS })}</p>
+            <p className="m-0">{t('help.orderEn')}</p>
           ) : (
             <p className="m-0">{t(hasDoku ? 'help.orderIdDoku' : 'help.orderIdTransfer', { hours: PAYMENT_RESERVATION_TTL_HOURS })}</p>
           )}

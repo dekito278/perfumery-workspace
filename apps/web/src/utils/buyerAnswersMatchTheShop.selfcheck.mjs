@@ -93,10 +93,10 @@ for (const language of ['id', 'en']) {
     assert.doesNotMatch(answer, FORBIDDEN_ABROAD,
       `${language}.${key} describes the domestic checkout to an overseas buyer: ${answer}`);
   }
-  // Since #587 the English cart places the order itself; "settled over WhatsApp" sent buyers away from it
-  // (visitor audit, 13 Nov 2026). The answer names the cart and how a dollar payment is made.
-  assert.doesNotMatch(MESSAGES[language]['answers.payIntlA'], /WhatsApp/,
-    `${language}: the overseas order is placed in the cart, not settled on WhatsApp`);
+  // Since 14 Nov 2026 the English cart orders on WhatsApp (Dekito: "pembeli luar saja, formulir alamat
+  // hapus"). The answer names the cart, WhatsApp and how a dollar payment is made.
+  assert.match(MESSAGES[language]['answers.payIntlA'], /WhatsApp/,
+    `${language}: the overseas order goes to WhatsApp and the answer must say so`);
   assert.match(MESSAGES[language]['answers.payIntlA'], /(cart|keranjang)[\s\S]*Wise[\s\S]*Western Union/i,
     `${language}: the answer names the cart and the ways to pay in dollars`);
   assert.match(MESSAGES[language]['answers.shippingIntlA'], /DHL/,
