@@ -4,7 +4,7 @@
 -- WHAT IS DECIDED (Dekito, 14 Nov 2026)
 --   Samhain       30 ml   Rp479.000   member Rp429.000   US$80    stock 0  (not given yet)
 --   Bloody Luwak  30 ml   Rp479.000   member Rp429.000   US$80    stock 5
---   Ambar Segara  30 ml   Rp2.980.000 member = same      US$180   stock 0  (not given yet) — Solivagant Reserve
+--   Ambar Segara  30 ml   Rp2.980.000 member = same      US$185   stock 0  (not given yet) — Solivagant Reserve
 --
 -- WHAT IS DELIBERATELY EMPTY — Dekito fills these in Studio; nothing about the scent is invented here:
 --   description / description_en, the note pyramid, mood, launch year. `notes` must not be blank
@@ -47,7 +47,7 @@ from (values
   ('samhain',      'overseas', 1320000),   -- US$80  at 16.500
   ('bloody-luwak', 'member',   429000),
   ('bloody-luwak', 'overseas', 1320000),   -- US$80
-  ('ambar-segara', 'overseas', 2970000)    -- US$180 — see "CHECK BEFORE RUNNING"
+  ('ambar-segara', 'overseas', 3052500)    -- US$185 (Dekito, 14 Nov 2026)
 ) as t(slug, tier, price)
 join public.storefront_products p on p.slug = t.slug
 on conflict (product_id, variant_id, tier) do nothing;
