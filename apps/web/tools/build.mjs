@@ -48,7 +48,7 @@ const staticPublicPages = [
       ['Fragrance Collection', 'A public catalog of perfume objects with notes, concentration, size variants, price, and availability.'],
       // Was "Request parfum custom through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari."
       // on the English home: half Indonesian, and a lead time Studio can now change (2026-11-03).
-      ['Bespoke Consultation', 'A perfume composed to order: tell Dekito the direction, choose the size, and send the request.'],
+      ['Bespoke Consultation', 'A perfume composed to order: tell us the direction, choose the size, and send the request.'],
       ['Journal', 'Editorial notes on scent memory, materials, the blending process, product stories, and perfumery culture.'],
     ],
   },
@@ -107,10 +107,10 @@ const staticPublicPages = [
     // carries the same facts the live page does and states no founding year, because nobody has.
     description: 'SOLIVAGANT is artisan perfume by Dekito, in Indonesia. Every bottle is blended and packed by Dekito and sold straight to the person who wears it.',
     heading: 'About SOLIVAGANT',
-    intro: 'SOLIVAGANT is artisan perfume by Dekito: scents built from raw materials, memory and ritual, blended and packed by the perfumer and sold straight from Dekito\'s workbench in Indonesia and abroad.',
+    intro: 'SOLIVAGANT is artisan perfume by Dekito: scents built from raw materials, memory and ritual, blended and packed by the perfumer and sold straight from our workbench in Indonesia and abroad.',
     sections: [
       ['The work', 'A scent is built from raw materials, memory and ritual, then tried again until it reads true.'],
-      ['Bespoke', 'For a scent that is not in the collection, Dekito composes one to order.'],
+      ['Bespoke', 'For a scent that is not in the collection, one is composed to order.'],
     ],
   },
   {
@@ -121,7 +121,7 @@ const staticPublicPages = [
     idTitleKey: 'help.tab',
     idDescriptionKey: 'help.meta',
     title: 'Help & Policies - SOLIVAGANT',
-    description: 'How to order and pay, shipping, tracking, a damaged parcel, privacy, and how to reach Dekito at SOLIVAGANT.',
+    description: 'How to order and pay, shipping, tracking, a damaged parcel, privacy, and how to reach SOLIVAGANT.',
     heading: 'Help & policies',
     intro: 'Everything about an order at SOLIVAGANT, on one page.',
     sections: [
