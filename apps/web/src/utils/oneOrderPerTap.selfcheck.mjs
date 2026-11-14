@@ -20,7 +20,6 @@ const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf
 const forms = [
   ['hooks/useCheckoutFlow.js', 'submitOrder'],
   ['pages/BespokePage.jsx', 'submitRequest'],
-  ['components/storefront/InternationalOrderForm.jsx', 'submit'],
 ];
 
 for (const [file, fn] of forms) {

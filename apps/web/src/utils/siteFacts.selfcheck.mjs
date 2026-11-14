@@ -63,7 +63,7 @@ for (const [file, pattern, why] of [
 // otherwise print "{days}" on some screen nobody looked at.
 const messages = read('i18n', 'messages.js');
 const factKeys = [...new Set([...messages.matchAll(/["']([\w.]+)["']:\s*["'][^\n]*\{(?:days|hours)\}/g)].map((m) => m[1]))].sort();
-assert.deepEqual(factKeys, ['bsp.lead', 'bsp.preorderConfirm', 'help.bespoke', 'help.dispatch', 'help.orderEn', 'help.orderIdDoku',
+assert.deepEqual(factKeys, ['bsp.lead', 'bsp.preorderConfirm', 'help.bespoke', 'help.dispatch', 'help.orderIdDoku',
   'help.orderIdTransfer', 'help.problemPromise', 'pay.quoteBody'], `a fact placeholder appeared in: ${factKeys.join(', ')}`);
 // The promises are EMPTY until Dekito sets them: the shop says nothing on his behalf.
 assert.equal(DEFAULT_SITE_FACTS.dispatchDays, '', 'no dispatch promise by default');

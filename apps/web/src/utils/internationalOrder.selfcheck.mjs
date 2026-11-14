@@ -173,17 +173,15 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   const srcDir = join(dirname(fileURLToPath(import.meta.url)), '..');
   const read = (...parts) => readFileSync(join(srcDir, ...parts), 'utf8');
   const cart = read('pages', 'InternationalCartPage.jsx');
-  assert.match(cart, /const canPlaceHere = quote\.settled && !unpriced\.length && !unfulfillable\.length;/,
-    'the cart takes the order itself only when every line and the parcel are priced');
-  assert.match(cart, /canPlaceHere \? \(\s*<>\s*<InternationalOrderForm quote=\{quote\} \/>/, 'and then it shows the form');
+  // Since 14 Nov 2026 the English cart orders on WhatsApp only (Dekito: "pembeli luar saja, formulir alamat
+  // hapus"). The endpoint's international branch and /pay/<token> stay, for orders Studio writes by hand.
+  assert.doesNotMatch(cart, /InternationalOrderForm|canPlaceHere/, 'the address form is back in the English cart');
+  assert.match(cart, /href=\{canOrder \? buildWhatsAppCheckoutUrl\(message, phone\) : '#'\}/, 'the English cart orders on WhatsApp');
   const service = read('services', 'orderService.js');
   const place = service.slice(service.indexOf('export const placeInternationalOrder'), service.indexOf('const createBespokeOrderViaEndpoint'));
-  assert.ok(place.includes("fetch('/api/orders/create'"), 'the form posts to the one order endpoint');
+  assert.ok(place.includes("fetch('/api/orders/create'"), 'placeInternationalOrder posts to the one order endpoint');
   assert.doesNotMatch(place, /priceNumber|subtotal|totalUsd|shippingUsd|unitUsd/,
     'the browser sends which bottles and where — never a price');
-  const form = read('components', 'storefront', 'InternationalOrderForm.jsx');
-  assert.match(form, /navigate\(`\/pay\/\$\{paymentToken\}`\)/, 'a placed order goes straight to its payment page');
-  assert.match(form, /quote\.gift \? \[quote\.gift\]/, 'the free vial the buyer picked travels with the order');
   const pay = read('pages', 'PaymentInstructionsPage.jsx');
   assert.match(pay, /paymentAmountUsd\(order\.amountIdr\)/, 'the payment page asks for the exact total');
   assert.match(pay, /submitOrderPaymentProof\(orderNumber/, 'the receipt is recorded on the order');
