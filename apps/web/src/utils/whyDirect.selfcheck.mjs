@@ -90,8 +90,9 @@ assert.match(home, /buildWhatsAppCheckoutUrl\(t\('home\.collabMessage'\)\)/, 'an
 // In the language the visitor was reading when they pressed it: someone who has just read an English
 // page and gets an Indonesian draft has to translate their own message before they can send it, which is
 // where most of them stop.
-assert.match(MESSAGES.id['home.collabMessage'], /Halo Dekito/);
-assert.match(MESSAGES.en['home.collabMessage'], /Hello Dekito/);
+// The brand, not the name (Dekito, 14 Nov 2026: naming him everywhere read as showing off).
+assert.match(MESSAGES.id['home.collabMessage'], /^Halo SOLIVAGANT, saya tertarik berkolaborasi/);
+assert.match(MESSAGES.en['home.collabMessage'], /^Hello SOLIVAGANT, I am interested in collaborating/);
 
 // --- 5. data-reveal only where something will reveal it ------------------------------------------------
 // [data-reveal] starts a section at opacity 0. The desktop home has a useScrollReveal container; the phone
