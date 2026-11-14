@@ -1,41 +1,41 @@
-import React from 'react';
+import React, { useId } from 'react';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import { buildFreeVialCartItem, freeVialChoices } from '@/utils/freeVial.js';
 import { splitScriptName } from '@/utils/scriptName.js';
 
 /**
- * The aroma buttons, and the three behaviours that go with them.
+ * The aroma choice, and the three behaviours that go with it — one rule, used by the cart's panel, the
+ * checkout and the add-to-cart prompt.
  *
- * Extracted because there are now TWO places a buyer meets this — the panel on the cart page and the
- * prompt that opens on add-to-cart — and "tap to choose, tap another to swap, tap the same one to
- * release" is one rule. Written twice it would be one rule that holds once, which is the mistake this
- * repository keeps paying for.
+ * A DROPDOWN since 14 Nov 2026 (Dekito, from his phone: "jadiin dropdown aja biar gak ribet"). Twenty
+ * aromas as buttons filled a phone screen and pushed the order summary below it; one field holds the same
+ * choice in a line. Choosing an aroma takes it, choosing another swaps it, choosing "none" releases it.
  *
  * `onPick` is handed the finished cart line, or null to release. The caller passes cartService's single
  * writer, which drops every vial line before adding, so a second aroma REPLACES rather than stacking.
  */
 const FreeVialChoices = ({ vialProduct, gift, onPick, bought = [], className = '' }) => {
+  const { t } = useTranslate();
+  const id = useId();
   const choices = freeVialChoices(vialProduct, bought);
   if (!choices.length) return null;
 
+  const pick = (variantId) => {
+    const choice = choices.find((item) => item.variantId === variantId);
+    onPick(choice ? buildFreeVialCartItem({ vialProduct, choice }) : null);
+  };
+
   return (
-    <div className={`flex flex-wrap gap-2 ${className}`.trim()} role="group">
-      {choices.map((choice) => {
-        const chosen = gift?.variantId === choice.variantId;
-        return (
-          <button
-            key={choice.variantId}
-            type="button"
-            className="ng-chip ng-chip--plain"
-            aria-pressed={chosen}
-            onClick={() => onPick(chosen ? null : buildFreeVialCartItem({ vialProduct, choice }))}
-          >
-            {/* The Latin name only: a chip is too small to set the aksara legibly, and the product page
-                already does. */}
-            {splitScriptName(choice.label).name}
-          </button>
-        );
-      })}
-    </div>
+    <label htmlFor={id} className={`flex flex-col gap-2 ${className}`.trim()}>
+      <span className="ng-mono text-ng-dust">{t('cart.giftPick')}</span>
+      <select id={id} className="ng-field" value={gift?.variantId || ''} onChange={(event) => pick(event.target.value)}>
+        <option value="">{t('cart.giftNone')}</option>
+        {choices.map((choice) => (
+          // The Latin name only: an option cannot set the aksara legibly, and the product page already does.
+          <option key={choice.variantId} value={choice.variantId}>{splitScriptName(choice.label).name}</option>
+        ))}
+      </select>
+    </label>
   );
 };
 
