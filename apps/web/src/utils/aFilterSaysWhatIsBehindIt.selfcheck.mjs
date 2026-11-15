@@ -86,7 +86,7 @@ for (const [name, page] of [
   assert.doesNotMatch(page, /catalogPillCounts\(\s*products/,
     `${name} counts against the full shelf, so the numbers lie as soon as anyone searches`);
   // The category is applied AFTER the narrowing, or the two disagree about what a pill would show.
-  assert.match(page, /narrowed[A-Za-z]*\.filter\(\(product\) => matchesCatalogCategory/,
+  assert.match(page, /narrowed[A-Za-z]*\s*\.filter\(\(product\) => matchesCatalogCategory/,
     `${name} must apply the category to the narrowed list`);
 }
 

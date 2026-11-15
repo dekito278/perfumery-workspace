@@ -138,8 +138,8 @@ export const toPublicFragrance = (product = {}) => {
     slug,
     name: String(product.name || 'Untitled fragrance').trim(),
     subtitle: product.subtitle || product.notes || product.mood || 'A quiet SOLIVAGANT fragrance object.',
-    description: product.description || product.notes || 'A quiet SOLIVAGANT fragrance object for skin, atmosphere, and ritual.',
-    story: product.story || product.description || 'A public SOLIVAGANT fragrance composed through raw materials, memory, and careful evaluation.',
+    description: product.description || '',
+    story: product.story || product.description || '',
     category: product.category || product.collection || tags[0] || 'Fragrance',
     publicCategory,
     badge: inferPublicBadge(product, tags),
@@ -152,9 +152,9 @@ export const toPublicFragrance = (product = {}) => {
     // whole point of typing it. Normalised here too, so a malformed row never reaches the page.
     testimonials: normalizeTestimonials(product.testimonials),
     collection: product.collection || product.category || 'SOLIVAGANT',
-    topNotes: topNotes.length ? topNotes : ['Opening impression'],
-    heartNotes: heartNotes.length ? heartNotes : ['Heart'],
-    baseNotes: baseNotes.length ? baseNotes : ['Lasting trace'],
+    topNotes,
+    heartNotes,
+    baseNotes,
     notes: product.notes || [...topNotes.slice(0, 1), ...heartNotes.slice(0, 1), ...baseNotes.slice(0, 1)].filter(Boolean).join(', '),
     // The English copy, carried through untouched and WITHOUT a fallback: an empty string here means
     // "not translated yet", and productCopyFor decides what to show instead. Filling in an Indonesian

@@ -109,7 +109,7 @@ const HomePage = () => {
         <meta name="twitter:title" content={t('home.tab')} />
         <meta name="twitter:description" content={t('home.meta')} />
         <meta name="twitter:image" content={homeShareImage} />
-        <script type="application/ld+json">{JSON.stringify(buildOrganizationJsonLd(siteOrigin))}</script>
+        <script type="application/ld+json">{JSON.stringify(buildOrganizationJsonLd(siteOrigin, undefined, region))}</script>
         <script type="application/ld+json">{JSON.stringify(buildWebSiteJsonLd(siteOrigin, region))}</script>
       </Helmet>
 
