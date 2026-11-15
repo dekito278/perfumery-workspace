@@ -77,7 +77,7 @@ assert.match(build, /fs\.writeFileSync\(path\.join\(distRoot, EN_PREFIX\.slice\(
   const vercel = JSON.parse(readFileSync(join(webRoot, 'vercel.json'), 'utf8'));
   const rewrites = vercel.rewrites || [];
   const at = (source) => rewrites.findIndex((rule) => rule.source === source);
-  assert.equal(rewrites[at('/en/:path*')]?.destination, '/en/app.html', 'English addresses without their own file get the English shell');
+  assert.ok(rewrites.some((rule) => /^\/en\/:first\(/.test(rule.source) && rule.destination === '/en/app.html'), 'English addresses without their own file get the English shell');
 }
 
 // If a build is present, hold the output to the same rule.

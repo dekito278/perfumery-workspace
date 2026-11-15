@@ -222,11 +222,11 @@
       "destination": "/articles/:slug/index.html"
     },
     {
-      "source": "/en/:path*",
+      "source": "/en/:first(about|accord|accords|articles|authenticator|batches|bespoke|cart|catalog|categories|chant-nocturne|checkout|customer|dashboard|formulas|help|home|hug|jaipong|journal|login|mobile|not-found|pay|payment|porte-vers-le-paradis|production-costing|products|raw-material|raw-material-audit|raw-materials|reset-password|studio|trace-daventure|track|track-order|validation|welcome)/:rest*",
       "destination": "/en/app.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/:first(about|accord|accords|articles|authenticator|batches|bespoke|cart|catalog|categories|chant-nocturne|checkout|customer|dashboard|formulas|help|home|hug|jaipong|journal|login|mobile|not-found|pay|payment|porte-vers-le-paradis|production-costing|products|raw-material|raw-material-audit|raw-materials|reset-password|studio|trace-daventure|track|track-order|validation|welcome)/:rest*",
       "destination": "/index.html"
     }
   ]
