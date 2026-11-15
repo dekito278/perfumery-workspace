@@ -373,7 +373,7 @@ const MobileDashboardPage = () => {
               <PriorityCard
                 icon={AlertTriangle}
                 label="Stok menipis"
-                title={`${lowStockProducts.length} product hampir habis`}
+                title={`${lowStockProducts.length} produk hampir habis`}
                 helper="Cek varian dan publish status"
                 tone={lowStockProducts.length ? 'rose' : 'emerald'}
                 onClick={() => navigate('/mobile/studio/products?filter=lowstock')}
@@ -397,9 +397,9 @@ const MobileDashboardPage = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <WorkflowButton icon={PackagePlus} label="Produk" helper="Tambah, daftar, kategori" tone="emerald" onClick={() => setProductMenuOpen(true)} />
-                <WorkflowTile icon={PackageCheck} label="Order" helper="Payment & fulfillment" tone="amber" to="/mobile/studio/orders" />
-                <WorkflowTile icon={PackageOpen} label="Pengiriman" helper="Packing & shipping" tone="emerald" to="/mobile/studio/fulfillment" />
-                <WorkflowTile icon={UsersRound} label="Customer" helper="Codes & repeat orders" tone="blue" to="/mobile/studio/customers" />
+                <WorkflowTile icon={PackageCheck} label="Order" helper="Pembayaran & pengiriman" tone="amber" to="/mobile/studio/orders" />
+                <WorkflowTile icon={PackageOpen} label="Pengiriman" helper="Kemas & kirim" tone="emerald" to="/mobile/studio/fulfillment" />
+                <WorkflowTile icon={UsersRound} label="Pelanggan" helper="Daftar pelanggan" tone="blue" to="/mobile/studio/customers" />
                 <WorkflowTile icon={WandSparkles} label="Bespoke" helper="Botol, cap, label" tone="rose" to="/mobile/studio/bespoke" />
                 <WorkflowTile icon={BadgePercent} label="Voucher" helper="Kode promo checkout" tone="amber" to="/mobile/studio/vouchers" />
               </div>
@@ -411,10 +411,10 @@ const MobileDashboardPage = () => {
                 <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/production-costing')}>Costing</Button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <WorkflowTile icon={Beaker} label="Formula" helper="Create or revise" tone="blue" to="/mobile/formulas" />
-                <WorkflowTile icon={Calculator} label="Batch" helper="Scale grams" to="/mobile/batches" />
-                <WorkflowTile icon={Factory} label="Biaya" helper="Bottle & bulk" tone="emerald" to="/mobile/production-costing" />
-                <WorkflowTile icon={NotebookPen} label="Validasi" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />
+                <WorkflowTile icon={Beaker} label="Formula" helper="Buat atau ubah" tone="blue" to="/mobile/formulas" />
+                <WorkflowTile icon={Calculator} label="Batch" helper="Hitung gram" to="/mobile/batches" />
+                <WorkflowTile icon={Factory} label="Biaya" helper="Botol & bahan" tone="emerald" to="/mobile/production-costing" />
+                <WorkflowTile icon={NotebookPen} label="Validasi" helper={`${actionNeededLogs.length} perlu tindakan`} tone="rose" to="/mobile/validation" />
               </div>
             </section>
 

@@ -148,6 +148,9 @@ const getNoteValue = (rows, label) => (
 
 
 
+// An order abroad: written by the English shop or by the export calculator, which both price it in US$.
+const isUsdOrder = (order) => order?.clientContext?.shop === 'en' || order?.paymentResponse?.currency === 'USD';
+
 const OrderDetailPage = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
@@ -673,10 +676,15 @@ const OrderDetailPage = () => {
             </Button>
             {/* Available whatever the payment status: an UNPAID invoice is what a buyer uploads to their
                 bank to make the transfer, which is the whole reason the status line exists on it. */}
-            <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={exportInvoice}>
-              <ReceiptText className="h-4 w-4" />
-              Invoice PDF
-            </Button>
+            {/* The export COMMERCIAL invoice: US$ lines, no perfume names, customs vial lines. On an Indonesian
+                order it printed nonsense and spent an invoice number (Studio audit, 15 Nov 2026), so it shows
+                on orders abroad only. */}
+            {isUsdOrder(order) ? (
+              <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={exportInvoice}>
+                <ReceiptText className="h-4 w-4" />
+                Invoice ekspor (USD)
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -916,7 +924,6 @@ const OrderDetailPage = () => {
                       <div className="mt-3 grid gap-2 text-xs font-semibold text-muted-foreground">
                         {event.previousStatus ? <div>Sebelumnya: <span className="text-[#1f2937]">{paymentProofStatusLabels[event.previousStatus] || event.previousStatus}</span></div> : null}
                         {event.fileName ? <div>File: <span className="text-[#1f2937]">{event.fileName}</span></div> : null}
-                        {event.filePath ? <div className="break-all">Path: <span className="text-[#1f2937]">{event.filePath}</span></div> : null}
                         {event.notes ? <div className="rounded-xl bg-white px-3 py-2 text-rose-700">Catatan: {event.notes}</div> : null}
                       </div>
                     </article>
@@ -952,9 +959,9 @@ const OrderDetailPage = () => {
                   <div className="mt-1 truncate text-lg font-bold">{order.paymentReference || '-'}</div>
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] p-4">
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Expired</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Batas bayar</div>
                   <div className="mt-1 text-lg font-bold">{formatDate(reservationExpiresAt || order.paymentExpiresAt)}</div>
-                  <p className="mt-1 text-xs font-semibold text-muted-foreground">Fallback TTL {PAYMENT_RESERVATION_TTL_HOURS} jam dari checkout jika DOKU tidak memberi expiry.</p>
+                  <p className="mt-1 text-xs font-semibold text-muted-foreground">Kalau tidak dibayar sampai jam ini, order batal sendiri dan stok kembali (bawaan {PAYMENT_RESERVATION_TTL_HOURS} jam dari checkout).</p>
                 </div>
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
@@ -1307,7 +1314,7 @@ const OrderDetailPage = () => {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-5 text-sm font-semibold leading-relaxed text-muted-foreground">
-                Belum ada callback DOKU untuk order ini. Kalau customer sudah bayar tapi status belum berubah, gunakan Sinkron DOKU atau cek webhook.
+                Belum ada kabar dari DOKU untuk order ini. Kalau pembeli sudah bayar tapi status belum berubah, tekan Sinkron DOKU.
               </div>
             )}
           </section>
