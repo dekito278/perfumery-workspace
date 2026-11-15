@@ -71,7 +71,7 @@ export const emptyProduct = {
   relatedFragrances: [],
   imageUrl: '',
   images: [],
-  featured: true,
+  featured: false,
   limited: false,
   reserve: false,
   testimonials: [],

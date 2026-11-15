@@ -68,7 +68,7 @@ export const emptyProduct = {
   batchSize: '',
   processImages: [],
   wear: {},
-  featured: true,
+  featured: false,
   limited: false,
   reserve: false,
   testimonials: [],

@@ -32,3 +32,17 @@ export const confirmAction = async (options) => {
   }
   return host({ ...request, message });
 };
+
+/**
+ * Cancelling an order is one dropdown pick away on four Studio screens, and it releases the stock and the
+ * voucher and closes the payment at once (orderService.updateOrderStatus). Studio audit, 15 Nov 2026: a
+ * slip of the thumb did all of that with no question. Every other status goes through untouched.
+ */
+export const confirmStatusChange = async (status) => (
+  status !== 'cancelled' || confirmAction({
+    title: 'Batalkan order ini?',
+    message: 'Stok dan voucher dikembalikan, dan pembeli tidak bisa membayar order ini lagi.',
+    confirmText: 'Batalkan order',
+    destructive: true,
+  })
+);

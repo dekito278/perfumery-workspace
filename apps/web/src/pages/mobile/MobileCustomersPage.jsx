@@ -56,8 +56,8 @@ const MobileCustomersPage = () => {
           <div role="alert" className="mobile-soft-card flex gap-2 border border-amber-300 bg-amber-50 p-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
             <p className="text-xs font-semibold text-amber-900">
-              Kolom tingkat pelanggan belum ada di database. Jalankan migrasi 20260913090000_customer_tiers_and_tier_prices.sql
-              dulu — sampai itu jalan semua pembeli dikenakan harga retail dan tingkat di sini tidak bisa diubah.
+              Harga member belum aktif (migrasi 20260913090000_customer_tiers_and_tier_prices.sql belum dijalankan), jadi
+              semua pembeli masih bayar harga retail dan tingkat di sini belum bisa diubah. Minta developer menjalankannya.
             </p>
           </div>
         ) : null}

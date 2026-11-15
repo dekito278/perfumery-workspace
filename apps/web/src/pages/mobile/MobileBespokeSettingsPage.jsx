@@ -115,14 +115,22 @@ const MobileBespokeSettingsPage = () => {
     if (saving) {
       return;
     }
+    // It resets ALL FIVE lists, photos and prices included — not just the one beside the button (Studio
+    // audit, 15 Nov 2026: one tap, no question).
+    if (!await confirmAction({
+      title: 'Kembalikan semua opsi bespoke ke bawaan?',
+      message: 'Semua ukuran, botol, tutup, label, dan bahan yang kamu ubah atau tambah akan dihapus, termasuk fotonya. Tidak bisa dibatalkan.',
+      confirmText: 'Hapus & kembalikan',
+      destructive: true,
+    })) return;
 
     setSaving(true);
     try {
       await resetBespokeSettings();
       resetForm();
-      toast.success('Bespoke settings dikembalikan ke default');
+      toast.success('Opsi bespoke dikembalikan ke bawaan');
     } catch (error) {
-      toast.error(error.message || 'Bespoke settings gagal direset');
+      toast.error(error.message || 'Opsi bespoke gagal dikembalikan');
     } finally {
       setSaving(false);
     }

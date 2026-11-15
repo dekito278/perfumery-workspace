@@ -36,7 +36,7 @@ const CustomersPage = () => {
             </div>
             <h1 className="text-3xl font-bold sm:text-4xl">Kode customer</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Setiap customer checkout dibuatkan kode unik. Saat order berikutnya, customer cukup masukkan kode seperti SOLI09232 agar data mereka terisi otomatis.
+              Daftar pembeli yang pernah order. Pembeli baru masuk dengan Google; kode SOLI hanya untuk pembeli lama yang sudah punya.
             </p>
           </div>
           <div className="dashboard-hero-panel">
@@ -49,15 +49,14 @@ const CustomersPage = () => {
         <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl font-bold">Customer</h2>
-            <span className="text-sm font-bold text-amber-700">Format kode: SOLIxxxxx</span>
+            <span className="text-sm font-bold text-amber-700">Kode SOLI lama</span>
           </div>
           {!tierSchemaReady ? (
             <div role="alert" className="mt-4 flex gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
               <p className="text-xs font-semibold text-amber-900">
-                Kolom tingkat pelanggan belum ada di database. Jalankan migrasi
-                <code className="mx-1 rounded bg-white/70 px-1">20260913090000_customer_tiers_and_tier_prices.sql</code>
-                dulu — sampai itu jalan, semua pembeli dikenakan harga retail dan tingkat di sini tidak bisa diubah.
+                Harga member belum aktif (migrasi 20260913090000_customer_tiers_and_tier_prices.sql belum dijalankan), jadi
+                semua pembeli masih bayar harga retail dan tingkat di sini belum bisa diubah. Minta developer menjalankannya.
               </p>
             </div>
           ) : null}

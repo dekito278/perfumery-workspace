@@ -26,7 +26,7 @@ const shipmentStatusLabels = {
   not_ready: 'Belum siap',
   packing: 'Dikemas',
   shipped: 'Dikirim',
-  delivered: 'Terkirim',
+  delivered: 'Sudah diterima',
 };
 
 const bespokeProductionStatusLabels = {
