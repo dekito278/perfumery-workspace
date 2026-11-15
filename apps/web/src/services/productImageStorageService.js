@@ -1,16 +1,13 @@
 import supabase from '@/lib/supabaseClient.js';
-import { getOptimizedStorageImageUrl } from '@/utils/storageImage.js';
+import { getOptimizedProductImageUrl as optimizedProductImageUrl, getProductImageSrcSet as productImageSrcSet } from '@/utils/productImageSrcSet.js';
 
+// The same name utils/productImageSrcSet.js holds (heroPhotoIsPreloaded checks the two agree).
 export const PRODUCT_IMAGES_BUCKET = 'storefront-product-images';
 const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
 const TARGET_IMAGE_SIZE_BYTES = 250 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
 const MIN_IMAGE_DIMENSION = 760;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const PRODUCT_STORAGE_PUBLIC_PATH = `/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/`;
-// 1080 for the product page on a 3x phone, whose ~350 CSS px frame wants ~1050 device pixels (sixth visitor
-// audit, 13 Nov 2026: the largest offered was 720w). Cards stay small: `sizes` picks the width per slot.
-const PRODUCT_IMAGE_WIDTHS = [240, 360, 520, 720, 1080];
 
 const canvasToBlob = (canvas, type, quality) => new Promise((resolve, reject) => {
   canvas.toBlob((blob) => {
@@ -30,27 +27,9 @@ const sanitizeName = (value) => String(value || 'product')
   .replace(/^-+|-+$/g, '')
   || 'product';
 
-// Kept as the product-facing name; the rewrite itself is bucket-agnostic and shared with site and
-// bespoke images (utils/storageImage.js).
-export const getOptimizedProductImageUrl = (imageUrl, width = 520) => getOptimizedStorageImageUrl(imageUrl, width);
-
-export const getProductImageSrcSet = (imageUrl) => {
-  const sourceUrl = String(imageUrl || '').trim();
-  if (!sourceUrl) return undefined;
-
-  try {
-    const url = new URL(sourceUrl);
-    if (!url.pathname.includes(PRODUCT_STORAGE_PUBLIC_PATH)) {
-      return undefined;
-    }
-  } catch {
-    return undefined;
-  }
-
-  return PRODUCT_IMAGE_WIDTHS
-    .map((width) => `${getOptimizedProductImageUrl(sourceUrl, width)} ${width}w`)
-    .join(', ');
-};
+// The srcset and the transform live in utils/productImageSrcSet.js, which the build shares (image preload).
+export const getOptimizedProductImageUrl = (imageUrl, width) => optimizedProductImageUrl(imageUrl, width);
+export const getProductImageSrcSet = (imageUrl) => productImageSrcSet(imageUrl);
 
 export const validateProductImageFile = (file) => {
   if (!file) {

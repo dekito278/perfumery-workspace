@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { PRODUCT_HERO_WIDTH } from '@/utils/productImageSrcSet.js';
 import { cn } from '@/lib/utils.js';
 import {
   getOptimizedProductImageUrl,
@@ -41,7 +42,7 @@ const ProductVisual = ({
   const [imageFailed, setImageFailed] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const imageUrl = String(product?.images?.[0] || product?.imageUrl || '').trim();
-  const optimizedImageUrl = getOptimizedProductImageUrl(imageUrl, priority ? 720 : 520);
+  const optimizedImageUrl = getOptimizedProductImageUrl(imageUrl, priority ? PRODUCT_HERO_WIDTH : 520);
   const imageSrcSet = getProductImageSrcSet(imageUrl);
   const hasImage = Boolean(imageUrl) && !imageFailed;
   const showSoldOut = showsSoldOutBadge(product, soldOut);
