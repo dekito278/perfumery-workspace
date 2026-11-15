@@ -57,7 +57,7 @@ const formatStatus = (value, t, fallback = '-') => {
 };
 
 const PublicTrackingPage = () => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const revealRef = useScrollReveal();
   const { code = '' } = useParams();
   const navigate = useNavigate();
@@ -249,7 +249,9 @@ const PublicTrackingPage = () => {
                 <p>{foundNothing ? t("track.checkNumber") : t("track.whereNumber")}</p>
                 {/* A number that finds nothing is often a typo or a lost payment page: a person can look it up
                     (visitor audit, 13 Nov 2026 — the page offered no way to ask). */}
-                {foundNothing ? <AskAtelierButton orderNumber={lookup.trim()} className="mt-4" /> : null}
+                {/* The English shop orders on WhatsApp (since #663), so most of its buyers have no number to type:
+                    the way to ask is right here, not only after a failed lookup (twelfth visitor audit). */}
+                {foundNothing || isInternational ? <AskAtelierButton orderNumber={lookup.trim()} className="mt-4" /> : null}
               </div>
             )}
             {error ? <p className="ng-notice ng-notice--error mt-4" role="alert">{error}</p> : null}

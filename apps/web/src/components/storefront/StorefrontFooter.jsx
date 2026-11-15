@@ -106,6 +106,8 @@ const StorefrontFooter = () => {
               </form>
             )}
             {error ? <p className="ng-error m-0 mt-2 text-sm" role="alert">{error}</p> : null}
+            {/* Said BEFORE the tap: typing an email and landing in WhatsApp was a surprise (twelfth visitor audit). */}
+            {subscribed ? null : <p className="m-0 mt-2 text-xs text-ng-dust">{t('nav.subscribeHow')}</p>}
           </div>
         </div>
 
