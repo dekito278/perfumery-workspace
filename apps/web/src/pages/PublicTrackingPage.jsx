@@ -136,130 +136,133 @@ const PublicTrackingPage = () => {
         <meta name="robots" content="noindex,follow" />
       </Helmet>
 
-      <main className="solivagant-editorial-home" ref={revealRef}>
+      <div className="solivagant-editorial-home" ref={revealRef}>
         <PublicHeader />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
 
-        <section className="ng-section !border-b-0 !pb-10 !pt-16 md:!pt-24">
-          <div className="mx-auto flex max-w-[720px] flex-col gap-5">
-          <p className="ng-eyebrow ng-mono m-0">{t("track.eyebrow")}</p>
-          <h1 className="ng-display ng-h1">{t("track.title")}</h1>
-          <p className="ng-lead">{t(describeOrderKey(order))}</p>
-          {/* The button appears because the SENTENCE asked for it, not because of a status picked by
-              hand: whichever lead this page opens with, if it says to message us, the way to do it is
-              right here rather than in the footer. */}
-          {invitesWhatsApp(t(describeOrderKey(order))) ? (
-            <AskAtelierButton orderNumber={order?.orderNumber} className="mt-4" />
-          ) : null}
-          </div>
-        </section>
+          <section className="ng-section !border-b-0 !pb-10 !pt-16 md:!pt-24">
+            <div className="mx-auto flex max-w-[720px] flex-col gap-5">
+            <p className="ng-eyebrow ng-mono m-0">{t("track.eyebrow")}</p>
+            <h1 className="ng-display ng-h1">{t("track.title")}</h1>
+            <p className="ng-lead">{t(describeOrderKey(order))}</p>
+            {/* The button appears because the SENTENCE asked for it, not because of a status picked by
+                hand: whichever lead this page opens with, if it says to message us, the way to do it is
+                right here rather than in the footer. */}
+            {invitesWhatsApp(t(describeOrderKey(order))) ? (
+              <AskAtelierButton orderNumber={order?.orderNumber} className="mt-4" />
+            ) : null}
+            </div>
+          </section>
 
-        <section className="tracking-content" data-reveal>
-          {/* Search form */}
-          <form className="tracking-search" onSubmit={submitLookup}>
-            <input
-              type="text"
-              value={lookup}
-              onChange={(event) => setLookup(event.target.value)}
-              placeholder={t("track.placeholderLong")}
-              aria-label={t("track.placeholderShort")}
-              autoCapitalize="characters"
-              spellCheck={false}
-              autoComplete="off"
-            />
-            <button type="submit" disabled={loading || !lookup.trim()}>
-              <Search className="h-4 w-4" />
-              {loading ? t("track.searching") : t('track.submit')}
-            </button>
-          </form>
+          <section className="tracking-content" data-reveal>
+            {/* Search form */}
+            <form className="tracking-search" onSubmit={submitLookup}>
+              <input
+                type="text"
+                value={lookup}
+                onChange={(event) => setLookup(event.target.value)}
+                placeholder={t("track.placeholderLong")}
+                aria-label={t("track.placeholderShort")}
+                autoCapitalize="characters"
+                spellCheck={false}
+                autoComplete="off"
+              />
+              <button type="submit" disabled={loading || !lookup.trim()}>
+                <Search className="h-4 w-4" />
+                {loading ? t("track.searching") : t('track.submit')}
+              </button>
+            </form>
 
-          {/* Timeline */}
-          <div className="tracking-card">
-            {order ? (
-              <>
-                <div className="tracking-card__header">
-                  <p className="editorial-eyebrow">{t("track.statusEyebrow")}</p>
-                  <h2>{order.orderNumber}</h2>
-                  <span className="tracking-card__customer">{order.customerName}</span>
-                </div>
-
-                {isCancelled ? (
-                  <div
-                    role="status"
-                    style={{ margin: '4px 0 16px', padding: '12px 16px', borderRadius: 16, border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', fontSize: 14, fontWeight: 500 }}
-                  >
-                    {t('track.cancelledNotice')}
-                    {invitesWhatsApp(t('track.cancelledNotice')) ? (
-                      <AskAtelierButton orderNumber={order.orderNumber} className="mt-3 w-full border-[#f0a090]/40 bg-transparent text-[#f0a090]" />
-                    ) : null}
+            {/* Timeline */}
+            <div className="tracking-card">
+              {order ? (
+                <>
+                  <div className="tracking-card__header">
+                    <p className="editorial-eyebrow">{t("track.statusEyebrow")}</p>
+                    <h2>{order.orderNumber}</h2>
+                    <span className="tracking-card__customer">{order.customerName}</span>
                   </div>
-                ) : null}
 
-                <ol className="tracking-timeline" aria-label={t("track.progress")} aria-hidden={isCancelled ? 'true' : undefined}>
-                  {steps.map((item, index) => (
-                    <li
-                      key={item.key}
-                      className={`tracking-step${index < completeCount ? ' is-complete' : ''}`}
-                      aria-current={index === completeCount - 1 ? 'step' : undefined}
+                  {isCancelled ? (
+                    <div
+                      role="status"
+                      style={{ margin: '4px 0 16px', padding: '12px 16px', borderRadius: 16, border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', fontSize: 14, fontWeight: 500 }}
                     >
-                      <span className="tracking-step__dot" aria-hidden="true" />
-                      <span className="tracking-step__label">{t(item.labelKey)}{index === completeCount - 1 ? t('track.current') : ''}</span>
-                    </li>
-                  ))}
-                </ol>
+                      {t('track.cancelledNotice')}
+                      {invitesWhatsApp(t('track.cancelledNotice')) ? (
+                        <AskAtelierButton orderNumber={order.orderNumber} className="mt-3 w-full border-[#f0a090]/40 bg-transparent text-[#f0a090]" />
+                      ) : null}
+                    </div>
+                  ) : null}
 
-                <div className="tracking-details">
-                  <div className="tracking-detail-row">
-                    <span>{t("track.statusTitle")}</span><strong>{formatStatus(order.status, t)}</strong>
+                  <ol className="tracking-timeline" aria-label={t("track.progress")} aria-hidden={isCancelled ? 'true' : undefined}>
+                    {steps.map((item, index) => (
+                      <li
+                        key={item.key}
+                        className={`tracking-step${index < completeCount ? ' is-complete' : ''}`}
+                        aria-current={index === completeCount - 1 ? 'step' : undefined}
+                      >
+                        <span className="tracking-step__dot" aria-hidden="true" />
+                        <span className="tracking-step__label">{t(item.labelKey)}{index === completeCount - 1 ? t('track.current') : ''}</span>
+                      </li>
+                    ))}
+                  </ol>
+
+                  <div className="tracking-details">
+                    <div className="tracking-detail-row">
+                      <span>{t("track.statusTitle")}</span><strong>{formatStatus(order.status, t)}</strong>
+                    </div>
+                    <div className="tracking-detail-row">
+                      <span>{t('track.payment')}</span><strong>{formatStatus(order.paymentStatus, t)}</strong>
+                    </div>
+                    <div className="tracking-detail-row">
+                      <span>{t('track.shipment')}</span><strong>{formatStatus(order.shipmentStatus, t, t('track.notShipped'))}</strong>
+                    </div>
+                    <div className="tracking-detail-row">
+                      <span>{t('track.itemCount')}</span><strong>{order.itemCount || '-'}</strong>
+                    </div>
+                    <div className="tracking-detail-row">
+                      <span>{t('track.created')}</span><strong>{order.createdAt ? formatDate(order.createdAt, t('fmt.dateLocale')) : '-'}</strong>
+                    </div>
+                    <div className="tracking-detail-row">
+                      <span>{t("track.lastUpdate")}</span><strong>{order.updatedAt ? formatDate(order.updatedAt, t('fmt.dateLocale')) : '-'}</strong>
+                    </div>
+                    <div className="tracking-detail-row">
+                      <span>{t('track.courier')}</span><strong>{order.courierName || t("track.notAvailable")}</strong>
+                    </div>
+                    <div className="tracking-detail-row">
+                      <span>{t("track.waybill")}</span><strong>{order.trackingNumber || t("track.notAvailable")}</strong>
+                    </div>
                   </div>
-                  <div className="tracking-detail-row">
-                    <span>{t('track.payment')}</span><strong>{formatStatus(order.paymentStatus, t)}</strong>
-                  </div>
-                  <div className="tracking-detail-row">
-                    <span>{t('track.shipment')}</span><strong>{formatStatus(order.shipmentStatus, t, t('track.notShipped'))}</strong>
-                  </div>
-                  <div className="tracking-detail-row">
-                    <span>{t('track.itemCount')}</span><strong>{order.itemCount || '-'}</strong>
-                  </div>
-                  <div className="tracking-detail-row">
-                    <span>{t('track.created')}</span><strong>{order.createdAt ? formatDate(order.createdAt, t('fmt.dateLocale')) : '-'}</strong>
-                  </div>
-                  <div className="tracking-detail-row">
-                    <span>{t("track.lastUpdate")}</span><strong>{order.updatedAt ? formatDate(order.updatedAt, t('fmt.dateLocale')) : '-'}</strong>
-                  </div>
-                  <div className="tracking-detail-row">
-                    <span>{t('track.courier')}</span><strong>{order.courierName || t("track.notAvailable")}</strong>
-                  </div>
-                  <div className="tracking-detail-row">
-                    <span>{t("track.waybill")}</span><strong>{order.trackingNumber || t("track.notAvailable")}</strong>
-                  </div>
+
+                  {courierUrl ? (
+                    <a href={courierUrl} target="_blank" rel="noreferrer" className="tracking-courier-link">
+                      {t('track.openCourier')} <ExternalLink className="h-4 w-4" />
+                    </a>
+                  ) : null}
+                </>
+              ) : (
+                <div className="tracking-card__empty">
+                  {/* foundNothing, not searched: a failed lookup falls back to the neutral prompt and
+                      lets the red line below carry what actually happened. */}
+                  <p className="editorial-eyebrow">{foundNothing ? t("track.notFoundEyebrow") : t("track.searchEyebrow")}</p>
+                  <h2>{foundNothing ? t("track.notFoundTitle") : t("track.enterNumber")}</h2>
+                  <p>{foundNothing ? t("track.checkNumber") : t("track.whereNumber")}</p>
+                  {/* A number that finds nothing is often a typo or a lost payment page: a person can look it up
+                      (visitor audit, 13 Nov 2026 — the page offered no way to ask). */}
+                  {/* The English shop orders on WhatsApp (since #663), so most of its buyers have no number to type:
+                      the way to ask is right here, not only after a failed lookup (twelfth visitor audit). */}
+                  {foundNothing || isInternational ? <AskAtelierButton orderNumber={lookup.trim()} className="mt-4" /> : null}
                 </div>
+              )}
+              {error ? <p className="ng-notice ng-notice--error mt-4" role="alert">{error}</p> : null}
+            </div>
+          </section>
 
-                {courierUrl ? (
-                  <a href={courierUrl} target="_blank" rel="noreferrer" className="tracking-courier-link">
-                    {t('track.openCourier')} <ExternalLink className="h-4 w-4" />
-                  </a>
-                ) : null}
-              </>
-            ) : (
-              <div className="tracking-card__empty">
-                {/* foundNothing, not searched: a failed lookup falls back to the neutral prompt and
-                    lets the red line below carry what actually happened. */}
-                <p className="editorial-eyebrow">{foundNothing ? t("track.notFoundEyebrow") : t("track.searchEyebrow")}</p>
-                <h2>{foundNothing ? t("track.notFoundTitle") : t("track.enterNumber")}</h2>
-                <p>{foundNothing ? t("track.checkNumber") : t("track.whereNumber")}</p>
-                {/* A number that finds nothing is often a typo or a lost payment page: a person can look it up
-                    (visitor audit, 13 Nov 2026 — the page offered no way to ask). */}
-                {/* The English shop orders on WhatsApp (since #663), so most of its buyers have no number to type:
-                    the way to ask is right here, not only after a failed lookup (twelfth visitor audit). */}
-                {foundNothing || isInternational ? <AskAtelierButton orderNumber={lookup.trim()} className="mt-4" /> : null}
-              </div>
-            )}
-            {error ? <p className="ng-notice ng-notice--error mt-4" role="alert">{error}</p> : null}
-          </div>
-        </section>
-
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };

@@ -194,183 +194,186 @@ const CatalogPage = () => {
         <script type="application/ld+json">{JSON.stringify(catalogBreadcrumb)}</script>
       </Helmet>
 
-      <main className="solivagant-editorial-home" ref={revealRef}>
+      <div className="solivagant-editorial-home" ref={revealRef}>
         {/* First, before the header: the redesign had put it after the header's links, so a keyboard reached
             it only after the stops it exists to skip (2026-11-02). */}
         <SkipToResults />
         <StaleCatalogNotice stale={fetchedProducts.stale && products.length > 0} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
 
-        {/* On a phone the title, the filters and the list share one screen: tighter here so the first perfume
-            is on it (it sat at y=880 of 844). Desktop keeps the canvas spacing. */}
-        <header className="ng-section !pb-8 !pt-8 md:!pb-14 md:!pt-24">
-          <div className="ng-container flex flex-wrap items-end justify-between gap-4 md:gap-8">
-            <div className="flex flex-col gap-5">
-              <p className="ng-eyebrow ng-mono m-0">{/* "19 KARYA" over a single search result read as a count of what is shown (fifth visitor
-                  audit, 13 Nov 2026): a narrowed list says how many of how many. */}
-                {!products.length ? t('catalog.ngEyebrowBare')
-                  : filteredProducts.length !== products.length ? t('catalog.ngEyebrowFiltered', { shown: filteredProducts.length, count: products.length })
-                    : t('catalog.ngEyebrow', { count: products.length })}</p>
-              <h1 className="ng-display ng-h1">{t('catalog.title')}</h1>
-            </div>
-            <p className="ng-lead max-w-[440px] !text-base">{t('catalog.ngLead')}</p>
-          </div>
-        </header>
-
-        <section className="ng-section ng-section--deep !py-5 md:!py-8" aria-label={t('catalog.ngFilters')}>
-          <div className="ng-container flex flex-col gap-4 md:gap-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              {/* One row that scrolls sideways on a phone, edge to edge, instead of three stacked rows. */}
-              <div className="-mx-[var(--ng-gutter)] flex w-[calc(100%+2*var(--ng-gutter))] shrink-0 gap-2.5 overflow-x-auto [&>*]:shrink-0 [&>*]:whitespace-nowrap px-[var(--ng-gutter)] md:mx-0 md:w-auto md:shrink md:flex-wrap md:overflow-visible md:px-0" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
-                {catalogCategories.map((category) => (
-                  <button
-                    key={category}
-                    type="button"
-                    aria-pressed={category === activeCategory}
-                    className="ng-chip ng-filter"
-                    disabled={!pillIsOffered(category, pillCounts[category])}
-                    onClick={() => setActiveCategory(category)}
-                  >
-                    {category === 'All' ? t('catalog.all') : category}
-                    {products.length ? <span className="ng-chip__count">{pillCounts[category] ?? 0}</span> : null}
-                  </button>
-                ))}
-                {/* Until the catalogue arrives the families are unknown; placeholders hold their room so the
-                    search field and the list do not jump when the real chips land. */}
-                {isLoading ? Array.from({ length: 5 }, (_, i) => <span key={i} aria-hidden="true" className="editorial-skel block h-11 w-28" />) : null}
+          {/* On a phone the title, the filters and the list share one screen: tighter here so the first perfume
+              is on it (it sat at y=880 of 844). Desktop keeps the canvas spacing. */}
+          <header className="ng-section !pb-8 !pt-8 md:!pb-14 md:!pt-24">
+            <div className="ng-container flex flex-wrap items-end justify-between gap-4 md:gap-8">
+              <div className="flex flex-col gap-5">
+                <p className="ng-eyebrow ng-mono m-0">{/* "19 KARYA" over a single search result read as a count of what is shown (fifth visitor
+                    audit, 13 Nov 2026): a narrowed list says how many of how many. */}
+                  {!products.length ? t('catalog.ngEyebrowBare')
+                    : filteredProducts.length !== products.length ? t('catalog.ngEyebrowFiltered', { shown: filteredProducts.length, count: products.length })
+                      : t('catalog.ngEyebrow', { count: products.length })}</p>
+                <h1 className="ng-display ng-h1">{t('catalog.title')}</h1>
               </div>
-              <input
-                type="search"
-                className="ng-field md:!w-[320px]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={t('catalog.searchPlaceholder')}
-                aria-label={t('catalog.searchLabel')}
-              />
+              <p className="ng-lead max-w-[440px] !text-base">{t('catalog.ngLead')}</p>
             </div>
-            {isLoading ? <span aria-hidden="true" className="editorial-skel block h-11 w-full max-w-[460px]" /> : <WearFilter products={products} selection={wearSelection} onChange={setWearSelection} />}
-          </div>
-        </section>
+          </header>
 
-        <section className="ng-section !pt-6 md:!pt-12" aria-label={t('catalog.ngResults')}>
-          <div className="ng-container">
-            {isLoading ? (
-              <div className="flex flex-col" aria-hidden="true">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="ng-cat-row">
-                    <span />
-                    <span className="editorial-skel block h-[90px] w-[72px]" />
-                    <span className="editorial-skel block h-8 w-2/3" />
-                  </div>
-                ))}
-              </div>
-            ) : filteredProducts.length ? (
-              <div className="flex flex-col" id="catalog-results" tabIndex={-1}>
-                <div className="ng-cat-row ng-cat-row--head ng-mono" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span>{t('home.ngColWork')}</span>
-                  <span className="ng-cat-row__notes">{t('home.ngColNotes')}</span>
-                  <span>{t('home.ngColPrice')}</span>
-                  <span />
+          <section className="ng-section ng-section--deep !py-5 md:!py-8" aria-label={t('catalog.ngFilters')}>
+            <div className="ng-container flex flex-col gap-4 md:gap-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                {/* One row that scrolls sideways on a phone, edge to edge, instead of three stacked rows. */}
+                <div className="-mx-[var(--ng-gutter)] flex w-[calc(100%+2*var(--ng-gutter))] shrink-0 gap-2.5 overflow-x-auto [&>*]:shrink-0 [&>*]:whitespace-nowrap px-[var(--ng-gutter)] md:mx-0 md:w-auto md:shrink md:flex-wrap md:overflow-visible md:px-0" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
+                  {catalogCategories.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      aria-pressed={category === activeCategory}
+                      className="ng-chip ng-filter"
+                      disabled={!pillIsOffered(category, pillCounts[category])}
+                      onClick={() => setActiveCategory(category)}
+                    >
+                      {category === 'All' ? t('catalog.all') : category}
+                      {products.length ? <span className="ng-chip__count">{pillCounts[category] ?? 0}</span> : null}
+                    </button>
+                  ))}
+                  {/* Until the catalogue arrives the families are unknown; placeholders hold their room so the
+                      search field and the list do not jump when the real chips land. */}
+                  {isLoading ? Array.from({ length: 5 }, (_, i) => <span key={i} aria-hidden="true" className="editorial-skel block h-11 w-28" />) : null}
                 </div>
-                {visibleProducts.map((product, index) => {
-                  const named = splitScriptName(product.name);
-                  const available = product.publicStatus === 'Available';
-                  return (
-                    <div key={product.slug || product.id} className="ng-cat-row">
-                      <span className="ng-cat-row__no ng-mono text-ng-ember">{String(index + 1).padStart(2, '0')}</span>
-                      {/* The photo and the name are the two links; the add button sits beside them, not
-                          inside an <a> — a button nested in a link is two controls a keyboard cannot
-                          tell apart, which is how the old card was built. */}
-                      <Link to={`/catalog/${product.slug}`} className="ng-cat-row__thumb" tabIndex={-1} aria-hidden="true">
-                        <ProductVisual
-                          product={product}
-                          className="h-full w-full"
-                          imageFit="cover"
-                          priority={index < 4}
-                          label={false}
-                          sizes="72px"
-                        />
-                      </Link>
-                      <Link to={`/catalog/${product.slug}`} className="ng-cat-row__name">
-                        {/* A heading per perfume, so a screen reader can move through the list by name (fifth
-                            visitor audit, 13 Nov 2026: 19 perfumes under one h1 and nothing else). */}
-                        <h2 className="m-0 font-ng-display text-[28px] font-normal leading-none [overflow-wrap:anywhere] md:text-[34px]">{named.name}</h2>
-                        <span className="ng-cat-row__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || t('catalog.cardFallbackLabel')}</span>
-                      </Link>
-                      {/* What it smells of, in three words. The field holds the full material list since
-                          2026-10-07 — far too long for a row — so this reuses the clamp the cart lines
-                          already use rather than inventing a second idea of how much is too much. */}
-                      <span className="ng-cat-row__notes text-[15px] leading-normal text-ng-dust">
-                        {shortNoteList(productCopyFor(product, region).notes, CARD_NOTE_LIMIT)}
-                      </span>
-                      <span className="ng-cat-row__price flex flex-col gap-1 text-base">
-                        <CardPrice product={product} />
-                      </span>
-                      <span className="ng-cat-row__act">
-                        {/* Quick-add in both shops since 2026-10-06. It once added the bottle at the
-                            DOMESTIC price into a cart the English shop could not open. The English cart
-                            now prices every line at its export price on read, so what the row adds is a
-                            line, not a price. */}
-                        <button
-                          type="button"
-                          className="ng-btn ng-btn--ghost !min-h-[44px] !px-4"
-                          onClick={(event) => handleQuickAdd(event, product)}
-                          aria-label={!available ? t('catalog.soldOutAria', { name: plainName(product.name) }) : t('catalog.addAria', { name: plainName(product.name) })}
-                          disabled={!available}
-                        >
-                          {!available ? (
-                            <>{t('catalog.soldOutShort')}</>
-                          ) : addedSlug === product.slug ? (
-                            <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('catalog.added')}</>
-                          ) : (
-                            <><Plus className="h-4 w-4" aria-hidden="true" /> {t('catalog.quickAdd')}</>
-                          )}
-                        </button>
-                      </span>
+                <input
+                  type="search"
+                  className="ng-field md:!w-[320px]"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={t('catalog.searchPlaceholder')}
+                  aria-label={t('catalog.searchLabel')}
+                />
+              </div>
+              {isLoading ? <span aria-hidden="true" className="editorial-skel block h-11 w-full max-w-[460px]" /> : <WearFilter products={products} selection={wearSelection} onChange={setWearSelection} />}
+            </div>
+          </section>
+
+          <section className="ng-section !pt-6 md:!pt-12" aria-label={t('catalog.ngResults')}>
+            <div className="ng-container">
+              {isLoading ? (
+                <div className="flex flex-col" aria-hidden="true">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="ng-cat-row">
+                      <span />
+                      <span className="editorial-skel block h-[90px] w-[72px]" />
+                      <span className="editorial-skel block h-8 w-2/3" />
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-start gap-5 py-14">
-                {/* Two different situations, two different messages: nothing matched the filter, or the
-                    catalogue itself did not load. Offering "Reset Katalog" for an outage sends the customer
-                    round a loop that cannot help them. */}
-                <p className="ng-mono m-0 text-ng-ash">{products.length ? t('catalog.noMatchEyebrow') : t('catalog.notLoadedEyebrow')}</p>
-                <h2 className="ng-display text-[36px] font-normal md:text-[44px]">
-                  {/* A typed search is not a filter (fresh buyer audit, 15 Nov 2026): say the words back. */}
-                  {products.length
-                    ? (searchTerm.trim() ? t('catalog.noMatchSearch', { term: searchTerm.trim() }) : t('catalog.noMatch'))
-                    : t('catalog.notLoaded')}
-                </h2>
-                {products.length ? (
-                  <button type="button" className="ng-btn" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
-                    {searchTerm.trim() ? t('catalog.clearSearch') : t('catalog.resetCatalog')}
-                  </button>
-                ) : (
-                  <button type="button" className="ng-btn" onClick={() => window.location.reload()}>
-                    {t('catalog.reload')}
-                  </button>
-                )}
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : filteredProducts.length ? (
+                <div className="flex flex-col" id="catalog-results" tabIndex={-1}>
+                  <div className="ng-cat-row ng-cat-row--head ng-mono" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span>{t('home.ngColWork')}</span>
+                    <span className="ng-cat-row__notes">{t('home.ngColNotes')}</span>
+                    <span>{t('home.ngColPrice')}</span>
+                    <span />
+                  </div>
+                  {visibleProducts.map((product, index) => {
+                    const named = splitScriptName(product.name);
+                    const available = product.publicStatus === 'Available';
+                    return (
+                      <div key={product.slug || product.id} className="ng-cat-row">
+                        <span className="ng-cat-row__no ng-mono text-ng-ember">{String(index + 1).padStart(2, '0')}</span>
+                        {/* The photo and the name are the two links; the add button sits beside them, not
+                            inside an <a> — a button nested in a link is two controls a keyboard cannot
+                            tell apart, which is how the old card was built. */}
+                        <Link to={`/catalog/${product.slug}`} className="ng-cat-row__thumb" tabIndex={-1} aria-hidden="true">
+                          <ProductVisual
+                            product={product}
+                            className="h-full w-full"
+                            imageFit="cover"
+                            priority={index < 4}
+                            label={false}
+                            sizes="72px"
+                          />
+                        </Link>
+                        <Link to={`/catalog/${product.slug}`} className="ng-cat-row__name">
+                          {/* A heading per perfume, so a screen reader can move through the list by name (fifth
+                              visitor audit, 13 Nov 2026: 19 perfumes under one h1 and nothing else). */}
+                          <h2 className="m-0 font-ng-display text-[28px] font-normal leading-none [overflow-wrap:anywhere] md:text-[34px]">{named.name}</h2>
+                          <span className="ng-cat-row__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || t('catalog.cardFallbackLabel')}</span>
+                        </Link>
+                        {/* What it smells of, in three words. The field holds the full material list since
+                            2026-10-07 — far too long for a row — so this reuses the clamp the cart lines
+                            already use rather than inventing a second idea of how much is too much. */}
+                        <span className="ng-cat-row__notes text-[15px] leading-normal text-ng-dust">
+                          {shortNoteList(productCopyFor(product, region).notes, CARD_NOTE_LIMIT)}
+                        </span>
+                        <span className="ng-cat-row__price flex flex-col gap-1 text-base">
+                          <CardPrice product={product} />
+                        </span>
+                        <span className="ng-cat-row__act">
+                          {/* Quick-add in both shops since 2026-10-06. It once added the bottle at the
+                              DOMESTIC price into a cart the English shop could not open. The English cart
+                              now prices every line at its export price on read, so what the row adds is a
+                              line, not a price. */}
+                          <button
+                            type="button"
+                            className="ng-btn ng-btn--ghost !min-h-[44px] !px-4"
+                            onClick={(event) => handleQuickAdd(event, product)}
+                            aria-label={!available ? t('catalog.soldOutAria', { name: plainName(product.name) }) : t('catalog.addAria', { name: plainName(product.name) })}
+                            disabled={!available}
+                          >
+                            {!available ? (
+                              <>{t('catalog.soldOutShort')}</>
+                            ) : addedSlug === product.slug ? (
+                              <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('catalog.added')}</>
+                            ) : (
+                              <><Plus className="h-4 w-4" aria-hidden="true" /> {t('catalog.quickAdd')}</>
+                            )}
+                          </button>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-start gap-5 py-14">
+                  {/* Two different situations, two different messages: nothing matched the filter, or the
+                      catalogue itself did not load. Offering "Reset Katalog" for an outage sends the customer
+                      round a loop that cannot help them. */}
+                  <p className="ng-mono m-0 text-ng-ash">{products.length ? t('catalog.noMatchEyebrow') : t('catalog.notLoadedEyebrow')}</p>
+                  <h2 className="ng-display text-[36px] font-normal md:text-[44px]">
+                    {/* A typed search is not a filter (fresh buyer audit, 15 Nov 2026): say the words back. */}
+                    {products.length
+                      ? (searchTerm.trim() ? t('catalog.noMatchSearch', { term: searchTerm.trim() }) : t('catalog.noMatch'))
+                      : t('catalog.notLoaded')}
+                  </h2>
+                  {products.length ? (
+                    <button type="button" className="ng-btn" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
+                      {searchTerm.trim() ? t('catalog.clearSearch') : t('catalog.resetCatalog')}
+                    </button>
+                  ) : (
+                    <button type="button" className="ng-btn" onClick={() => window.location.reload()}>
+                      {t('catalog.reload')}
+                    </button>
+                  )}
+                </div>
+              )}
 
-            {visibleProducts.length < filteredProducts.length ? (
-              <div className="mt-12 flex flex-wrap items-center gap-6">
-                <button type="button" className="ng-btn ng-btn--ghost" onClick={() => setVisibleCount((c) => c + CATALOG_PAGE_SIZE)}>
-                  {t('catalog.showMore')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <span className="ng-mono text-ng-ash">{t('catalog.shownOf', { shown: visibleProducts.length, total: filteredProducts.length })}</span>
-              </div>
-            ) : null}
-          </div>
-        </section>
+              {visibleProducts.length < filteredProducts.length ? (
+                <div className="mt-12 flex flex-wrap items-center gap-6">
+                  <button type="button" className="ng-btn ng-btn--ghost" onClick={() => setVisibleCount((c) => c + CATALOG_PAGE_SIZE)}>
+                    {t('catalog.showMore')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <span className="ng-mono text-ng-ash">{t('catalog.shownOf', { shown: visibleProducts.length, total: filteredProducts.length })}</span>
+                </div>
+              ) : null}
+            </div>
+          </section>
 
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };

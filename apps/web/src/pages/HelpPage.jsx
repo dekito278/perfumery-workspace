@@ -127,15 +127,18 @@ const HelpPage = () => {
         <meta name="description" content={t('help.meta')} />
         <link rel="canonical" href={shopCanonicalUrl('/help', region)} />
       </Helmet>
-      <main className="solivagant-editorial-home">
+      <div className="solivagant-editorial-home">
         <PublicHeader />
-        <section className="tracking-content !pt-16">
-          <div className="tracking-card">
-            <HelpContent />
-          </div>
-        </section>
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
+          <section className="tracking-content !pt-16">
+            <div className="tracking-card">
+              <HelpContent />
+            </div>
+          </section>
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };

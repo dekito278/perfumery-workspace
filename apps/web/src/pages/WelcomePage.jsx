@@ -87,16 +87,19 @@ const WelcomePage = () => {
   return (
     <>
       {head}
-      <main className="solivagant-editorial-home" ref={revealRef}>
+      <div className="solivagant-editorial-home" ref={revealRef}>
         <PublicHeader />
-        <section className="tracking-content !pt-16">
-          <div className="tracking-card">
-            <WelcomeContent currentUser={currentUser} signIn={signIn} />
-          </div>
-        </section>
-        <WhyBuyDirect />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
+          <section className="tracking-content !pt-16">
+            <div className="tracking-card">
+              <WelcomeContent currentUser={currentUser} signIn={signIn} />
+            </div>
+          </section>
+          <WhyBuyDirect />
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };

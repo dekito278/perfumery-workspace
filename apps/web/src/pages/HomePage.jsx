@@ -113,254 +113,257 @@ const HomePage = () => {
         <script type="application/ld+json">{JSON.stringify(buildWebSiteJsonLd(siteOrigin, region))}</script>
       </Helmet>
 
-      <main className="solivagant-editorial-home" ref={revealRef}>
+      <div className="solivagant-editorial-home" ref={revealRef}>
         <StaleCatalogNotice stale={fetchedProducts.stale} empty={!fetchedProducts.length} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
 
-        {/* ── Hero ── */}
-        <header className="ng-hero">
-          {/* No photograph until the upload list settles: the bundled fallback is a different
-              picture, so seeding with it flashed the old hero on every first paint. */}
-          {siteImagesLoading ? null : (
-            <picture>
-              <source media="(max-width: 767px)" srcSet={srcSet(siteImages['home-hero'], PHONE_HERO_WIDTHS)} sizes="100vw" />
-              <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-hero']) || FALLBACK_LIBRARY_SRCSET} sizes="100vw" alt="" className="ng-hero__image" />
-            </picture>
-          )}
-          <div className="ng-hero__shade" aria-hidden="true" />
-          <div className="ng-ring" aria-hidden="true">
-            <svg viewBox="0 0 320 320" className="ng-ring__svg">
-              <defs><path id="ng-ring-path" d="M160,160 m-132,0 a132,132 0 1,1 264,0 a132,132 0 1,1 -264,0" /></defs>
-              <circle cx="160" cy="160" r="108" fill="none" stroke="rgba(237,230,214,0.18)" strokeWidth="1" />
-              <circle cx="160" cy="160" r="4" fill="#D4573A" />
-              {/* Once round the circle, fitted to it: written twice it overran the 829 px path in Indonesian
-                  and the ring read "DIRDIRAKIT TANGAN" where the start of the second copy met the first
-                  (eighth visitor audit, 13 Nov 2026). textLength = 2 x pi x 132. */}
-              <text className="ng-ring__text"><textPath href="#ng-ring-path" textLength="829" lengthAdjust="spacing">{t('home.ngRing')}</textPath></text>
-            </svg>
-          </div>
-
-          <div className="ng-hero__body">
-            <p className="ng-eyebrow ng-mono">{t('home.eyebrow')}</p>
-            <h1 className="ng-display ng-hero__title">
-              {t('home.ngTitle').split('\n').map((line, index) => (
-                index ? <em key={line}><br />{line}</em> : <React.Fragment key={line}>{line}</React.Fragment>
-              ))}
-            </h1>
-            <p className="ng-lead">{t('home.ngLead')}</p>
-            {/* The one line that says why to buy here rather than on a marketplace. */}
-            <p className="ng-hero__note">{t('home.note')}</p>
-            <div className="flex flex-wrap items-center gap-3.5">
-              <Link to="/catalog" className="ng-btn">
-                {t('home.seeCollection')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-              <Link to="/customer" className="ng-btn ng-btn--ghost">
-                {t(currentUser ? 'nav.account' : 'nav.accountSub')}
-              </Link>
+          {/* ── Hero ── */}
+          <header className="ng-hero">
+            {/* No photograph until the upload list settles: the bundled fallback is a different
+                picture, so seeding with it flashed the old hero on every first paint. */}
+            {siteImagesLoading ? null : (
+              <picture>
+                <source media="(max-width: 767px)" srcSet={srcSet(siteImages['home-hero'], PHONE_HERO_WIDTHS)} sizes="100vw" />
+                <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-hero']) || FALLBACK_LIBRARY_SRCSET} sizes="100vw" alt="" className="ng-hero__image" />
+              </picture>
+            )}
+            <div className="ng-hero__shade" aria-hidden="true" />
+            <div className="ng-ring" aria-hidden="true">
+              <svg viewBox="0 0 320 320" className="ng-ring__svg">
+                <defs><path id="ng-ring-path" d="M160,160 m-132,0 a132,132 0 1,1 264,0 a132,132 0 1,1 -264,0" /></defs>
+                <circle cx="160" cy="160" r="108" fill="none" stroke="rgba(237,230,214,0.18)" strokeWidth="1" />
+                <circle cx="160" cy="160" r="4" fill="#D4573A" />
+                {/* Once round the circle, fitted to it: written twice it overran the 829 px path in Indonesian
+                    and the ring read "DIRDIRAKIT TANGAN" where the start of the second copy met the first
+                    (eighth visitor audit, 13 Nov 2026). textLength = 2 x pi x 132. */}
+                <text className="ng-ring__text"><textPath href="#ng-ring-path" textLength="829" lengthAdjust="spacing">{t('home.ngRing')}</textPath></text>
+              </svg>
             </div>
-          </div>
-          <p className="ng-hero__scroll ng-mono" aria-hidden="true">
-            <span>{t('home.ngScroll')}</span>
-            <svg width="14" height="24" viewBox="0 0 14 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M7 1v21M1 16l6 6 6-6" /></svg>
-          </p>
-        </header>
 
-        {/* ── The first bottle of the curated set, set large ── */}
-        {featured ? (
-          <section className="ng-section" aria-labelledby="home-featured-title" data-reveal>
-            {/* grid-cols-1 on a phone: without a template the one column grew to its widest child and the
-                block ran 11px past a 360px screen, cutting off "Maskumambang" and its price (fourth visitor
-                audit, 13 Nov 2026) — the same fault the product page had (phoneLayout.selfcheck.mjs). */}
-            <div className="ng-container grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-[72px]">
-              <Link to={`/catalog/${featured.slug}`} className="relative block min-w-0" tabIndex={-1} aria-hidden="true">
-                <ProductVisual product={featured} label={false} imageFit="cover" priority className="aspect-[4/5] w-full" sizes="(max-width: 767px) 100vw, 640px" />
-                {featuredName.script ? (
-                  <span className="ng-script-mark absolute left-6 top-5 text-[96px] md:text-[120px]">{featuredName.script}</span>
-                ) : null}
-              </Link>
-              <div className="flex min-w-0 flex-col gap-7">
-                <p className="ng-mono m-0 text-ng-ember">{t('home.ngFeatNo', { family: familyLine(featured) })}</p>
-                <div>
-                  <h2 id="home-featured-title" className="ng-display text-[clamp(38px,12vw,56px)] font-normal [overflow-wrap:anywhere] md:text-[clamp(44px,6.5vw,84px)]">{featuredName.name}</h2>
-                  {featuredName.script ? <p className="m-0 mt-2.5 font-ng-java text-[28px] text-ng-ash">{featuredName.script}</p> : null}
-                </div>
-                {/* The product's words in the shop's language: /en/home read "Dari seri Macapat." over an English
-                    description that said "From the Macapat series." (2026-11-02). */}
-                {firstParagraph(productCopyFor(featured, region).description) ? (
-                  <p className="m-0 max-w-[520px] font-ng-display text-[22px] italic leading-snug text-ng-sand md:text-[26px]">{firstParagraph(productCopyFor(featured, region).description)}</p>
-                ) : null}
-                <dl className="m-0 flex flex-col border-t border-ng-bone/15">
-                  {shortNoteList(productCopyFor(featured, region).notes, HOME_CARD_NOTE_LIMIT) ? (
-                    <div className="flex justify-between gap-6 border-b border-ng-bone/15 py-3.5 text-[15px]">
-                      <dt className="ng-mono text-ng-ash">{t('home.ngFeatNotes')}</dt>
-                      <dd className="m-0 text-right text-ng-sand">{shortNoteList(productCopyFor(featured, region).notes, HOME_CARD_NOTE_LIMIT)}</dd>
-                    </div>
+            <div className="ng-hero__body">
+              <p className="ng-eyebrow ng-mono">{t('home.eyebrow')}</p>
+              <h1 className="ng-display ng-hero__title">
+                {t('home.ngTitle').split('\n').map((line, index) => (
+                  index ? <em key={line}><br />{line}</em> : <React.Fragment key={line}>{line}</React.Fragment>
+                ))}
+              </h1>
+              <p className="ng-lead">{t('home.ngLead')}</p>
+              {/* The one line that says why to buy here rather than on a marketplace. */}
+              <p className="ng-hero__note">{t('home.note')}</p>
+              <div className="flex flex-wrap items-center gap-3.5">
+                <Link to="/catalog" className="ng-btn">
+                  {t('home.seeCollection')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                <Link to="/customer" className="ng-btn ng-btn--ghost">
+                  {t(currentUser ? 'nav.account' : 'nav.accountSub')}
+                </Link>
+              </div>
+            </div>
+            <p className="ng-hero__scroll ng-mono" aria-hidden="true">
+              <span>{t('home.ngScroll')}</span>
+              <svg width="14" height="24" viewBox="0 0 14 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M7 1v21M1 16l6 6 6-6" /></svg>
+            </p>
+          </header>
+
+          {/* ── The first bottle of the curated set, set large ── */}
+          {featured ? (
+            <section className="ng-section" aria-labelledby="home-featured-title" data-reveal>
+              {/* grid-cols-1 on a phone: without a template the one column grew to its widest child and the
+                  block ran 11px past a 360px screen, cutting off "Maskumambang" and its price (fourth visitor
+                  audit, 13 Nov 2026) — the same fault the product page had (phoneLayout.selfcheck.mjs). */}
+              <div className="ng-container grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-[72px]">
+                <Link to={`/catalog/${featured.slug}`} className="relative block min-w-0" tabIndex={-1} aria-hidden="true">
+                  <ProductVisual product={featured} label={false} imageFit="cover" priority className="aspect-[4/5] w-full" sizes="(max-width: 767px) 100vw, 640px" />
+                  {featuredName.script ? (
+                    <span className="ng-script-mark absolute left-6 top-5 text-[96px] md:text-[120px]">{featuredName.script}</span>
                   ) : null}
-                  {featured.size ? (
-                    <div className="flex justify-between gap-6 border-b border-ng-bone/15 py-3.5 text-[15px]">
-                      <dt className="ng-mono text-ng-ash">{t('home.ngFeatSize')}</dt>
-                      <dd className="m-0 text-right text-ng-sand">{featured.size}</dd>
-                    </div>
-                  ) : null}
-                  <div className="flex justify-between gap-6 border-b border-ng-bone/15 py-3.5 text-[15px]">
-                    <dt className="ng-mono text-ng-ash">{t('home.ngFeatPrice')}</dt>
-                    <dd className="m-0 flex flex-col items-end gap-1 text-right">
-                      <CardPrice product={featured} />
-                    </dd>
+                </Link>
+                <div className="flex min-w-0 flex-col gap-7">
+                  <p className="ng-mono m-0 text-ng-ember">{t('home.ngFeatNo', { family: familyLine(featured) })}</p>
+                  <div>
+                    <h2 id="home-featured-title" className="ng-display text-[clamp(38px,12vw,56px)] font-normal [overflow-wrap:anywhere] md:text-[clamp(44px,6.5vw,84px)]">{featuredName.name}</h2>
+                    {featuredName.script ? <p className="m-0 mt-2.5 font-ng-java text-[28px] text-ng-ash">{featuredName.script}</p> : null}
                   </div>
-                </dl>
-                <div className="flex flex-wrap gap-3.5">
-                  <Link to={`/catalog/${featured.slug}`} className="ng-btn">{t('home.ngFeatCta')}</Link>
+                  {/* The product's words in the shop's language: /en/home read "Dari seri Macapat." over an English
+                      description that said "From the Macapat series." (2026-11-02). */}
+                  {firstParagraph(productCopyFor(featured, region).description) ? (
+                    <p className="m-0 max-w-[520px] font-ng-display text-[22px] italic leading-snug text-ng-sand md:text-[26px]">{firstParagraph(productCopyFor(featured, region).description)}</p>
+                  ) : null}
+                  <dl className="m-0 flex flex-col border-t border-ng-bone/15">
+                    {shortNoteList(productCopyFor(featured, region).notes, HOME_CARD_NOTE_LIMIT) ? (
+                      <div className="flex justify-between gap-6 border-b border-ng-bone/15 py-3.5 text-[15px]">
+                        <dt className="ng-mono text-ng-ash">{t('home.ngFeatNotes')}</dt>
+                        <dd className="m-0 text-right text-ng-sand">{shortNoteList(productCopyFor(featured, region).notes, HOME_CARD_NOTE_LIMIT)}</dd>
+                      </div>
+                    ) : null}
+                    {featured.size ? (
+                      <div className="flex justify-between gap-6 border-b border-ng-bone/15 py-3.5 text-[15px]">
+                        <dt className="ng-mono text-ng-ash">{t('home.ngFeatSize')}</dt>
+                        <dd className="m-0 text-right text-ng-sand">{featured.size}</dd>
+                      </div>
+                    ) : null}
+                    <div className="flex justify-between gap-6 border-b border-ng-bone/15 py-3.5 text-[15px]">
+                      <dt className="ng-mono text-ng-ash">{t('home.ngFeatPrice')}</dt>
+                      <dd className="m-0 flex flex-col items-end gap-1 text-right">
+                        <CardPrice product={featured} />
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="flex flex-wrap gap-3.5">
+                    <Link to={`/catalog/${featured.slug}`} className="ng-btn">{t('home.ngFeatCta')}</Link>
+                  </div>
                 </div>
               </div>
+            </section>
+          ) : null}
+
+          {/* ── The curated set, as a numbered list ── */}
+          <section className="ng-section" aria-labelledby="home-table-title" data-reveal>
+            <div className="ng-container flex flex-col gap-12">
+              <div className="flex flex-wrap items-end justify-between gap-6">
+                <div className="flex flex-col gap-3.5">
+                  <p className="ng-mono m-0 text-ng-ash">{collectionProducts.length ? t('home.ngTableEyebrow', { count: collectionProducts.length }) : t('home.ngTableEyebrowBare')}</p>
+                  <h2 id="home-table-title" className="ng-display ng-h2">{t('home.ngTableTitle')} <em>{t('home.ngTableTitleEm')}</em></h2>
+                </div>
+                <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-3">
+                  {t('home.seeAll')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+              {collectionProducts.length ? (
+                <div className="flex flex-col">
+                  <div className="ng-row ng-row--head ng-mono" aria-hidden="true">
+                    <span />
+                    <span>{t('home.ngColWork')}</span>
+                    <span className="ng-row__notes">{t('home.ngColNotes')}</span>
+                    <span className="ng-row__size">{t('home.ngColSize')}</span>
+                    <span>{t('home.ngColPrice')}</span>
+                    <span />
+                  </div>
+                  {collectionProducts.map((product, index) => {
+                    const named = splitScriptName(product.name);
+                    return (
+                      <Link key={product.slug || product.id} to={`/catalog/${product.slug}`} className="ng-row">
+                        <span className="ng-mono text-ng-ember">{String(index + 1).padStart(2, '0')}</span>
+                        <span className="flex flex-col gap-1.5">
+                          <span className="font-ng-display text-[28px] leading-none [overflow-wrap:anywhere] md:text-[36px]">{named.name}</span>
+                          <span className="ng-mono text-ng-ash">{familyLine(product)}</span>
+                        </span>
+                        {/* What it smells of, on the first list a visitor ever sees — same helper and the
+                            same three notes as the catalogue, so the two cannot drift apart. */}
+                        <span className="ng-row__notes text-[15px] leading-normal text-ng-dust">{shortNoteList(productCopyFor(product, region).notes, HOME_CARD_NOTE_LIMIT)}</span>
+                        <span className="ng-row__size ng-mono text-ng-dust">{product.size}</span>
+                        <span className="ng-row__price flex flex-col gap-1 text-[15px]">
+                          {(product.price || product.priceNumber) ? (
+                            <CardPrice product={product} />
+                          ) : null}
+                        </span>
+                        <ArrowRight className="ng-row__arrow h-4 w-4 opacity-60" aria-hidden="true" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : fetchedProducts.loading ? (
+                <span aria-hidden="true" className="editorial-skel block h-40 w-full" />
+              ) : (
+                // "A new collection is being prepared" is a promise; after a failed fetch it was a false one.
+                <p className="m-0 text-ng-dust">{t(fetchedProducts.stale ? 'catalog.notLoaded' : 'home.emptyCollection')}</p>
+              )}
             </div>
           </section>
-        ) : null}
 
-        {/* ── The curated set, as a numbered list ── */}
-        <section className="ng-section" aria-labelledby="home-table-title" data-reveal>
-          <div className="ng-container flex flex-col gap-12">
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <div className="flex flex-col gap-3.5">
-                <p className="ng-mono m-0 text-ng-ash">{collectionProducts.length ? t('home.ngTableEyebrow', { count: collectionProducts.length }) : t('home.ngTableEyebrowBare')}</p>
-                <h2 id="home-table-title" className="ng-display ng-h2">{t('home.ngTableTitle')} <em>{t('home.ngTableTitleEm')}</em></h2>
-              </div>
-              <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-3">
-                {t('home.seeAll')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </div>
-            {collectionProducts.length ? (
-              <div className="flex flex-col">
-                <div className="ng-row ng-row--head ng-mono" aria-hidden="true">
-                  <span />
-                  <span>{t('home.ngColWork')}</span>
-                  <span className="ng-row__notes">{t('home.ngColNotes')}</span>
-                  <span className="ng-row__size">{t('home.ngColSize')}</span>
-                  <span>{t('home.ngColPrice')}</span>
-                  <span />
+          {/* ── Material notes from the journal ── */}
+          {publishedArticles.length ? (
+            <section className="ng-section ng-section--deep" aria-labelledby="home-spec-title" data-reveal>
+              <div className="ng-container flex flex-col gap-14">
+                <div className="grid items-end gap-6 md:grid-cols-2 md:gap-12">
+                  <div className="flex flex-col gap-3.5">
+                    <p className="ng-mono m-0 text-ng-ash">{t('home.ngSpecEyebrow')}</p>
+                    <h2 id="home-spec-title" className="ng-display ng-h2">{t('home.ngSpecTitle')} <em>{t('home.ngSpecTitleEm')}</em></h2>
+                  </div>
+                  <div className="flex flex-col gap-3 md:justify-self-end">
+                    <p className="ng-lead m-0">{t('home.ngSpecLead')}</p>
+                    {/* The notes below are Indonesian; the journal says so, and so must the home page that links to them. */}
+                    {isInternational ? <p className="m-0 text-sm text-ng-dust">{t('journal.indonesianOnly')}</p> : null}
+                  </div>
                 </div>
-                {collectionProducts.map((product, index) => {
-                  const named = splitScriptName(product.name);
-                  return (
-                    <Link key={product.slug || product.id} to={`/catalog/${product.slug}`} className="ng-row">
-                      <span className="ng-mono text-ng-ember">{String(index + 1).padStart(2, '0')}</span>
-                      <span className="flex flex-col gap-1.5">
-                        <span className="font-ng-display text-[28px] leading-none [overflow-wrap:anywhere] md:text-[36px]">{named.name}</span>
-                        <span className="ng-mono text-ng-ash">{familyLine(product)}</span>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  {publishedArticles.map((article, index) => (
+                    <Link key={article.id} to={getJournalPublicPath(article)} className="ng-specimen">
+                      <span className="ng-mono flex justify-between gap-4 text-ng-ash">
+                        <span className="text-ng-ember">{t('home.ngSpecLabel', { number: String(index + 1).padStart(2, '0') })}</span>
+                        <span>{getJournalCategoryShopLabel(article.category, t)}</span>
                       </span>
-                      {/* What it smells of, on the first list a visitor ever sees — same helper and the
-                          same three notes as the catalogue, so the two cannot drift apart. */}
-                      <span className="ng-row__notes text-[15px] leading-normal text-ng-dust">{shortNoteList(productCopyFor(product, region).notes, HOME_CARD_NOTE_LIMIT)}</span>
-                      <span className="ng-row__size ng-mono text-ng-dust">{product.size}</span>
-                      <span className="ng-row__price flex flex-col gap-1 text-[15px]">
-                        {(product.price || product.priceNumber) ? (
-                          <CardPrice product={product} />
-                        ) : null}
-                      </span>
-                      <ArrowRight className="ng-row__arrow h-4 w-4 opacity-60" aria-hidden="true" />
+                      <span lang="id" className="font-ng-display text-[32px] leading-[1.05]">{article.title}</span>
+                      <span lang="id" className="text-[15px] leading-relaxed text-ng-dust">{getArticleExcerpt(article)}</span>
+                      <span className="ng-mono mt-auto">{t('home.ngSpecRead')}</span>
                     </Link>
-                  );
-                })}
+                  ))}
+                </div>
+                <Link to="/journal" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-3 self-start">
+                  {t('home.readJournal')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
               </div>
-            ) : fetchedProducts.loading ? (
-              <span aria-hidden="true" className="editorial-skel block h-40 w-full" />
-            ) : (
-              // "A new collection is being prepared" is a promise; after a failed fetch it was a false one.
-              <p className="m-0 text-ng-dust">{t(fetchedProducts.stale ? 'catalog.notLoaded' : 'home.emptyCollection')}</p>
-            )}
-          </div>
-        </section>
+            </section>
+          ) : null}
 
-        {/* ── Material notes from the journal ── */}
-        {publishedArticles.length ? (
-          <section className="ng-section ng-section--deep" aria-labelledby="home-spec-title" data-reveal>
-            <div className="ng-container flex flex-col gap-14">
-              <div className="grid items-end gap-6 md:grid-cols-2 md:gap-12">
-                <div className="flex flex-col gap-3.5">
-                  <p className="ng-mono m-0 text-ng-ash">{t('home.ngSpecEyebrow')}</p>
-                  <h2 id="home-spec-title" className="ng-display ng-h2">{t('home.ngSpecTitle')} <em>{t('home.ngSpecTitleEm')}</em></h2>
-                </div>
-                <div className="flex flex-col gap-3 md:justify-self-end">
-                  <p className="ng-lead m-0">{t('home.ngSpecLead')}</p>
-                  {/* The notes below are Indonesian; the journal says so, and so must the home page that links to them. */}
-                  {isInternational ? <p className="m-0 text-sm text-ng-dust">{t('journal.indonesianOnly')}</p> : null}
-                </div>
+          {/* ── Explore by mood ── */}
+          <section className="ng-section" aria-labelledby="home-mood-title" data-reveal>
+            <div className="ng-container flex flex-col gap-12">
+              <div className="flex flex-col gap-3.5">
+                <p className="ng-mono m-0 text-ng-ash">{t('home.byMood')}</p>
+                <h2 id="home-mood-title" className="ng-display ng-h2">{t('home.ngMoodTitle')} <em>{t('home.ngMoodTitleEm')}</em></h2>
               </div>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                {publishedArticles.map((article, index) => (
-                  <Link key={article.id} to={getJournalPublicPath(article)} className="ng-specimen">
-                    <span className="ng-mono flex justify-between gap-4 text-ng-ash">
-                      <span className="text-ng-ember">{t('home.ngSpecLabel', { number: String(index + 1).padStart(2, '0') })}</span>
-                      <span>{getJournalCategoryShopLabel(article.category, t)}</span>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                {moodCategories.map((mood) => (
+                  <Link key={mood.nameKey} to={`/catalog?family=${mood.filter}`} className="ng-mood">
+                    <span className="ng-mood__swatch" data-family={mood.family.toLowerCase()}>
+                      {siteImages[mood.siteImageKey] ? (
+                        <img src={img(siteImages[mood.siteImageKey], 720)} srcSet={srcSet(siteImages[mood.siteImageKey])} sizes="(max-width: 767px) 50vw, 320px" alt="" loading="lazy" decoding="async" />
+                      ) : null}
                     </span>
-                    <span lang="id" className="font-ng-display text-[32px] leading-[1.05]">{article.title}</span>
-                    <span lang="id" className="text-[15px] leading-relaxed text-ng-dust">{getArticleExcerpt(article)}</span>
-                    <span className="ng-mono mt-auto">{t('home.ngSpecRead')}</span>
+                    <span className="font-ng-display text-[24px] leading-none md:text-[28px]">{t(mood.nameKey)}</span>
+                    <span className="ng-mono text-ng-ash">{t(mood.shortKey)}</span>
                   </Link>
                 ))}
               </div>
-              <Link to="/journal" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-3 self-start">
-                {t('home.readJournal')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
             </div>
           </section>
-        ) : null}
 
-        {/* ── Explore by mood ── */}
-        <section className="ng-section" aria-labelledby="home-mood-title" data-reveal>
-          <div className="ng-container flex flex-col gap-12">
-            <div className="flex flex-col gap-3.5">
-              <p className="ng-mono m-0 text-ng-ash">{t('home.byMood')}</p>
-              <h2 id="home-mood-title" className="ng-display ng-h2">{t('home.ngMoodTitle')} <em>{t('home.ngMoodTitleEm')}</em></h2>
+          {/* ── Why buy here ── */}
+          <WhyBuyDirect />
+
+          {/* ── Bespoke and collaboration ── */}
+          <section className="ng-section ng-collab" aria-labelledby="home-collab-title" data-reveal>
+            {siteImagesLoading ? null : (
+              <picture>
+                <source media="(max-width: 767px)" srcSet={srcSet(siteImages['home-newsletter'], PHONE_COLLAB_WIDTHS)} sizes="100vw" />
+                <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-newsletter']) || FALLBACK_LIBRARY_SRCSET} sizes="100vw" loading="lazy" decoding="async" alt="" className="ng-collab__image" />
+              </picture>
+            )}
+            <div className="ng-container relative flex flex-col items-start gap-7">
+              <p className="ng-mono m-0 text-ng-ash">{t('home.collabEyebrow')}</p>
+              <h2 id="home-collab-title" className="ng-display ng-h2 max-w-[980px]">{t('home.collabHeading')}</h2>
+              <p className="ng-lead">{t('home.collabBody')}</p>
+              <div className="flex flex-wrap gap-3.5">
+                <a
+                  href={buildWhatsAppCheckoutUrl(t('home.collabMessage'))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ng-btn"
+                >
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" /> {t('home.collabCta')}
+                </a>
+                <Link to="/bespoke" className="ng-btn ng-btn--ghost">{t('home.statementCta')}</Link>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {moodCategories.map((mood) => (
-                <Link key={mood.nameKey} to={`/catalog?family=${mood.filter}`} className="ng-mood">
-                  <span className="ng-mood__swatch" data-family={mood.family.toLowerCase()}>
-                    {siteImages[mood.siteImageKey] ? (
-                      <img src={img(siteImages[mood.siteImageKey], 720)} srcSet={srcSet(siteImages[mood.siteImageKey])} sizes="(max-width: 767px) 50vw, 320px" alt="" loading="lazy" decoding="async" />
-                    ) : null}
-                  </span>
-                  <span className="font-ng-display text-[24px] leading-none md:text-[28px]">{t(mood.nameKey)}</span>
-                  <span className="ng-mono text-ng-ash">{t(mood.shortKey)}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── Why buy here ── */}
-        <WhyBuyDirect />
-
-        {/* ── Bespoke and collaboration ── */}
-        <section className="ng-section ng-collab" aria-labelledby="home-collab-title" data-reveal>
-          {siteImagesLoading ? null : (
-            <picture>
-              <source media="(max-width: 767px)" srcSet={srcSet(siteImages['home-newsletter'], PHONE_COLLAB_WIDTHS)} sizes="100vw" />
-              <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-newsletter']) || FALLBACK_LIBRARY_SRCSET} sizes="100vw" loading="lazy" decoding="async" alt="" className="ng-collab__image" />
-            </picture>
-          )}
-          <div className="ng-container relative flex flex-col items-start gap-7">
-            <p className="ng-mono m-0 text-ng-ash">{t('home.collabEyebrow')}</p>
-            <h2 id="home-collab-title" className="ng-display ng-h2 max-w-[980px]">{t('home.collabHeading')}</h2>
-            <p className="ng-lead">{t('home.collabBody')}</p>
-            <div className="flex flex-wrap gap-3.5">
-              <a
-                href={buildWhatsAppCheckoutUrl(t('home.collabMessage'))}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ng-btn"
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" /> {t('home.collabCta')}
-              </a>
-              <Link to="/bespoke" className="ng-btn ng-btn--ghost">{t('home.statementCta')}</Link>
-            </div>
-          </div>
-        </section>
-
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };

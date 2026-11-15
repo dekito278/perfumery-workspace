@@ -288,218 +288,221 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
       </Helmet>
 
-      <main className="solivagant-editorial-home" ref={revealRef}>
+      <div className="solivagant-editorial-home" ref={revealRef}>
         <StaleCatalogNotice stale={studioProducts.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
 
-        <section className="ng-section !pt-10">
-          <div className="ng-container flex flex-col gap-10">
-            <nav className="ng-mono flex flex-wrap items-center gap-3 text-ng-ash" aria-label={t('a11y.breadcrumb')}>
-              <Link to="/catalog" className="ng-link">{t('pdp.collection')}</Link>
-              <span aria-hidden="true">/</span>
-              <span className="text-ng-bone">{named.name}</span>
-            </nav>
-
-            {/* grid-cols-1 (= minmax(0,1fr)) and min-w-0: with no column template on a phone the column grew to
-                its widest child — Wongka's seven-thumbnail strip, a 56px title — and the page ran 444-516px
-                wide on a 390px screen, cutting off the description and "Tambah ke keranjang" (third visitor
-                audit, 13 Nov 2026). */}
-            <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-2 md:gap-[72px]">
-              <div className="relative min-w-0">
-                {/* Every photo the product has, with zoom — the gallery the phone page always had and the
-                    desktop page never showed. One page for both now, so both get it. */}
-                <ProductGallery product={product} visualClassName="aspect-[4/5]" imageFit="cover" priority />
-                {named.script ? (
-                  <span className="ng-script-mark pointer-events-none absolute left-6 top-5 text-[96px] md:text-[120px]" aria-hidden="true">{named.script}</span>
-                ) : null}
-              </div>
-
-              <div className="ng-pdp__info flex min-w-0 flex-col gap-7">
-                <p className="ng-mono m-0 text-ng-ember">{cardLabels(product).join(' · ')}</p>
-                <div>
-                  <h1 className="ng-display text-[clamp(38px,12vw,56px)] font-normal [overflow-wrap:anywhere] md:text-[clamp(56px,6.5vw,88px)]">{named.name}</h1>
-                  {named.script ? <p className="m-0 mt-2.5 font-ng-java text-[28px] text-ng-ash">{named.script}</p> : null}
-                </div>
-
-                <div className="flex flex-col gap-3 border-y border-ng-bone/15 py-5">
-                  {/* One price, for the shop being read. In the English shop the Indonesian price and the
-                      member/tier line are not shown at all: three prices on one screen left the reader to guess
-                      which was theirs, which is what Dekito saw on a phone. */}
-                  {exportPrice ? (
-                    <InternationalPrice price={exportPrice} />
-                  ) : isInternational ? (
-                    // No export price for this bottle: the English shop never shows the rupiah price instead.
-                    <p className="m-0 font-ng-display text-[40px] leading-none">{t('price.onRequest')}</p>
-                  ) : (
-                    <>
-                      <p className="m-0 font-ng-display text-[40px] leading-none">{product.price}</p>
-                      <PriceNote product={product} variant={selectedVariant} />
-                    </>
-                  )}
-                  {scarcity ? <p className="ng-mono m-0 text-ng-ember">{scarcity}</p> : null}
-                  {batchLine ? <p className="ng-mono m-0 text-ng-dust">{batchLine}</p> : null}
-                </div>
-
-                {/* The written description carries blank lines the author typed; a bare {story} collapsed
-                    them into one run-on block, the same way bespoke briefs used to render. */}
-                <div className="ng-prose text-base leading-[1.7] text-ng-sand">
-                  <BriefText text={copy.description} />
-                </div>
-
-                {variants.length > 1 ? (
-                  <div className="flex flex-col gap-2">
-                    <label className="ng-mono text-ng-dust" htmlFor="pdp-variant-select">{t('pdp.size')}</label>
-                    <select
-                      id="pdp-variant-select"
-                      value={selectedVariantKey}
-                      onChange={(event) => setSelectedVariantId(event.target.value)}
-                      className="ng-field"
-                    >
-                      {variants.map((v) => {
-                        const key = v.id || v.size;
-                        return (
-                          <option key={key} value={key}>
-                            {v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? t('pdp.soldOutOption') : ''}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                ) : null}
-
-                <div className="flex flex-col gap-3.5">
-                  {/* Both shops add to the cart since 2026-10-06. The English cart prices the basket in dollars,
-                      asks for the destination and hands the order to WhatsApp; it never reaches the domestic
-                      checkout. The gate that hid this button in the English shop from 18 Sep to 6 Oct is gone
-                      with the reason for it. */}
-                  {/* Sold out: no gift offer, no shipping quote, no overseas enquiry for a bottle that cannot be
-                      bought — and a way to hear when it is back instead (visitor audit, 13 Nov 2026: Sudra offered
-                      a free vial and a "US$95 to my country?" draft beside a disabled button). */}
-                  {soldOut ? null : <FreeVialNote products={studioProducts} />}
-                  <button ref={addBtnRef} type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => handleAddToCart()} disabled={soldOut}>
-                    {soldOut ? (
-                      <>{t('pdp.soldOut')}</>
-                    ) : allInCart ? (
-                      <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.allInCart')}</>
-                    ) : lastAddedSlug === product.slug ? (
-                      <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.inCart')}</>
-                    ) : (
-                      <><ShoppingBag className="h-4 w-4" aria-hidden="true" /> {addCount > 1 && exportPrice
-                        ? t('pdp.addManyToCartWithPrice', { count: addCount, price: `US$${usdPriceFor(exportPrice) * addCount}` })
-                        : (isInternational && !exportPrice ? t('pdp.addToCart') : t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') }))}</>
-                    )}
-                  </button>
-                  {soldOut ? (
-                    <AskAtelierButton labelKey="pdp.restockAsk" draftKey="pdp.restockDraft" draftVars={{ name: `${plainName(product.name)} (${selectedSize})` }} className="w-full" />
-                  ) : isInternational ? (
-                    <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />
-                  ) : (
-                    // One currency per shop (Dekito's brief, 14 Nov 2026): the Indonesian page names no dollar
-                    // figure, it points to the international version of this same perfume. A plain link —
-                    // /en lives under the other router's basename.
-                    <p className="m-0 text-sm text-ng-dust">
-                      {t('pdp.shipAbroad')}{' '}
-                      <a href={`/en/catalog/${product.slug}`} className="ng-link inline-flex min-h-[44px] items-center">{t('pdp.seeIntlVersion')}</a>
-                    </p>
-                  )}
-                  <ShareProductButton product={product} />
-                </div>
-
-                {/* Under the buy button for the reason written out on the phone page: the form stood between
-                    the price and the first word about the perfume. */}
-                {exportPrice && !soldOut ? (
-                  <InternationalShippingQuote product={product} variant={selectedVariant} />
-                ) : null}
-                {/* Customs and reviewers read this, not shoppers: a US shipment was held over the word
-                    oud. Shown only where the page is quoting internationally. */}
-                {exportPrice ? <p className="pdp-synthetic-accords m-0 max-w-[70ch] text-xs leading-relaxed text-ng-dust">{t('pdp.syntheticAccords')}</p> : null}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* The story, when there is one, between the buy block and the pyramid: the same frame as every
-            other bottle, with the story whole in the middle (Dekito's choice, 2026-11-08). It used to
-            REPLACE this page, which left the one perfume with a story shaped like no other. */}
-        {productStory ? <ProductStory product={product} story={productStory} /> : null}
-        <ProcessGallery images={product.processImages} subject={named.name} />
-
-        <section className="ng-section ng-section--deep" aria-labelledby="pdp-pyramid-heading" data-reveal>
-          <div className="ng-container flex flex-col gap-14">
-            <h2 id="pdp-pyramid-heading" className="ng-display ng-h2">{t('pdp.ngPyramidHeading')} <em>{t('pdp.ngPyramidHeadingEm')}</em></h2>
-            <ScentPyramid product={{ ...product, ...copy }} />
-
-            <div className="flex flex-col gap-4">
-              <p className="ng-mono m-0 text-ng-ash">{t('pdp.ngDetails')}</p>
-              <ul className="ng-tags">
-                {/* Typed in Indonesian in Studio, with no English field: the English shop shows none rather than "TENANG". */}
-                {isPlaceholderMood(product.mood) || isInternational ? null : <li>{product.mood}</li>}
-                {product.concentration ? <li>{product.concentration}</li> : null}
-                {product.intensity ? <li>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</li> : null}
-                {(product.sizeVariants || []).length ? <li>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</li> : null}
-                {/* Shown only once the atelier has stated it. A fragrance database records a launch year
-                    for everything it lists, and an absent year is answered honestly rather than guessed —
-                    created_at is right there and means something else entirely. */}
-                {product.launchYear ? <li>{t('pdp.released', { year: product.launchYear })}</li> : null}
-              </ul>
-            </div>
-
-            {/* The catalogue filter promises this bottle suits a moment; the product page has to
-                say the same thing, or a customer arriving from search never sees the claim. */}
-            {describeWear(product.wear, t).length ? (
-              <div className="flex flex-col gap-4">
-                <p className="ng-mono m-0 text-ng-ash">{t('pdp.wearFor')}</p>
-                <ul className="ng-tags">
-                  {describeWear(product.wear, t).map((label) => <li key={label}>{label}</li>)}
-                </ul>
-              </div>
-            ) : null}
-
-            {product.materialHighlights?.length ? (
-              <div className="flex flex-col gap-4">
-                <p className="ng-mono m-0 text-ng-ash">{t('pdp.rawMaterials')}</p>
-                <ul className="ng-tags">
-                  {product.materialHighlights.map((m) => <li key={m}>{m}</li>)}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        {/* The story, before the other bottles. Someone still deciding about THIS perfume is better
-            served by what was written about it than by four alternatives. */}
-        <div className="ng-section empty:hidden">
-          <ProductStoryLink product={product} className="ng-container" />
-        </div>
-        <ProductTestimonials product={product} />
-        <BuyerAnswers />
-
-        {related.length ? (
-          <section className="ng-section" aria-labelledby="pdp-related-heading" data-reveal>
+          <section className="ng-section !pt-10">
             <div className="ng-container flex flex-col gap-10">
-              <div className="flex flex-col gap-3.5">
-                <p className="ng-mono m-0 text-ng-ash">{t('pdp.youMayLike')}</p>
-                <h2 id="pdp-related-heading" className="ng-display text-[44px] md:text-[56px]">{t('pdp.youMayLikeSub')}</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-6">
-                {related.map((item) => (
-                  <Link key={item.slug} to={`/catalog/${item.slug}`} className="ng-card">
-                    <ProductVisual product={item} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 320px" />
-                    <span className="ng-mono text-ng-ash">{item.category}</span>
-                    <span className="font-ng-display text-[26px] leading-none md:text-[28px]">{splitScriptName(item.name).name}</span>
-                    <span className="flex flex-col gap-1 text-[15px]">
-                      <CardPrice product={item} />
-                    </span>
-                  </Link>
-                ))}
+              <nav className="ng-mono flex flex-wrap items-center gap-3 text-ng-ash" aria-label={t('a11y.breadcrumb')}>
+                <Link to="/catalog" className="ng-link">{t('pdp.collection')}</Link>
+                <span aria-hidden="true">/</span>
+                <span className="text-ng-bone">{named.name}</span>
+              </nav>
+
+              {/* grid-cols-1 (= minmax(0,1fr)) and min-w-0: with no column template on a phone the column grew to
+                  its widest child — Wongka's seven-thumbnail strip, a 56px title — and the page ran 444-516px
+                  wide on a 390px screen, cutting off the description and "Tambah ke keranjang" (third visitor
+                  audit, 13 Nov 2026). */}
+              <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-2 md:gap-[72px]">
+                <div className="relative min-w-0">
+                  {/* Every photo the product has, with zoom — the gallery the phone page always had and the
+                      desktop page never showed. One page for both now, so both get it. */}
+                  <ProductGallery product={product} visualClassName="aspect-[4/5]" imageFit="cover" priority />
+                  {named.script ? (
+                    <span className="ng-script-mark pointer-events-none absolute left-6 top-5 text-[96px] md:text-[120px]" aria-hidden="true">{named.script}</span>
+                  ) : null}
+                </div>
+
+                <div className="ng-pdp__info flex min-w-0 flex-col gap-7">
+                  <p className="ng-mono m-0 text-ng-ember">{cardLabels(product).join(' · ')}</p>
+                  <div>
+                    <h1 className="ng-display text-[clamp(38px,12vw,56px)] font-normal [overflow-wrap:anywhere] md:text-[clamp(56px,6.5vw,88px)]">{named.name}</h1>
+                    {named.script ? <p className="m-0 mt-2.5 font-ng-java text-[28px] text-ng-ash">{named.script}</p> : null}
+                  </div>
+
+                  <div className="flex flex-col gap-3 border-y border-ng-bone/15 py-5">
+                    {/* One price, for the shop being read. In the English shop the Indonesian price and the
+                        member/tier line are not shown at all: three prices on one screen left the reader to guess
+                        which was theirs, which is what Dekito saw on a phone. */}
+                    {exportPrice ? (
+                      <InternationalPrice price={exportPrice} />
+                    ) : isInternational ? (
+                      // No export price for this bottle: the English shop never shows the rupiah price instead.
+                      <p className="m-0 font-ng-display text-[40px] leading-none">{t('price.onRequest')}</p>
+                    ) : (
+                      <>
+                        <p className="m-0 font-ng-display text-[40px] leading-none">{product.price}</p>
+                        <PriceNote product={product} variant={selectedVariant} />
+                      </>
+                    )}
+                    {scarcity ? <p className="ng-mono m-0 text-ng-ember">{scarcity}</p> : null}
+                    {batchLine ? <p className="ng-mono m-0 text-ng-dust">{batchLine}</p> : null}
+                  </div>
+
+                  {/* The written description carries blank lines the author typed; a bare {story} collapsed
+                      them into one run-on block, the same way bespoke briefs used to render. */}
+                  <div className="ng-prose text-base leading-[1.7] text-ng-sand">
+                    <BriefText text={copy.description} />
+                  </div>
+
+                  {variants.length > 1 ? (
+                    <div className="flex flex-col gap-2">
+                      <label className="ng-mono text-ng-dust" htmlFor="pdp-variant-select">{t('pdp.size')}</label>
+                      <select
+                        id="pdp-variant-select"
+                        value={selectedVariantKey}
+                        onChange={(event) => setSelectedVariantId(event.target.value)}
+                        className="ng-field"
+                      >
+                        {variants.map((v) => {
+                          const key = v.id || v.size;
+                          return (
+                            <option key={key} value={key}>
+                              {v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? t('pdp.soldOutOption') : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  ) : null}
+
+                  <div className="flex flex-col gap-3.5">
+                    {/* Both shops add to the cart since 2026-10-06. The English cart prices the basket in dollars,
+                        asks for the destination and hands the order to WhatsApp; it never reaches the domestic
+                        checkout. The gate that hid this button in the English shop from 18 Sep to 6 Oct is gone
+                        with the reason for it. */}
+                    {/* Sold out: no gift offer, no shipping quote, no overseas enquiry for a bottle that cannot be
+                        bought — and a way to hear when it is back instead (visitor audit, 13 Nov 2026: Sudra offered
+                        a free vial and a "US$95 to my country?" draft beside a disabled button). */}
+                    {soldOut ? null : <FreeVialNote products={studioProducts} />}
+                    <button ref={addBtnRef} type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => handleAddToCart()} disabled={soldOut}>
+                      {soldOut ? (
+                        <>{t('pdp.soldOut')}</>
+                      ) : allInCart ? (
+                        <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.allInCart')}</>
+                      ) : lastAddedSlug === product.slug ? (
+                        <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.inCart')}</>
+                      ) : (
+                        <><ShoppingBag className="h-4 w-4" aria-hidden="true" /> {addCount > 1 && exportPrice
+                          ? t('pdp.addManyToCartWithPrice', { count: addCount, price: `US$${usdPriceFor(exportPrice) * addCount}` })
+                          : (isInternational && !exportPrice ? t('pdp.addToCart') : t('pdp.addToCartWithPrice', { price: quotedInternationalPrice(exportPrice, selectedPriceLabel).replace(/ /g, '\u00a0') }))}</>
+                      )}
+                    </button>
+                    {soldOut ? (
+                      <AskAtelierButton labelKey="pdp.restockAsk" draftKey="pdp.restockDraft" draftVars={{ name: `${plainName(product.name)} (${selectedSize})` }} className="w-full" />
+                    ) : isInternational ? (
+                      <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />
+                    ) : (
+                      // One currency per shop (Dekito's brief, 14 Nov 2026): the Indonesian page names no dollar
+                      // figure, it points to the international version of this same perfume. A plain link —
+                      // /en lives under the other router's basename.
+                      <p className="m-0 text-sm text-ng-dust">
+                        {t('pdp.shipAbroad')}{' '}
+                        <a href={`/en/catalog/${product.slug}`} className="ng-link inline-flex min-h-[44px] items-center">{t('pdp.seeIntlVersion')}</a>
+                      </p>
+                    )}
+                    <ShareProductButton product={product} />
+                  </div>
+
+                  {/* Under the buy button for the reason written out on the phone page: the form stood between
+                      the price and the first word about the perfume. */}
+                  {exportPrice && !soldOut ? (
+                    <InternationalShippingQuote product={product} variant={selectedVariant} />
+                  ) : null}
+                  {/* Customs and reviewers read this, not shoppers: a US shipment was held over the word
+                      oud. Shown only where the page is quoting internationally. */}
+                  {exportPrice ? <p className="pdp-synthetic-accords m-0 max-w-[70ch] text-xs leading-relaxed text-ng-dust">{t('pdp.syntheticAccords')}</p> : null}
+                </div>
               </div>
             </div>
           </section>
-        ) : null}
 
+          {/* The story, when there is one, between the buy block and the pyramid: the same frame as every
+              other bottle, with the story whole in the middle (Dekito's choice, 2026-11-08). It used to
+              REPLACE this page, which left the one perfume with a story shaped like no other. */}
+          {productStory ? <ProductStory product={product} story={productStory} /> : null}
+          <ProcessGallery images={product.processImages} subject={named.name} />
+
+          <section className="ng-section ng-section--deep" aria-labelledby="pdp-pyramid-heading" data-reveal>
+            <div className="ng-container flex flex-col gap-14">
+              <h2 id="pdp-pyramid-heading" className="ng-display ng-h2">{t('pdp.ngPyramidHeading')} <em>{t('pdp.ngPyramidHeadingEm')}</em></h2>
+              <ScentPyramid product={{ ...product, ...copy }} />
+
+              <div className="flex flex-col gap-4">
+                <p className="ng-mono m-0 text-ng-ash">{t('pdp.ngDetails')}</p>
+                <ul className="ng-tags">
+                  {/* Typed in Indonesian in Studio, with no English field: the English shop shows none rather than "TENANG". */}
+                  {isPlaceholderMood(product.mood) || isInternational ? null : <li>{product.mood}</li>}
+                  {product.concentration ? <li>{product.concentration}</li> : null}
+                  {product.intensity ? <li>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</li> : null}
+                  {(product.sizeVariants || []).length ? <li>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</li> : null}
+                  {/* Shown only once the atelier has stated it. A fragrance database records a launch year
+                      for everything it lists, and an absent year is answered honestly rather than guessed —
+                      created_at is right there and means something else entirely. */}
+                  {product.launchYear ? <li>{t('pdp.released', { year: product.launchYear })}</li> : null}
+                </ul>
+              </div>
+
+              {/* The catalogue filter promises this bottle suits a moment; the product page has to
+                  say the same thing, or a customer arriving from search never sees the claim. */}
+              {describeWear(product.wear, t).length ? (
+                <div className="flex flex-col gap-4">
+                  <p className="ng-mono m-0 text-ng-ash">{t('pdp.wearFor')}</p>
+                  <ul className="ng-tags">
+                    {describeWear(product.wear, t).map((label) => <li key={label}>{label}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+
+              {product.materialHighlights?.length ? (
+                <div className="flex flex-col gap-4">
+                  <p className="ng-mono m-0 text-ng-ash">{t('pdp.rawMaterials')}</p>
+                  <ul className="ng-tags">
+                    {product.materialHighlights.map((m) => <li key={m}>{m}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </section>
+
+          {/* The story, before the other bottles. Someone still deciding about THIS perfume is better
+              served by what was written about it than by four alternatives. */}
+          <div className="ng-section empty:hidden">
+            <ProductStoryLink product={product} className="ng-container" />
+          </div>
+          <ProductTestimonials product={product} />
+          <BuyerAnswers />
+
+          {related.length ? (
+            <section className="ng-section" aria-labelledby="pdp-related-heading" data-reveal>
+              <div className="ng-container flex flex-col gap-10">
+                <div className="flex flex-col gap-3.5">
+                  <p className="ng-mono m-0 text-ng-ash">{t('pdp.youMayLike')}</p>
+                  <h2 id="pdp-related-heading" className="ng-display text-[44px] md:text-[56px]">{t('pdp.youMayLikeSub')}</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-6">
+                  {related.map((item) => (
+                    <Link key={item.slug} to={`/catalog/${item.slug}`} className="ng-card">
+                      <ProductVisual product={item} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 320px" />
+                      <span className="ng-mono text-ng-ash">{item.category}</span>
+                      <span className="font-ng-display text-[26px] leading-none md:text-[28px]">{splitScriptName(item.name).name}</span>
+                      <span className="flex flex-col gap-1 text-[15px]">
+                        <CardPrice product={item} />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
 
       {/* Sticky buy-bar — appears after the main CTA scrolls away. On a phone it is the buy button. */}
       <div className={`ng-buybar${showStickyBar ? ' is-visible' : ''}`} aria-hidden={!showStickyBar}>

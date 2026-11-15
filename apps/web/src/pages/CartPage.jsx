@@ -84,212 +84,215 @@ const CartPage = () => {
         <title>{t('cart.tab')}</title>
       </Helmet>
 
-      <main className="solivagant-editorial-home" ref={revealRef}>
+      <div className="solivagant-editorial-home" ref={revealRef}>
         <StaleCatalogNotice stale={catalogProducts.stale} empty={!catalogProducts.length} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
 
-        <section className="ng-section !border-b-0 !pt-14 md:!pt-20">
-          <div className="ng-container flex flex-col gap-12">
-            <div className="flex flex-col gap-5">
-              <p className="ng-eyebrow ng-mono m-0">{t('cart.ngStep')}</p>
-              <h1 className="ng-display ng-h1">{t('cart.title')}</h1>
-              <p className="ng-lead">{t('cart.lead')}</p>
-            </div>
+          <section className="ng-section !border-b-0 !pt-14 md:!pt-20">
+            <div className="ng-container flex flex-col gap-12">
+              <div className="flex flex-col gap-5">
+                <p className="ng-eyebrow ng-mono m-0">{t('cart.ngStep')}</p>
+                <h1 className="ng-display ng-h1">{t('cart.title')}</h1>
+                <p className="ng-lead">{t('cart.lead')}</p>
+              </div>
 
-            <div className={`grid items-start gap-12 lg:gap-[72px] ${items.length ? 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]' : ''}`}>
-              <div className="flex flex-col gap-14">
-                <div className="flex flex-col border-t border-ng-bone/30">
-                  {items.some((item) => item.priceChanged) ? (
-                    <p className="m-0 border-b border-ng-bone/15 py-4 text-sm text-ng-sand" role="status">
-                      {t('checkout.pricesUpdated')}
-                    </p>
-                  ) : null}
-                  {unavailableItems.length ? (
-                    <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">
-                      {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
-                    </p>
-                  ) : null}
-                  <p className="sr-only" role="status">{removedName ? t('cart.removedNotice', { name: removedName }) : ''}</p>
-                  {!boughtLines.length ? (
-                    <div className="flex flex-col items-start gap-5 border-b border-ng-bone/15 py-14">
-                      <ShoppingBag className="h-8 w-8 text-ng-ash" aria-hidden="true" />
-                      <h2 className="ng-display text-[36px] font-normal" tabIndex={-1} data-cart-empty-heading>{t('cart.empty')}</h2>
-                      {/* Both doors, as the phone cart always offered: a bottle from the shelf, or one
-                          made to order. The desktop cart only ever pointed at the catalogue. */}
-                      <p className="m-0 max-w-[480px] text-ng-dust">{t('cart.emptyMobileBody')}</p>
-                      <div className="flex flex-wrap gap-3.5">
-                        <Link to="/catalog" className="ng-btn">
-                          {t('home.seeCollection')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                        </Link>
-                        <Link to="/bespoke" className="ng-btn ng-btn--ghost">{t('cart.bespoke')}</Link>
-                      </div>
-                    </div>
-                  ) : (
-                    boughtLines.map((item) => {
-                      const discountedLine = discountedLineMap.get(item.slug);
-                      const hasLineDiscount = Boolean(discountedLine?.discount);
-                      const lineTotal = discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0);
-                      return (
-                        <div key={item.slug} className="ng-cart-line">
-                          <Link to={`/catalog/${item.productSlug || item.slug}`} className="ng-cart-line__image" tabIndex={-1} aria-hidden="true">
-                            <ProductVisual product={item} className="h-full w-full" imageFit="cover" label={false} sizes="96px" />
+              <div className={`grid items-start gap-12 lg:gap-[72px] ${items.length ? 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]' : ''}`}>
+                <div className="flex flex-col gap-14">
+                  <div className="flex flex-col border-t border-ng-bone/30">
+                    {items.some((item) => item.priceChanged) ? (
+                      <p className="m-0 border-b border-ng-bone/15 py-4 text-sm text-ng-sand" role="status">
+                        {t('checkout.pricesUpdated')}
+                      </p>
+                    ) : null}
+                    {unavailableItems.length ? (
+                      <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">
+                        {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
+                      </p>
+                    ) : null}
+                    <p className="sr-only" role="status">{removedName ? t('cart.removedNotice', { name: removedName }) : ''}</p>
+                    {!boughtLines.length ? (
+                      <div className="flex flex-col items-start gap-5 border-b border-ng-bone/15 py-14">
+                        <ShoppingBag className="h-8 w-8 text-ng-ash" aria-hidden="true" />
+                        <h2 className="ng-display text-[36px] font-normal" tabIndex={-1} data-cart-empty-heading>{t('cart.empty')}</h2>
+                        {/* Both doors, as the phone cart always offered: a bottle from the shelf, or one
+                            made to order. The desktop cart only ever pointed at the catalogue. */}
+                        <p className="m-0 max-w-[480px] text-ng-dust">{t('cart.emptyMobileBody')}</p>
+                        <div className="flex flex-wrap gap-3.5">
+                          <Link to="/catalog" className="ng-btn">
+                            {t('home.seeCollection')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                           </Link>
-                          <div className="flex min-w-0 flex-col gap-2">
-                            <Link to={`/catalog/${item.productSlug || item.slug}`} data-cart-line-name className="inline-flex min-h-[44px] items-center self-start font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(item.name).name}</Link>
-                            <span className="ng-mono text-ng-ash">{[shortNoteList(item.notes), item.size].filter(Boolean).join(' · ')}</span>
-                            <span className="text-sm text-ng-dust">{item.price}</span>
-                            <CartPriceChange item={item} className="mt-1" />
-                            {hasLineDiscount ? (
-                              <span className="text-sm text-ng-sand">{t('cart.afterVoucherLine', { price: formatTotal(discountedLine.discountedUnitPrice) })}</span>
-                            ) : null}
-                            <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeLine(item.slug, splitScriptName(item.name).name)} aria-label={t('cart.removeOf', { name: splitScriptName(item.name).name })}>
-                              {t('cart.removeItem')}
-                            </button>
-                          </div>
-                          <div className="ng-cart-line__qty">
-                            <CartQuantityStepper
-                              name={splitScriptName(item.name).name}
-                              quantity={item.quantity}
-                              canDecrease={item.quantity > 1}
-                              canIncrease={!atStockCap(item)}
-                              onDecrease={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))}
-                              onIncrease={() => updateQuantity(item.slug, nextQuantityUp(item))}
-                            />
-                            {/* The cap said, not only greyed (audit, 13 Nov 2026): "+" just stopped working at 2. */}
-                            {atStockCap(item) ? <span className="text-xs text-ng-ash">{t('cart.stockLeft', { count: item.quantity })}</span> : null}
-                          </div>
-                          <div className="ng-cart-line__sum flex flex-col items-end gap-1 text-right">
-                            {hasLineDiscount ? <span className="text-xs text-ng-ash line-through">{formatTotal(discountedLine.originalTotal)}</span> : null}
-                            <span className="text-base">{formatTotal(lineTotal)}</span>
-                          </div>
+                          <Link to="/bespoke" className="ng-btn ng-btn--ghost">{t('cart.bespoke')}</Link>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-                <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />
-              </div>
-
-              {/* An empty cart has nothing to sum: the box said Subtotal Rp 0, listed a free vial, and offered the
-                  same two ways out as the empty state beside it (2026-11-02). */}
-              {items.length ? (
-                <aside className="ng-panel ng-sticky flex flex-col gap-6" aria-labelledby="cart-summary-title">
-                  <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
-                  <h2 id="cart-summary-title" className="sr-only">{t('cart.summary')}</h2>
-
-                  <div className="flex flex-col gap-2.5">
-                    <label className="text-sm text-ng-dust" htmlFor="cart-voucher">
-                      {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('cart.voucherPrompt')}
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        id="cart-voucher"
-                        type="text"
-                        aria-label={t('cart.voucherPlaceholder')}
-                        className="ng-field !min-h-[48px] uppercase placeholder:normal-case"
-                        value={voucher.inputCode}
-                        onChange={(event) => voucher.setInputCode(event.target.value)}
-                        onKeyDown={onEnter(voucher.applyVoucher)}
-                        placeholder={t('cart.voucherPlaceholder')}
-                        autoComplete="off"
-                        autoCapitalize="characters"
-                        spellCheck={false}
-                        disabled={!items.length || voucher.loading}
-                      />
-                      <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
-                        <BadgePercent className="h-4 w-4" aria-hidden="true" />
-                        {voucher.loading ? t('cart.voucherChecking') : t('cart.voucherApply')}
-                      </button>
-                    </div>
-                    {voucher.message ? <p ref={codeMessageRef} role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
-                    {voucher.appliedVoucher ? (
-                      <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
-                        <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
-                      </button>
-                    ) : null}
+                      </div>
+                    ) : (
+                      boughtLines.map((item) => {
+                        const discountedLine = discountedLineMap.get(item.slug);
+                        const hasLineDiscount = Boolean(discountedLine?.discount);
+                        const lineTotal = discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0);
+                        return (
+                          <div key={item.slug} className="ng-cart-line">
+                            <Link to={`/catalog/${item.productSlug || item.slug}`} className="ng-cart-line__image" tabIndex={-1} aria-hidden="true">
+                              <ProductVisual product={item} className="h-full w-full" imageFit="cover" label={false} sizes="96px" />
+                            </Link>
+                            <div className="flex min-w-0 flex-col gap-2">
+                              <Link to={`/catalog/${item.productSlug || item.slug}`} data-cart-line-name className="inline-flex min-h-[44px] items-center self-start font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(item.name).name}</Link>
+                              <span className="ng-mono text-ng-ash">{[shortNoteList(item.notes), item.size].filter(Boolean).join(' · ')}</span>
+                              <span className="text-sm text-ng-dust">{item.price}</span>
+                              <CartPriceChange item={item} className="mt-1" />
+                              {hasLineDiscount ? (
+                                <span className="text-sm text-ng-sand">{t('cart.afterVoucherLine', { price: formatTotal(discountedLine.discountedUnitPrice) })}</span>
+                              ) : null}
+                              <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeLine(item.slug, splitScriptName(item.name).name)} aria-label={t('cart.removeOf', { name: splitScriptName(item.name).name })}>
+                                {t('cart.removeItem')}
+                              </button>
+                            </div>
+                            <div className="ng-cart-line__qty">
+                              <CartQuantityStepper
+                                name={splitScriptName(item.name).name}
+                                quantity={item.quantity}
+                                canDecrease={item.quantity > 1}
+                                canIncrease={!atStockCap(item)}
+                                onDecrease={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))}
+                                onIncrease={() => updateQuantity(item.slug, nextQuantityUp(item))}
+                              />
+                              {/* The cap said, not only greyed (audit, 13 Nov 2026): "+" just stopped working at 2. */}
+                              {atStockCap(item) ? <span className="text-xs text-ng-ash">{t('cart.stockLeft', { count: item.quantity })}</span> : null}
+                            </div>
+                            <div className="ng-cart-line__sum flex flex-col items-end gap-1 text-right">
+                              {hasLineDiscount ? <span className="text-xs text-ng-ash line-through">{formatTotal(discountedLine.originalTotal)}</span> : null}
+                              <span className="text-base">{formatTotal(lineTotal)}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
+                  <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />
+                </div>
 
-                  <dl className="m-0 flex flex-col gap-3 text-[15px]">
-                    <div className="flex justify-between gap-4">
-                      <dt className="text-ng-dust">{t('cart.subtotal')}</dt>
-                      <dd className="m-0">{formatTotal(subtotal)}</dd>
+                {/* An empty cart has nothing to sum: the box said Subtotal Rp 0, listed a free vial, and offered the
+                    same two ways out as the empty state beside it (2026-11-02). */}
+                {items.length ? (
+                  <aside className="ng-panel ng-sticky flex flex-col gap-6" aria-labelledby="cart-summary-title">
+                    <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
+                    <h2 id="cart-summary-title" className="sr-only">{t('cart.summary')}</h2>
+
+                    <div className="flex flex-col gap-2.5">
+                      <label className="text-sm text-ng-dust" htmlFor="cart-voucher">
+                        {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('cart.voucherPrompt')}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          id="cart-voucher"
+                          type="text"
+                          aria-label={t('cart.voucherPlaceholder')}
+                          className="ng-field !min-h-[48px] uppercase placeholder:normal-case"
+                          value={voucher.inputCode}
+                          onChange={(event) => voucher.setInputCode(event.target.value)}
+                          onKeyDown={onEnter(voucher.applyVoucher)}
+                          placeholder={t('cart.voucherPlaceholder')}
+                          autoComplete="off"
+                          autoCapitalize="characters"
+                          spellCheck={false}
+                          disabled={!items.length || voucher.loading}
+                        />
+                        <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
+                          <BadgePercent className="h-4 w-4" aria-hidden="true" />
+                          {voucher.loading ? t('cart.voucherChecking') : t('cart.voucherApply')}
+                        </button>
+                      </div>
+                      {voucher.message ? <p ref={codeMessageRef} role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
+                      {voucher.appliedVoucher ? (
+                        <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
+                          <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
+                        </button>
+                      ) : null}
                     </div>
-                    {voucher.discountAmount ? (
-                      <>
-                        <div className="flex justify-between gap-4">
-                          <dt className="text-ng-dust">Voucher {voucher.appliedVoucher?.code}</dt>
-                          <dd className="m-0 text-ng-sand">-{formatTotal(voucher.discountAmount)}</dd>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                          <dt className="text-ng-dust">{t('cart.afterVoucher')}</dt>
-                          <dd className="m-0">{formatTotal(totalAfterVoucher)}</dd>
-                        </div>
-                      </>
-                    ) : null}
-                    {/* Only once one is chosen: "Vial hadiah, gratis — Gratis" with nothing picked read as a gift
-                        already in the parcel (visitor audit, 13 Nov 2026). */}
-                    {gift ? (
+
+                    <dl className="m-0 flex flex-col gap-3 text-[15px]">
                       <div className="flex justify-between gap-4">
-                        <dt className="text-ng-dust">{t('cart.giftTitle')}</dt>
-                        <dd className="m-0 text-ng-sand">{t('cart.giftFree')}</dd>
+                        <dt className="text-ng-dust">{t('cart.subtotal')}</dt>
+                        <dd className="m-0">{formatTotal(subtotal)}</dd>
+                      </div>
+                      {voucher.discountAmount ? (
+                        <>
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-ng-dust">Voucher {voucher.appliedVoucher?.code}</dt>
+                            <dd className="m-0 text-ng-sand">-{formatTotal(voucher.discountAmount)}</dd>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-ng-dust">{t('cart.afterVoucher')}</dt>
+                            <dd className="m-0">{formatTotal(totalAfterVoucher)}</dd>
+                          </div>
+                        </>
+                      ) : null}
+                      {/* Only once one is chosen: "Vial hadiah, gratis — Gratis" with nothing picked read as a gift
+                          already in the parcel (visitor audit, 13 Nov 2026). */}
+                      {gift ? (
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-ng-dust">{t('cart.giftTitle')}</dt>
+                          <dd className="m-0 text-ng-sand">{t('cart.giftFree')}</dd>
+                        </div>
+                      ) : null}
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-ng-dust">{t('checkout.shipping')}</dt>
+                        <dd className="m-0 text-right text-ng-ash">{t('cart.shippingAtCheckout')}</dd>
+                      </div>
+                    </dl>
+
+                    {/* The saving the buyer is weighing the total against, at the moment they weigh it.
+                        Every other storefront page names the member price — home, catalog, product, the
+                        account page — and the checkout one step later names this exact amount. Built from the
+                        message keys those pages already use, so there is no second wording to keep in step. */}
+                    {offerMemberSignIn ? (
+                      <div className="flex flex-col gap-1.5 border border-ng-bone/20 p-4 text-sm">
+                        <span>{t('price.memberHint')}</span>
+                        <Link to="/customer" className="ng-link ng-mono inline-flex min-h-[44px] items-center underline underline-offset-4">{t('why.member.cta')}</Link>
                       </div>
                     ) : null}
-                    <div className="flex justify-between gap-4">
-                      <dt className="text-ng-dust">{t('checkout.shipping')}</dt>
-                      <dd className="m-0 text-right text-ng-ash">{t('cart.shippingAtCheckout')}</dd>
-                    </div>
-                  </dl>
 
-                  {/* The saving the buyer is weighing the total against, at the moment they weigh it.
-                      Every other storefront page names the member price — home, catalog, product, the
-                      account page — and the checkout one step later names this exact amount. Built from the
-                      message keys those pages already use, so there is no second wording to keep in step. */}
-                  {offerMemberSignIn ? (
-                    <div className="flex flex-col gap-1.5 border border-ng-bone/20 p-4 text-sm">
-                      <span>{t('price.memberHint')}</span>
-                      <Link to="/customer" className="ng-link ng-mono inline-flex min-h-[44px] items-center underline underline-offset-4">{t('why.member.cta')}</Link>
-                    </div>
-                  ) : null}
-
-                  {items.length ? (
-                    <Link to="/checkout" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.toCheckout')}</Link>
-                  ) : (
-                    <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
-                  )}
-                  <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
-                  <Link to="/help" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('help.shippingAndPayment')}</Link>
-                </aside>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        {/* Cross-sell — complete the ritual. Offered to an empty cart too, as the English one is: an empty
-            cart that ends at "add products first" is a dead end. */}
-        {recommendations.length ? (
-          <section className="ng-section" aria-labelledby="cart-recommend-title" data-reveal>
-            <div className="ng-container flex flex-col gap-10">
-              <div className="flex flex-col gap-3.5">
-                <p className="ng-mono m-0 text-ng-ash">{t('cart.completeEyebrow')}</p>
-                <h2 id="cart-recommend-title" className="ng-display text-[44px] md:text-[56px]">{t('cart.complete')}</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-6">
-                {recommendations.map((item) => (
-                  <Link key={item.slug} to={`/catalog/${item.slug}`} className="ng-card">
-                    <ProductVisual product={item} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 320px" />
-                    <span className="ng-mono text-ng-ash">{item.category}</span>
-                    <span className="font-ng-display text-[26px] leading-none">{splitScriptName(item.name).name}</span>
-                    <span className="text-[15px]">{item.price}</span>
-                  </Link>
-                ))}
+                    {items.length ? (
+                      <Link to="/checkout" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.toCheckout')}</Link>
+                    ) : (
+                      <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
+                    )}
+                    <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
+                    <Link to="/help" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('help.shippingAndPayment')}</Link>
+                  </aside>
+                ) : null}
               </div>
             </div>
           </section>
-        ) : null}
 
+          {/* Cross-sell — complete the ritual. Offered to an empty cart too, as the English one is: an empty
+              cart that ends at "add products first" is a dead end. */}
+          {recommendations.length ? (
+            <section className="ng-section" aria-labelledby="cart-recommend-title" data-reveal>
+              <div className="ng-container flex flex-col gap-10">
+                <div className="flex flex-col gap-3.5">
+                  <p className="ng-mono m-0 text-ng-ash">{t('cart.completeEyebrow')}</p>
+                  <h2 id="cart-recommend-title" className="ng-display text-[44px] md:text-[56px]">{t('cart.complete')}</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-6">
+                  {recommendations.map((item) => (
+                    <Link key={item.slug} to={`/catalog/${item.slug}`} className="ng-card">
+                      <ProductVisual product={item} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 320px" />
+                      <span className="ng-mono text-ng-ash">{item.category}</span>
+                      <span className="font-ng-display text-[26px] leading-none">{splitScriptName(item.name).name}</span>
+                      <span className="text-[15px]">{item.price}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
 
       {/* The phone's pay bar, as the phone cart had: the total and the next step, always in reach. */}
       {items.length ? (

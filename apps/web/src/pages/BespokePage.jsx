@@ -829,367 +829,370 @@ const BespokePage = () => {
         <meta name="description" content={t('bsp.meta')} />
       </Helmet>
 
-      <main className="solivagant-editorial-home" ref={revealRef}>
+      <div className="solivagant-editorial-home" ref={revealRef}>
         <ScrollProgress />
         <PublicHeader />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
 
-        <header className="ng-section relative overflow-hidden !pb-16 !pt-20 md:!pt-28">
-          <span className="ng-script-mark absolute bottom-[-40px] right-6 hidden text-[220px] lg:block" aria-hidden="true">ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀</span>
-          <div className="ng-container relative flex flex-col gap-7">
-            <p className="ng-eyebrow ng-mono m-0">{t('bsp.eyebrow')}</p>
-            <h1 className="ng-display ng-h1 max-w-[980px]">{t('bsp.title')}</h1>
-            <p className="ng-lead">{t('bsp.lead', { days: siteFacts.bespokeDays })}</p>
-            {/* A floor derived from Studio's own option prices: rupiah here, dollars in the English shop by the
-                rule every perfume abroad is priced with (bespokeUsdPrice). */}
-            {/* The price and its condition, each on its own line: run together they read "Mulai dari Rp 569.000
-                Sebelum ongkir…", one sentence that is not one (2026-11-02). */}
-            {/* max-w: at 1920px the note ran ~120 characters a line (fifth visitor audit, 13 Nov 2026). */}
-            <p className="m-0 flex max-w-[62ch] flex-col gap-1 text-[15px] text-ng-dust">
-              <strong className="font-medium text-ng-bone">{t('bsp.floor', { price: isInternational ? `US$${bespokeUsdPrice(floorPrice)}` : formatRupiah(floorPrice) })}</strong>
-              <span>{t('bsp.floorNote')}</span>
-            </p>
-            {/* The steps say where the buyer is (sixth visitor audit, 13 Nov 2026: every label stayed the same
-                grey before and after "Lanjut ke checkout"). Scent first; the moment and the size have
-                defaults, so a written brief is at the size; the checkout step is the address, then payment. */}
-            <ol className="ng-mono m-0 mt-2 flex list-none flex-wrap gap-x-8 gap-y-3 p-0 text-ng-ash">
-              {bespokeStepKeys(stepKeys, isInternational).map((stepKey, index) => (
-                <li key={stepKey} aria-current={index === currentStep ? 'step' : undefined} className={index < currentStep ? 'text-ng-dust' : index === currentStep ? 'text-ng-bone' : undefined}>
-                  <span className="mr-2 text-ng-ember">{index < currentStep ? '✓' : (ROMAN_STEPS[index] || index + 1)}</span>{t(stepKey)}
-                </li>
-              ))}
-            </ol>
-          </div>
-        </header>
-
-        <section className="ng-section" data-reveal>
-          <form className="ng-container flex flex-col gap-16" onSubmit={submitRequest}>
-            <div className="flex flex-col gap-10">
-              <div className="flex flex-col gap-3.5">
-                <p className="ng-mono m-0 text-ng-ash">{t('bsp.designFirst')}</p>
-                <h2 className="ng-display ng-h2">{t('bsp.designFirstTitle')}</h2>
-                <p className="ng-lead">{t('bsp.designFirstBody')}</p>
-              </div>
-              <div className="grid gap-10 lg:grid-cols-3 lg:gap-8">
-                <label className="ng-label">
-                  <span className="ng-mono text-ng-dust">{t('bsp.perfumeName')}</span>
-                  <input type="text" className="ng-field !font-ng-display !text-[26px]" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} aria-label={t('bsp.perfumeName')} autoComplete="off" />
-                  <small className="text-[13px] text-ng-ash">{t('bsp.perfumeNameHint')}</small>
-                </label>
-                <label className="ng-label">
-                  <span className="ng-mono text-ng-dust">{t('bsp.scentDirection')}</span>
-                  <textarea id="bespoke-scent" rows="4" className="ng-field" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} aria-label={t('bsp.scentDirection')} />
-                  <div className="flex flex-wrap gap-2" aria-label={t('bsp.scentShortcuts')}>
-                    {/* A toggle, not an append (sixth visitor audit, 13 Nov 2026): Woody, Fresh, Woody again read
-                        "…, Woody, Fresh, Woody" in the brief, and nothing showed which were already in it. */}
-                    {scentDirectionPrompts.map((prompt) => {
-                      const chosen = scentDirectionChosen(form.scentDescription, prompt);
-                      return (
-                        <button
-                          key={prompt}
-                          type="button"
-                          aria-pressed={chosen}
-                          className={`ng-btn !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal${chosen ? '' : ' ng-btn--ghost'}`}
-                          onClick={() => updateField('scentDescription', toggleScentDirection(form.scentDescription, prompt))}
-                        >
-                          {chosen ? '✓' : '+'} {prompt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </label>
-                <fieldset className="ng-fieldset !gap-3">
-                  <legend className="ng-mono mb-2 p-0 text-ng-dust">{t('bsp.moment')}</legend>
-                  <div className="flex flex-wrap gap-2">
-                    {bespokeOccasionOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        aria-pressed={form.occasion === option.value}
-                        className="ng-chip"
-                        onClick={() => updateField('occasion', option.value)}
-                      >
-                        {t(option.labelKey)}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
+          <header className="ng-section relative overflow-hidden !pb-16 !pt-20 md:!pt-28">
+            <span className="ng-script-mark absolute bottom-[-40px] right-6 hidden text-[220px] lg:block" aria-hidden="true">ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀</span>
+            <div className="ng-container relative flex flex-col gap-7">
+              <p className="ng-eyebrow ng-mono m-0">{t('bsp.eyebrow')}</p>
+              <h1 className="ng-display ng-h1 max-w-[980px]">{t('bsp.title')}</h1>
+              <p className="ng-lead">{t('bsp.lead', { days: siteFacts.bespokeDays })}</p>
+              {/* A floor derived from Studio's own option prices: rupiah here, dollars in the English shop by the
+                  rule every perfume abroad is priced with (bespokeUsdPrice). */}
+              {/* The price and its condition, each on its own line: run together they read "Mulai dari Rp 569.000
+                  Sebelum ongkir…", one sentence that is not one (2026-11-02). */}
+              {/* max-w: at 1920px the note ran ~120 characters a line (fifth visitor audit, 13 Nov 2026). */}
+              <p className="m-0 flex max-w-[62ch] flex-col gap-1 text-[15px] text-ng-dust">
+                <strong className="font-medium text-ng-bone">{t('bsp.floor', { price: isInternational ? `US$${bespokeUsdPrice(floorPrice)}` : formatRupiah(floorPrice) })}</strong>
+                <span>{t('bsp.floorNote')}</span>
+              </p>
+              {/* The steps say where the buyer is (sixth visitor audit, 13 Nov 2026: every label stayed the same
+                  grey before and after "Lanjut ke checkout"). Scent first; the moment and the size have
+                  defaults, so a written brief is at the size; the checkout step is the address, then payment. */}
+              <ol className="ng-mono m-0 mt-2 flex list-none flex-wrap gap-x-8 gap-y-3 p-0 text-ng-ash">
+                {bespokeStepKeys(stepKeys, isInternational).map((stepKey, index) => (
+                  <li key={stepKey} aria-current={index === currentStep ? 'step' : undefined} className={index < currentStep ? 'text-ng-dust' : index === currentStep ? 'text-ng-bone' : undefined}>
+                    <span className="mr-2 text-ng-ember">{index < currentStep ? '✓' : (ROMAN_STEPS[index] || index + 1)}</span>{t(stepKey)}
+                  </li>
+                ))}
+              </ol>
             </div>
-            <div className="flex flex-col gap-8 border-t border-ng-bone/15 pt-12" data-reveal>
-              <div className="flex flex-col gap-3">
-                <p className="ng-mono m-0 text-ng-ash">{t(bespokeChoiceGroups.length > 1 ? 'bsp.visualEyebrow' : 'bsp.visualEyebrowSingle')}</p>
-                {/* With one group left (size, since the bottle, cap and label options were switched off on 23 Oct)
-                    "choose a category" offered a single tab: the group names itself instead. */}
-                <h3 className="ng-display m-0 text-[36px] md:text-[44px]">{bespokeChoiceGroups.length > 1 ? t('bsp.visualBody') : activeChoice.title}</h3>
-              </div>
-              <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                <BespokeBottlePreview
-                  activeGroup={activeChoice.key}
-                  bottle={selectedBottle}
-                  cap={selectedCap}
-                  label={selectedLabel}
-                  material={selectedMaterial}
-                  size={selectedSize}
-                />
-                <div className="flex flex-col gap-6">
-                  {bespokeChoiceGroups.length > 1 ? (
-                  <div className="editorial-bespoke-tabs" role="tablist" aria-label={t('bsp.optionGroups')}>
-                    {bespokeChoiceGroups.map((group) => (
-                      <button
-                        key={group.key}
-                        type="button"
-                        role="tab"
-                        aria-selected={activeChoice.key === group.key}
-                        className={activeChoice.key === group.key ? 'is-active' : ''}
-                        onClick={() => setActiveChoiceGroup(group.key)}
-                      >
-                        {group.tabLabel}
-                      </button>
-                    ))}
-                  </div>
-                  ) : null}
-                  <div className="flex flex-col gap-5" role={bespokeChoiceGroups.length > 1 ? 'tabpanel' : undefined} aria-label={activeChoice.title}>
-                    {bespokeChoiceGroups.length > 1 ? (
-                      <div className="flex flex-col gap-2">
-                        <p className="ng-mono m-0 text-ng-ember">{activeChoice.eyebrow}</p>
-                        <h3 className="ng-display m-0 text-[30px]">{activeChoice.title}</h3>
-                      </div>
-                    ) : null}
-                    <div className={`editorial-bespoke-option-grid${activeChoice.key === 'size' ? ' editorial-bespoke-option-grid--compact' : ''}`}>
-                      {activeChoice.options.map((option) => (
-                        <BespokeOptionCard
-                          key={getOptionKey(option) || option.label}
-                          active={isActiveChoiceOption(activeChoice, option)}
-                          description={option.description}
-                          imageUrl={option.imageUrl}
-                          extra={optionPriceLabel(option, activeChoice.options)}
-                          label={option.label}
-                          onClick={() => selectChoiceOption(activeChoice, option)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          </header>
 
-            <div className="ng-panel grid grid-cols-[minmax(0,1fr)] items-end gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" data-reveal>
-              <div className="flex flex-col gap-5">
-                <p className="ng-mono m-0 text-ng-ash">{t('bsp.summaryEyebrow')}</p>
-                <p className="m-0 font-ng-display text-[36px] italic leading-tight">{form.perfumeName || t('bsp.untitled')}</p>
-                <dl className="m-0 flex flex-col gap-3 border-t border-ng-bone/15 pt-4 text-[15px]">
-                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.scent')}</dt><dd className="m-0 text-right">{form.scentDescription || t('bsp.notFilled')}</dd></div>
-                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.moment')}</dt><dd className="m-0 text-right">{bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions) || '-'}</dd></div>
-                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.bottle')}</dt><dd className="m-0 text-right">{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
-                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0 shrink-0 whitespace-nowrap font-ng-display text-[32px]">{priceReady ? (isInternational ? `US$${bespokeUsdPrice(estimatedTotal)}` : formatRupiah(estimatedTotal)) : '—'}</dd></div>
-                </dl>
-              </div>
-              {/* Where the two shops part. The Indonesian one opens its checkout; the English one hands
-                  the brief to WhatsApp, because a bespoke bottle has no international price and its
-                  shipping is quoted by hand. The old page showed this buyer a full checkout — Indonesian
-                  couriers, a domestic voucher box, a rupiah total — directly under a notice saying
-                  international orders are not placed through it. */}
-              <div className="flex flex-col gap-4 text-[15px] text-ng-dust">
-                {bespokeTakesPayment(isInternational) ? (
-                  <>
-                    <p className="m-0">{t('bsp.designOk')}</p>
-                    <button type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => { if (needsScentFirst()) return; setCheckoutOpen(true); }}>
-                      {t('bsp.toCheckout')}
-                      <CreditCard className="h-4 w-4" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="m-0">{t('bsp.waOrderWhy')}</p>
-                    {/* Where it goes: the brief asked for "shipping to my address" and never said which country
-                        (third visitor audit, 13 Nov 2026). The same shared choice the cart's picker writes. */}
-                    <label className="ng-label">
-                      <span className="ng-mono text-ng-dust">{t('intlQuote.countryLabel')}</span>
-                      <select className="ng-field" value={destinationCountry} onChange={(event) => setDestinationCountry(event.target.value)} aria-label={t('intlQuote.countryLabel')}>
-                        <option value="">{t('intlQuote.selectCountry')}</option>
-                        {countryGroups('en').map((group) => (
-                          <optgroup key={group.key} label={group.label}>
-                            {group.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
-                          </optgroup>
-                        ))}
-                      </select>
-                    </label>
-                    <a
-                      href={buildWhatsAppCheckoutUrl(buildBespokeEnquiryDraft({
-                        t,
-                        destination: destinationCountry ? countryNameFor(destinationCountry, 'en') : '',
-                        perfumeName: form.perfumeName,
-                        scent: form.scentDescription || form.mood,
-                        occasion: bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions),
-                        bottle: [selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / '),
-                        price: priceReady && estimatedTotal > 0 ? `US$${bespokeUsdPrice(estimatedTotal)}` : '',
-                      }), getStorefrontWhatsAppNumber())}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(event) => {
-                        if (needsScentFirst()) { event.preventDefault(); return; }
-                        if (!destinationCountry) { event.preventDefault(); toast.error(t('intlQuote.pickFirst')); }
-                      }}
-                      className="ng-btn ng-btn--lg ng-btn--block"
-                    >
-                      {t('bsp.waOrder')}
-                      <Globe className="h-4 w-4" />
-                    </a>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {checkoutOpen && bespokeTakesPayment(isInternational) ? (
-              <div className="flex flex-col gap-10 border-t border-ng-bone/15 pt-12" data-reveal>
+          <section className="ng-section" data-reveal>
+            <form className="ng-container flex flex-col gap-16" onSubmit={submitRequest}>
+              <div className="flex flex-col gap-10">
                 <div className="flex flex-col gap-3.5">
-                  <p className="ng-mono m-0 text-ng-ash">{t('checkout.eyebrow')}</p>
-                  <h2 id="bespoke-checkout-heading" tabIndex={-1} className="ng-display ng-h2 outline-none">{t('bsp.contactSection')}</h2>
-                  <p className="ng-lead">{t('bsp.contactSectionBody')}</p>
+                  <p className="ng-mono m-0 text-ng-ash">{t('bsp.designFirst')}</p>
+                  <h2 className="ng-display ng-h2">{t('bsp.designFirstTitle')}</h2>
+                  <p className="ng-lead">{t('bsp.designFirstBody')}</p>
                 </div>
-                {/* Bespoke ships through the same domestic courier API as the product checkout, so the
-                    same dead end waits here: a foreign city returns an empty area list with no error. */}
-                <InternationalCheckoutNotice quotedOnRequest className="mb-4" />
-                <div className="grid gap-5 md:grid-cols-2">
-                  {/* No SOLI customer code here any more, as in the main checkout (#595): signing in fills the
-                      details, and a guest just types them. */}
-                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input id="bespoke-name" type="text" className="ng-field" autoComplete="name" value={form.customerName} aria-required="true" onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} aria-invalid={invalidFor('name')} />{errorFor('name')}</label>
-                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input id="bespoke-contact" type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} aria-required="true" onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} aria-invalid={invalidFor('contact')} />{errorFor('contact')}</label>
-                  <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea id="bespoke-address" rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} aria-required="true" onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-invalid={invalidFor('address')} />{errorFor('address')}{addressLooksAbroad(form.deliveryAddress) ? (
-                    <span role="status" className="ng-notice">{t('checkout.abroadHint')} <a href="/en/bespoke" className="ng-link">{t('bsp.abroadLink')}</a></span>
-                  ) : null}</label>
-                </div>
-                <div className="ng-fieldset">
-                  <div className="flex flex-col gap-2">
-                    <p className="ng-mono m-0 text-ng-ember">{t('bsp.shippingLegend')}</p>
-                    <strong className="font-ng-display text-[30px] font-normal">{t('bsp.pickArea')}</strong>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      id="bespoke-area"
-                      type="text"
-                      className="ng-field"
-                      aria-invalid={invalidFor('area')}
-                      value={destinationSearch}
-                      onChange={(event) => updateDestinationSearch(event.target.value)}
-                      placeholder={t('bsp.areaPlaceholder')} aria-label={t('bsp.areaAria')}
-                      enterKeyHint="search"
-                      onKeyDown={onEnter(() => { if (!shippingLoading && destinationSearch.trim().length >= 3) searchDestinations(); })}
-                    />
-                    <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
-                      {shippingLoading ? t('bsp.searching') : t('bsp.search')}
-                      <Search className="h-4 w-4" />
-                    </button>
-                  </div>
+                <div className="grid gap-10 lg:grid-cols-3 lg:gap-8">
                   <label className="ng-label">
-                    <span className="ng-mono text-ng-dust">{selectedCourier ? courierLabels[selectedCourier] : t('bsp.pickShippingCourier')}</span>
-                    <select id="bespoke-courier" className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')} aria-invalid={invalidFor('courier')}>
-                      <option value="">{t('bsp.pickCourier')}</option>
-                      {checkoutCourierOptions.map((courier) => (
-                        <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
-                      ))}
-                    </select>
+                    <span className="ng-mono text-ng-dust">{t('bsp.perfumeName')}</span>
+                    <input type="text" className="ng-field !font-ng-display !text-[26px]" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} aria-label={t('bsp.perfumeName')} autoComplete="off" />
+                    <small className="text-[13px] text-ng-ash">{t('bsp.perfumeNameHint')}</small>
                   </label>
-                  {/* The rate is chosen for the buyer, as in the cart checkout: the cheapest, which they can change.
-                      It used to wait for a tap nobody knew they owed, then refuse the order (tenth visitor audit). */}
-                  <button id="bespoke-show-rates" type="button" className="ng-btn ng-btn--ghost self-start" onClick={() => autoCalculateShipping({ autoSelectBest: true })} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
-                    {shippingLoading ? t('bsp.calculating') : t('bsp.showRates')}
-                  </button>
-                  {selectedDestination ? <p className="ng-notice" role="status">{t('ship.area', { area: selectedDestination.label })}</p> : null}
-                  {destinationOptions.length && !selectedDestination ? (
-                    <div className="flex flex-wrap gap-2">
-                      {destinationOptions.map((destination) => (
-                        <button key={destination.id} type="button" className="ng-btn ng-btn--ghost !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal" onClick={() => loadShippingRates(destination, { autoSelectCheapest: true })}>
-                          {destination.label}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                  {visibleShippingOptions.length ? (
-                    <div id="bespoke-rates" className="flex flex-col gap-2">
-                      {visibleShippingOptions.map((rate) => {
-                        const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
+                  <label className="ng-label">
+                    <span className="ng-mono text-ng-dust">{t('bsp.scentDirection')}</span>
+                    <textarea id="bespoke-scent" rows="4" className="ng-field" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} aria-label={t('bsp.scentDirection')} />
+                    <div className="flex flex-wrap gap-2" aria-label={t('bsp.scentShortcuts')}>
+                      {/* A toggle, not an append (sixth visitor audit, 13 Nov 2026): Woody, Fresh, Woody again read
+                          "…, Woody, Fresh, Woody" in the brief, and nothing showed which were already in it. */}
+                      {scentDirectionPrompts.map((prompt) => {
+                        const chosen = scentDirectionChosen(form.scentDescription, prompt);
                         return (
                           <button
-                            key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
+                            key={prompt}
                             type="button"
-                            aria-pressed={active}
-                            className="ng-choice"
-                            onClick={() => setSelectedShipping(rate)}
+                            aria-pressed={chosen}
+                            className={`ng-btn !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal${chosen ? '' : ' ng-btn--ghost'}`}
+                            onClick={() => updateField('scentDescription', toggleScentDirection(form.scentDescription, prompt))}
                           >
-                            {courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}
-                            {' / '}
-                            {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
-                              <s className="mr-1.5 text-ng-ash">{formatRupiah(rate.originalCost)}</s>
-                            ) : null}
-                            {formatRupiah(rate.cost)}
+                            {chosen ? '✓' : '+'} {prompt}
                           </button>
                         );
                       })}
                     </div>
-                  ) : null}
-                  {selectedShipping?.promotionApplied ? <p className="ng-notice" role="status">{selectedShipping.promotionLabel}</p> : null}
-                  {shippingError ? <p role="status" className="ng-notice ng-notice--error">{shippingError}</p> : null}
-                  {errorFor('area')}{errorFor('courier')}{errorFor('service')}
+                  </label>
+                  <fieldset className="ng-fieldset !gap-3">
+                    <legend className="ng-mono mb-2 p-0 text-ng-dust">{t('bsp.moment')}</legend>
+                    <div className="flex flex-wrap gap-2">
+                      {bespokeOccasionOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          aria-pressed={form.occasion === option.value}
+                          className="ng-chip"
+                          onClick={() => updateField('occasion', option.value)}
+                        >
+                          {t(option.labelKey)}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
                 </div>
-                <div className="ng-fieldset">
-                  <div className="flex flex-col gap-2">
-                    <p className="ng-mono m-0 text-ng-ember">{t('bsp.voucher')}</p>
-                    <strong className="font-ng-display text-[30px] font-normal">{voucher.appliedVoucher ? t('bsp.voucherApplied', { code: voucher.appliedVoucher.code }) : t('bsp.voucherEnter')}</strong>
+              </div>
+              <div className="flex flex-col gap-8 border-t border-ng-bone/15 pt-12" data-reveal>
+                <div className="flex flex-col gap-3">
+                  <p className="ng-mono m-0 text-ng-ash">{t(bespokeChoiceGroups.length > 1 ? 'bsp.visualEyebrow' : 'bsp.visualEyebrowSingle')}</p>
+                  {/* With one group left (size, since the bottle, cap and label options were switched off on 23 Oct)
+                      "choose a category" offered a single tab: the group names itself instead. */}
+                  <h3 className="ng-display m-0 text-[36px] md:text-[44px]">{bespokeChoiceGroups.length > 1 ? t('bsp.visualBody') : activeChoice.title}</h3>
+                </div>
+                <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                  <BespokeBottlePreview
+                    activeGroup={activeChoice.key}
+                    bottle={selectedBottle}
+                    cap={selectedCap}
+                    label={selectedLabel}
+                    material={selectedMaterial}
+                    size={selectedSize}
+                  />
+                  <div className="flex flex-col gap-6">
+                    {bespokeChoiceGroups.length > 1 ? (
+                    <div className="editorial-bespoke-tabs" role="tablist" aria-label={t('bsp.optionGroups')}>
+                      {bespokeChoiceGroups.map((group) => (
+                        <button
+                          key={group.key}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeChoice.key === group.key}
+                          className={activeChoice.key === group.key ? 'is-active' : ''}
+                          onClick={() => setActiveChoiceGroup(group.key)}
+                        >
+                          {group.tabLabel}
+                        </button>
+                      ))}
+                    </div>
+                    ) : null}
+                    <div className="flex flex-col gap-5" role={bespokeChoiceGroups.length > 1 ? 'tabpanel' : undefined} aria-label={activeChoice.title}>
+                      {bespokeChoiceGroups.length > 1 ? (
+                        <div className="flex flex-col gap-2">
+                          <p className="ng-mono m-0 text-ng-ember">{activeChoice.eyebrow}</p>
+                          <h3 className="ng-display m-0 text-[30px]">{activeChoice.title}</h3>
+                        </div>
+                      ) : null}
+                      <div className={`editorial-bespoke-option-grid${activeChoice.key === 'size' ? ' editorial-bespoke-option-grid--compact' : ''}`}>
+                        {activeChoice.options.map((option) => (
+                          <BespokeOptionCard
+                            key={getOptionKey(option) || option.label}
+                            active={isActiveChoiceOption(activeChoice, option)}
+                            description={option.description}
+                            imageUrl={option.imageUrl}
+                            extra={optionPriceLabel(option, activeChoice.options)}
+                            label={option.label}
+                            onClick={() => selectChoiceOption(activeChoice, option)}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      id="bespoke-voucher"
-                      type="text"
-                      className="ng-field uppercase placeholder:normal-case"
-                      aria-invalid={invalidFor('voucher')}
-                      value={voucher.inputCode}
-                      onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
-                      onKeyDown={onEnter(voucher.applyVoucher)}
-                      aria-label={t('bsp.voucherPlaceholder')}
-                      placeholder={t('bsp.voucherPlaceholder')}
-                    />
-                    <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={voucher.loading}>
-                      {voucher.loading ? t('bsp.checking') : t('bsp.apply')}
-                      <BadgePercent className="h-4 w-4" />
-                    </button>
+                </div>
+              </div>
+
+              <div className="ng-panel grid grid-cols-[minmax(0,1fr)] items-end gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" data-reveal>
+                <div className="flex flex-col gap-5">
+                  <p className="ng-mono m-0 text-ng-ash">{t('bsp.summaryEyebrow')}</p>
+                  <p className="m-0 font-ng-display text-[36px] italic leading-tight">{form.perfumeName || t('bsp.untitled')}</p>
+                  <dl className="m-0 flex flex-col gap-3 border-t border-ng-bone/15 pt-4 text-[15px]">
+                    <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.scent')}</dt><dd className="m-0 text-right">{form.scentDescription || t('bsp.notFilled')}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.moment')}</dt><dd className="m-0 text-right">{bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions) || '-'}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.bottle')}</dt><dd className="m-0 text-right">{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
+                    <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0 shrink-0 whitespace-nowrap font-ng-display text-[32px]">{priceReady ? (isInternational ? `US$${bespokeUsdPrice(estimatedTotal)}` : formatRupiah(estimatedTotal)) : '—'}</dd></div>
+                  </dl>
+                </div>
+                {/* Where the two shops part. The Indonesian one opens its checkout; the English one hands
+                    the brief to WhatsApp, because a bespoke bottle has no international price and its
+                    shipping is quoted by hand. The old page showed this buyer a full checkout — Indonesian
+                    couriers, a domestic voucher box, a rupiah total — directly under a notice saying
+                    international orders are not placed through it. */}
+                <div className="flex flex-col gap-4 text-[15px] text-ng-dust">
+                  {bespokeTakesPayment(isInternational) ? (
+                    <>
+                      <p className="m-0">{t('bsp.designOk')}</p>
+                      <button type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => { if (needsScentFirst()) return; setCheckoutOpen(true); }}>
+                        {t('bsp.toCheckout')}
+                        <CreditCard className="h-4 w-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="m-0">{t('bsp.waOrderWhy')}</p>
+                      {/* Where it goes: the brief asked for "shipping to my address" and never said which country
+                          (third visitor audit, 13 Nov 2026). The same shared choice the cart's picker writes. */}
+                      <label className="ng-label">
+                        <span className="ng-mono text-ng-dust">{t('intlQuote.countryLabel')}</span>
+                        <select className="ng-field" value={destinationCountry} onChange={(event) => setDestinationCountry(event.target.value)} aria-label={t('intlQuote.countryLabel')}>
+                          <option value="">{t('intlQuote.selectCountry')}</option>
+                          {countryGroups('en').map((group) => (
+                            <optgroup key={group.key} label={group.label}>
+                              {group.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </label>
+                      <a
+                        href={buildWhatsAppCheckoutUrl(buildBespokeEnquiryDraft({
+                          t,
+                          destination: destinationCountry ? countryNameFor(destinationCountry, 'en') : '',
+                          perfumeName: form.perfumeName,
+                          scent: form.scentDescription || form.mood,
+                          occasion: bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions),
+                          bottle: [selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / '),
+                          price: priceReady && estimatedTotal > 0 ? `US$${bespokeUsdPrice(estimatedTotal)}` : '',
+                        }), getStorefrontWhatsAppNumber())}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(event) => {
+                          if (needsScentFirst()) { event.preventDefault(); return; }
+                          if (!destinationCountry) { event.preventDefault(); toast.error(t('intlQuote.pickFirst')); }
+                        }}
+                        className="ng-btn ng-btn--lg ng-btn--block"
+                      >
+                        {t('bsp.waOrder')}
+                        <Globe className="h-4 w-4" />
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {checkoutOpen && bespokeTakesPayment(isInternational) ? (
+                <div className="flex flex-col gap-10 border-t border-ng-bone/15 pt-12" data-reveal>
+                  <div className="flex flex-col gap-3.5">
+                    <p className="ng-mono m-0 text-ng-ash">{t('checkout.eyebrow')}</p>
+                    <h2 id="bespoke-checkout-heading" tabIndex={-1} className="ng-display ng-h2 outline-none">{t('bsp.contactSection')}</h2>
+                    <p className="ng-lead">{t('bsp.contactSectionBody')}</p>
                   </div>
-                  {voucher.appliedVoucher ? (
-                    <div role="status" className="flex items-center justify-between gap-4 border border-ng-bone/20 px-4 py-2 text-[15px]">
-                      <span className="text-ng-dust">{t('bsp.voucherDiscount')}</span>
-                      <strong className="font-normal">-{formatRupiah(discountAmount)}</strong>
-                      <button type="button" className="grid h-11 w-11 place-items-center border-0 bg-transparent text-ng-bone" onClick={voucher.removeVoucher} aria-label={t('bsp.voucherRemove')}>
-                        <X className="h-4 w-4" />
+                  {/* Bespoke ships through the same domestic courier API as the product checkout, so the
+                      same dead end waits here: a foreign city returns an empty area list with no error. */}
+                  <InternationalCheckoutNotice quotedOnRequest className="mb-4" />
+                  <div className="grid gap-5 md:grid-cols-2">
+                    {/* No SOLI customer code here any more, as in the main checkout (#595): signing in fills the
+                        details, and a guest just types them. */}
+                    <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input id="bespoke-name" type="text" className="ng-field" autoComplete="name" value={form.customerName} aria-required="true" onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} aria-invalid={invalidFor('name')} />{errorFor('name')}</label>
+                    <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input id="bespoke-contact" type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} aria-required="true" onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} aria-invalid={invalidFor('contact')} />{errorFor('contact')}</label>
+                    <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea id="bespoke-address" rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} aria-required="true" onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-invalid={invalidFor('address')} />{errorFor('address')}{addressLooksAbroad(form.deliveryAddress) ? (
+                      <span role="status" className="ng-notice">{t('checkout.abroadHint')} <a href="/en/bespoke" className="ng-link">{t('bsp.abroadLink')}</a></span>
+                    ) : null}</label>
+                  </div>
+                  <div className="ng-fieldset">
+                    <div className="flex flex-col gap-2">
+                      <p className="ng-mono m-0 text-ng-ember">{t('bsp.shippingLegend')}</p>
+                      <strong className="font-ng-display text-[30px] font-normal">{t('bsp.pickArea')}</strong>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        id="bespoke-area"
+                        type="text"
+                        className="ng-field"
+                        aria-invalid={invalidFor('area')}
+                        value={destinationSearch}
+                        onChange={(event) => updateDestinationSearch(event.target.value)}
+                        placeholder={t('bsp.areaPlaceholder')} aria-label={t('bsp.areaAria')}
+                        enterKeyHint="search"
+                        onKeyDown={onEnter(() => { if (!shippingLoading && destinationSearch.trim().length >= 3) searchDestinations(); })}
+                      />
+                      <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
+                        {shippingLoading ? t('bsp.searching') : t('bsp.search')}
+                        <Search className="h-4 w-4" />
                       </button>
                     </div>
-                  ) : voucher.message ? (
-                    <p role="status" className={voucher.codeAccepted ? 'ng-notice' : 'ng-notice ng-notice--error'}>{voucher.message}</p>
-                  ) : null}
-                  {errorFor('voucher')}
+                    <label className="ng-label">
+                      <span className="ng-mono text-ng-dust">{selectedCourier ? courierLabels[selectedCourier] : t('bsp.pickShippingCourier')}</span>
+                      <select id="bespoke-courier" className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')} aria-invalid={invalidFor('courier')}>
+                        <option value="">{t('bsp.pickCourier')}</option>
+                        {checkoutCourierOptions.map((courier) => (
+                          <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    {/* The rate is chosen for the buyer, as in the cart checkout: the cheapest, which they can change.
+                        It used to wait for a tap nobody knew they owed, then refuse the order (tenth visitor audit). */}
+                    <button id="bespoke-show-rates" type="button" className="ng-btn ng-btn--ghost self-start" onClick={() => autoCalculateShipping({ autoSelectBest: true })} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
+                      {shippingLoading ? t('bsp.calculating') : t('bsp.showRates')}
+                    </button>
+                    {selectedDestination ? <p className="ng-notice" role="status">{t('ship.area', { area: selectedDestination.label })}</p> : null}
+                    {destinationOptions.length && !selectedDestination ? (
+                      <div className="flex flex-wrap gap-2">
+                        {destinationOptions.map((destination) => (
+                          <button key={destination.id} type="button" className="ng-btn ng-btn--ghost !min-h-[44px] !px-3.5 !font-ng-body !text-sm !normal-case !tracking-normal" onClick={() => loadShippingRates(destination, { autoSelectCheapest: true })}>
+                            {destination.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                    {visibleShippingOptions.length ? (
+                      <div id="bespoke-rates" className="flex flex-col gap-2">
+                        {visibleShippingOptions.map((rate) => {
+                          const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
+                          return (
+                            <button
+                              key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
+                              type="button"
+                              aria-pressed={active}
+                              className="ng-choice"
+                              onClick={() => setSelectedShipping(rate)}
+                            >
+                              {courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}
+                              {' / '}
+                              {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
+                                <s className="mr-1.5 text-ng-ash">{formatRupiah(rate.originalCost)}</s>
+                              ) : null}
+                              {formatRupiah(rate.cost)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                    {selectedShipping?.promotionApplied ? <p className="ng-notice" role="status">{selectedShipping.promotionLabel}</p> : null}
+                    {shippingError ? <p role="status" className="ng-notice ng-notice--error">{shippingError}</p> : null}
+                    {errorFor('area')}{errorFor('courier')}{errorFor('service')}
+                  </div>
+                  <div className="ng-fieldset">
+                    <div className="flex flex-col gap-2">
+                      <p className="ng-mono m-0 text-ng-ember">{t('bsp.voucher')}</p>
+                      <strong className="font-ng-display text-[30px] font-normal">{voucher.appliedVoucher ? t('bsp.voucherApplied', { code: voucher.appliedVoucher.code }) : t('bsp.voucherEnter')}</strong>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        id="bespoke-voucher"
+                        type="text"
+                        className="ng-field uppercase placeholder:normal-case"
+                        aria-invalid={invalidFor('voucher')}
+                        value={voucher.inputCode}
+                        onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                        onKeyDown={onEnter(voucher.applyVoucher)}
+                        aria-label={t('bsp.voucherPlaceholder')}
+                        placeholder={t('bsp.voucherPlaceholder')}
+                      />
+                      <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={voucher.loading}>
+                        {voucher.loading ? t('bsp.checking') : t('bsp.apply')}
+                        <BadgePercent className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {voucher.appliedVoucher ? (
+                      <div role="status" className="flex items-center justify-between gap-4 border border-ng-bone/20 px-4 py-2 text-[15px]">
+                        <span className="text-ng-dust">{t('bsp.voucherDiscount')}</span>
+                        <strong className="font-normal">-{formatRupiah(discountAmount)}</strong>
+                        <button type="button" className="grid h-11 w-11 place-items-center border-0 bg-transparent text-ng-bone" onClick={voucher.removeVoucher} aria-label={t('bsp.voucherRemove')}>
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : voucher.message ? (
+                      <p role="status" className={voucher.codeAccepted ? 'ng-notice' : 'ng-notice ng-notice--error'}>{voucher.message}</p>
+                    ) : null}
+                    {errorFor('voucher')}
+                  </div>
+                  <dl className="ng-panel m-0 flex flex-col gap-3 text-[15px]">
+                    <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
+                    {discountAmount ? <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.voucher')}</dt><dd className="m-0 text-ng-sand">-{formatRupiah(discountAmount)}</dd></div> : null}
+                    <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.shipping')}</dt><dd className="m-0">{shippingFee ? formatRupiah(shippingFee) : '-'}</dd></div>
+                    <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t(isManualPayment ? 'bsp.transferTotal' : 'checkout.total')}</dt><dd className="m-0 font-ng-display text-[34px]">{priceReady ? formatRupiah(totalDue) : '—'}</dd></div>
+                  </dl>
+                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.payment')}</span><select className="ng-field" value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
+                  <label className="flex items-start gap-3 text-[15px] leading-relaxed text-ng-sand">
+                    <input id="bespoke-preorder" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#d4573a]" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} aria-invalid={invalidFor('preorder')} />
+                    {t('bsp.preorderConfirm', { days: siteFacts.bespokeDays })}
+                  </label>
+                  {errorFor('preorder')}
+                  <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={saving}>
+                    {saving ? t('bsp.saving') : (isManualPayment ? t('bsp.orderUpload') : t('bsp.orderPay'))}
+                    {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
+                  </button>
                 </div>
-                <dl className="ng-panel m-0 flex flex-col gap-3 text-[15px]">
-                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.subtotal')}</dt><dd className="m-0">{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
-                  {discountAmount ? <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.voucher')}</dt><dd className="m-0 text-ng-sand">-{formatRupiah(discountAmount)}</dd></div> : null}
-                  <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.shipping')}</dt><dd className="m-0">{shippingFee ? formatRupiah(shippingFee) : '-'}</dd></div>
-                  <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t(isManualPayment ? 'bsp.transferTotal' : 'checkout.total')}</dt><dd className="m-0 font-ng-display text-[34px]">{priceReady ? formatRupiah(totalDue) : '—'}</dd></div>
-                </dl>
-                <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.payment')}</span><select className="ng-field" value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
-                <label className="flex items-start gap-3 text-[15px] leading-relaxed text-ng-sand">
-                  <input id="bespoke-preorder" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#d4573a]" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} aria-invalid={invalidFor('preorder')} />
-                  {t('bsp.preorderConfirm', { days: siteFacts.bespokeDays })}
-                </label>
-                {errorFor('preorder')}
-                <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={saving}>
-                  {saving ? t('bsp.saving') : (isManualPayment ? t('bsp.orderUpload') : t('bsp.orderPay'))}
-                  {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
-                </button>
-              </div>
-            ) : null}
-          </form>
-        </section>
+              ) : null}
+            </form>
+          </section>
 
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };

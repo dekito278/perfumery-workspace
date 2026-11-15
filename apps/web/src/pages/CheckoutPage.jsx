@@ -161,7 +161,7 @@ const CheckoutPage = () => {
   const pickArea = async (destination) => {
     await loadShippingRates(destination, { autoSelectCheapest: true });
     window.requestAnimationFrame(() => {
-      const target = document.querySelector('#checkout-form .ng-choice[aria-pressed="true"]')
+      const target = document.querySelector('#checkout-form .ng-choice[aria-pressed="true"], #checkout-form .ng-choice[aria-checked="true"]')
         || document.querySelector('#checkout-form .ng-choice')
         || document.querySelector('#checkout-form select');
       target?.focus();
@@ -179,24 +179,27 @@ const CheckoutPage = () => {
         <Helmet>
           <title>{t('checkout.tab')}</title>
         </Helmet>
-        <main className="solivagant-editorial-home">
+        <div className="solivagant-editorial-home">
           <PublicHeader />
-          <section className="ng-section !pt-14 md:!pt-20">
-            <div className="ng-container flex flex-col items-start gap-6">
-              <p className="ng-eyebrow ng-mono m-0">{t('checkout.eyebrow')}</p>
-              <h1 className="ng-display ng-h1">{t('checkout.title')}</h1>
-              <p className="ng-lead">{t('checkout.emptyTitle')}</p>
-              {/* The heading already says the cart is empty; what is left is the instruction and the way out. */}
-              <p className="m-0 flex items-center gap-3 text-ng-dust"><ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('checkout.emptyBody')}</p>
-              {/* Both doors, as the phone checkout always offered: a bottle from the shelf, or one made to order. */}
-              <div className="flex flex-wrap gap-3.5">
-                <Link to="/catalog" className="ng-btn">{t('home.seeCollection')}</Link>
-                <Link to="/bespoke" className="ng-btn ng-btn--ghost">{t('cart.bespoke')}</Link>
+          {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+          <main id="main-content">
+            <section className="ng-section !pt-14 md:!pt-20">
+              <div className="ng-container flex flex-col items-start gap-6">
+                <p className="ng-eyebrow ng-mono m-0">{t('checkout.eyebrow')}</p>
+                <h1 className="ng-display ng-h1">{t('checkout.title')}</h1>
+                <p className="ng-lead">{t('checkout.emptyTitle')}</p>
+                {/* The heading already says the cart is empty; what is left is the instruction and the way out. */}
+                <p className="m-0 flex items-center gap-3 text-ng-dust"><ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('checkout.emptyBody')}</p>
+                {/* Both doors, as the phone checkout always offered: a bottle from the shelf, or one made to order. */}
+                <div className="flex flex-wrap gap-3.5">
+                  <Link to="/catalog" className="ng-btn">{t('home.seeCollection')}</Link>
+                  <Link to="/bespoke" className="ng-btn ng-btn--ghost">{t('cart.bespoke')}</Link>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </main>
           <StorefrontFooter />
-        </main>
+        </div>
       </>
     );
   }
@@ -207,303 +210,309 @@ const CheckoutPage = () => {
         <title>{t('checkout.tab')}</title>
       </Helmet>
 
-      <main className="solivagant-editorial-home">
+      <div className="solivagant-editorial-home">
         <StaleCatalogNotice stale={catalogProducts.stale} empty={!catalogProducts.length} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <PublicHeader />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
 
-        <section className="ng-section !border-b-0 !pt-14 md:!pt-20">
-          <div className="ng-container flex flex-col gap-12">
-            <div className="flex flex-col gap-5">
-              <p className="ng-eyebrow ng-mono m-0">{t('checkout.ngStep')}</p>
-              <h1 className="ng-display ng-h1">{t('checkout.title')}</h1>
-              <p className="ng-lead">{t('checkout.lead')}</p>
-            </div>
+          <section className="ng-section !border-b-0 !pt-14 md:!pt-20">
+            <div className="ng-container flex flex-col gap-12">
+              <div className="flex flex-col gap-5">
+                <p className="ng-eyebrow ng-mono m-0">{t('checkout.ngStep')}</p>
+                <h1 className="ng-display ng-h1">{t('checkout.title')}</h1>
+                <p className="ng-lead">{t('checkout.lead')}</p>
+              </div>
 
-            {/* minmax(0,1fr) on the phone too, and min-w-0 on the form. A grid with no columns sizes its one
-                column to the content, and the signed-in line ("Masuk sebagai <email> — data terisi otomatis",
-                one line by design) pushed the whole form to 501px on a 390px phone — every field ran off the
-                right edge (Dekito's screenshot, 14 Nov 2026). */}
-            <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-[72px]">
-              <form id="checkout-form" className="flex min-w-0 flex-col gap-14" onSubmit={handleSubmitAttempt} noValidate>
-                {/* Customer info */}
-                <fieldset className="ng-fieldset">
-                  <legend className="ng-legend"><span className="ng-mono text-ng-ember">I</span>{t('checkout.buyerInfo')}</legend>
-                  {currentUser ? (
-                    <div className="flex items-center justify-between gap-3 border border-ng-bone/20 px-4 py-3 text-sm">
-                      <span className="min-w-0 text-ng-sand [overflow-wrap:anywhere]">{t('checkout.signedInAuto', { email: currentUser.email })}</span>
-                      <button type="button" onClick={signOut} className="ng-link ng-mono min-h-[44px] shrink-0 border-0 bg-transparent p-0 underline underline-offset-4">{t('checkout.signOut')}</button>
+              {/* minmax(0,1fr) on the phone too, and min-w-0 on the form. A grid with no columns sizes its one
+                  column to the content, and the signed-in line ("Masuk sebagai <email> — data terisi otomatis",
+                  one line by design) pushed the whole form to 501px on a 390px phone — every field ran off the
+                  right edge (Dekito's screenshot, 14 Nov 2026). */}
+              <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-[72px]">
+                <form id="checkout-form" className="flex min-w-0 flex-col gap-14" onSubmit={handleSubmitAttempt} noValidate>
+                  {/* Customer info */}
+                  <fieldset className="ng-fieldset">
+                    <legend className="ng-legend"><span className="ng-mono text-ng-ember">I</span>{t('checkout.buyerInfo')}</legend>
+                    {currentUser ? (
+                      <div className="flex items-center justify-between gap-3 border border-ng-bone/20 px-4 py-3 text-sm">
+                        <span className="min-w-0 text-ng-sand [overflow-wrap:anywhere]">{t('checkout.signedInAuto', { email: currentUser.email })}</span>
+                        <button type="button" onClick={signOut} className="ng-link ng-mono min-h-[44px] shrink-0 border-0 bg-transparent p-0 underline underline-offset-4">{t('checkout.signOut')}</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={handleGoogleLogin} className="ng-btn ng-btn--ghost ng-btn--block !min-h-[56px] !justify-start !normal-case !tracking-normal !font-ng-body !text-[15px]">
+                        <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        {memberSaving > 0
+                          ? t('checkout.signInSaving')
+                          : t('checkout.signInPlain')}
+                      </button>
+                    )}
+                    {/* No code fields here (Dekito, 13 Nov 2026: too many codes). A member code goes in the one
+                        "Kode" field below, with vouchers; the old SOLI customer code is not asked for at all —
+                        signing in fills the details, and a guest just types them. */}
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <label className="ng-label">
+                        <span className="ng-mono text-ng-dust">{t('checkout.fullName')}</span>
+                        <input type="text" className="ng-field" aria-required="true" maxLength={100} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
+                        {triedSubmit && fieldErrors.customerName ? <span className="ng-error text-sm" role="alert">{fieldErrors.customerName}</span> : null}
+                      </label>
+                      <label className="ng-label">
+                        <span className="ng-mono text-ng-dust">{t('checkout.whatsapp')}</span>
+                        <input type="tel" className="ng-field" maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} placeholder={t('bsp.contactPlaceholder')} autoComplete="tel" aria-required="true" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
+                        {triedSubmit && fieldErrors.contact ? <span className="ng-error text-sm" role="alert">{fieldErrors.contact}</span> : null}
+                      </label>
                     </div>
-                  ) : (
-                    <button type="button" onClick={handleGoogleLogin} className="ng-btn ng-btn--ghost ng-btn--block !min-h-[56px] !justify-start !normal-case !tracking-normal !font-ng-body !text-[15px]">
-                      <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
-                      {memberSaving > 0
-                        ? t('checkout.signInSaving')
-                        : t('checkout.signInPlain')}
-                    </button>
-                  )}
-                  {/* No code fields here (Dekito, 13 Nov 2026: too many codes). A member code goes in the one
-                      "Kode" field below, with vouchers; the old SOLI customer code is not asked for at all —
-                      signing in fills the details, and a guest just types them. */}
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <label className="ng-label">
-                      <span className="ng-mono text-ng-dust">{t('checkout.fullName')}</span>
-                      <input type="text" className="ng-field" aria-required="true" maxLength={100} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
-                      {triedSubmit && fieldErrors.customerName ? <span className="ng-error text-sm" role="alert">{fieldErrors.customerName}</span> : null}
-                    </label>
-                    <label className="ng-label">
-                      <span className="ng-mono text-ng-dust">{t('checkout.whatsapp')}</span>
-                      <input type="tel" className="ng-field" maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} placeholder={t('bsp.contactPlaceholder')} autoComplete="tel" aria-required="true" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
-                      {triedSubmit && fieldErrors.contact ? <span className="ng-error text-sm" role="alert">{fieldErrors.contact}</span> : null}
-                    </label>
-                  </div>
-                  <div className="ng-label">
-                    <label className="ng-mono text-ng-dust" htmlFor="checkout-address">{t('checkout.address')}</label>
-                    {/* A returning buyer picks between the address on file and a new one — the choice the
-                        phone checkout always offered and the desktop one never did. */}
-                    {repeatCustomer?.customerCode && (repeatCustomer.deliveryAddress || repeatCustomer.deliveryArea) ? (
-                      <div className="flex flex-wrap gap-2">
-                        <button type="button" aria-pressed={repeatAddressMode === 'last'} onClick={useCustomerLastAddress} className="ng-chip ng-chip--plain">{t('mcheckout.useLastAddress')}</button>
-                        <button type="button" aria-pressed={repeatAddressMode === 'new'} onClick={useCustomerNewAddress} className="ng-chip ng-chip--plain">{t('mcheckout.useNewAddress')}</button>
-                      </div>
-                    ) : null}
-                    <textarea id="checkout-address" className="ng-field" aria-required="true" maxLength={500} value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
-                    {/* Rupiah is for Indonesia (Dekito's brief, 14 Nov 2026): an address that ends in another country
-                        is told where its order goes, before the buyer hunts for a kecamatan that does not exist. */}
-                    {addressLooksAbroad(deliveryAddress) ? (
-                      <p role="status" className="ng-notice m-0">
-                        {t('checkout.abroadHint')}{' '}
-                        <a href="/en/cart" className="ng-link">{t('checkout.abroadLink')}</a>
-                      </p>
-                    ) : null}
-                    {triedSubmit && fieldErrors.deliveryAddress ? <span className="ng-error text-sm" role="alert">{fieldErrors.deliveryAddress}</span> : null}
-                  </div>
-                </fieldset>
+                    <div className="ng-label">
+                      <label className="ng-mono text-ng-dust" htmlFor="checkout-address">{t('checkout.address')}</label>
+                      {/* A returning buyer picks between the address on file and a new one — the choice the
+                          phone checkout always offered and the desktop one never did. */}
+                      {repeatCustomer?.customerCode && (repeatCustomer.deliveryAddress || repeatCustomer.deliveryArea) ? (
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" aria-pressed={repeatAddressMode === 'last'} onClick={useCustomerLastAddress} className="ng-chip ng-chip--plain">{t('mcheckout.useLastAddress')}</button>
+                          <button type="button" aria-pressed={repeatAddressMode === 'new'} onClick={useCustomerNewAddress} className="ng-chip ng-chip--plain">{t('mcheckout.useNewAddress')}</button>
+                        </div>
+                      ) : null}
+                      <textarea id="checkout-address" className="ng-field" aria-required="true" maxLength={500} value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
+                      {/* Rupiah is for Indonesia (Dekito's brief, 14 Nov 2026): an address that ends in another country
+                          is told where its order goes, before the buyer hunts for a kecamatan that does not exist. */}
+                      {addressLooksAbroad(deliveryAddress) ? (
+                        <p role="status" className="ng-notice m-0">
+                          {t('checkout.abroadHint')}{' '}
+                          <a href="/en/cart" className="ng-link">{t('checkout.abroadLink')}</a>
+                        </p>
+                      ) : null}
+                      {triedSubmit && fieldErrors.deliveryAddress ? <span className="ng-error text-sm" role="alert">{fieldErrors.deliveryAddress}</span> : null}
+                    </div>
+                  </fieldset>
 
-                {/* Shipping */}
-                <fieldset className="ng-fieldset">
-                  <legend className="ng-legend"><span className="ng-mono text-ng-ember">II</span>{t('checkout.deliveryLegend')}</legend>
-                  <label className="ng-label">
-                    <span className="ng-mono text-ng-dust">{t('checkout.courier')}</span>
-                    <select className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('checkout.pickCourier')} aria-invalid={triedSubmit && fieldErrors.courier ? 'true' : undefined}>
-                      <option value="">{t('checkout.pickCourier')}</option>
-                      {checkoutCourierOptions.map((courier) => (
-                        <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
-                      ))}
-                    </select>
-                    {triedSubmit && fieldErrors.courier ? <span className="ng-error text-sm" role="alert">{fieldErrors.courier}</span> : null}
-                  </label>
-                  {showAreaSearch || manualArea ? (
+                  {/* Shipping */}
+                  <fieldset className="ng-fieldset">
+                    <legend className="ng-legend"><span className="ng-mono text-ng-ember">II</span>{t('checkout.deliveryLegend')}</legend>
                     <label className="ng-label">
-                      <span className="ng-mono text-ng-dust">{t('checkout.destination')}</span>
-                      <div className="flex gap-2">
-                        <input type="text" className="ng-field" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" onKeyDown={onEnter(searchArea)} enterKeyHint="search" aria-invalid={triedSubmit && fieldErrors.destination ? 'true' : undefined} />
-                        <button
-                          type="button"
-                          className="ng-btn ng-btn--ghost shrink-0"
-                          disabled={shippingLoading || !selectedCourier}
-                          onClick={searchArea}
-                        >
-                          <Search className="h-4 w-4" aria-hidden="true" /> {t('checkout.search')}
-                        </button>
-                      </div>
-                      {manualArea ? <span className="text-sm text-ng-dust">{t('mcheckout.manualAreaHint')}</span> : null}
-                      {triedSubmit && fieldErrors.destination ? <span className="ng-error text-sm" role="alert">{fieldErrors.destination}</span> : null}
+                      <span className="ng-mono text-ng-dust">{t('checkout.courier')}</span>
+                      <select className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('checkout.pickCourier')} aria-invalid={triedSubmit && fieldErrors.courier ? 'true' : undefined}>
+                        <option value="">{t('checkout.pickCourier')}</option>
+                        {checkoutCourierOptions.map((courier) => (
+                          <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
+                        ))}
+                      </select>
+                      {triedSubmit && fieldErrors.courier ? <span className="ng-error text-sm" role="alert">{fieldErrors.courier}</span> : null}
                     </label>
-                  ) : selectedCourier ? (
-                    <button type="button" onClick={() => setManualArea(true)} className="ng-link ng-mono inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4">
-                      {t('mcheckout.editManualShipping')}
-                    </button>
-                  ) : null}
-                  {shippingLoading ? <p role="status" className="ng-notice">{t('checkout.searchingRates')}</p> : null}
-                  {shippingNotice ? <p role="status" className="ng-notice">{shippingNotice}</p> : null}
-                  {shippingError ? <p role="status" className="ng-notice ng-notice--error">{shippingError}</p> : null}
-                  {/* The calculator is out for the day, not the buyer's address: the order goes by WhatsApp,
-                      with the basket already written in the message. */}
-                  {shippingError === SHIPPING_QUOTA_MESSAGE ? (
-                    <AskAtelierButton
-                      className="self-start"
-                      labelKey="checkout.orderOnWhatsApp"
-                      draftKey="checkout.waShippingDraft"
-                      draftVars={{ items: items.map((item) => `${plainName(item.name)} × ${item.quantity}`).join(', ') }}
-                    />
-                  ) : null}
-                  {destinationOptions.length ? (
-                    <div className="flex flex-col gap-2">
-                      <span className="ng-mono text-ng-ash">{t('mcheckout.pickOtherArea')}</span>
-                      <div className="flex flex-wrap gap-2">
-                        {destinationOptions.map((destination) => (
-                          <button key={destination.id || destination.label} type="button" className="ng-chip ng-chip--plain" aria-pressed={selectedDestination?.label === destination.label} onClick={() => pickArea(destination)}>
-                            {destination.label}
+                    {showAreaSearch || manualArea ? (
+                      <label className="ng-label">
+                        <span className="ng-mono text-ng-dust">{t('checkout.destination')}</span>
+                        <div className="flex gap-2">
+                          <input type="text" className="ng-field" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" onKeyDown={onEnter(searchArea)} enterKeyHint="search" aria-invalid={triedSubmit && fieldErrors.destination ? 'true' : undefined} />
+                          <button
+                            type="button"
+                            className="ng-btn ng-btn--ghost shrink-0"
+                            disabled={shippingLoading || !selectedCourier}
+                            onClick={searchArea}
+                          >
+                            <Search className="h-4 w-4" aria-hidden="true" /> {t('checkout.search')}
+                          </button>
+                        </div>
+                        {manualArea ? <span className="text-sm text-ng-dust">{t('mcheckout.manualAreaHint')}</span> : null}
+                        {triedSubmit && fieldErrors.destination ? <span className="ng-error text-sm" role="alert">{fieldErrors.destination}</span> : null}
+                      </label>
+                    ) : selectedCourier ? (
+                      <button type="button" onClick={() => setManualArea(true)} className="ng-link ng-mono inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4">
+                        {t('mcheckout.editManualShipping')}
+                      </button>
+                    ) : null}
+                    {shippingLoading ? <p role="status" className="ng-notice">{t('checkout.searchingRates')}</p> : null}
+                    {shippingNotice ? <p role="status" className="ng-notice">{shippingNotice}</p> : null}
+                    {shippingError ? <p role="status" className="ng-notice ng-notice--error">{shippingError}</p> : null}
+                    {/* The calculator is out for the day, not the buyer's address: the order goes by WhatsApp,
+                        with the basket already written in the message. */}
+                    {shippingError === SHIPPING_QUOTA_MESSAGE ? (
+                      <AskAtelierButton
+                        className="self-start"
+                        labelKey="checkout.orderOnWhatsApp"
+                        draftKey="checkout.waShippingDraft"
+                        draftVars={{ items: items.map((item) => `${plainName(item.name)} × ${item.quantity}`).join(', ') }}
+                      />
+                    ) : null}
+                    {destinationOptions.length ? (
+                      <div className="flex flex-col gap-2">
+                        <span className="ng-mono text-ng-ash">{t('mcheckout.pickOtherArea')}</span>
+                        <div className="flex flex-wrap gap-2">
+                          {destinationOptions.map((destination) => (
+                            <button key={destination.id || destination.label} type="button" className="ng-chip ng-chip--plain" aria-pressed={selectedDestination?.label === destination.label} onClick={() => pickArea(destination)}>
+                              {destination.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    {visibleShippingOptions.length ? (
+                      <div className="flex flex-col gap-2" role="radiogroup" aria-label={t('checkout.fieldRate')}>
+                        {visibleShippingOptions.map((rate) => (
+                          <button
+                            key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
+                            type="button"
+                            role="radio"
+                            aria-checked={selectedShipping?.service === rate.service && selectedShipping?.cost === rate.cost}
+                            className="ng-choice"
+                            onClick={() => setSelectedShipping(rate)}
+                          >
+                            <span>{courierLabels[rate.courierCode] || rate.courierCode} · {rate.service}</span>
+                            <span className="flex items-baseline gap-2">
+                              {/* The promotion was applied to rate.cost before it got here, and the desktop
+                                  showed only the result: a lower number with nothing to explain it. The phone
+                                  has always struck through the original and named the promo. A buyer who
+                                  cannot see that free shipping happened has been given a discount and no
+                                  reason to remember it. */}
+                              {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
+                                <s className="text-sm text-ng-ash">{formatTotal(rate.originalCost)}</s>
+                              ) : null}
+                              {formatTotal(rate.cost)}
+                            </span>
                           </button>
                         ))}
                       </div>
+                    ) : null}
+                    {selectedShipping?.promotionApplied && selectedShipping.promotionLabel ? (
+                      <p role="status" className="ng-notice">{selectedShipping.promotionLabel}</p>
+                    ) : null}
+                    {selectedDestination ? <p role="status" className="ng-notice">{t('ship.area', { area: selectedDestination.label })}</p> : null}
+                  </fieldset>
+
+                  {/* Voucher */}
+                  <fieldset className="ng-fieldset">
+                    <legend className="ng-legend"><span className="ng-mono text-ng-ember">III</span>{t('cart.voucher')}</legend>
+                    <div className="flex flex-col gap-2.5">
+                      <label className="text-sm text-ng-dust" htmlFor="checkout-voucher">
+                        {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('checkout.voucherEnter')}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          id="checkout-voucher"
+                          type="text"
+                          className="ng-field uppercase placeholder:normal-case"
+                          value={voucher.inputCode}
+                          onChange={(event) => voucher.setInputCode(event.target.value)}
+                          onKeyDown={onEnter(voucher.applyVoucher)}
+                          placeholder={t('checkout.voucherPlaceholder')} aria-label={t('checkout.voucherPlaceholder')}
+                          autoComplete="off"
+                          autoCapitalize="characters"
+                          spellCheck={false}
+                          disabled={!items.length || voucher.loading}
+                          aria-invalid={triedSubmit && voucher.unappliedCode && !voucher.loading ? 'true' : undefined}
+                        />
+                        <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
+                          <BadgePercent className="h-4 w-4" aria-hidden="true" />
+                          {voucher.loading ? t('checkout.checking') : t('checkout.voucherApply')}
+                        </button>
+                      </div>
+                      {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
+                      {triedSubmit && voucher.unappliedCode && !voucher.loading ? <span className="ng-error text-sm" role="alert">{t(voucher.codeRefused ? 'checkout.errVoucherRefused' : 'checkout.errVoucherUnapplied', { code: voucher.unappliedCode })}</span> : null}
+                      {voucher.appliedVoucher ? (
+                        <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
+                          <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
+                        </button>
+                      ) : null}
                     </div>
-                  ) : null}
-                  {visibleShippingOptions.length ? (
-                    <div className="flex flex-col gap-2">
-                      {visibleShippingOptions.map((rate) => (
+                  </fieldset>
+
+                  {/* Payment */}
+                  <fieldset className="ng-fieldset">
+                    <legend className="ng-legend"><span className="ng-mono text-ng-ember">IV</span>{t('checkout.paymentLegend')}</legend>
+                    {/* Choices you can read, as the phone checkout drew them, instead of a closed dropdown. */}
+                    {/* One of a set, announced as one (fresh buyer audit, 15 Nov 2026: read as two "pressed" buttons). */}
+                    <div className="flex flex-col gap-2" role="radiogroup" aria-label={t('checkout.paymentMethod')}>
+                      {checkoutPaymentMethods.map((method) => (
                         <button
-                          key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
+                          key={method.id}
                           type="button"
-                          aria-pressed={selectedShipping?.service === rate.service && selectedShipping?.cost === rate.cost}
+                          role="radio"
+                          aria-checked={selectedPaymentMethod === method.id}
                           className="ng-choice"
-                          onClick={() => setSelectedShipping(rate)}
+                          onClick={() => setSelectedPaymentMethod(method.id)}
                         >
-                          <span>{courierLabels[rate.courierCode] || rate.courierCode} · {rate.service}</span>
-                          <span className="flex items-baseline gap-2">
-                            {/* The promotion was applied to rate.cost before it got here, and the desktop
-                                showed only the result: a lower number with nothing to explain it. The phone
-                                has always struck through the original and named the promo. A buyer who
-                                cannot see that free shipping happened has been given a discount and no
-                                reason to remember it. */}
-                            {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
-                              <s className="text-sm text-ng-ash">{formatTotal(rate.originalCost)}</s>
-                            ) : null}
-                            {formatTotal(rate.cost)}
+                          <span className="flex flex-col gap-1 text-left">
+                            <span>{t(method.labelKey)}</span>
+                            {method.descriptionKey ? <span className="text-[13px] text-ng-dust">{t(method.descriptionKey)}</span> : null}
                           </span>
+                          <span className="ng-choice__dot" aria-hidden="true" />
                         </button>
                       ))}
                     </div>
-                  ) : null}
-                  {selectedShipping?.promotionApplied && selectedShipping.promotionLabel ? (
-                    <p role="status" className="ng-notice">{selectedShipping.promotionLabel}</p>
-                  ) : null}
-                  {selectedDestination ? <p role="status" className="ng-notice">{t('ship.area', { area: selectedDestination.label })}</p> : null}
-                </fieldset>
-
-                {/* Voucher */}
-                <fieldset className="ng-fieldset">
-                  <legend className="ng-legend"><span className="ng-mono text-ng-ember">III</span>{t('cart.voucher')}</legend>
-                  <div className="flex flex-col gap-2.5">
-                    <label className="text-sm text-ng-dust" htmlFor="checkout-voucher">
-                      {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('checkout.voucherEnter')}
+                    <label className="ng-label">
+                      <span className="ng-mono text-ng-dust">{t('checkout.deliveryNote')}</span>
+                      <textarea className="ng-field" value={notes} onChange={(event) => setNotes(event.target.value)} rows="2" placeholder={t('checkout.optional')} aria-label={t('checkout.deliveryNote')} autoComplete="off" />
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        id="checkout-voucher"
-                        type="text"
-                        className="ng-field uppercase placeholder:normal-case"
-                        value={voucher.inputCode}
-                        onChange={(event) => voucher.setInputCode(event.target.value)}
-                        onKeyDown={onEnter(voucher.applyVoucher)}
-                        placeholder={t('checkout.voucherPlaceholder')} aria-label={t('checkout.voucherPlaceholder')}
-                        autoComplete="off"
-                        autoCapitalize="characters"
-                        spellCheck={false}
-                        disabled={!items.length || voucher.loading}
-                        aria-invalid={triedSubmit && voucher.unappliedCode && !voucher.loading ? 'true' : undefined}
-                      />
-                      <button type="button" className="ng-btn ng-btn--ghost shrink-0" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
-                        <BadgePercent className="h-4 w-4" aria-hidden="true" />
-                        {voucher.loading ? t('checkout.checking') : t('checkout.voucherApply')}
-                      </button>
-                    </div>
-                    {voucher.message ? <p role="status" className={`m-0 text-sm ${voucher.codeAccepted ? 'text-ng-sand' : 'ng-error'}`}>{voucher.message}</p> : null}
-                    {triedSubmit && voucher.unappliedCode && !voucher.loading ? <span className="ng-error text-sm" role="alert">{t(voucher.codeRefused ? 'checkout.errVoucherRefused' : 'checkout.errVoucherUnapplied', { code: voucher.unappliedCode })}</span> : null}
-                    {voucher.appliedVoucher ? (
-                      <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 self-start border-0 bg-transparent p-0" onClick={voucher.removeVoucher}>
-                        <X className="h-3.5 w-3.5" aria-hidden="true" /> {t('cart.voucherRemove')}
-                      </button>
-                    ) : null}
-                  </div>
-                </fieldset>
+                  </fieldset>
 
-                {/* Payment */}
-                <fieldset className="ng-fieldset">
-                  <legend className="ng-legend"><span className="ng-mono text-ng-ember">IV</span>{t('checkout.paymentLegend')}</legend>
-                  {/* Choices you can read, as the phone checkout drew them, instead of a closed dropdown. */}
-                  <div className="flex flex-col gap-2" role="group" aria-label={t('checkout.paymentMethod')}>
-                    {checkoutPaymentMethods.map((method) => (
-                      <button
-                        key={method.id}
-                        type="button"
-                        aria-pressed={selectedPaymentMethod === method.id}
-                        className="ng-choice"
-                        onClick={() => setSelectedPaymentMethod(method.id)}
-                      >
-                        <span className="flex flex-col gap-1 text-left">
-                          <span>{t(method.labelKey)}</span>
-                          {method.descriptionKey ? <span className="text-[13px] text-ng-dust">{t(method.descriptionKey)}</span> : null}
-                        </span>
-                        <span className="ng-choice__dot" aria-hidden="true" />
-                      </button>
+                  {/* Said on the cart page, and again here: this is the screen where the number becomes a
+                      transfer instruction, and a total that moved without explanation is a total nobody trusts. */}
+                  {items.some((item) => item.priceChanged) ? (
+                    <p className="ng-notice" role="status">{t('checkout.pricesUpdated')}</p>
+                  ) : null}
+                  {/* A to-do list until the buyer tries to order, an error after: in red on arrival it read as a failure
+                      before anything had been typed (2026-11-02). */}
+                  {!canSubmitCheckout && items.length ? <p id="checkout-missing" role="status" className={`ng-notice${triedSubmit ? ' ng-notice--error' : ''}`}>{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
+                  <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={!items.length || saving}>
+                    <CreditCard className="h-4 w-4" aria-hidden="true" />
+                    {saving ? t('checkout.processing') : t('checkout.placeOrder')}
+                  </button>
+                </form>
+
+                <aside className="ng-panel ng-sticky flex flex-col gap-5" aria-labelledby="checkout-summary-title">
+                  <p className="ng-mono m-0 text-ng-ash">{t('checkout.summary')}</p>
+                  <h2 id="checkout-summary-title" className="sr-only">{items.length ? t('checkout.chosenProducts') : t('checkout.noProducts')}</h2>
+
+                  <div className="flex flex-col gap-4 border-b border-ng-bone/15 pb-5">
+                    {items.map((item) => (
+                      <div key={item.slug} className="grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3.5">
+                        <div className="h-[60px] w-12">
+                          <ProductVisual product={item} className="h-full w-full" imageFit="cover" label={false} sizes="48px" />
+                        </div>
+                        <div className="flex min-w-0 flex-col gap-1">
+                          <strong className="truncate font-ng-display text-xl font-normal leading-none">{splitScriptName(item.name).name}</strong>
+                          {/* The gift vial's "size" is the scent chosen, already in its name: "Vial hadiah — La Rose"
+                              over "La Rose · Qty 1" said it twice (fifth visitor audit, 13 Nov 2026). */}
+                          {isFreeVialLine(item) ? null : <span className="text-xs text-ng-ash">{t('checkout.sizeQty', { size: item.size, qty: item.quantity })}</span>}
+                          <CartPriceChange item={item} />
+                        </div>
+                        <strong className="text-sm font-normal">{isFreeVialLine(item) ? FREE_VIAL_PRICE_LABEL : formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
+                      </div>
                     ))}
                   </div>
-                  <label className="ng-label">
-                    <span className="ng-mono text-ng-dust">{t('checkout.deliveryNote')}</span>
-                    <textarea className="ng-field" value={notes} onChange={(event) => setNotes(event.target.value)} rows="2" placeholder={t('checkout.optional')} aria-label={t('checkout.deliveryNote')} autoComplete="off" />
-                  </label>
-                </fieldset>
+                  {/* Also while the chosen vial's bottle is in the cart: the picker releases it and says so. */}
+                  {chosenGift && !giftScentIsBought(chosenGift, boughtNames(items)) ? null : <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />}
 
-                {/* Said on the cart page, and again here: this is the screen where the number becomes a
-                    transfer instruction, and a total that moved without explanation is a total nobody trusts. */}
-                {items.some((item) => item.priceChanged) ? (
-                  <p className="ng-notice" role="status">{t('checkout.pricesUpdated')}</p>
-                ) : null}
-                {/* A to-do list until the buyer tries to order, an error after: in red on arrival it read as a failure
-                    before anything had been typed (2026-11-02). */}
-                {!canSubmitCheckout && items.length ? <p id="checkout-missing" role="status" className={`ng-notice${triedSubmit ? ' ng-notice--error' : ''}`}>{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
-                <button type="submit" className="ng-btn ng-btn--lg ng-btn--block" disabled={!items.length || saving}>
-                  <CreditCard className="h-4 w-4" aria-hidden="true" />
-                  {saving ? t('checkout.processing') : t('checkout.placeOrder')}
-                </button>
-              </form>
-
-              <aside className="ng-panel ng-sticky flex flex-col gap-5" aria-labelledby="checkout-summary-title">
-                <p className="ng-mono m-0 text-ng-ash">{t('checkout.summary')}</p>
-                <h2 id="checkout-summary-title" className="sr-only">{items.length ? t('checkout.chosenProducts') : t('checkout.noProducts')}</h2>
-
-                <div className="flex flex-col gap-4 border-b border-ng-bone/15 pb-5">
-                  {items.map((item) => (
-                    <div key={item.slug} className="grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3.5">
-                      <div className="h-[60px] w-12">
-                        <ProductVisual product={item} className="h-full w-full" imageFit="cover" label={false} sizes="48px" />
-                      </div>
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <strong className="truncate font-ng-display text-xl font-normal leading-none">{splitScriptName(item.name).name}</strong>
-                        {/* The gift vial's "size" is the scent chosen, already in its name: "Vial hadiah — La Rose"
-                            over "La Rose · Qty 1" said it twice (fifth visitor audit, 13 Nov 2026). */}
-                        {isFreeVialLine(item) ? null : <span className="text-xs text-ng-ash">{t('checkout.sizeQty', { size: item.size, qty: item.quantity })}</span>}
-                        <CartPriceChange item={item} />
-                      </div>
-                      <strong className="text-sm font-normal">{isFreeVialLine(item) ? FREE_VIAL_PRICE_LABEL : formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
-                    </div>
-                  ))}
-                </div>
-                {/* Also while the chosen vial's bottle is in the cart: the picker releases it and says so. */}
-                {chosenGift && !giftScentIsBought(chosenGift, boughtNames(items)) ? null : <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />}
-
-                <dl className="m-0 flex flex-col gap-3 text-[15px]">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-ng-dust">{t('checkout.subtotal')}</dt>
-                    <dd className="m-0">{formatTotal(summary.subtotal)}</dd>
-                  </div>
-                  {shippingFee ? (
+                  <dl className="m-0 flex flex-col gap-3 text-[15px]">
                     <div className="flex justify-between gap-4">
-                      <dt className="text-ng-dust">{t('checkout.shipping')}</dt>
-                      <dd className="m-0">{formatTotal(shippingFee)}</dd>
+                      <dt className="text-ng-dust">{t('checkout.subtotal')}</dt>
+                      <dd className="m-0">{formatTotal(summary.subtotal)}</dd>
                     </div>
-                  ) : null}
-                  {voucher.discountAmount ? (
-                    <div className="flex justify-between gap-4">
-                      <dt className="text-ng-dust">Voucher {voucher.appliedVoucher?.code}</dt>
-                      <dd className="m-0 text-ng-sand">-{formatTotal(voucher.discountAmount)}</dd>
+                    {shippingFee ? (
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-ng-dust">{t('checkout.shipping')}</dt>
+                        <dd className="m-0">{formatTotal(shippingFee)}</dd>
+                      </div>
+                    ) : null}
+                    {voucher.discountAmount ? (
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-ng-dust">Voucher {voucher.appliedVoucher?.code}</dt>
+                        <dd className="m-0 text-ng-sand">-{formatTotal(voucher.discountAmount)}</dd>
+                      </div>
+                    ) : null}
+                    <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-4">
+                      <dt className="ng-mono text-ng-dust">{t('checkout.total')}</dt>
+                      <dd className="m-0 font-ng-display text-[34px] leading-none">{formatTotal(totalDue)}</dd>
                     </div>
-                  ) : null}
-                  <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-4">
-                    <dt className="ng-mono text-ng-dust">{t('checkout.total')}</dt>
-                    <dd className="m-0 font-ng-display text-[34px] leading-none">{formatTotal(totalDue)}</dd>
-                  </div>
-                </dl>
+                  </dl>
 
-                <Link to="/cart" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('checkout.backToCart')}</Link>
-              </aside>
+                  <Link to="/cart" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('checkout.backToCart')}</Link>
+                </aside>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
 
       {/* The phone's pay bar: the total and the order button, always in reach while the form scrolls. */}
       <div className="ng-buybar is-visible lg:hidden">
