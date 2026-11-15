@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { PRODUCT_HERO_SIZES } from '@/utils/productImageSrcSet.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -167,7 +168,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
             product={previewProduct}
             className={visualClassName || 'aspect-square'}
             priority={priority}
-            sizes="(max-width: 767px) 100vw, 640px"
+            sizes={PRODUCT_HERO_SIZES}
             soldOut={false}
             label={false}
             imageFit={imageFit}

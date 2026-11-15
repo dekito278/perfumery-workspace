@@ -6,6 +6,7 @@ import { normalizeSiteFacts } from '../src/data/siteFacts.js';
 import fs from 'node:fs';
 import { isFreeVialProduct } from '../src/utils/freeVial.js';
 import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
+import { PRODUCT_HERO_SIZES, PRODUCT_HERO_WIDTH, getOptimizedProductImageUrl, getProductImageSrcSet } from '../src/utils/productImageSrcSet.js';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, brandedTitle, metaSnippet as snippet, productMetaDescription, stripTrailingBrand } from '../src/utils/seo.js';
 import { schemaAvailability } from '../src/utils/schemaAvailability.js';
 import { stripMarkdown } from '../src/utils/articleExcerpt.js';
@@ -144,10 +145,26 @@ const toList = (value) => {
   return [];
 };
 
+// The photo the PAGE shows first: the list, then the single field (normalizeProductImages). This used to read
+// image_url first; the two agree on every row today, but the preload below has to name the exact file the
+// gallery opens on, and the share image should be that photo too.
 const firstImage = (row) => {
-  if (row.image_url) return String(row.image_url);
   const imgs = toList(row.image_urls);
-  return imgs[0] || '';
+  return String(imgs[0] || row.image_url || '');
+};
+
+// Twelfth visitor audit, 15 Nov 2026: on a slow phone the product photo — the page's largest paint — waited
+// for the whole app to download and run before it was even requested (LCP 5.5 s vs 3.7 s on the home page).
+// A preload with the SAME src, srcset and sizes the gallery renders lets it download beside the scripts.
+const upsertImagePreload = (html, imageUrl) => {
+  const without = html.replace(/\s*<link rel="preload" as="image"[^>]*>/gi, '');
+  if (!imageUrl) return without;
+  const href = getOptimizedProductImageUrl(imageUrl, PRODUCT_HERO_WIDTH);
+  const srcset = getProductImageSrcSet(imageUrl);
+  const tag = `<link rel="preload" as="image" href="${escapeHtml(href)}"`
+    + (srcset ? ` imagesrcset="${escapeHtml(srcset)}" imagesizes="${escapeHtml(PRODUCT_HERO_SIZES)}"` : '')
+    + ' fetchpriority="high" referrerpolicy="no-referrer" />';
+  return without.replace(/<\/head>/i, `    ${tag}\n  </head>`);
 };
 
 export const fetchPublicProducts = async (env) => {
@@ -386,6 +403,7 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
         html = upsertMeta(html, 'property', 'og:image', image);
         html = upsertMeta(html, 'name', 'twitter:image', image);
       }
+      html = upsertImagePreload(html, abs(siteUrl, product.image));
       html = upsertMeta(html, 'name', 'twitter:card', 'summary_large_image');
       html = upsertMeta(html, 'name', 'twitter:title', title);
       html = upsertMeta(html, 'name', 'twitter:description', description);
