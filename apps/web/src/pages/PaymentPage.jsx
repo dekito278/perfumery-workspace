@@ -1111,17 +1111,20 @@ const PaymentPageContent = () => {
       <Helmet>
         <title>{t("pay.tab")}</title>
       </Helmet>
-      <main className="solivagant-editorial-home">
+      <div className="solivagant-editorial-home">
         <PublicHeader />
-        <section className="ng-section">
-          <div className="ng-container max-w-[960px]">
-            {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
-              <ManualTransferPanel session={session} onProofSubmitted={setSession} />
-            ) : session?.qrContent ? <QrisPanel session={session} onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
-          </div>
-        </section>
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
+          <section className="ng-section">
+            <div className="ng-container max-w-[960px]">
+              {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
+                <ManualTransferPanel session={session} onProofSubmitted={setSession} />
+              ) : session?.qrContent ? <QrisPanel session={session} onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+            </div>
+          </section>
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
       {/* The phone's action bar, as the phone payment page had it: the amount, the status and the one thing
           to do next. The same rule as the panel: a paid order is not offered a way to pay. */}
       {session && !sessionIsQris && session.paymentStatus !== 'paid' ? (

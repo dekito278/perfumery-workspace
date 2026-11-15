@@ -1319,11 +1319,13 @@ const CustomerPortalPage = () => {
         <title>{t('cust.tab')}</title>
         <meta name="description" content={t('cust.meta')} />
       </Helmet>
-      <main className="ng-scope min-h-screen bg-ng-ink text-ng-bone">
+      <div className="ng-scope min-h-screen bg-ng-ink text-ng-bone">
         {/* The shop's own header and footer since 2026-11-07: the portal kept a back-link bar of its own and
             no footer, so a member signed in from the shop lost the cart, the language switch and the way back. */}
         <PublicHeader />
 
+        {/* Only the page content is the main landmark (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
         <section className="ng-section !border-b-0 !pt-10 md:!pt-16">
         <div className="ng-container grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)]">
           <div className="space-y-5">
@@ -1340,53 +1342,63 @@ const CustomerPortalPage = () => {
               ) : null}
             </div>
 
-            <form onSubmit={loadPortal} className="rounded-none border bg-transparent p-4">
-              <label className="ng-mono text-ng-dust">{t('cust.customerCode')}</label>
-              <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
-                <input
-                  value={customerCode}
-                  onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
-                  aria-label={t('cust.customerCode')}
-                  placeholder="SOLI•••••" autoCapitalize="characters" spellCheck={false}
-                  className="h-12 min-w-0 rounded-none border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-ng-bone/30"
-                />
-                <button type="submit" className="ng-btn ng-btn--tight" disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  {t('cust.check')}
-                </button>
-              </div>
-              {/* Paste and "last code" came over from the phone portal when it retired (2026-10-31): on a phone
-                  the code is usually sitting in a WhatsApp message, two taps away. */}
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button type="button" className="ng-btn ng-btn--ghost ng-btn--tight" onClick={pasteCustomerCode}>
-                  <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
-                  {t('cust.pasteCode')}
-                </button>
-                <button type="button" className="ng-btn ng-btn--ghost ng-btn--tight" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
-                  <History className="h-4 w-4" aria-hidden="true" />
-                  {t('cust.lastCheck')}
-                </button>
-              </div>
-              {lastCustomerCode ? (
-                <button type="button" onClick={checkLastCustomerCode} className="mt-2 min-h-[44px] text-left text-xs font-bold text-ng-bone underline underline-offset-4">
-                  {t('cust.lastUsed', { code: lastCustomerCode })}
-                </button>
-              ) : null}
-              <p className="mt-3 text-xs font-semibold leading-relaxed text-ng-dust">
-                {t('cust.codeGivenKeep')}
-              </p>
+            {/* Google first, the old code folded away (fresh buyer audit, 15 Nov 2026): a new buyer met a code
+                field they do not have, with three buttons, before the way in that is actually theirs. */}
+            <div className="rounded-none border bg-transparent p-4">
               {currentUser ? (
-                <div className="mt-3 flex items-center justify-between gap-2 rounded-none bg-ng-ink px-4 py-2 text-xs font-semibold text-ng-bone">
+                <div className="flex items-center justify-between gap-2 rounded-none bg-ng-ink px-4 py-2 text-xs font-semibold text-ng-bone">
                   <span className="min-w-0 truncate">{t('cust.signedInAs', { email: currentUser.email })}</span>
                   <button type="button" onClick={signOut} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
                 </div>
               ) : (
-                <button type="button" className="ng-btn ng-btn--ghost ng-btn--block mt-3" onClick={signInGoogle}>
+                <button type="button" className="ng-btn ng-btn--block" onClick={signInGoogle}>
                   <UserRound className="h-4 w-4" />
                   {t('cust.signInMember')}
                 </button>
               )}
-            </form>
+            </div>
+            <details className="rounded-none border bg-transparent p-4" open={Boolean(customerCode || lastCustomerCode) || undefined}>
+              <summary className="ng-mono flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 text-ng-dust">
+                {t('cust.haveOldCode')}
+                <span aria-hidden="true" className="text-ng-bone">+</span>
+              </summary>
+              <form onSubmit={loadPortal} className="mt-3">
+                <label className="ng-mono text-ng-dust">{t('cust.customerCode')}</label>
+                <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                  <input
+                    value={customerCode}
+                    onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
+                    aria-label={t('cust.customerCode')}
+                    placeholder="SOLI•••••" autoCapitalize="characters" spellCheck={false}
+                    className="h-12 min-w-0 rounded-none border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-ng-bone/30"
+                  />
+                  <button type="submit" className="ng-btn ng-btn--tight" disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    {t('cust.check')}
+                  </button>
+                </div>
+                {/* Paste and "last code" came over from the phone portal when it retired (2026-10-31): on a phone
+                    the code is usually sitting in a WhatsApp message, two taps away. */}
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button type="button" className="ng-btn ng-btn--ghost ng-btn--tight" onClick={pasteCustomerCode}>
+                    <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
+                    {t('cust.pasteCode')}
+                  </button>
+                  <button type="button" className="ng-btn ng-btn--ghost ng-btn--tight" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
+                    <History className="h-4 w-4" aria-hidden="true" />
+                    {t('cust.lastCheck')}
+                  </button>
+                </div>
+                {lastCustomerCode ? (
+                  <button type="button" onClick={checkLastCustomerCode} className="mt-2 min-h-[44px] text-left text-xs font-bold text-ng-bone underline underline-offset-4">
+                    {t('cust.lastUsed', { code: lastCustomerCode })}
+                  </button>
+                ) : null}
+                <p className="mt-3 text-xs font-semibold leading-relaxed text-ng-dust">
+                  {t('cust.codeGivenKeep')}
+                </p>
+              </form>
+            </details>
             <MemberCodePanel />
             {renderAccountPanel()}
           </div>
@@ -1651,8 +1663,9 @@ const CustomerPortalPage = () => {
           </div>
         </div>
         </section>
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };

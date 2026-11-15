@@ -91,16 +91,19 @@ const AboutPage = () => {
   return (
     <>
       {head}
-      <main className="solivagant-editorial-home">
+      <div className="solivagant-editorial-home">
         <PublicHeader />
-        <section className="tracking-content !pt-16">
-          <div className="tracking-card">
-            <AboutContent />
-          </div>
-        </section>
-        <ProcessGallery images={siteFacts.aboutProcessImages} subject="SOLIVAGANT" headingKey="about.processHeading" />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
+          <section className="tracking-content !pt-16">
+            <div className="tracking-card">
+              <AboutContent />
+            </div>
+          </section>
+          <ProcessGallery images={siteFacts.aboutProcessImages} subject="SOLIVAGANT" headingKey="about.processHeading" />
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };

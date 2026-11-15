@@ -70,140 +70,143 @@ const InternationalCartPage = () => {
   return (
     <>
       <Helmet><title>{t('cart.tab')}</title></Helmet>
-      <main className="solivagant-editorial-home">
+      <div className="solivagant-editorial-home">
         <StaleCatalogNotice stale={catalog.stale} empty={!catalog.length} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
+        {/* Only the page content is the main landmark; header and footer sit beside it (fresh buyer audit, 15 Nov 2026). */}
+        <main id="main-content">
 
-        <section className="ng-section !border-b-0 !pt-14 md:!pt-20">
-          <div className="ng-container flex flex-col gap-12">
-            <div className="flex flex-col gap-5">
-              <p className="ng-eyebrow ng-mono m-0">{t('cart.eyebrow')}</p>
-              <h1 className="ng-display ng-h1">{t('cart.title')}</h1>
-              <p className="ng-lead">{t('cart.intl.lead')}</p>
-            </div>
+          <section className="ng-section !border-b-0 !pt-14 md:!pt-20">
+            <div className="ng-container flex flex-col gap-12">
+              <div className="flex flex-col gap-5">
+                <p className="ng-eyebrow ng-mono m-0">{t('cart.eyebrow')}</p>
+                <h1 className="ng-display ng-h1">{t('cart.title')}</h1>
+                <p className="ng-lead">{t('cart.intl.lead')}</p>
+              </div>
 
-            <div className={`grid items-start gap-12 lg:gap-[72px] ${items.length ? 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]' : ''}`}>
-              <div className="flex flex-col gap-14">
-                <div className="flex flex-col border-t border-ng-bone/30">
-                  {unfulfillable.length ? (
-                    <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">
-                      {t('cart.intl.unavailable', { names: unfulfillable.map((line) => line.name).join(', ') })}
-                    </p>
-                  ) : null}
-                  {unpriced.length ? (
-                    <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">
-                      {t('cart.intl.unpriced', { names: unpriced.map((line) => line.name).join(', ') })}
-                    </p>
-                  ) : null}
-                  <p className="sr-only" role="status">{removedName ? t('cart.removedNotice', { name: removedName }) : ''}</p>
-                  {!lines.length ? (
-                    <div className="flex flex-col items-start gap-5 border-b border-ng-bone/15 py-14">
-                      <ShoppingBag className="h-8 w-8 text-ng-ash" aria-hidden="true" />
-                      <h2 className="ng-display text-[36px] font-normal" tabIndex={-1} data-cart-empty-heading>{t('cart.empty')}</h2>
-                      <p className="m-0 text-ng-dust">{t('cart.emptyBody')}</p>
-                      <Link to="/catalog" className="ng-btn">
-                        {t('home.seeCollection')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                      </Link>
-                    </div>
-                  ) : (
-                    lines.map((line) => (
-                      <div key={line.slug} className="ng-cart-line">
-                        <Link to={`/catalog/${line.productSlug}`} className="ng-cart-line__image" tabIndex={-1} aria-hidden="true">
-                          <ProductVisual product={line} className="h-full w-full" imageFit="cover" label={false} sizes="96px" />
+              <div className={`grid items-start gap-12 lg:gap-[72px] ${items.length ? 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]' : ''}`}>
+                <div className="flex flex-col gap-14">
+                  <div className="flex flex-col border-t border-ng-bone/30">
+                    {unfulfillable.length ? (
+                      <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">
+                        {t('cart.intl.unavailable', { names: unfulfillable.map((line) => line.name).join(', ') })}
+                      </p>
+                    ) : null}
+                    {unpriced.length ? (
+                      <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">
+                        {t('cart.intl.unpriced', { names: unpriced.map((line) => line.name).join(', ') })}
+                      </p>
+                    ) : null}
+                    <p className="sr-only" role="status">{removedName ? t('cart.removedNotice', { name: removedName }) : ''}</p>
+                    {!lines.length ? (
+                      <div className="flex flex-col items-start gap-5 border-b border-ng-bone/15 py-14">
+                        <ShoppingBag className="h-8 w-8 text-ng-ash" aria-hidden="true" />
+                        <h2 className="ng-display text-[36px] font-normal" tabIndex={-1} data-cart-empty-heading>{t('cart.empty')}</h2>
+                        <p className="m-0 text-ng-dust">{t('cart.emptyBody')}</p>
+                        <Link to="/catalog" className="ng-btn">
+                          {t('home.seeCollection')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                         </Link>
-                        <div className="flex min-w-0 flex-col gap-2">
-                          <Link to={`/catalog/${line.productSlug}`} data-cart-line-name className="inline-flex min-h-[44px] items-center self-start font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(line.name).name}</Link>
-                          <span className="ng-mono text-ng-ash">{[shortNoteList(productCopyFor(catalog.find((entry) => entry.slug === line.productSlug), 'en').notes || line.notes), line.size].filter(Boolean).join(' · ')}</span>
-                          <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeLine(line.slug, splitScriptName(line.name).name)} aria-label={t('cart.removeOf', { name: splitScriptName(line.name).name })}>
-                            {t('cart.removeItem')}
-                          </button>
-                        </div>
-                        <div className="ng-cart-line__qty">
-                          <CartQuantityStepper
-                            name={splitScriptName(line.name).name}
-                            quantity={line.quantity}
-                            canDecrease={line.quantity > 1}
-                            canIncrease={!atStockCap(line)}
-                            onDecrease={() => updateQuantity(line.slug, Math.max(1, line.quantity - 1))}
-                            onIncrease={() => updateQuantity(line.slug, nextQuantityUp(line))}
-                          />
-                            {/* The cap said, not only greyed (audit, 13 Nov 2026): "+" just stopped working at 2. */}
-                            {atStockCap(line) ? <span className="text-xs text-ng-ash">{t('cart.stockLeft', { count: line.quantity })}</span> : null}
-                        </div>
-                        {/* The dollar alone, per bottle and for the line — see the note at the top of
-                            InternationalPrice.jsx for why the rupiah is not beside it. */}
-                        <div className="ng-cart-line__sum flex flex-col items-end gap-1 text-right">
-                          <span className="text-base">{line.unitUsd ? `US$${line.unitUsd}` : t('intlQuote.onRequest.destination')}</span>
-                          {line.unitUsd && line.quantity > 1 ? <span className="text-xs text-ng-dust">{`US$${line.lineUsd}`}</span> : null}
-                        </div>
                       </div>
-                    ))
-                  )}
+                    ) : (
+                      lines.map((line) => (
+                        <div key={line.slug} className="ng-cart-line">
+                          <Link to={`/catalog/${line.productSlug}`} className="ng-cart-line__image" tabIndex={-1} aria-hidden="true">
+                            <ProductVisual product={line} className="h-full w-full" imageFit="cover" label={false} sizes="96px" />
+                          </Link>
+                          <div className="flex min-w-0 flex-col gap-2">
+                            <Link to={`/catalog/${line.productSlug}`} data-cart-line-name className="inline-flex min-h-[44px] items-center self-start font-ng-display text-[28px] leading-none text-ng-bone no-underline [overflow-wrap:anywhere] md:text-[34px]">{splitScriptName(line.name).name}</Link>
+                            <span className="ng-mono text-ng-ash">{[shortNoteList(productCopyFor(catalog.find((entry) => entry.slug === line.productSlug), 'en').notes || line.notes), line.size].filter(Boolean).join(' · ')}</span>
+                            <button type="button" className="ng-link ng-mono mt-1 inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => removeLine(line.slug, splitScriptName(line.name).name)} aria-label={t('cart.removeOf', { name: splitScriptName(line.name).name })}>
+                              {t('cart.removeItem')}
+                            </button>
+                          </div>
+                          <div className="ng-cart-line__qty">
+                            <CartQuantityStepper
+                              name={splitScriptName(line.name).name}
+                              quantity={line.quantity}
+                              canDecrease={line.quantity > 1}
+                              canIncrease={!atStockCap(line)}
+                              onDecrease={() => updateQuantity(line.slug, Math.max(1, line.quantity - 1))}
+                              onIncrease={() => updateQuantity(line.slug, nextQuantityUp(line))}
+                            />
+                              {/* The cap said, not only greyed (audit, 13 Nov 2026): "+" just stopped working at 2. */}
+                              {atStockCap(line) ? <span className="text-xs text-ng-ash">{t('cart.stockLeft', { count: line.quantity })}</span> : null}
+                          </div>
+                          {/* The dollar alone, per bottle and for the line — see the note at the top of
+                              InternationalPrice.jsx for why the rupiah is not beside it. */}
+                          <div className="ng-cart-line__sum flex flex-col items-end gap-1 text-right">
+                            <span className="text-base">{line.unitUsd ? `US$${line.unitUsd}` : t('intlQuote.onRequest.destination')}</span>
+                            {line.unitUsd && line.quantity > 1 ? <span className="text-xs text-ng-dust">{`US$${line.lineUsd}`}</span> : null}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {/* The gift, in both shops since 2026-10-06. Every word of it comes from the message file, so
+                      it reads in English here; the line it writes into the cart carries Dekito's own Indonesian
+                      'Gratis' for the packing slip, which the buyer never sees. */}
+                  <FreeVialPicker items={items} products={catalog} onPick={setGift} />
                 </div>
-                {/* The gift, in both shops since 2026-10-06. Every word of it comes from the message file, so
-                    it reads in English here; the line it writes into the cart carries Dekito's own Indonesian
-                    'Gratis' for the packing slip, which the buyer never sees. */}
-                <FreeVialPicker items={items} products={catalog} onPick={setGift} />
-              </div>
 
-              {/* An empty cart has nothing to sum: the box said Subtotal Rp 0, listed a free vial, and offered the
-                  same two ways out as the empty state beside it (2026-11-02). */}
-              {items.length ? (
-                <aside className="ng-panel ng-sticky flex flex-col gap-6" aria-labelledby="intl-cart-summary">
-                  <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
-                  <h2 id="intl-cart-summary" className="sr-only">{t('cart.summary')}</h2>
-                  {lines.length ? <InternationalShippingQuote quote={quote} /> : null}
-                  {/* WhatsApp is the order (Dekito, 14 Nov 2026: buyers abroad stopped writing to him once
-                      the address went into a form here). The draft carries the basket, the country and the
-                      total; the address and the payment are settled in the chat. */}
-                  {lines.length && !needsDestination ? <p className="m-0 text-sm leading-relaxed text-ng-dust">{t(quote?.shippingUsd ? 'cart.intl.howItWorks' : 'cart.intl.howItWorksAsk')}</p> : null}
-                  {lines.length ? (
-                    <a
-                      href={canOrder ? buildWhatsAppCheckoutUrl(message, phone) : '#'}
-                      onClick={needsDestination ? focusDestinationPicker : undefined}
-                      target={canOrder ? '_blank' : undefined}
-                      rel="noopener noreferrer"
-                      className="ng-btn ng-btn--lg ng-btn--block"
-                      aria-disabled={!canOrder && !needsDestination}
-                    >
-                      <Globe className="h-4 w-4" aria-hidden="true" /> {t(needsDestination ? 'intlQuote.pickFirst' : 'cart.intl.order')}
-                    </a>
-                  ) : (
-                    <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
-                  )}
-                  <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
-                  <Link to="/help" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('help.shippingAndPayment')}</Link>
-                </aside>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        {recommended.length ? (
-          <section className="ng-section" aria-labelledby="intl-cart-recommend">
-            <div className="ng-container flex flex-col gap-10">
-              <div className="flex flex-col gap-3.5">
-                <p className="ng-mono m-0 text-ng-ash">{t('cart.completeEyebrow')}</p>
-                <h2 id="intl-cart-recommend" className="ng-display text-[44px] md:text-[56px]">{t('cart.complete')}</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-6">
-                {recommended.map((product) => (
-                  <Link key={product.slug} to={`/catalog/${product.slug}`} className="ng-card">
-                    <ProductVisual product={product} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 320px" />
-                    <span className="ng-mono text-ng-ash">{product.category}</span>
-                    <span className="font-ng-display text-[26px] leading-none">{splitScriptName(product.name).name}</span>
-                    {/* CardPrice, not a conversion of its own: the export price is keyed by variant. */}
-                    <span className="text-[15px]"><CardPrice product={product} /></span>
-                  </Link>
-                ))}
+                {/* An empty cart has nothing to sum: the box said Subtotal Rp 0, listed a free vial, and offered the
+                    same two ways out as the empty state beside it (2026-11-02). */}
+                {items.length ? (
+                  <aside className="ng-panel ng-sticky flex flex-col gap-6" aria-labelledby="intl-cart-summary">
+                    <p className="ng-mono m-0 text-ng-ash">{t('cart.summaryEyebrow')}</p>
+                    <h2 id="intl-cart-summary" className="sr-only">{t('cart.summary')}</h2>
+                    {lines.length ? <InternationalShippingQuote quote={quote} /> : null}
+                    {/* WhatsApp is the order (Dekito, 14 Nov 2026: buyers abroad stopped writing to him once
+                        the address went into a form here). The draft carries the basket, the country and the
+                        total; the address and the payment are settled in the chat. */}
+                    {lines.length && !needsDestination ? <p className="m-0 text-sm leading-relaxed text-ng-dust">{t(quote?.shippingUsd ? 'cart.intl.howItWorks' : 'cart.intl.howItWorksAsk')}</p> : null}
+                    {lines.length ? (
+                      <a
+                        href={canOrder ? buildWhatsAppCheckoutUrl(message, phone) : '#'}
+                        onClick={needsDestination ? focusDestinationPicker : undefined}
+                        target={canOrder ? '_blank' : undefined}
+                        rel="noopener noreferrer"
+                        className="ng-btn ng-btn--lg ng-btn--block"
+                        aria-disabled={!canOrder && !needsDestination}
+                      >
+                        <Globe className="h-4 w-4" aria-hidden="true" /> {t(needsDestination ? 'intlQuote.pickFirst' : 'cart.intl.order')}
+                      </a>
+                    ) : (
+                      <Link to="/catalog" className="ng-btn ng-btn--lg ng-btn--block">{t('cart.addProductsFirst')}</Link>
+                    )}
+                    <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('cart.keepShopping')}</Link>
+                    <Link to="/help" className="ng-link ng-mono inline-flex min-h-[44px] items-center justify-center">{t('help.shippingAndPayment')}</Link>
+                  </aside>
+                ) : null}
               </div>
             </div>
           </section>
-        ) : null}
 
+          {recommended.length ? (
+            <section className="ng-section" aria-labelledby="intl-cart-recommend">
+              <div className="ng-container flex flex-col gap-10">
+                <div className="flex flex-col gap-3.5">
+                  <p className="ng-mono m-0 text-ng-ash">{t('cart.completeEyebrow')}</p>
+                  <h2 id="intl-cart-recommend" className="ng-display text-[44px] md:text-[56px]">{t('cart.complete')}</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-6">
+                  {recommended.map((product) => (
+                    <Link key={product.slug} to={`/catalog/${product.slug}`} className="ng-card">
+                      <ProductVisual product={product} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 320px" />
+                      <span className="ng-mono text-ng-ash">{product.category}</span>
+                      <span className="font-ng-display text-[26px] leading-none">{splitScriptName(product.name).name}</span>
+                      {/* CardPrice, not a conversion of its own: the export price is keyed by variant. */}
+                      <span className="text-[15px]"><CardPrice product={product} /></span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+        </main>
         <StorefrontFooter />
-      </main>
+      </div>
     </>
   );
 };
