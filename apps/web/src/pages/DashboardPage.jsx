@@ -146,13 +146,13 @@ const DashboardPage = () => {
         );
         toast.error(
           failedRequests.length === results.length
-            ? 'Failed to load dashboard data'
+            ? 'Data dasbor gagal dimuat. Cek koneksi lalu muat ulang.'
             : 'Some dashboard data could not be loaded'
         );
       }
     } catch (error) {
       setLoadError(error.message || 'Dashboard data could not be loaded. Check the connection and retry.');
-      toast.error('Failed to load dashboard data');
+      toast.error('Data dasbor gagal dimuat. Cek koneksi lalu muat ulang.');
     } finally {
       setLoading(false);
     }
@@ -461,7 +461,7 @@ const DashboardPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <Sparkles className="w-4 h-4 text-primary" />
-              Action center
+              Yang perlu dikerjakan
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: '-0.02em' }}>
               Prioritas operasional hari ini.
@@ -498,7 +498,7 @@ const DashboardPage = () => {
               <strong>{paidReadyOrders.length}</strong>
             </div>
             <div className="dashboard-hero-stat">
-              <span className="dashboard-hero-stat-label">Issue total</span>
+              <span className="dashboard-hero-stat-label">Total masalah</span>
               <strong>{lowStockProducts.length + voucherIssues.length + syncIssueItems.length}</strong>
             </div>
           </div>
@@ -517,7 +517,7 @@ const DashboardPage = () => {
           </div>
         ) : null}
 
-        <DashboardSection title="Action center" subtitle="Urutan ini dibuat untuk kerja harian: cek bukti bayar, packing order paid, amankan stok, rapikan voucher, lalu bersihkan sync issue.">
+        <DashboardSection title="Yang perlu dikerjakan" subtitle="Urutan ini dibuat untuk kerja harian: cek bukti bayar, packing order paid, amankan stok, rapikan voucher, lalu bersihkan sync issue.">
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
             {actionCenterItems.map((item) => {
               const Icon = item.icon;
@@ -638,15 +638,15 @@ const DashboardPage = () => {
           </div>
         </DashboardSection>
 
-        <DashboardSection title="Admin ops metrics" subtitle="Angka praktis untuk follow-up order, packing, payment expiry, stock, dan aging shipment.">
+        <DashboardSection title="Angka hari ini" subtitle="Untuk follow-up order, packing, batas bayar, stok, dan paket yang belum dikirim.">
           <div className="grid gap-4 lg:grid-cols-6">
             {[
-              ['Pending revenue', formatTotal(pendingRevenue), 'Payment unpaid/pending', 'text-amber-700 bg-amber-50'],
-              ['Proof review', proofReviewOrders.length, 'Bukti transfer submitted', 'text-sky-700 bg-sky-50'],
-              ['Paid ready ship', paidReadyOrders.length, 'Paid dan belum shipped', 'text-emerald-700 bg-emerald-50'],
-              ['Expired payment', expiredPaymentOrders.length, 'Expired atau melewati TTL', 'text-rose-700 bg-rose-50'],
-              ['Low stock', lowStockProducts.length, 'Produk di bawah threshold', 'text-rose-700 bg-rose-50'],
-              ['Shipment aging', shipmentAgingOrders.length, 'Paid-ready lebih dari 48 jam', 'text-sky-700 bg-sky-50'],
+              ['Belum dibayar (Rp)', formatTotal(pendingRevenue), 'Order belum/menunggu bayar', 'text-amber-700 bg-amber-50'],
+              ['Bukti transfer', proofReviewOrders.length, 'Bukti masuk, belum dicek', 'text-sky-700 bg-sky-50'],
+              ['Siap dikemas', paidReadyOrders.length, 'Sudah dibayar, belum dikirim', 'text-emerald-700 bg-emerald-50'],
+              ['Pembayaran kedaluwarsa', expiredPaymentOrders.length, 'Lewat batas bayar', 'text-rose-700 bg-rose-50'],
+              ['Stok menipis', lowStockProducts.length, 'Produk di bawah batas stok', 'text-rose-700 bg-rose-50'],
+              ['Belum dikirim >48 jam', shipmentAgingOrders.length, 'Sudah dibayar lebih dari 48 jam', 'text-sky-700 bg-sky-50'],
             ].map(([label, value, helper, tone]) => (
               <div key={label} className="rounded-2xl border bg-white p-4 shadow-sm">
                 <div className="text-xs font-bold uppercase text-muted-foreground">{label}</div>
@@ -658,7 +658,7 @@ const DashboardPage = () => {
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <section className="rounded-2xl border bg-white/90 p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h3 className="text-base font-bold">Shipment aging</h3>
+                <h3 className="text-base font-bold">Belum dikirim lebih dari 48 jam</h3>
                 <Button type="button" variant="outline" className="h-9 rounded-2xl bg-white text-xs" onClick={() => navigate('/studio/shipments')}>Open shipments</Button>
               </div>
               <div className="grid gap-2">
@@ -695,7 +695,7 @@ const DashboardPage = () => {
           </div>
         </DashboardSection>
 
-        <DashboardSection title="Admin audit log" subtitle="Filter perubahan by admin, event, atau order lalu cek diff before-after.">
+        <DashboardSection title="Riwayat perubahan" subtitle="Filter perubahan by admin, event, atau order lalu cek diff before-after.">
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
               <input
@@ -771,7 +771,7 @@ const DashboardPage = () => {
           </section>
         </DashboardSection>
 
-        <DashboardSection title="Production health" subtitle="Payment, shipping, dan local fallback dibuat terlihat supaya order kritis tidak diam-diam tersimpan lokal.">
+        <DashboardSection title="Kesehatan sistem" subtitle="Payment, shipping, dan local fallback dibuat terlihat supaya order kritis tidak diam-diam tersimpan lokal.">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
             <section className={`rounded-2xl border p-5 shadow-sm ${opsHealth.hasCriticalIssues ? 'border-rose-200 bg-rose-50' : 'border-emerald-100 bg-emerald-50'}`}>
               {/* Side by side only from 2xl: in a half-width card at 1280px "Check API" and "Retry sync" overlapped. */}
@@ -781,7 +781,7 @@ const DashboardPage = () => {
                     {opsHealth.hasCriticalIssues ? <WifiOff className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
                   </span>
                   <div>
-                    <div className="text-xs font-bold uppercase text-muted-foreground">Order reliability</div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground">Order belum tersinkron</div>
                     <h2 className="mt-1 text-xl font-bold text-editorial-charcoal">
                       {opsHealth.hasCriticalIssues ? 'Ada item yang perlu dicek sebelum follow-up' : 'Order flow terlihat sehat'}
                     </h2>
@@ -803,7 +803,7 @@ const DashboardPage = () => {
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-5">
                 <div className="rounded-2xl bg-white px-4 py-3">
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Local sync</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Sinkron lokal</div>
                   <div className="mt-1 text-2xl font-bold text-editorial-charcoal">{opsHealth.syncQueue.length}</div>
                 </div>
                 {/* Orders that only exist on this device. createLocalOrder writes them when the server

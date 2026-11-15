@@ -128,12 +128,12 @@ export const ORDER_TASKS = {
   done: { title: 'Order selesai', helper: 'Order sudah masuk arsip operasional.' },
   // A cancelled order is archived too, but it is not "selesai" — read on a cancelled smoke order 11 Nov 2026.
   cancelled: { title: 'Order dibatalkan', helper: 'Tidak ada tugas lagi untuk order ini.' },
-  proof: { title: 'Review bukti transfer', helper: 'Buka bukti, approve atau reject dengan catatan.' },
+  proof: { title: 'Cek bukti transfer', helper: 'Buka bukti, lalu setujui atau tolak dengan alasan.' },
   quote: { title: 'Kirim angka ongkir', helper: 'Order ini menunggu ongkir dari kita sebelum bisa dibayar.' },
   payment: { title: 'Tuntaskan pembayaran', helper: 'Follow-up pembayaran atau sinkron DOKU bila perlu.' },
-  followUp: { title: 'Follow-up pengiriman', helper: 'Pantau tracking dan tutup order setelah delivered.' },
+  followUp: { title: 'Follow-up pengiriman', helper: 'Pantau paket dan tandai selesai setelah diterima.' },
   ship: { title: 'Packing lalu kirim', helper: 'Simpan kurir/resi dan tandai dikirim setelah paket keluar.' },
-  pack: { title: 'Mulai packing', helper: 'Cetak resi PDF, lalu tandai order masuk packing.' },
+  pack: { title: 'Mulai packing', helper: 'Cetak label kirim, lalu tandai order masuk packing.' },
 };
 
 export const nextOrderTask = (order) => {

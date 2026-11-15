@@ -30,10 +30,10 @@ const shipmentStatusLabels = {
 };
 
 const bespokeProductionStatusLabels = {
-  review_brief: 'Review brief',
+  review_brief: 'Cek brief',
   formula: 'Formula',
-  sample: 'Sample',
-  approval: 'Approval',
+  sample: 'Sampel',
+  approval: 'Persetujuan',
   production: 'Produksi',
   ready: 'Siap',
 };

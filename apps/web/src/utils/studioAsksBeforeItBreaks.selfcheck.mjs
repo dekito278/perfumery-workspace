@@ -42,4 +42,11 @@ assert.match(templates, /unpaid\(order\) && getPaymentLinkUrl\(order\) \? `Pay h
 assert.match(templates, /Status pembayaran: \$\{PAYMENT_STATUS_ID\[order\.paymentStatus\]/, 'buyers read the label, not "pending"');
 assert.doesNotMatch(read('pages', 'OrderDetailPage.jsx'), /`Customer code: \$\{order\.customerCode\}`/, 'the reminder hands out a SOLI code again');
 
+// Batch 2: the export invoice only on orders abroad (it printed US$ and customs vials on Indonesian ones and
+// spent an invoice number); the phone's payment button runs DOKU's check only on DOKU orders.
+const desk = read('pages', 'OrderDetailPage.jsx');
+assert.match(desk, /\{isUsdOrder\(order\) \? \(\s*<Button[^>]*onClick=\{exportInvoice\}/, 'the USD export invoice shows on an Indonesian order again');
+const phone = read('pages', 'mobile', 'MobileOrderDetailPage.jsx');
+assert.match(phone, /if \(order\.paymentProvider === 'doku'\) syncDokuStatus\(\);/);
+assert.doesNotMatch(phone, /: 'Sinkron DOKU',/, 'a bank-transfer order is offered DOKU\'s check again');
 console.log('studioAsksBeforeItBreaks selfcheck OK (cancel asks, one chat per buyer, reset asks, no empty pay line)');

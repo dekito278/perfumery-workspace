@@ -645,7 +645,11 @@ const MobileOrderDetailPage = () => {
         reviewPaymentProof('approved');
         return;
       }
-      syncDokuStatus();
+      // DOKU's check only for a DOKU order (Studio audit, 15 Nov 2026: a bank-transfer or export order got
+      // "Sinkron DOKU" and an error). A manual order is marked paid here; a paid one moves on to shipping.
+      if (order.paymentProvider === 'doku') syncDokuStatus();
+      else if (order.paymentStatus !== 'paid') handlePaymentStatusChange('paid');
+      else setOrderSection('fulfillment');
       return;
     }
     if (orderSection === 'fulfillment') {
@@ -662,7 +666,9 @@ const MobileOrderDetailPage = () => {
   const fulfillmentStep = nextFulfillmentAction(order);
   const primaryActionLabel = {
     task: fulfillmentStep ? fulfillmentStep.label : (order?.paymentStatus === 'paid' ? 'Buka tab Kirim' : 'Cek pembayaran'),
-    payment: hasPaymentProofPath && paymentProofStatus !== 'approved' ? 'Setujui bukti' : 'Sinkron DOKU',
+    payment: hasPaymentProofPath && paymentProofStatus !== 'approved' ? 'Setujui bukti'
+      : order?.paymentProvider === 'doku' ? 'Cek status DOKU'
+        : order?.paymentStatus !== 'paid' ? 'Tandai sudah dibayar' : 'Ke pengiriman',
     fulfillment: savingShipment ? 'Menyimpan pengiriman...' : 'Simpan pengiriman',
     production: savingProductionLinks ? 'Menyimpan link...' : 'Simpan link',
     history: 'Salin draft',
@@ -983,7 +989,6 @@ const MobileOrderDetailPage = () => {
                     <span>Percobaan: {event.attempt}</span>
                     {event.previousStatus ? <span>Sebelumnya: {paymentProofStatusLabels[event.previousStatus] || event.previousStatus}</span> : null}
                     {event.fileName ? <span>File: {event.fileName}</span> : null}
-                    {event.filePath ? <span className="break-all">Path: {event.filePath}</span> : null}
                     {event.notes ? <span className="rounded-xl bg-white px-2 py-1 text-rose-700">Catatan: {event.notes}</span> : null}
                   </div>
                 </article>
