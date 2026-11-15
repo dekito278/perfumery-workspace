@@ -645,7 +645,7 @@ const runOutage = async (browser) => {
   check(run, 'the journal offers to try again', await page.getByRole('button', { name: ID['stale.retry'], exact: true }).isVisible().catch(() => false));
   await context.unroute(/supabase\.co\/(rest|storage)\//);
   await goto(page, '/pay/00000000000000000000000000000000');
-  check(run, 'a dead payment link has a heading that says so', (await h1()) === ID['pay.link.invalidTitle'], await h1());
+  check(run, 'the retired payment link says it is no longer in use', (await h1()) === ID['pay.link.retiredTitle'], await h1());
   check(run, 'no write left the browser', state.blocked.length === 0, state.blocked.join(', '));
   await context.close();
 };

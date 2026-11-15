@@ -570,16 +570,6 @@ const MobileOrderDetailPage = () => {
     }
   };
 
-  // The /pay/<token> page of an overseas order, for a buyer who lost it (10 Nov 2026).
-  const copyPaymentPageLink = async () => {
-    try {
-      await navigator.clipboard.writeText(getPaymentLinkUrl(order));
-      toast.success('Link halaman bayar disalin');
-    } catch (error) {
-      toast.error(error.message || 'Gagal menyalin link bayar');
-    }
-  };
-
   const copyPublicTrackingLink = async () => {
     try {
       await navigator.clipboard.writeText(buildPublicTrackingUrl(order.orderNumber));
@@ -888,12 +878,6 @@ const MobileOrderDetailPage = () => {
             <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={() => navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`)}>
               <CreditCard className="h-4 w-4" />
               Lanjut bayar
-            </Button>
-          ) : null}
-          {!order.paymentUrl && order.paymentToken && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-            <Button type="button" variant="outline" className="mt-3 h-11 w-full rounded-2xl bg-white gap-2" onClick={copyPaymentPageLink}>
-              <Copy className="h-4 w-4" />
-              Salin link bayar
             </Button>
           ) : null}
           {order.paymentUrl ? (

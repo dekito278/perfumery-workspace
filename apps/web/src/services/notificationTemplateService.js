@@ -50,14 +50,13 @@ export const formatOrderTotal = (order) => {
 };
 
 /**
- * The page where this order is paid: DOKU's when there is one, else the /pay/<token> instructions page
- * (overseas manual transfer). '' when neither exists.
+ * The page where this order is paid: DOKU's, or '' when there is none.
+ *
+ * Until 15 Nov 2026 an overseas order fell back to the /pay/<token> instructions page. That page is retired
+ * (Dekito: buyers abroad pay on WhatsApp, the page is no longer used), so no message hands it out any more;
+ * the reminder buttons stay disabled for an order with no DOKU link, and the chat carries the payment.
  */
-export const getPaymentLinkUrl = (order) => {
-  if (order?.paymentUrl) return order.paymentUrl;
-  if (typeof window === 'undefined' || !order?.paymentToken) return '';
-  return `${window.location.origin}${shopPrefix(order)}/pay/${order.paymentToken}`;
-};
+export const getPaymentLinkUrl = (order) => order?.paymentUrl || '';
 
 const unpaid = (order) => ['unpaid', 'pending'].includes(order?.paymentStatus);
 

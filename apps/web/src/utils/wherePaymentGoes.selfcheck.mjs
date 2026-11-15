@@ -37,13 +37,11 @@ for (const file of ['services/cartService.js', 'pages/ExportShippingCalculatorPa
 assert.match(cart, /PT Bank SMBC Indonesia Tbk \(Jenius\)/, 'the current name is the fallback');
 
 // --- 2. One set of variables, not two -----------------------------------------------------------------
-// /pay/<token> reads VITE_PAY_*. The cart's two payment blocks now read the SAME names, so setting them
-// once in Vercel fills both — two sets would mean half the shop updated after a bank change.
-const details = read('data', 'paymentDetails.js');
+// The cart's two payment blocks read VITE_PAY_*. (/pay/<token> read the same names until it was retired
+// on 15 Nov 2026 — buyers abroad pay on WhatsApp now — so the cart is the one reader left.)
 for (const name of ['VITE_PAY_BANK_NAME', 'VITE_PAY_BANK_ACCOUNT', 'VITE_PAY_BANK_HOLDER',
   'VITE_PAY_WIRE_BANK', 'VITE_PAY_WIRE_BIC', 'VITE_PAY_WIRE_ACCOUNT', 'VITE_PAY_WIRE_ADDRESS']) {
-  assert.ok(details.includes(name), `${name} is read by the payment page`);
-  assert.ok(cart.includes(name), `${name} is read by the cart too — one set of variables, not two`);
+  assert.ok(cart.includes(name), `${name} is read by the cart`);
 }
 
 // --- 3. The environment wins, and §0 is finally met ---------------------------------------------------

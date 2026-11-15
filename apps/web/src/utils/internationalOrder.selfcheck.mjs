@@ -174,7 +174,8 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   const read = (...parts) => readFileSync(join(srcDir, ...parts), 'utf8');
   const cart = read('pages', 'InternationalCartPage.jsx');
   // Since 14 Nov 2026 the English cart orders on WhatsApp only (Dekito: "pembeli luar saja, formulir alamat
-  // hapus"). The endpoint's international branch and /pay/<token> stay, for orders Studio writes by hand.
+  // hapus"). The endpoint's international branch stays, for orders Studio writes by hand; /pay/<token> was
+  // retired on 15 Nov 2026 (payment is arranged in the chat).
   assert.doesNotMatch(cart, /InternationalOrderForm|canPlaceHere/, 'the address form is back in the English cart');
   assert.match(cart, /href=\{canOrder \? buildWhatsAppCheckoutUrl\(message, phone\) : '#'\}/, 'the English cart orders on WhatsApp');
   const service = read('services', 'orderService.js');
@@ -182,10 +183,6 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   assert.ok(place.includes("fetch('/api/orders/create'"), 'placeInternationalOrder posts to the one order endpoint');
   assert.doesNotMatch(place, /priceNumber|subtotal|totalUsd|shippingUsd|unitUsd/,
     'the browser sends which bottles and where — never a price');
-  const pay = read('pages', 'PaymentInstructionsPage.jsx');
-  assert.match(pay, /paymentAmountUsd\(order\.amountIdr\)/, 'the payment page asks for the exact total');
-  assert.match(pay, /submitOrderPaymentProof\(orderNumber/, 'the receipt is recorded on the order');
-  assert.match(pay, /notify-proof/, 'and Dekito is told');
   const cartService = read('services', 'cartService.js');
   const endpointSource = readFileSync(join(srcDir, '..', 'api', 'orders', 'create.js'), 'utf8');
   for (const fallback of ["'PT Bank SMBC Indonesia Tbk (Jenius)'", "'SUNIIDJA'"]) {
@@ -197,17 +194,6 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
     assert.ok(studio.includes(key) && new RegExp(`\\b${key}:`).test(endpointSource.slice(endpointSource.indexOf('payment_response:'))),
       `payment_response.${key} is written by one order writer and not the other`);
   }
-}
-
-// --- 4. PayPal: shown only once Dekito sets the link, and only ever to paypal.me ------------------------
-{
-  const { paypalLinkFor } = await import('../data/paymentDetails.js');
-  assert.equal(paypalLinkFor(180, ''), '', 'no link set = no PayPal block (nothing invented)');
-  assert.equal(paypalLinkFor(180, 'https://paypal.me/solivagant'), 'https://paypal.me/solivagant/180USD', 'the amount rides in the link');
-  assert.equal(paypalLinkFor(180, 'https://www.paypal.me/solivagant/'), 'https://paypal.me/solivagant/180USD');
-  assert.equal(paypalLinkFor(180, 'https://paypal.me.evil.test/x'), '', 'a look-alike host is refused');
-  assert.equal(paypalLinkFor(180, 'http://paypal.me/solivagant'), '', 'only https');
-  assert.equal(paypalLinkFor(null, 'https://paypal.me/solivagant'), '', 'no amount, no link');
 }
 
 // --- 5. Studio can follow the order up: the pay link and the dollars ------------------------------------
@@ -225,11 +211,12 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   const templates = read('services', 'notificationTemplateService.js');
   assert.doesNotMatch(templates, /formatTotal\(order\.subtotal\)/, 'a buyer message prints a rupiah total without asking whether the order is in dollars');
   assert.match(templates, /amountUsd/, 'the message total reads the dollars the order carries');
-  assert.match(templates, /\/pay\/\$\{order\.paymentToken\}/, 'the pay link is the /pay/<token> page when there is no DOKU link');
+  // /pay/<token> retired 15 Nov 2026: the pay link is DOKU's or nothing, never the retired page.
+  assert.match(templates, /export const getPaymentLinkUrl = \(order\) => order\?\.paymentUrl \|\| '';/, 'the pay link is DOKU\'s or nothing');
   const desk = read('pages', 'OrderDetailPage.jsx');
   assert.equal((desk.match(/disabled=\{!paymentLink\}/g) || []).length, 2, 'both desktop pay-link buttons open for a /pay order');
-  assert.match(read('pages', 'mobile', 'MobileOrderDetailPage.jsx'), /order\.paymentToken && \['unpaid', 'pending'\]\.includes\(order\.paymentStatus\)/,
-    'the phone screen offers the /pay link too');
+  assert.doesNotMatch(read('pages', 'mobile', 'MobileOrderDetailPage.jsx'), /copyPaymentPageLink|Salin link bayar/,
+    'the phone screen no longer hands out the retired /pay link');
 }
 
 // --- 6. The contact the server writes ("email · phone") reaches both Studio buttons ------------------------
