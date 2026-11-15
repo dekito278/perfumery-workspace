@@ -155,8 +155,15 @@ const CatalogPage = () => {
     () => catalogPillCounts(narrowedProducts, catalogCategories, matchesCatalogCategory),
     [narrowedProducts, catalogCategories],
   );
+  // What can be bought comes first, in the shop's own order; what has sold out follows, in the same order
+  // (eleventh visitor audit, 15 Nov 2026: the catalogue opened on two SOLD OUT cards, because new rows
+  // arrive first). A stable sort, so nothing else moves.
   const filteredProducts = useMemo(
-    () => narrowedProducts.filter((product) => matchesCatalogCategory(product, activeCategory)),
+    () => narrowedProducts
+      .filter((product) => matchesCatalogCategory(product, activeCategory))
+      .map((product, index) => ({ product, index, soldOut: product.publicStatus !== 'Available' }))
+      .sort((a, b) => (Number(a.soldOut) - Number(b.soldOut)) || (a.index - b.index))
+      .map(({ product }) => product),
     [narrowedProducts, activeCategory],
   );
 

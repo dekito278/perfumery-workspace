@@ -118,13 +118,16 @@ const availabilityUrl = (product) => schemaAvailability({
 
 // The number every WhatsApp button on the shop uses (VITE_STOREFRONT_WHATSAPP_NUMBER). It was typed in
 // here, so a number changed in Vercel would have stayed old in search results (2026-11-03).
-export const buildOrganizationJsonLd = (origin = getSiteOrigin(), whatsapp = import.meta.env?.VITE_STOREFRONT_WHATSAPP_NUMBER) => {
+// The tagline in each shop's language: the English home told search engines "Parfum artisan oleh Dekito"
+// (eleventh visitor audit, 15 Nov 2026).
+export const SITE_TAGLINE_EN = 'Artisan perfume by Dekito';
+export const buildOrganizationJsonLd = (origin = getSiteOrigin(), whatsapp = import.meta.env?.VITE_STOREFRONT_WHATSAPP_NUMBER, region = 'id') => {
   const phone = normalizeWhatsAppPhoneNumber(whatsapp || '');
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: SITE_NAME,
-    description: SITE_TAGLINE,
+    description: region === 'en' ? SITE_TAGLINE_EN : SITE_TAGLINE,
     url: origin || undefined,
     logo: toAbsoluteUrl(BRAND_LOGO_PATH, origin),
     founder: { '@type': 'Person', name: 'Dekito' },

@@ -555,11 +555,14 @@ export const normalizeProduct = (input, existingProducts = []) => {
     compareAtPrice: primaryVariant.compareAtPriceNumber ? formatRupiah(primaryVariant.compareAtPriceNumber) : '',
     size: primaryVariant.size || input.size || '30 ml',
     notes: input.notes || 'Custom scent profile',
-    topNotes: splitList(input.topNotes).length ? splitList(input.topNotes) : ['Opening note'],
-    heartNotes: splitList(input.heartNotes).length ? splitList(input.heartNotes) : ['Heart note'],
-    baseNotes: splitList(input.baseNotes).length ? splitList(input.baseNotes) : ['Base note'],
+    // Empty stays empty (eleventh visitor audit, 15 Nov 2026): "Opening note / Heart note / Base note" and
+    // "A custom product entry managed from Studio." were printed on three new perfumes' pages, in their
+    // search previews and share text — words the shop invented for Dekito. A page hides what is empty.
+    topNotes: splitList(input.topNotes),
+    heartNotes: splitList(input.heartNotes),
+    baseNotes: splitList(input.baseNotes),
     mood: input.mood || 'Profil parfum bespoke',
-    description: input.description || 'A custom product entry managed from Studio.',
+    description: input.description || '',
     // The English copy, carried through WITHOUT an Indonesian fallback: empty means "not translated
     // yet", and productCopyFor decides what to show. This list is hand-written, so a field that is not
     // named here stops existing at this line — fromDatabaseRow passed all five in and every one of them
