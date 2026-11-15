@@ -157,7 +157,7 @@ const InternationalCartPage = () => {
                   {/* WhatsApp is the order (Dekito, 14 Nov 2026: buyers abroad stopped writing to him once
                       the address went into a form here). The draft carries the basket, the country and the
                       total; the address and the payment are settled in the chat. */}
-                  {lines.length && !needsDestination ? <p className="m-0 text-sm leading-relaxed text-ng-dust">{t('cart.intl.howItWorks')}</p> : null}
+                  {lines.length && !needsDestination ? <p className="m-0 text-sm leading-relaxed text-ng-dust">{t(quote?.shippingUsd ? 'cart.intl.howItWorks' : 'cart.intl.howItWorksAsk')}</p> : null}
                   {lines.length ? (
                     <a
                       href={canOrder ? buildWhatsAppCheckoutUrl(message, phone) : '#'}

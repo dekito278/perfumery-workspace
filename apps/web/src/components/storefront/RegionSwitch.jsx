@@ -21,8 +21,9 @@ const RegionSwitch = ({ className = '' }) => {
   return (
     <div role="group" aria-label={t('region.label')} className={`ng-region ${className}`.trim()}>
       {[
-        { value: REGION_ID, label: 'ID', title: t('region.idTitle') },
-        { value: REGION_EN, label: 'EN', title: t('region.enTitle') },
+        // A name in its own language for a screen reader, which otherwise reads "I D" (fresh audit).
+        { value: REGION_ID, label: 'ID', name: t('region.idName'), lang: 'id', title: t('region.idTitle') },
+        { value: REGION_EN, label: 'EN', name: t('region.enName'), lang: 'en', title: t('region.enTitle') },
       ].map((option) => (
         // 44px both ways: these two switch the whole shop into a language the reader may not read, so
         // they are the last pair on the page that can be allowed to be small (measured 31 and 35px wide
@@ -32,6 +33,8 @@ const RegionSwitch = ({ className = '' }) => {
           type="button"
           onClick={() => setRegion(option.value)}
           aria-pressed={region === option.value}
+          aria-label={option.name}
+          lang={option.lang}
           title={option.title}
         >
           {option.label}

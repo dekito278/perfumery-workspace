@@ -78,6 +78,8 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // 15 Nov 2026 (full copy review): the invoice, the bespoke stages, the quantity line and the app-install
   // words left this list — the Indonesian shop now says them in Indonesian (Pembeli, Parfum, Jml, Cetak,
   // Sampel, Persetujuan, Pasang…), as Dekito asked for every text a buyer sees.
+  // A language is named in itself, whichever shop the switch sits in (screen-reader names, 15 Nov 2026).
+  'region.idName', 'region.enName',
   'pay.status',  // Status is Status
   // Payment providers are named, not translated: DOKU is DOKU and QRIS is QRIS on both sides.
   'paymethod.doku', 'paymethod.qris',

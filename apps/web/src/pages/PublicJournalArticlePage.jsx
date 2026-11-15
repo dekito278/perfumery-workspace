@@ -23,6 +23,7 @@ import { formatDate } from '@/utils/formatting.js';
 // og:url and JSON-LD @id pointing at that host (audit round 8).
 import { DEFAULT_SHARE_IMAGE, SITE_NAME, brandedTitle, getSiteOrigin, metaSnippet, shopCanonicalUrl, stripTrailingBrand, toAbsoluteUrl } from '@/utils/seo.js';
 import { stripMarkdown } from '@/utils/articleExcerpt.js';
+import { withoutRepeatedLead } from '@/utils/articleLead.js';
 
 const getReadingMinutes = (content) => {
   const wordCount = String(content || '').trim().split(/\s+/).filter(Boolean).length;
@@ -223,7 +224,7 @@ const PublicJournalArticlePage = () => {
               <div className="mx-auto flex max-w-[680px] flex-col gap-10">
                 <div className="ng-article">
                   {post.content ? (
-                    <JournalMarkdownContent content={post.content} />
+                    <JournalMarkdownContent content={withoutRepeatedLead(post.content, { title: post.title, excerpt: post.excerpt })} />
                   ) : (
                     <p className="m-0 text-ng-dust">{t("journal.noContent")}</p>
                   )}

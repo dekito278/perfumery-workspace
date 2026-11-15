@@ -20,7 +20,8 @@ const read = (...parts) => readFileSync(join(src, ...parts), 'utf8');
 
 // --- 1 ----------------------------------------------------------------------------------------------------
 const pdp = read('pages', 'PublicProductDetailPage.jsx');
-assert.match(pdp, /const \{ bottles: chosenBottles \} = useShippingDestination\(\);\s*const addCount = isInternational \? Math\.max\(1, Math\.round\(Number\(chosenBottles\) \|\| 1\)\) : 1;/,
+// Capped at the stock left since 15 Nov 2026 (fresh buyer audit: the picker offered 4 of 2 bottles).
+assert.match(pdp, /const \{ bottles: chosenBottles \} = useShippingDestination\(\);[\s\S]{0,200}const addCount = isInternational\s*\? Math\.min\(Math\.max\(1, Math\.round\(Number\(chosenBottles\) \|\| 1\)\), [^;]*stockOfVariant[^;]*\)\s*: 1;/,
   'the English shop adds the bottle count chosen in its quote block; the Indonesian shop adds one');
 assert.match(pdp, /priceNumber: selectedPrice,[\s\S]{0,260}\}, addCount\);/, 'and that count is what goes in the cart');
 assert.match(pdp, /addCount > 1 && exportPrice\s*\? t\('pdp\.addManyToCartWithPrice', \{ count: addCount, price: `US\$\$\{usdPriceFor\(exportPrice\) \* addCount\}` \}\)/,
@@ -28,7 +29,7 @@ assert.match(pdp, /addCount > 1 && exportPrice\s*\? t\('pdp\.addManyToCartWithPr
 for (const language of ['id', 'en']) assert.match(MESSAGES[language]['pdp.addManyToCartWithPrice'], /\{count\}[\s\S]*\{price\}/);
 
 // --- 2 ----------------------------------------------------------------------------------------------------
-assert.match(read('pages', 'InternationalCartPage.jsx'), /\{lines\.length && !needsDestination \? <p[^>]*>\{t\('cart\.intl\.howItWorks'\)\}/,
+assert.match(read('pages', 'InternationalCartPage.jsx'), /\{lines\.length && !needsDestination \? <p[^>]*>\{t\(quote\?\.shippingUsd \? 'cart\.intl\.howItWorks' : 'cart\.intl\.howItWorksAsk'\)\}/,
   'how the WhatsApp order works is said once a country is chosen');
 
 // --- 3 ----------------------------------------------------------------------------------------------------

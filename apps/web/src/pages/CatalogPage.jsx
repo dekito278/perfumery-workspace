@@ -341,13 +341,14 @@ const CatalogPage = () => {
                     round a loop that cannot help them. */}
                 <p className="ng-mono m-0 text-ng-ash">{products.length ? t('catalog.noMatchEyebrow') : t('catalog.notLoadedEyebrow')}</p>
                 <h2 className="ng-display text-[36px] font-normal md:text-[44px]">
+                  {/* A typed search is not a filter (fresh buyer audit, 15 Nov 2026): say the words back. */}
                   {products.length
-                    ? t('catalog.noMatch')
+                    ? (searchTerm.trim() ? t('catalog.noMatchSearch', { term: searchTerm.trim() }) : t('catalog.noMatch'))
                     : t('catalog.notLoaded')}
                 </h2>
                 {products.length ? (
                   <button type="button" className="ng-btn" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
-                    {t('catalog.resetCatalog')}
+                    {searchTerm.trim() ? t('catalog.clearSearch') : t('catalog.resetCatalog')}
                   </button>
                 ) : (
                   <button type="button" className="ng-btn" onClick={() => window.location.reload()}>
