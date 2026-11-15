@@ -56,7 +56,13 @@ export const formatOrderTotal = (order) => {
  * (Dekito: buyers abroad pay on WhatsApp, the page is no longer used), so no message hands it out any more;
  * the reminder buttons stay disabled for an order with no DOKU link, and the chat carries the payment.
  */
-export const getPaymentLinkUrl = (order) => order?.paymentUrl || '';
+// For an unpaid Indonesian bank-transfer order, the shop's own payment page (bank details + receipt upload)
+// is that page (Studio audit, 15 Nov 2026: the reminder buttons sat disabled for every transfer order).
+export const getPaymentLinkUrl = (order) => {
+  if (order?.paymentUrl) return order.paymentUrl;
+  if (shopOf(order) === 'en' || !unpaid(order)) return '';
+  return getManualPaymentUploadUrl(order);
+};
 
 const unpaid = (order) => ['unpaid', 'pending'].includes(order?.paymentStatus);
 
@@ -148,9 +154,11 @@ const templatesById = {
     'Detail order:',
     formatItemLines(order),
     `Total: ${formatOrderTotal(order)}`,
-    `Status pembayaran: ${order.paymentStatus || '-'}`,
+    // The label, not the database word: buyers read "pending"/"unpaid" in English otherwise (Studio audit).
+    `Status pembayaran: ${PAYMENT_STATUS_ID[order.paymentStatus] || order.paymentStatus || '-'}`,
     linkLine(order, 'Invoice', 'Lacak pesanan'),
-    unpaid(order) && order.paymentToken ? `Link bayar: ${getPaymentLinkUrl(order)}` : null,
+    // Only when there IS a link: since /pay retired an export order printed "Pay here: " with nothing after it.
+    unpaid(order) && getPaymentLinkUrl(order) ? `Link bayar: ${getPaymentLinkUrl(order)}` : null,
     '',
     'Kami akan update lagi setelah pembayaran terkonfirmasi. Terima kasih.',
   ],
@@ -207,6 +215,10 @@ const templatesById = {
   ],
 };
 
+// Written here rather than imported: two guards run this file with its imports stripped.
+const PAYMENT_STATUS_ID = { unpaid: 'Belum dibayar', pending: 'Menunggu bayar', paid: 'Sudah dibayar', failed: 'Gagal', expired: 'Kedaluwarsa', refunded: 'Dikembalikan' };
+const PAYMENT_STATUS_EN = { unpaid: 'Not paid yet', pending: 'Awaiting payment', paid: 'Paid', failed: 'Failed', expired: 'Expired', refunded: 'Refunded' };
+
 const templatesByEn = {
   order_created: (order) => [
     buildGreeting(order),
@@ -216,9 +228,9 @@ const templatesByEn = {
     'Order details:',
     formatItemLines(order),
     `Total: ${formatOrderTotal(order)}`,
-    `Payment status: ${order.paymentStatus || '-'}`,
+    `Payment status: ${PAYMENT_STATUS_EN[order.paymentStatus] || order.paymentStatus || '-'}`,
     linkLine(order, 'Invoice', 'Track your order'),
-    unpaid(order) && order.paymentToken ? `Pay here: ${getPaymentLinkUrl(order)}` : null,
+    unpaid(order) && getPaymentLinkUrl(order) ? `Pay here: ${getPaymentLinkUrl(order)}` : null,
     '',
     'We will write again once the payment is confirmed. Thank you.',
   ],

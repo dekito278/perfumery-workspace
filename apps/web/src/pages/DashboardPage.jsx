@@ -786,7 +786,7 @@ const DashboardPage = () => {
                       {opsHealth.hasCriticalIssues ? 'Ada item yang perlu dicek sebelum follow-up' : 'Order flow terlihat sehat'}
                     </h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
-                      DOKU checkout diblokir saat order hanya local draft. Gunakan retry sync sebelum kirim payment link atau proses fulfillment.
+                      Order yang hanya tersimpan di perangkat ini belum bisa dibayar pembeli. Tekan Coba sinkron lagi sebelum memproses ordernya.
                     </p>
                   </div>
                 </div>

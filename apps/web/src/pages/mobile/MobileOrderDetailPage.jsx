@@ -73,6 +73,7 @@ import {
   auditRowIsImportant,
   summariseAuditValues,
 } from '@/utils/orderAuditChanges.js';
+import { confirmStatusChange } from '@/utils/confirmAction.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -319,6 +320,7 @@ const MobileOrderDetailPage = () => {
   }, [order?.paymentProofUrl]);
 
   const handleStatusChange = async (status) => {
+    if (!await confirmStatusChange(status)) return;
     try {
       const orderKey = order.id || order.orderNumber;
       const nextOrders = await updateOrderStatus(orderKey, status);
@@ -870,7 +872,7 @@ const MobileOrderDetailPage = () => {
             </select>
             {order.paymentStatus !== 'paid' ? (
               <Button type="button" className="h-11 rounded-2xl px-4 text-xs" onClick={() => handlePaymentStatusChange('paid')} disabled={savingPayment}>
-                {savingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Tandai paid'}
+                {savingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Tandai sudah dibayar'}
               </Button>
             ) : null}
           </div>
@@ -1060,9 +1062,6 @@ const MobileOrderDetailPage = () => {
               Email
             </Button>
           </div>
-          <p className="mt-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-            Manual dulu: salin template, kirim WhatsApp, atau buka draft email. Format ini siap dipakai nanti untuk automation penuh.
-          </p>
         </section>
         </> : null}
 
@@ -1469,8 +1468,8 @@ const MobileOrderDetailPage = () => {
       <MobileBottomSheet
         open={rejectProofOpen}
         onOpenChange={setRejectProofOpen}
-        title="Reject bukti transfer"
-        description="Alasan ini akan tampil untuk customer dan order tetap pending."
+        title="Tolak bukti transfer"
+        description="Alasan ini dikirim ke pembeli. Order tetap menunggu bayar sampai bukti baru diupload."
         footer={(
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white" onClick={() => setRejectProofOpen(false)} disabled={savingPaymentProof}>
@@ -1478,7 +1477,7 @@ const MobileOrderDetailPage = () => {
             </Button>
             <Button type="button" className="h-11 rounded-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={submitRejectProof} disabled={savingPaymentProof || !rejectProofNotes.trim()}>
               {savingPaymentProof ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertCircle className="mr-2 h-4 w-4" />}
-              Reject
+              Tolak bukti
             </Button>
           </div>
         )}

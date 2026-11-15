@@ -11,6 +11,7 @@ import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/compo
 import { useOrders } from '@/hooks/useOrders.js';
 import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderService.js';
 import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
+import { openFollowUpsOneByOne } from '@/utils/whatsAppFollowUps.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { exportOrdersCsv, settleBulk } from '@/utils/orderBulkActions.js';
 import {
@@ -363,16 +364,8 @@ const ShipmentsPage = () => {
       toast.error('Tidak ada template WA untuk order terpilih');
       return;
     }
-    let copied = true;
-    try {
-      await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
-    } catch (error) {
-      copied = false;
-    }
-    window.open(getNotificationHandoffUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
-    toast.success(copied
-      ? `${messages.length} pesan WA disalin, WA pertama dibuka`
-      : `WA pertama dibuka (${messages.length} pesan gagal disalin ke clipboard)`);
+    // One chat per buyer, each with its own message — never a pasted block of everyone's (whatsAppFollowUps.js).
+    openFollowUpsOneByOne(messages);
   };
 
   const bulkExportCsv = () => {
@@ -498,11 +491,11 @@ const ShipmentsPage = () => {
                 </Button>
                 <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkWhatsAppFollowUp} disabled={!selectedShipmentOrders.length}>
                   <MessageCircle className="h-4 w-4" />
-                  WA follow-up
+                  Kirim WA
                 </Button>
                 <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkExportCsv} disabled={!selectedShipmentOrders.length}>
                   <Download className="h-4 w-4" />
-                  Export CSV
+                  Unduh CSV
                 </Button>
               </div>
             </div>

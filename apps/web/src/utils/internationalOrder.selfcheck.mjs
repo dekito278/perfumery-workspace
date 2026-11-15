@@ -212,7 +212,9 @@ console.log('internationalOrder selfcheck OK (server charges what the cart showe
   assert.doesNotMatch(templates, /formatTotal\(order\.subtotal\)/, 'a buyer message prints a rupiah total without asking whether the order is in dollars');
   assert.match(templates, /amountUsd/, 'the message total reads the dollars the order carries');
   // /pay/<token> retired 15 Nov 2026: the pay link is DOKU's or nothing, never the retired page.
-  assert.match(templates, /export const getPaymentLinkUrl = \(order\) => order\?\.paymentUrl \|\| '';/, 'the pay link is DOKU\'s or nothing');
+  assert.match(templates, /if \(order\?\.paymentUrl\) return order\.paymentUrl;\s*if \(shopOf\(order\) === 'en' \|\| !unpaid\(order\)\) return '';\s*return getManualPaymentUploadUrl\(order\);/,
+    'the pay link is DOKU\'s, or the shop\'s own transfer page for an unpaid Indonesian order — never /pay for abroad');
+  assert.doesNotMatch(templates, /order\.paymentToken \? `(Link bayar|Pay here)/, 'no message prints an empty pay line');
   const desk = read('pages', 'OrderDetailPage.jsx');
   assert.equal((desk.match(/disabled=\{!paymentLink\}/g) || []).length, 2, 'both desktop pay-link buttons open for a /pay order');
   assert.doesNotMatch(read('pages', 'mobile', 'MobileOrderDetailPage.jsx'), /copyPaymentPageLink|Salin link bayar/,

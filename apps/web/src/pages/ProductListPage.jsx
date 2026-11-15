@@ -49,7 +49,7 @@ const ProductListPage = () => {
   const previewProduct = (product) => {
     const path = getProductStorefrontPath(product);
     if (!path) {
-      toast.error('Slug produk belum tersedia');
+      toast.error('Alamat produk belum ada. Isi nama produk lalu simpan dulu.');
       return;
     }
     navigate(path);

@@ -24,6 +24,7 @@ import {
   updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
+import { openFollowUpsOneByOne } from '@/utils/whatsAppFollowUps.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { cn } from '@/lib/utils.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
@@ -49,6 +50,7 @@ import {
   stockReservationTone,
 } from '@/utils/orderWorkflow.js';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
+import { confirmStatusChange } from '@/utils/confirmAction.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -62,9 +64,9 @@ const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 
 const nextActionByStatus = {
   pending_payment: 'Tunggu pembayaran DOKU/manual sebelum produksi.',
-  paid: 'Siap diproses: review brief, siapkan formula, lalu ubah ke Processing.',
-  processing: 'Sedang dikerjakan. Update ke Shipped setelah resi/packing siap.',
-  shipped: 'Dalam pengiriman. Ubah ke Completed saat selesai.',
+  paid: 'Siap diproses: cek brief, siapkan formula, lalu ubah ke Diproses.',
+  processing: 'Sedang dikerjakan. Ubah ke Dikirim setelah paket keluar.',
+  shipped: 'Dalam pengiriman. Ubah ke Selesai setelah paket diterima.',
   completed: 'Order selesai.',
   cancelled: 'Order dibatalkan.',
 };
@@ -349,9 +351,8 @@ const MobileOrdersPage = () => {
       toast.error('Tidak ada template WA untuk order terpilih');
       return;
     }
-    await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
-    window.open(getNotificationHandoffUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
-    toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
+    // One chat per buyer, each with its own message — never a pasted block of everyone's (whatsAppFollowUps.js).
+    openFollowUpsOneByOne(messages);
   };
 
   const bulkExportCsv = () => {
@@ -378,6 +379,7 @@ const MobileOrdersPage = () => {
   };
 
   const changeOrderStatus = async (order, status) => {
+    if (!await confirmStatusChange(status)) return;
     try {
       await updateStatus(order.id || order.orderNumber, status);
     } catch (error) {
@@ -487,15 +489,15 @@ const MobileOrdersPage = () => {
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkPrintResi} disabled={!selectedPrintableOrders.length}>
                 <Download className="h-4 w-4" />
-                Print resi
+                Cetak label kirim
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkWhatsAppFollowUp} disabled={!selectedFilteredOrders.length}>
                 <MessageCircle className="h-4 w-4" />
-                WA follow-up
+                Kirim WA
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkExportCsv} disabled={!selectedFilteredOrders.length}>
                 <Download className="h-4 w-4" />
-                Export CSV
+                Unduh CSV
               </Button>
             </div>
             <p className="mt-2 text-[10px] font-bold uppercase text-[#6b7280]">{selectedFilteredOrders.length} dipilih / {selectedPrintableOrders.length} siap print</p>
@@ -627,7 +629,7 @@ const MobileOrdersPage = () => {
                   </div>
                   {order.paymentStatus !== 'paid' ? (
                     <Button type="button" size="sm" className="h-9 shrink-0 rounded-2xl px-3 text-xs" onClick={() => changePaymentStatus(order, 'paid')}>
-                      Tandai paid
+                      Tandai sudah dibayar
                     </Button>
                   ) : null}
                 </div>

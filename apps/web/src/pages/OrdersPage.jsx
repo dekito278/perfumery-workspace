@@ -21,6 +21,7 @@ import {
   updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
+import { openFollowUpsOneByOne } from '@/utils/whatsAppFollowUps.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import {
   getOrderProductItems,
@@ -44,6 +45,7 @@ import {
   stockReservationLabel,
   stockReservationTone,
 } from '@/utils/orderWorkflow.js';
+import { confirmStatusChange } from '@/utils/confirmAction.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -238,6 +240,7 @@ const OrdersPage = () => {
   };
 
   const updateStatusAndNotify = async (order, status) => {
+    if (!await confirmStatusChange(status)) return;
     try {
       await updateStatus(order.id || order.orderNumber, status);
       if (['processing', 'shipped', 'completed'].includes(status)) {
@@ -330,9 +333,8 @@ const OrdersPage = () => {
       toast.error('Tidak ada template WA untuk order terpilih');
       return;
     }
-    await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
-    window.open(getNotificationHandoffUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
-    toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
+    // One chat per buyer, each with its own message — never a pasted block of everyone's (whatsAppFollowUps.js).
+    openFollowUpsOneByOne(messages);
   };
 
   const bulkExportCsv = () => {
@@ -478,15 +480,15 @@ const OrdersPage = () => {
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkPrintResi} disabled={!selectedPrintableOrders.length}>
                 <Download className="h-4 w-4" />
-                Print resi
+                Cetak label kirim
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkWhatsAppFollowUp} disabled={!selectedVisibleOrders.length}>
                 <MessageCircle className="h-4 w-4" />
-                WA follow-up
+                Kirim WA
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkExportCsv} disabled={!selectedVisibleOrders.length}>
                 <Download className="h-4 w-4" />
-                Export CSV
+                Unduh CSV
               </Button>
             </div>
             <p className="text-xs font-bold text-muted-foreground lg:col-span-2">
@@ -669,7 +671,7 @@ const OrdersPage = () => {
                         </select>
                         {order.paymentStatus !== 'paid' ? (
                           <Button type="button" size="sm" className="h-10 rounded-2xl px-3 text-xs" onClick={() => updatePaymentAndNotify(order, 'paid')}>
-                            Tandai paid
+                            Tandai sudah dibayar
                           </Button>
                         ) : null}
                       </div>

@@ -608,7 +608,7 @@ const BatchProductionPage = () => {
                   <MetricCard label="Stok draf" value={`${publishedProduct?.stock ?? bottleCount} botol`} helper={publishedProduct ? 'stok produk tertaut' : 'dihitung dari volume terpakai'} tone="emerald" />
                   <MetricCard label="SKU" value={productSku || '-'} helper={publishedProduct ? 'sudah tertaut' : 'dibuat otomatis'} />
                 </div>
-                <Button type="button" className="mt-4 h-11 w-full rounded-2xl gap-2" onClick={publishedProduct ? () => navigate('/studio/products') : publishBatchAsProduct} disabled={publishingProduct || (!publishedProduct && bottleCount <= 0)}>
+                <Button type="button" className="mt-4 h-11 w-full rounded-2xl gap-2" onClick={publishedProduct ? () => navigate(`/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`) : publishBatchAsProduct} disabled={publishingProduct || (!publishedProduct && bottleCount <= 0)}>
                   <ShoppingBag className="h-4 w-4" />
                   {publishedProduct ? 'Buka produk tertaut' : publishingProduct ? 'Membuat draf...' : 'Buat draf stok produk'}
                 </Button>

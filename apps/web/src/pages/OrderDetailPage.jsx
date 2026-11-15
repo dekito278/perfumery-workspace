@@ -71,6 +71,7 @@ import {
   auditRowIsImportant,
   summariseAuditValues,
 } from '@/utils/orderAuditChanges.js';
+import { confirmStatusChange } from '@/utils/confirmAction.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -224,7 +225,6 @@ const OrderDetailPage = () => {
     paymentLink || null,
     '',
     `Total: ${order ? formatOrderTotal(order) : formatTotal(0)}`,
-    order?.customerCode ? `Customer code: ${order.customerCode}` : null,
     '',
     english ? 'Once it is paid we will update the order. Thank you.' : 'Kalau sudah dibayar, status order akan kami update. Terima kasih.',
     // Optional lines are null; the '' entries above are deliberate blank lines. Filtering on '' removed
@@ -372,6 +372,7 @@ const OrderDetailPage = () => {
   };
 
   const updateStatus = async (status) => {
+    if (!await confirmStatusChange(status)) return;
     setSavingStatus(true);
     try {
       await updateOrderStatus(orderKey, status);
@@ -799,7 +800,7 @@ const OrderDetailPage = () => {
             <div className="grid gap-2 sm:grid-cols-4">
               <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => updatePayment('paid')} disabled={savingPayment || order.paymentStatus === 'paid'}>
                 {savingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                Tandai paid
+                Tandai sudah dibayar
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => updateStatus('processing')} disabled={savingStatus || order.status === 'processing'}>
                 <PackageCheck className="h-4 w-4" />
@@ -962,7 +963,7 @@ const OrderDetailPage = () => {
                 </select>
                 <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => updatePayment('paid')} disabled={savingPayment || order.paymentStatus === 'paid'}>
                   {savingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  Tandai paid
+                  Tandai sudah dibayar
                 </Button>
                 {order.paymentProvider === 'doku' ? (
                   <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={syncDokuStatus} disabled={syncingPayment}>
