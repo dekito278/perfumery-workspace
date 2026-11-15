@@ -382,7 +382,8 @@ const loadLocalApiEnv = () => {
 const manualChunkGroups = [
 	['react-vendor', ['/node_modules/react/', '/node_modules/react-dom/', '/node_modules/scheduler/']],
 	['router-vendor', ['/node_modules/react-router/', '/node_modules/react-router-dom/']],
-	['supabase-vendor', ['/node_modules/@supabase/']],
+	// iceberg-js arrives through @supabase/storage-js.
+	['supabase-vendor', ['/node_modules/@supabase/', '/node_modules/iceberg-js/']],
 	['motion-vendor', ['/node_modules/framer-motion/']],
 	['pdf-parse-vendor', ['/node_modules/pdfjs-dist/']],
 	['pdf-export-vendor', ['/node_modules/jspdf/', '/node_modules/html2canvas/']],
@@ -417,6 +418,17 @@ const manualChunkGroups = [
 		'/node_modules/react-smooth/', '/node_modules/recharts-scale/',
 		'/node_modules/react-transition-group/', '/node_modules/dom-helpers/',
 		'/node_modules/raf/', '/node_modules/performance-now/',
+		// Found the same way on 15 Nov 2026: recharts-scale and react-smooth's own dependencies, 71 kB raw
+		// in the eager `vendor` chunk.
+		'/node_modules/decimal.js-light/', '/node_modules/fast-equals/',
+	]],
+	// Studio's drawer, select and tooltip (formula screens, filters, the phone bottom sheet), with the
+	// positioning library Radix's popper uses. 15 Nov 2026: 210 kB raw of these sat in `vendor` on every
+	// buyer's first visit. Named, not deferred: if the storefront ever imports one eagerly the chunk is
+	// simply preloaded, and the build's lazy-chunk assertion is not tripped by a legitimate use.
+	['studio-ui-vendor', [
+		'/node_modules/vaul/', '/node_modules/@radix-ui/react-select/', '/node_modules/@radix-ui/react-tooltip/',
+		'/node_modules/@floating-ui/', '/node_modules/@radix-ui/react-popper/',
 	]],
 	['form-vendor', ['/node_modules/react-hook-form/', '/node_modules/@hookform/', '/node_modules/zod/']],
 	['qr-vendor', ['/node_modules/qrcode/']],

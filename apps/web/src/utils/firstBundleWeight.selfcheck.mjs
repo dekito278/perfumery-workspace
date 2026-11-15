@@ -23,8 +23,23 @@ const app = read('App.jsx');
 for (const page of ['BespokePage', 'PublicTrackingPage', 'PublicJournalPage']) {
   assert.match(app, new RegExp(`const ${page} = lazyRoute\\(\\(\\) => import\\('@/pages/${page}\\.jsx'\\)\\);`), `${page} loads when visited`);
 }
-for (const page of ['HomePage', 'CatalogPage', 'PublicProductDetailPage', 'CartPage', 'CheckoutPage']) {
+for (const page of ['HomePage', 'CatalogPage', 'PublicProductDetailPage', 'CartPage']) {
   assert.match(app, new RegExp(`^import ${page} from '@/pages/${page}\\.jsx';`, 'm'), `${page} stays in the first bundle — the buying path never waits on a second request`);
+}
+// Checkout left the first bundle on 15 Nov 2026 (−18 kB brotli for every visitor, most of whom never
+// check out). The rule above still holds for it: the chunk is fetched the moment something goes into the
+// cart, and again when the cart opens, so the tap on "Lanjut ke checkout" does not wait on it.
+assert.match(app, /const CheckoutPage = lazyRoute\(\(\) => import\('@\/pages\/CheckoutPage\.jsx'\)\);/);
+assert.match(app, /window\.addEventListener\(CART_ITEM_ADDED_EVENT, prefetch, \{ once: true \}\);/, 'checkout is fetched at the first add-to-cart');
+assert.match(app, /<PrefetchCheckoutOnAdd \/>/);
+
+// The catch-all `vendor` chunk is eager. Studio's drawer/select/tooltip (+ floating-ui) and recharts'
+// decimal.js-light/fast-equals sat in it until 15 Nov 2026 — 280 kB raw on every buyer's first visit.
+{
+  const vite = readFileSync(join(src, '..', 'vite.config.js'), 'utf8');
+  for (const lib of ['/node_modules/vaul/', '/node_modules/@radix-ui/react-select/', '/node_modules/@floating-ui/', '/node_modules/decimal.js-light/', '/node_modules/fast-equals/']) {
+    assert.ok(vite.includes(`'${lib}'`), `${lib} has no chunk of its own, so it falls into the eager vendor chunk again`);
+  }
 }
 
 assert.doesNotMatch(read('index.css'), /@import url\('https:\/\/fonts\.googleapis\.com/, 'no font @import blocking the shop');
