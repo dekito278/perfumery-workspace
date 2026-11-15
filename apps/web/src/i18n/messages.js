@@ -285,7 +285,7 @@ export const MESSAGES = {
     'nav.catalog': 'Katalog',
     'nav.signIn': 'Masuk',
     'nav.cartLabel': 'Keranjang · {count}',
-    'nav.footerTagline': 'Parfum artisan oleh Dekito. Dirakit tangan, edisi kecil.',
+    'nav.footerTagline': 'Parfum artisan oleh Dekito. Diracik tangan, edisi kecil.',
     'nav.footerPlace': 'Dikirim dari Indonesia',
     'nav.home': 'Beranda',
     'nav.bespokeShort': 'Bespoke',
@@ -407,11 +407,11 @@ export const MESSAGES = {
     'home.readJournal': 'Baca jurnal',
     // Desktop's own sentence, moved out of HomePage.jsx where it was hardcoded — the English shop's
     // home page was describing itself in Indonesian to every search engine and link preview.
-    'home.meta': 'SOLIVAGANT adalah parfum artisan oleh Dekito — merakit karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi.',
+    'home.meta': 'SOLIVAGANT adalah parfum artisan oleh Dekito — meracik karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi.',
     // One sentence per shop for BOTH catalogue pages. The desktop page hardcoded the English one and
     // the phone page hardcoded the Indonesian one, so each shop was served the other's language half
     // the time. Both sentences below are the ones that were already in the code.
-    'catalog.meta': 'Jelajahi koleksi parfum SOLIVAGANT: objek parfum terbatas dan signature harian yang dirakit tangan, lengkap dengan notes, ukuran, dan harga.',
+    'catalog.meta': 'Jelajahi koleksi parfum SOLIVAGANT: objek parfum terbatas dan signature harian yang diracik tangan, lengkap dengan notes, ukuran, dan harga.',
     'home.statementCta': 'Ceritakan aroma yang kamu cari',
     'home.collabEyebrow': 'KOLABORASI',
     'home.collabHeading': 'Mari berkolaborasi.',
@@ -859,8 +859,8 @@ export const MESSAGES = {
     "cust.trackParcel": "Lacak resi",
     "cust.orderAgain": "Pesan lagi",
     'home.ngTitle': 'Rasa di atas\nformula.',
-    'home.ngLead': 'Parfum artisan yang dirakit tangan di meja kerja kami — dari raw material, tembang, dan ritual. Bukan dari tren.',
-    'home.ngRing': 'DIRAKIT TANGAN · RAW MATERIAL · TEMBANG MACAPAT · RITUAL · EDISI KECIL · ',
+    'home.ngLead': 'Parfum artisan yang diracik tangan di meja kerja kami — dari raw material, tembang, dan ritual. Bukan dari tren.',
+    'home.ngRing': 'DIRACIK TANGAN · RAW MATERIAL · TEMBANG MACAPAT · RITUAL · EDISI KECIL · ',
     'home.ngScroll': 'Gulir',
     'home.ngFeatNo': 'N° 01 · {family}',
     'home.ngFeatNotes': 'Bahan',
@@ -1488,7 +1488,7 @@ export const MESSAGES = {
     'nav.catalog': 'Catalogue',
     'nav.signIn': 'Sign in',
     'nav.cartLabel': 'Cart · {count}',
-    'nav.footerTagline': 'Artisan perfume by Dekito. Assembled by hand, in small editions.',
+    'nav.footerTagline': 'Artisan perfume by Dekito. Blended by hand, in small editions.',
     'nav.footerPlace': 'Shipped from Indonesia',
     'nav.home': 'Home',
     'nav.bespokeShort': 'Bespoke',
@@ -2065,8 +2065,8 @@ export const MESSAGES = {
     "cust.trackParcel": "Track the parcel",
     "cust.orderAgain": "Order again",
     'home.ngTitle': 'Feeling over\nformula.',
-    'home.ngLead': 'Artisan perfume assembled by hand at our workbench — from raw materials, song and ritual. Not from trends.',
-    'home.ngRing': 'ASSEMBLED BY HAND · RAW MATERIAL · MACAPAT SONGS · RITUAL · SMALL EDITIONS · ',
+    'home.ngLead': 'Artisan perfume blended by hand at our workbench — from raw materials, song and ritual. Not from trends.',
+    'home.ngRing': 'BLENDED BY HAND · RAW MATERIAL · MACAPAT SONGS · RITUAL · SMALL EDITIONS · ',
     'home.ngScroll': 'Scroll',
     'home.ngFeatNo': 'N° 01 · {family}',
     'home.ngFeatNotes': 'Notes',
