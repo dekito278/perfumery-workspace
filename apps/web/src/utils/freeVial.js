@@ -118,8 +118,11 @@ const nameKey = (value) => String(value ?? '')
  *                is no gift (visitor audit, 13 Nov 2026: the list offered the bottle just added), so those
  *                aromas are left out. When that leaves nothing, nothing is offered.
  */
+const ownedKeys = (bought = []) => new Set((Array.isArray(bought) ? bought : []).map(nameKey).filter(Boolean));
+const labelIsOwned = (label, owned) => owned.has(nameKey(label)) || owned.has(nameKey(String(label).split(/\s+[^\x00-\x7F]/)[0]));
+
 export const freeVialChoices = (vialProduct = {}, bought = []) => {
-  const owned = new Set((Array.isArray(bought) ? bought : []).map(nameKey).filter(Boolean));
+  const owned = ownedKeys(bought);
   return (Array.isArray(vialProduct?.variants) ? vialProduct.variants : [])
     .map((variant) => ({
       variantId: String(variant?.id || ''),
@@ -127,8 +130,19 @@ export const freeVialChoices = (vialProduct = {}, bought = []) => {
       stock: Math.max(0, Math.round(Number(variant?.stock) || 0)),
     }))
     .filter((choice) => choice.variantId && choice.label && choice.stock > 0)
-    .filter((choice) => !owned.has(nameKey(choice.label)) && !owned.has(nameKey(choice.label.split(/\s+[^\x00-\x7F]/)[0])));
+    .filter((choice) => !labelIsOwned(choice.label, owned));
 };
+
+/**
+ * The aroma already chosen, whose BOTTLE went into the cart afterwards (eleventh visitor audit, 15 Nov 2026).
+ *
+ * freeVialChoices leaves a bought scent out, so the dropdown had no option for the gift it was holding and
+ * read "— Belum dipilih —" while the order still carried that vial. Same rule as the list: a sample of the
+ * bottle being bought is no gift. So the picker releases it and says why, and the buyer picks another.
+ */
+export const giftScentIsBought = (gift = null, bought = []) => (
+  Boolean(gift?.size) && labelIsOwned(String(gift.size), ownedKeys(bought))
+);
 
 /** The names of the bottles bought in this cart — what freeVialChoices leaves out. */
 export const boughtNames = (items = []) => splitFreeVialLines(items).lines.map((line) => line?.name || line?.productName || '');

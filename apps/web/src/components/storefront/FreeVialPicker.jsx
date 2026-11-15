@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Gift } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import FreeVialChoices from '@/components/storefront/FreeVialChoices.jsx';
 import {
   boughtNames,
   freeVialChoices,
+  giftScentIsBought,
   isFreeVialProduct,
   splitFreeVialLines,
 } from '@/utils/freeVial.js';
@@ -27,8 +28,18 @@ const FreeVialPicker = ({ items = [], products = [], onPick }) => {
   const bought = boughtNames(items);
   const choices = freeVialChoices(vialProduct, bought);
   const { lines, gift } = splitFreeVialLines(items);
+  // The chosen aroma's bottle is now in the cart: release the vial and say so (see giftScentIsBought).
+  const [released, setReleased] = useState('');
+  const staleGift = giftScentIsBought(gift, bought) ? gift.size : '';
+  useEffect(() => {
+    if (!staleGift) return;
+    setReleased(staleGift);
+    onPick(null);
+  }, [staleGift, onPick]);
+  const pick = (item) => { setReleased(''); onPick(item); };
 
   if (!vialProduct || !choices.length || !lines.length) return null;
+  const shownGift = staleGift ? null : gift;
 
   return (
     <section className="flex flex-col gap-4" aria-label={t('cart.giftTitle')}>
@@ -36,9 +47,12 @@ const FreeVialPicker = ({ items = [], products = [], onPick }) => {
         <Gift className="h-5 w-5 text-ng-ember" aria-hidden="true" />
         {t('cart.giftTitle')}
       </p>
-      <p className="m-0 text-[15px] leading-relaxed text-ng-dust" role="status">{gift ? t('cart.giftChosen', { name: gift.size }) : t('cart.giftBody')}</p>
-      <FreeVialChoices vialProduct={vialProduct} gift={gift} onPick={onPick} bought={bought} />
-      {gift ? (
+      <p className="m-0 text-[15px] leading-relaxed text-ng-dust" role="status">
+        {shownGift ? t('cart.giftChosen', { name: shownGift.size })
+          : released ? t('cart.giftReleased', { name: released }) : t('cart.giftBody')}
+      </p>
+      <FreeVialChoices vialProduct={vialProduct} gift={shownGift} onPick={pick} bought={bought} />
+      {shownGift ? (
         <button type="button" className="ng-link ng-mono inline-flex min-h-[44px] items-center self-start border-0 bg-transparent p-0 underline underline-offset-4" onClick={() => onPick(null)}>
           {t('cart.giftRemove')}
         </button>

@@ -23,7 +23,7 @@ for (const language of ['id', 'en']) {
   const draft = MESSAGES[language]['export.waCartDraft'];
   for (const placeholder of ['{lines}', '{destination}', '{total}']) assert.ok(draft.includes(placeholder), `${language}: the WhatsApp order lost ${placeholder}`);
   for (const key of ['export.waCartDraft', 'export.waCartAsk']) {
-    assert.match(MESSAGES[language][key], /(alamat pengiriman saya|delivery address):\n$/, `${language}.${key} no longer asks for the address at its end`);
+    assert.match(MESSAGES[language][key], /(alamat pengiriman, dan nomor telepon saya|delivery address and phone number):\n$/, `${language}.${key} no longer asks for the address and phone at its end`);
   }
   assert.match(MESSAGES[language]['cart.intl.order'], /WhatsApp/);
 }

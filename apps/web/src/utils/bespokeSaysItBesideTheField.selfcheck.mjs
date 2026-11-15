@@ -16,15 +16,15 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const page = readFileSync(join(root, 'pages', 'BespokePage.jsx'), 'utf8');
 
 // --- 1. Every refusal names a field ------------------------------------------------------------------------
-const validate = page.slice(page.indexOf('const validateForm = () => {'), page.indexOf('return null;\n  };', page.indexOf('const validateForm = () => {')));
-const keys = [...validate.matchAll(/return fail\('([a-z]+)'/g)].map((match) => match[1]);
+const validate = page.slice(page.indexOf('const validateAll = () => {'), page.indexOf('return found;\n  };', page.indexOf('const validateAll = () => {')));
+const keys = [...validate.matchAll(/refuse\('([a-z]+)'/g)].map((match) => match[1]);
 assert.ok(keys.length >= 10, `only ${keys.length} refusals found — the scan is broken`);
-assert.ok(!/return t\(/.test(validate), 'a refusal without a field went back to being a bare message');
+assert.ok(!/return t\(|return fail\(/.test(validate), 'a refusal went back to being a bare message, or to one per tap');
 
 // --- 2. Each field the checkout step shows has an id, a marker and its message ------------------------------
 const ids = Object.fromEntries([...page.matchAll(/^\s{2}([a-z]+): '(bespoke-[a-z-]+)',$/gm)].map((match) => [match[1], match[2]]));
 for (const key of ['name', 'contact', 'address', 'area', 'courier', 'service', 'preorder', 'voucher']) {
-  assert.ok(keys.includes(key), `validateForm no longer refuses '${key}'`);
+  assert.ok(keys.includes(key), `validateAll no longer refuses '${key}'`);
   assert.ok(ids[key], `BESPOKE_FIELD_IDS has no target for '${key}'`);
   assert.ok(page.includes(`id="${ids[key]}"`), `nothing on the page has id="${ids[key]}" for '${key}'`);
   assert.ok(page.includes(`{errorFor('${key}')}`), `the '${key}' refusal is never said on the page`);
@@ -33,11 +33,12 @@ for (const key of ['name', 'contact', 'address', 'area', 'courier', 'service', '
 
 // --- 3. The submit takes the buyer there, and toasts only what has no field here ----------------------------
 const submit = page.slice(page.indexOf('const submitRequest = async (event) => {'));
-assert.match(submit, /setSubmitError\(validationError\);/);
+// Every refusal at once (eleventh visitor audit, 15 Nov 2026), focus on the first field.
+assert.match(submit, /setSubmitError\(validationErrors\.map\(\(error\) => error\.key\)\);/);
 assert.match(submit, /field\.scrollIntoView\(\{ block: 'center' \}\);\s*field\.focus\(\{ preventScroll: true \}\);/);
-assert.match(submit, /if \(!target\) \{\s*toast\.error\(validationError\.text\);/);
+assert.match(submit, /validationErrors\.filter\(\(error\) => !targetOf\(error\)\)\.forEach\(\(error\) => toast\.error\(error\.text\)\);/);
 // A message leaves once its field is fixed.
-assert.match(page, /const shownError = liveError && liveError\.key === submitError\?\.key \? liveError : null;/);
+assert.match(page, /const shownErrors = submitError \? validateAll\(\)\.filter\(\(error\) => submitError\.includes\(error\.key\)\) : \[\];/);
 
 // --- 4. The rate is chosen when the page prices the parcel -------------------------------------------------
 assert.match(page, /onClick=\{\(\) => autoCalculateShipping\(\{ autoSelectBest: true \}\)\}/, '"Tampilkan ongkir" lists rates without choosing one');

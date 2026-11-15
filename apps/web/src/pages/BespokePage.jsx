@@ -189,7 +189,7 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
 // again), and a brief started from another perfume (?reference=) does not inherit this one.
 const BESPOKE_DRAFT_KEY = 'solivagant.bespokeDraft.v1';
 const NOT_REMEMBERED = ['preorderAcknowledged', 'customerCode'];
-// Where each checkout refusal is said and where focus goes (see validateForm).
+// Where each checkout refusal is said and where focus goes (see validateAll).
 const BESPOKE_FIELD_IDS = {
   name: 'bespoke-name',
   contact: 'bespoke-contact',
@@ -601,44 +601,50 @@ const BespokePage = () => {
   // Which field each refusal belongs to, so the page can say it THERE. Tenth visitor audit, 13 Nov 2026:
   // every refusal was a toast at the top of the screen while focus stayed on the button and the field in
   // question sat out of view — "Pilih layanan ongkir." with the shipping section a screen away.
-  const fail = (key, text) => ({ key, text });
-  const validateForm = () => {
-    if (!form.customerName.trim()) return fail('name', t('bsp.errName'));
-    if (!form.contact.trim()) return fail('contact', t('bsp.errContact'));
-    if (!form.scentDescription.trim()) return fail('scent', t('bsp.errScent'));
-    if (!form.size) return fail('size', t('bsp.errSize'));
-    if (estimatedTotal <= 0) return fail('price', t('bsp.errPrice'));
-    if (!form.deliveryAddress.trim()) return fail('address', t('bsp.errAddress'));
-    if (!selectedDestination) return fail('area', t('bsp.errArea'));
-    if (!selectedCourier) return fail('courier', t('bsp.errCourier'));
-    if (!selectedShipping) return fail('service', t('bsp.errService'));
-    if (!form.preorderAcknowledged) return fail('preorder', t('bsp.errPreorder'));
+  //
+  // ALL of them at once since the eleventh visitor audit (15 Nov 2026): one message per tap made a buyer
+  // with four empty fields tap "Kirim" four times to learn what the form wanted. Area, courier and service
+  // are one chain — each is asked for only once the one before it is chosen.
+  const validateAll = () => {
+    const found = [];
+    const refuse = (key, text) => found.push({ key, text });
+    if (!form.customerName.trim()) refuse('name', t('bsp.errName'));
+    if (!form.contact.trim()) refuse('contact', t('bsp.errContact'));
+    if (!form.scentDescription.trim()) refuse('scent', t('bsp.errScent'));
+    if (!form.size) refuse('size', t('bsp.errSize'));
+    else if (estimatedTotal <= 0) refuse('price', t('bsp.errPrice'));
+    if (!form.deliveryAddress.trim()) refuse('address', t('bsp.errAddress'));
+    if (!selectedDestination) refuse('area', t('bsp.errArea'));
+    else if (!selectedCourier) refuse('courier', t('bsp.errCourier'));
+    else if (!selectedShipping) refuse('service', t('bsp.errService'));
+    if (!form.preorderAcknowledged) refuse('preorder', t('bsp.errPreorder'));
     // A typed code that is not the one applied would be dropped without a word (ninth visitor audit).
-    if (voucher.unappliedCode && !voucher.loading) return fail('voucher', t(voucher.codeRefused ? 'checkout.errVoucherRefused' : 'checkout.errVoucherUnapplied', { code: voucher.unappliedCode }));
-    return null;
+    if (voucher.unappliedCode && !voucher.loading) refuse('voucher', t(voucher.codeRefused ? 'checkout.errVoucherRefused' : 'checkout.errVoucherUnapplied', { code: voucher.unappliedCode }));
+    return found;
   };
-  // The refusal stays beside its field only while that field is still the problem.
+  // Each refusal stays beside its field only while that field is still the problem.
   const [submitError, setSubmitError] = useState(null);
-  const liveError = submitError ? validateForm() : null;
-  const shownError = liveError && liveError.key === submitError?.key ? liveError : null;
-  const errorFor = (key) => (shownError?.key === key
-    ? <span className="ng-error text-sm" role="alert">{shownError.text}</span>
+  const shownErrors = submitError ? validateAll().filter((error) => submitError.includes(error.key)) : [];
+  const shownFor = (key) => shownErrors.find((error) => error.key === key);
+  const errorFor = (key) => (shownFor(key)
+    ? <span className="ng-error text-sm" role="alert">{shownFor(key).text}</span>
     : null);
-  const invalidFor = (key) => (shownError?.key === key ? 'true' : undefined);
+  const invalidFor = (key) => (shownFor(key) ? 'true' : undefined);
 
   const submitRequest = async (event) => {
     event.preventDefault();
     if (submittingRef.current) return;
-    const validationError = validateForm();
-    if (validationError) {
-      setSubmitError(validationError);
-      // Take the buyer to the field; a refusal with no field on this step (scent, size, price) is a toast.
-      const target = document.getElementById(BESPOKE_FIELD_IDS[validationError.key] || '')
-        || (validationError.key === 'service' ? document.getElementById('bespoke-show-rates') : null);
-      if (!target) {
-        toast.error(validationError.text);
-        return;
-      }
+    const validationErrors = validateAll();
+    if (validationErrors.length) {
+      setSubmitError(validationErrors.map((error) => error.key));
+      // Every refusal is said beside its field; one with no field on this step (scent, size, price) is a
+      // toast. Focus goes to the first field in the list.
+      const targetOf = (error) => document.getElementById(BESPOKE_FIELD_IDS[error.key] || '')
+        || (error.key === 'service' ? document.getElementById('bespoke-show-rates') : null);
+      validationErrors.filter((error) => !targetOf(error)).forEach((error) => toast.error(error.text));
+      const first = validationErrors.find(targetOf);
+      const target = first ? targetOf(first) : null;
+      if (!target) return;
       window.requestAnimationFrame(() => {
         const field = target.matches('input, select, textarea, button') ? target : (target.querySelector('button, input, select') || target);
         field.scrollIntoView({ block: 'center' });
