@@ -90,7 +90,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   // added ONE (visitor audit, 13 Nov 2026): the buyer believed they had ordered three. The count chosen there
   // is what goes in the cart, and the button says so. The Indonesian shop has no such count.
   const { bottles: chosenBottles } = useShippingDestination();
-  const addCount = isInternational ? Math.max(1, Math.round(Number(chosenBottles) || 1)) : 1;
+  const stockOfVariant = Math.floor(Number(selectedVariant?.stock));
+  const addCount = isInternational
+    ? Math.min(Math.max(1, Math.round(Number(chosenBottles) || 1)), Number.isFinite(stockOfVariant) && stockOfVariant > 0 ? stockOfVariant : Infinity)
+    : 1;
 
   // Reveal a compact sticky buy-bar once the main add-to-cart button scrolls out of view.
   useEffect(() => {
@@ -506,7 +509,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               <ProductVisual product={product} className="h-full w-full" imageFit="cover" label={false} soldOut={false} sizes="44px" />
             </div>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="truncate font-ng-display text-xl leading-none">{named.name}</span>
+              {/* Two lines before an ellipsis: "Maskuma..." did not say which perfume the bar was for (fresh audit). */}
+              <span className="line-clamp-2 break-words font-ng-display text-lg leading-tight sm:text-xl">{named.name}</span>
               {/* The dollar, for the same reason the headline shows it — see the note at the top of
                   InternationalPrice.jsx. The rupiah of an export price is Dekito's book figure, not the
                   amount the buyer is asked to send. */}

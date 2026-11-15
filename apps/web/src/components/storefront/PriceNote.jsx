@@ -53,7 +53,9 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   // a number they will never be charged. That is the same bait-and-switch the export panel exists to
   // prevent, pointing the other way, and a broken promise is worse than a missed nudge.
   const memberPrice = Number(variant?.memberPriceNumber ?? product?.memberPriceNumber ?? 0);
-  if (!overseasPrice && price && memberPrice && memberPrice < price) {
+  // Not under a sold-out bottle either: it invited a sign-up for something that cannot be bought (fresh audit).
+  const soldOut = variant && variant.stock != null && Number(variant.stock) <= 0;
+  if (!overseasPrice && !soldOut && price && memberPrice && memberPrice < price) {
     return (
       <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-ng-ember ${className}`}>
         {/* Said, not priced (Dekito, 12 Nov 2026): the member price depends on the community code. */}

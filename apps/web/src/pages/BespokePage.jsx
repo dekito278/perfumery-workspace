@@ -297,6 +297,18 @@ const BespokePage = () => {
   const currentStep = !form.scentDescription.trim() ? 0
     : !checkoutOpen ? 2
       : !form.deliveryAddress.trim() ? 3 : 4;
+  // Opening the step lands the buyer on it (fresh buyer audit, 15 Nov 2026: the page barely moved, the
+  // first field stayed below the fold, and it felt as if the button did nothing).
+  useEffect(() => {
+    if (!checkoutOpen) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const heading = document.getElementById('bespoke-checkout-heading');
+      if (!heading) return;
+      heading.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      heading.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [checkoutOpen]);
   const setCheckoutOpen = (open) => {
     if (open && location.hash !== '#checkout') navigate({ search: location.search, hash: 'checkout' });
     if (!open && location.hash === '#checkout') navigate(-1);
@@ -1032,7 +1044,7 @@ const BespokePage = () => {
               <div className="flex flex-col gap-10 border-t border-ng-bone/15 pt-12" data-reveal>
                 <div className="flex flex-col gap-3.5">
                   <p className="ng-mono m-0 text-ng-ash">{t('checkout.eyebrow')}</p>
-                  <h2 className="ng-display ng-h2">{t('bsp.contactSection')}</h2>
+                  <h2 id="bespoke-checkout-heading" tabIndex={-1} className="ng-display ng-h2 outline-none">{t('bsp.contactSection')}</h2>
                   <p className="ng-lead">{t('bsp.contactSectionBody')}</p>
                 </div>
                 {/* Bespoke ships through the same domestic courier API as the product checkout, so the
@@ -1041,9 +1053,9 @@ const BespokePage = () => {
                 <div className="grid gap-5 md:grid-cols-2">
                   {/* No SOLI customer code here any more, as in the main checkout (#595): signing in fills the
                       details, and a guest just types them. */}
-                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input id="bespoke-name" type="text" className="ng-field" autoComplete="name" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} aria-invalid={invalidFor('name')} />{errorFor('name')}</label>
-                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input id="bespoke-contact" type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} aria-invalid={invalidFor('contact')} />{errorFor('contact')}</label>
-                  <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea id="bespoke-address" rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-invalid={invalidFor('address')} />{errorFor('address')}{addressLooksAbroad(form.deliveryAddress) ? (
+                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input id="bespoke-name" type="text" className="ng-field" autoComplete="name" value={form.customerName} aria-required="true" onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} aria-invalid={invalidFor('name')} />{errorFor('name')}</label>
+                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input id="bespoke-contact" type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} aria-required="true" onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} aria-invalid={invalidFor('contact')} />{errorFor('contact')}</label>
+                  <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea id="bespoke-address" rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} aria-required="true" onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-invalid={invalidFor('address')} />{errorFor('address')}{addressLooksAbroad(form.deliveryAddress) ? (
                     <span role="status" className="ng-notice">{t('checkout.abroadHint')} <a href="/en/bespoke" className="ng-link">{t('bsp.abroadLink')}</a></span>
                   ) : null}</label>
                 </div>

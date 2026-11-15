@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
@@ -39,6 +39,11 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
   const own = useInternationalQuote({ price: ownPrice, product, variant });
   // The same cap the quote applies, from the same loaded policy (Studio → export shipping policy).
   const maxBottles = useExportShippingPolicy().maxQuotedBottles;
+  // Never more bottles than are left (fresh buyer audit, 15 Nov 2026: "2 BOTTLES LEFT", the picker offered
+  // 4, the button read "ADD 4 TO CART — US$640", and the cart quietly took 2). Unknown stock keeps the card.
+  const stockLeft = Math.floor(Number(variant?.stock));
+  const stockCap = Number.isFinite(stockLeft) && stockLeft > 0 ? stockLeft : Infinity;
+  const choices = Math.min(maxBottles, stockCap);
   const fromCart = Boolean(quote);
   const price = fromCart ? quote.goodsUsd : ownPrice;
   const {
@@ -48,6 +53,10 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
   // A STABLE id for the country picker, not a useId one: the order buttons on this page send a buyer who
   // has not chosen yet to this control, and they find it by id.
   const countryId = DESTINATION_PICKER_ID;
+  // A count chosen on another bottle (the choice is shared) is brought down to what this one has left.
+  useEffect(() => {
+    if (setBottles && Number(bottles) > stockCap) setBottles(stockCap);
+  }, [setBottles, bottles, stockCap]);
   const bottlesId = useId();
 
   // No export price means this reader is not being quoted internationally, or the bottle has no export
@@ -97,12 +106,12 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
           >
             {/* Past the card's last tier there is one more option, and choosing it says so rather than
                 quoting the 5–6 price for eight bottles. */}
-            {Array.from({ length: maxBottles }, (_, index) => index + 1).map((count) => (
+            {Array.from({ length: choices }, (_, index) => index + 1).map((count) => (
               <option key={count} value={count}>
                 {count === 1 ? t('intlQuote.bottleOne') : t('intlQuote.bottleMany', { count })}
               </option>
             ))}
-            <option value={maxBottles + 1}>{t('intlQuote.bottleMore', { count: maxBottles + 1 })}</option>
+            {stockCap > maxBottles ? <option value={maxBottles + 1}>{t('intlQuote.bottleMore', { count: maxBottles + 1 })}</option> : null}
           </select>
         </div>
         ) : null}

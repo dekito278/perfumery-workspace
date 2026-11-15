@@ -204,7 +204,8 @@ assert.deepEqual(defaultLeaks, [],
 // proof runs THROUGH the same regex: the strings the allowlist exempts are real literals in these files,
 // so the scan must have seen them. Checking the raw file text instead proves nothing about the regex —
 // which is exactly how a sabotaged pattern walked past the first version of this file.
-const MUST_BE_SEEN = ['081234567890', 'SOLI•••••'];
+// '081234567890' left this list on 15 Nov 2026: the checkout's phone placeholder now comes from the message file.
+const MUST_BE_SEEN = ['SOLI•••••'];
 for (const value of MUST_BE_SEEN) {
   assert.ok(ALLOWED.has(value), `${value} must stay on the allowlist with its reason`);
   assert.ok(seen.has(value),

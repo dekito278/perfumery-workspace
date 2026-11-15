@@ -78,8 +78,9 @@ const CheckoutPage = () => {
     !customerName.trim() ? t('checkout.fieldName') : '',
     !contact.trim() ? t('checkout.fieldContact') : (!validPhoneContact ? t('checkout.fieldValidPhone') : ''),
     !deliveryAddress.trim() ? t('checkout.fieldAddress') : '',
-    !selectedDestination ? t('checkout.fieldDestination') : '',
+    // In the order the screen asks for them: the area field appears once a courier is picked (fresh audit).
     !selectedCourier ? t('checkout.fieldCourier') : '',
+    !selectedDestination ? t('checkout.fieldDestination') : '',
     !selectedShipping ? t('checkout.fieldRate') : '',
     !selectedPaymentMethod ? t('checkout.fieldPayment') : '',
     // canSubmitCheckout also refuses lines whose product is gone or sold out; name them, otherwise the
@@ -246,12 +247,12 @@ const CheckoutPage = () => {
                   <div className="grid gap-5 md:grid-cols-2">
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.fullName')}</span>
-                      <input type="text" className="ng-field" maxLength={100} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
+                      <input type="text" className="ng-field" aria-required="true" maxLength={100} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
                       {triedSubmit && fieldErrors.customerName ? <span className="ng-error text-sm" role="alert">{fieldErrors.customerName}</span> : null}
                     </label>
                     <label className="ng-label">
                       <span className="ng-mono text-ng-dust">{t('checkout.whatsapp')}</span>
-                      <input type="tel" className="ng-field" maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
+                      <input type="tel" className="ng-field" maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} placeholder={t('bsp.contactPlaceholder')} autoComplete="tel" aria-required="true" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
                       {triedSubmit && fieldErrors.contact ? <span className="ng-error text-sm" role="alert">{fieldErrors.contact}</span> : null}
                     </label>
                   </div>
@@ -265,7 +266,7 @@ const CheckoutPage = () => {
                         <button type="button" aria-pressed={repeatAddressMode === 'new'} onClick={useCustomerNewAddress} className="ng-chip ng-chip--plain">{t('mcheckout.useNewAddress')}</button>
                       </div>
                     ) : null}
-                    <textarea id="checkout-address" className="ng-field" maxLength={500} value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
+                    <textarea id="checkout-address" className="ng-field" aria-required="true" maxLength={500} value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
                     {/* Rupiah is for Indonesia (Dekito's brief, 14 Nov 2026): an address that ends in another country
                         is told where its order goes, before the buyer hunts for a kecamatan that does not exist. */}
                     {addressLooksAbroad(deliveryAddress) ? (

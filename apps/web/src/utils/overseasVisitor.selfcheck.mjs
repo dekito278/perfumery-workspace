@@ -230,7 +230,7 @@ assert.doesNotMatch(priceHook, /detectOverseasVisitor/,
 
 // The member nudge must be silent for an international visitor: their price is the export price, so
 // inviting them to sign in for the member price promises a number they will never be charged.
-assert.match(priceNote, /if \(!overseasPrice && price && memberPrice && memberPrice < price\) \{/,
+assert.match(priceNote, /if \(!overseasPrice && !soldOut && price && memberPrice && memberPrice < price\) \{/,
   'the member nudge is gated on NOT being quoted internationally');
 
 // There were TWO member nudges. The phone's sticky bar carried its own, outside PriceNote entirely, and it

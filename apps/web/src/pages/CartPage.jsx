@@ -60,6 +60,12 @@ const CartPage = () => {
   // the list. The picker below owns it.
   const { lines: boughtLines, gift } = splitFreeVialLines(items);
   const { removeLine, removedName } = useCartLineRemoval(removeItem, boughtLines);
+  // The last bottle out takes the gift with it (fresh buyer audit, 15 Nov 2026: the cart read "empty" yet
+  // kept "Subtotal Rp 0", the vial line and an active "Lanjut ke checkout"). The same rule dropOrphanedGift
+  // applies when a cart is read back; this applies it the moment it happens.
+  useEffect(() => {
+    if (!boughtLines.length && gift) setGift(null);
+  }, [boughtLines.length, gift, setGift]);
 
   const recommendations = useMemo(() => {
     const inCart = new Set(items.map((item) => item.productSlug || item.slug));
