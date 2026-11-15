@@ -12,7 +12,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
@@ -48,37 +48,20 @@ assert.throws(() => createPaymentToken(null), /random source/);
 for (const junk of ['', 'ABC', null, undefined, 42, `${token}X`, token.toLowerCase(), 'I'.repeat(32)]) {
   assert.equal(isPaymentToken(junk), false, `${JSON.stringify(junk)} is not a token`);
 }
-const service = read('src', 'services', 'paymentLinkService.js');
-assert.match(service, /if \(!isPaymentToken\(token\)\) return null;/,
-  'the lookup checks the shape first, so a URL full of punctuation never reaches the database');
-
-// --- 2. No account number in the repository ----------------------------------------------------------
-// Asserted as a SHAPE, because naming the real numbers here would commit them. A run of six or more
-// digits in either file is either an account number or something that reads like one.
-for (const file of [
-  ['src', 'data', 'paymentDetails.js'],
-  ['src', 'pages', 'PaymentInstructionsPage.jsx'],
-]) {
-  const source = read(...file);
-  const runs = (source.replace(/VITE_PAY_[A-Z_]+/g, '').match(/\d{6,}/g) || []);
-  assert.deepEqual(runs, [],
-    `${file.join('/')} contains ${runs.join(', ')} — an account number belongs in the environment, not `
-    + 'in a file that ships in every clone');
-}
-const details = read('src', 'data', 'paymentDetails.js');
-assert.match(details, /import\.meta\.env/, 'the details come from the environment');
-for (const name of ['VITE_PAY_BANK_ACCOUNT', 'VITE_PAY_WIRE_ACCOUNT', 'VITE_PAY_BANK_HOLDER']) {
-  assert.ok(details.includes(name), `${name} is read, so Vercel has somewhere to put it`);
-}
-// Unset is a state, not a blank line: a half-filled bank block loses a buyer's transfer.
-for (const guard of ['bankIsConfigured', 'wireIsConfigured', 'cashIsConfigured']) {
-  assert.ok(details.includes(`export const ${guard}`), `${guard} decides all-or-nothing per block`);
-}
+// --- 2. The page is retired, and holds nothing ---------------------------------------------------------
+// 15 Nov 2026 (Dekito: the payment-link page is no longer used — buyers abroad pay on WhatsApp). /pay/<token>
+// is a notice now: no lookup, no account, no upload. What it must never do again is look an order up from
+// a link or print an account, so that is asserted on the page as it stands.
 const page = read('src', 'pages', 'PaymentInstructionsPage.jsx');
-for (const guard of ['bankIsConfigured()', 'wireIsConfigured()', 'cashIsConfigured()']) {
-  assert.ok(page.includes(guard), `the page asks ${guard} before printing a block`);
-}
-assert.match(page, /pay\.link\.notConfigured/, 'and says what happens instead when it is unset');
+assert.doesNotMatch(page, /useParams|storefront_payment_link|findOrderByPaymentToken|supabase/,
+  'the retired page looks nothing up');
+assert.doesNotMatch(page, /VITE_PAY_|accountNumber|uploadPaymentProof|paypal/i, 'and prints no account and takes no file');
+assert.match(page, /t\('pay\.link\.retiredTitle'\)/, 'it says the link is no longer in use');
+assert.match(page, /<AskAtelierButton/, 'and offers the chat the payment moved to');
+assert.ok(!existsSync(join(web, 'src', 'services', 'paymentLinkService.js')), 'the lookup service is gone');
+assert.ok(!existsSync(join(web, 'src', 'data', 'paymentDetails.js')), 'and so are the page\'s payment details');
+const templates = read('src', 'services', 'notificationTemplateService.js');
+assert.doesNotMatch(templates, /\/pay\/\$\{/, 'no Studio message hands the retired link out');
 
 // --- 3. Not indexed, not linked ----------------------------------------------------------------------
 assert.match(page, /<meta name="robots" content="noindex,nofollow" \/>/,
@@ -94,15 +77,6 @@ const app = read('src', 'App.jsx');
 assert.match(app, /<Route path="\/pay\/:token"/, 'the route exists');
 const sitemapSource = read('tools', 'seo-artifacts.mjs');
 assert.ok(!sitemapSource.includes("'/pay"), 'and it is not advertised in the sitemap');
-
-// --- 4. One answer for every failure -----------------------------------------------------------------
-// A wrong token, a deleted order and a paid one are indistinguishable from outside. The page has exactly
-// one message for all of them, and the function hands back nothing rather than a reason.
-assert.equal((page.match(/pay\.link\.notFound/g) || []).length, 1,
-  'there is one not-available message, not one per cause');
-assert.match(service, /return null;/, 'and the service answers with nothing, never with a reason');
-assert.ok(!/alreadyPaid|sudahDibayar|expiredLink/.test(page),
-  'no message distinguishes a paid order from a wrong token');
 
 // --- 5. The function returns no person ---------------------------------------------------------------
 const migration = read('..', '..', 'supabase', 'migrations', '20261021120000_payment_link.sql');
@@ -131,5 +105,4 @@ const tool = read('src', 'pages', 'ExportShippingCalculatorPage.jsx');
 assert.match(tool, /createPaymentToken\(browserRandomBytes\)/,
   'from the browser crypto source, not from Math.random');
 
-console.log(`paymentLinkIsASecret: ok (${PAYMENT_TOKEN_LENGTH * 5}-bit token, no account number in the `
-  + 'repo, noindex in three trees, one answer for every failure, no person in the function)');
+console.log(`paymentLinkIsASecret: ok (${PAYMENT_TOKEN_LENGTH * 5}-bit token, the retired page holds nothing, noindex, no person in the function)`);
