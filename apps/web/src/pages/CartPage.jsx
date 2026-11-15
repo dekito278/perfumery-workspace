@@ -30,6 +30,10 @@ import { useCartLineRemoval } from '@/hooks/useCartLineRemoval.js';
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
 const CartPage = () => {
+  // Checkout is a lazy chunk since 15 Nov 2026 (nobody lands there cold). Fetched here, while the buyer
+  // reads the cart, so "Lanjut ke checkout" opens it without a wait. A failure is harmless: the route
+  // loads it again on its own.
+  useEffect(() => { import('@/pages/CheckoutPage.jsx').catch(() => {}); }, []);
   const { items, summary, updateQuantity, removeItem, setGift } = useCart();
   const { index: memberIndex } = useMemberPrices();
   const { tier } = useTierPrices();

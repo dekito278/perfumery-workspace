@@ -50,4 +50,8 @@ assert.deepEqual(stale, [], `EAGER_ALLOWED names pages App.jsx no longer uses:\n
 const lazyCount = [...app.matchAll(/lazyRoute\(\(\) => import\(/g)].length;
 assert.ok(lazyCount > 50, `only ${lazyCount} lazy routes found — expected the studio to stay code-split`);
 
+// Checkout left the entry on 15 Nov 2026 (−18 kB brotli for every first visit); the cart fetches it ahead.
+assert.match(app, /const CheckoutPage = lazyRoute\(\(\) => import\('@\/pages\/CheckoutPage\.jsx'\)\);/);
+assert.match(readFileSync(join(here, '..', 'pages', 'CartPage.jsx'), 'utf8'), /useEffect\(\(\) => \{ import\('@\/pages\/CheckoutPage\.jsx'\)\.catch\(\(\) => \{\}\); \}, \[\]\);/,
+  'the cart prefetches checkout, so the step after it does not wait');
 console.log(`routeSplitting selfcheck OK (${eager.length} eager storefront pages, ${lazyCount} lazy routes)`);

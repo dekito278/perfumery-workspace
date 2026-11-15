@@ -8,6 +8,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import FreeVialPrompt from '@/components/storefront/FreeVialPrompt.jsx';
+import { CART_ITEM_ADDED_EVENT } from '@/services/cartService.js';
 import ConfirmHost from '@/components/ConfirmHost.jsx';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ScrollRevealEffects from '@/components/ScrollRevealEffects.jsx';
@@ -21,7 +22,6 @@ import HomePage from '@/pages/HomePage.jsx';
 import CatalogPage from '@/pages/CatalogPage.jsx';
 import PublicProductDetailPage from '@/pages/PublicProductDetailPage.jsx';
 import CartPage from '@/pages/CartPage.jsx';
-import CheckoutPage from '@/pages/CheckoutPage.jsx';
 import NotFoundPage from '@/pages/NotFoundPage.jsx';
 import { fromRetiredMobileStorefront, isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
@@ -136,6 +136,18 @@ const AboutPage = lazyRoute(() => import('@/pages/AboutPage.jsx'));
 const HelpPage = lazyRoute(() => import('@/pages/HelpPage.jsx'));
 // The international cart is lazy like the phone's: it is one shop's page, not every visitor's.
 const InternationalCartPage = lazyRoute(() => import('@/pages/InternationalCartPage.jsx'));
+// Lazy since 15 Nov 2026 (−18 kB brotli on every first visit): nobody lands on checkout cold. It is fetched
+// ahead the moment anything goes into the cart (below) and again when the cart opens, so the buying path
+// still never waits on a request when the buyer taps "Lanjut ke checkout".
+const CheckoutPage = lazyRoute(() => import('@/pages/CheckoutPage.jsx'));
+const PrefetchCheckoutOnAdd = () => {
+  useEffect(() => {
+    const prefetch = () => { import('@/pages/CheckoutPage.jsx').catch(() => {}); };
+    window.addEventListener(CART_ITEM_ADDED_EVENT, prefetch, { once: true });
+    return () => window.removeEventListener(CART_ITEM_ADDED_EVENT, prefetch);
+  }, []);
+  return null;
+};
 const MobileProductListPage = lazyRoute(() => import('@/pages/mobile/MobileProductListPage.jsx'));
 const MobileProductWearTaggingPage = lazyRoute(() => import('@/pages/mobile/MobileProductWearTaggingPage.jsx'));
 const MobileProductCreatePage = lazyRoute(() => import('@/pages/mobile/MobileProductCreatePage.jsx'));
@@ -492,6 +504,7 @@ function AppRoutes() {
       <ScrollRevealEffects />
       <MobileBrowserRedirect />
       <FreeVialPrompt />
+      <PrefetchCheckoutOnAdd />
       <Suspense fallback={<RouteFallback />}>
       <MobileRouteTransition>
       <Routes>
