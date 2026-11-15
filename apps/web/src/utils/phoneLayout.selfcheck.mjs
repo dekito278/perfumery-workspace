@@ -27,6 +27,8 @@ const home = read('pages', 'HomePage.jsx');
 assert.match(home, /<div className="ng-container grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-\[72px\]">\s*<Link to=\{`\/catalog\/\$\{featured\.slug\}`\} className="relative block min-w-0"/,
   'the featured block has a column template on a phone');
 assert.match(home, /<h2 id="home-featured-title" className="ng-display text-\[clamp\(38px,12vw,56px\)\][^"]*\[overflow-wrap:anywhere\]/, 'and its name scales and wraps');
+// …and on a tablet too: a fixed 84px split "Maskumambang" mid-word in a 300px column (iPad portrait, 15 Nov 2026).
+assert.match(home, /id="home-featured-title"[^>]*md:text-\[clamp\(44px,6\.5vw,84px\)\]/);
 
 // The site menu (fourth audit, 13 Nov 2026): a panel of links, not role="menu"; Tab out of it closes it;
 // Escape hands focus back to the button; on a phone the page behind it does not scroll.

@@ -182,7 +182,7 @@ const HomePage = () => {
               <div className="flex min-w-0 flex-col gap-7">
                 <p className="ng-mono m-0 text-ng-ember">{t('home.ngFeatNo', { family: familyLine(featured) })}</p>
                 <div>
-                  <h2 id="home-featured-title" className="ng-display text-[clamp(38px,12vw,56px)] font-normal [overflow-wrap:anywhere] md:text-[84px]">{featuredName.name}</h2>
+                  <h2 id="home-featured-title" className="ng-display text-[clamp(38px,12vw,56px)] font-normal [overflow-wrap:anywhere] md:text-[clamp(44px,6.5vw,84px)]">{featuredName.name}</h2>
                   {featuredName.script ? <p className="m-0 mt-2.5 font-ng-java text-[28px] text-ng-ash">{featuredName.script}</p> : null}
                 </div>
                 {/* The product's words in the shop's language: /en/home read "Dari seri Macapat." over an English

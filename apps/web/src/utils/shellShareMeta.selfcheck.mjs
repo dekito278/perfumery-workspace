@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const build = readFileSync(join(webRoot, 'tools', 'build.mjs'), 'utf8');
@@ -86,7 +87,9 @@ if (existsSync(join(dist, 'index.html'))) {
   const image = (shell.match(/property="og:image"[^>]*content="([^"]*)"/) || [])[1] || '';
   assert.ok(image.startsWith('http'), `the built shell still has a relative og:image: ${image}`);
   assert.match(shell, /name="description"[^>]*content="[^"]{20,}"/, 'the built shell needs a real description');
-  assert.match(shell, /property="og:description" content="SOLIVAGANT adalah/, 'the built shell previews in Indonesian');
+  // The Indonesian home description, whatever its wording (it was "SOLIVAGANT adalah…" until 15 Nov 2026).
+  const idDescription = (shell.match(/property="og:description" content="([^"]*)"/) || [])[1] || '';
+  assert.ok(idDescription && MESSAGES.id['home.meta'].startsWith(idDescription.slice(0, 30)), 'the built shell previews in Indonesian');
   assert.doesNotMatch(shell, /rel="canonical"/, 'the built shell must not claim a canonical');
   const enIndex = join(dist, 'en', 'app.html');
   if (existsSync(enIndex)) {
