@@ -35,7 +35,7 @@ assert.match(read('pages', 'CheckoutPage.jsx'), /isFreeVialLine\(item\) \? FREE_
 // Checkout offers the same picker while no vial is chosen.
 const checkout = read('pages', 'CheckoutPage.jsx');
 assert.match(checkout, /const \{ gift: chosenGift \} = splitFreeVialLines\(items\);/);
-assert.match(checkout, /\{chosenGift \? null : <FreeVialPicker items=\{items\} products=\{catalogProducts\} onPick=\{setGift\} \/>\}/,
+assert.match(checkout, /\{chosenGift && !giftScentIsBought\(chosenGift, boughtNames\(items\)\) \? null : <FreeVialPicker items=\{items\} products=\{catalogProducts\} onPick=\{setGift\} \/>\}/,
   'checkout no longer offers the free vial to a buyer who skipped the cart');
 
 for (const language of ['id', 'en']) {

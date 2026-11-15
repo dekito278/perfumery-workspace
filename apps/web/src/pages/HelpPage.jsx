@@ -66,10 +66,19 @@ const HelpContent = () => {
         </Section>
 
         <Section id="help-tracking" title={t('help.trackTitle')}>
-          <p className="m-0">
-            {t('help.track')}{' '}
-            <Link to="/track-order" className="underline underline-offset-4">{t('nav.trackOrder')}</Link>.
-          </p>
+          {/* An order placed on WhatsApp has no order number to look up, so the English shop does not send
+              its buyers to the lookup (eleventh visitor audit, 15 Nov 2026). */}
+          {isInternational ? (
+            <>
+              <p className="m-0">{t('help.track')}</p>
+              <AskAtelierButton className="justify-self-start" />
+            </>
+          ) : (
+            <p className="m-0">
+              {t('help.track')}{' '}
+              <Link to="/track-order" className="underline underline-offset-4">{t('nav.trackOrder')}</Link>.
+            </p>
+          )}
         </Section>
 
         <Section id="help-problem" title={t('help.problemTitle')}>
@@ -95,7 +104,8 @@ const HelpContent = () => {
 
         <Section id="help-contact" title={t('help.contactTitle')}>
           <p className="m-0">{t('help.contact')}</p>
-          <AskAtelierButton className="justify-self-start" />
+          {/* Its own words: "Tanya soal paketmu" under "Kontak" asked about a parcel nobody had (eleventh audit). */}
+          <AskAtelierButton className="justify-self-start" labelKey="help.contactCta" />
           {facts.contactEmail ? (
             <p className="m-0">
               {t('help.email')}{' '}

@@ -1,5 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { FREE_VIAL_PRICE_LABEL, isFreeVialLine, splitFreeVialLines } from '@/utils/freeVial.js';
+import { FREE_VIAL_PRICE_LABEL, boughtNames, giftScentIsBought, isFreeVialLine, splitFreeVialLines } from '@/utils/freeVial.js';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { addressLooksAbroad } from '@/utils/addressAbroad.js';
@@ -469,7 +469,8 @@ const CheckoutPage = () => {
                     </div>
                   ))}
                 </div>
-                {chosenGift ? null : <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />}
+                {/* Also while the chosen vial's bottle is in the cart: the picker releases it and says so. */}
+                {chosenGift && !giftScentIsBought(chosenGift, boughtNames(items)) ? null : <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />}
 
                 <dl className="m-0 flex flex-col gap-3 text-[15px]">
                   <div className="flex justify-between gap-4">

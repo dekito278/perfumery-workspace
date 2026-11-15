@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Gift, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import FreeVialChoices from '@/components/storefront/FreeVialChoices.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
@@ -64,10 +65,14 @@ const FreeVialPrompt = () => {
 
   // Closed by picking, not only by the X: the buyer has answered, and leaving the sheet up afterwards
   // makes them dismiss a question they have already dealt with.
+  // …and it says what it did: the sheet vanished with no word about the vial (eleventh visitor audit).
   const pick = useCallback((item) => {
     setGift(item);
-    if (item) setOpen(false);
-  }, [setGift]);
+    if (item) {
+      setOpen(false);
+      toast.success(t('cart.giftAdded', { name: item.size }));
+    }
+  }, [setGift, t]);
 
   const visible = shouldOfferFreeVial({ opened: open, vialProduct, gift, bought });
   const sheetRef = useRef(null);

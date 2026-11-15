@@ -22,7 +22,9 @@ const page = readFileSync(join(root, 'pages', 'CustomerInvoicePage.jsx'), 'utf8'
 const failure = page.slice(page.indexOf("console.warn('Invoice lookup failed:'"), page.indexOf("toast.error(t('inv.codeLookupFailed'));"));
 assert.match(failure, /setSearched\(false\);/, 'a failed lookup still shows "not found" under the field while the toast says the code is fine');
 
-assert.doesNotMatch(MESSAGES.en['help.track'], /WhatsApp/i,
-  'the English help page promises a WhatsApp message the English order form never asks a number for');
+// Reversed 15 Nov 2026: since #663 the English shop orders ON WhatsApp, so the number is the conversation
+// itself, and "we message you on WhatsApp" is the true sentence (eachAnswerSaysOneThing holds the rest).
+assert.match(MESSAGES.en['help.track'], /WhatsApp/i,
+  'the English help page no longer says where the parcel news comes from');
 
-console.log('oneWordForTheCode selfcheck OK (one name for the customer code; a failed lookup is not "not found"; no WhatsApp promise to an email buyer)');
+console.log('oneWordForTheCode selfcheck OK (one name for the customer code; a failed lookup is not "not found"; parcel news where the order was placed)');
