@@ -190,7 +190,7 @@ assert.match(enquiry, /if \(!phoneNumber \|\| !product\?\.name\) return null;/,
 // told about is the half that matters least — the overseas buyer is the one whose bottle is not held.
 {
   const { MESSAGES } = await import('../i18n/messages.js');
-  assert.match(MESSAGES.id['export.waDraft'], /belum memesan stok/,
+  assert.match(MESSAGES.id['export.waDraft'], /belum ada botol yang ditahan/,
     'the message must say the enquiry does not reserve stock, or someone believes a bottle is being held');
   assert.match(MESSAGES.en['export.waDraft'], /does not reserve/,
     'and the English draft must say it too — that buyer waits longest between asking and ordering');

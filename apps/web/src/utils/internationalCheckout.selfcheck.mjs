@@ -80,7 +80,7 @@ assert.match(MESSAGES.id['intl.noticeCatalogPrice'], /harga internasional/i);
 assert.match(notice, /t\(quotedOnRequest \? 'intl\.quotedOnRequest' : 'intl\.noticeCatalogPrice'\)/,
   'the notice must choose where the international price comes from, not assume a product page');
 assert.match(MESSAGES.en['intl.quotedOnRequest'], /quoted on WhatsApp/i);
-assert.match(MESSAGES.id['intl.quotedOnRequest'], /dikutip lewat WhatsApp/i);
+assert.match(MESSAGES.id['intl.quotedOnRequest'], /lewat WhatsApp/i);
 assert.doesNotMatch(MESSAGES.en['intl.quotedOnRequest'], /product page/i,
   'and it must not send a bespoke buyer to a page that does not exist');
 

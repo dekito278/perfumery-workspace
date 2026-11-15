@@ -413,7 +413,7 @@ assert.match(button, /ng-btn/, 'the button is drawn by the shared ng-btn rule');
 assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned to a fixed height again');
 assert.match(MESSAGES.en['export.waDraft'], /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
-assert.match(MESSAGES.id['export.waDraft'], /belum memesan stok/);
+assert.match(MESSAGES.id['export.waDraft'], /belum ada botol yang ditahan/);
 // The ORDER lives in the English cart since 2026-10-06 (export.waCartDraft) — and it must be just as
 // careful as the enquiry. Nothing is held until Dekito confirms on WhatsApp.
 assert.match(MESSAGES.en['export.waCartDraft'], /nothing is reserved/i,

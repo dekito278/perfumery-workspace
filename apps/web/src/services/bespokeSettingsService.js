@@ -19,7 +19,7 @@ export const optionCollections = ['bottleSizes', 'bottleTypes', 'capDesigns', 'l
 // `npm run build` prints every difference. When it does, re-read the table and paste the result here.
 export const defaultBespokeSettings = {
   bottleSizes: [
-    { id: "30-ml", label: "30 ml", value: "30 ml", price: 569000, description: "Ukuran default bespoke.", enabled: true, sortOrder: 10 },
+    { id: "30-ml", label: "30 ml", value: "30 ml", price: 569000, description: "Ukuran standar bespoke.", enabled: true, sortOrder: 10 },
     { id: "50-ml-1778532231031", label: "50 ml", value: "50 ml", price: 939000, description: "", enabled: true, sortOrder: 30 },
   ],
   // Emptied 2026-10-25 to match the shop. Dekito switched bespoke to size-only on 23 October — 30 ml

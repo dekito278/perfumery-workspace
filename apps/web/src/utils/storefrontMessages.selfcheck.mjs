@@ -47,7 +47,6 @@ for (const language of ['id', 'en']) {
 // So the exemption is now a named list: every entry is a word that is genuinely the same in both
 // languages, and adding one is a decision somebody has to write down.
 const IDENTICAL_ON_PURPOSE = new Set([
-  'pdp.rawMaterials', // the perfumery term, printed in English on the Indonesian page already
   'pdp.checkout',     // the word Indonesian buyers use for this button
   'price.memberIs',   // "Member Rp 675.000" — "member" is the loanword in both
   'nav.bespokeShort', // "Bespoke" is the word used in both, and the tab has room for one
@@ -76,12 +75,14 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // (journal.tab / .meta / .eyebrow left this list on 2026-11-02: since the redesign the Indonesian journal
   // is headed "Catatan Atelier", so an English tab and an English search snippet were no longer its name.)
   // pay.refresh left this list on 13 Nov 2026: the Indonesian button reads 'Muat ulang' (eighth audit).
+  // 15 Nov 2026 (full copy review): the invoice, the bespoke stages, the quantity line and the app-install
+  // words left this list — the Indonesian shop now says them in Indonesian (Pembeli, Parfum, Jml, Cetak,
+  // Sampel, Persetujuan, Pasang…), as Dekito asked for every text a buyer sees.
   'pay.status',  // Status is Status
   // Payment providers are named, not translated: DOKU is DOKU and QRIS is QRIS on both sides.
   'paymethod.doku', 'paymethod.qris',
-  'checkout.sizeQty', // "30ml · Qty 2" — two numbers and an abbreviation used in both
   // Bespoke: perfumery and commerce terms that are the same word on an Indonesian bottle.
-  'bsp.label', 'bsp.material', 'bsp.addonMaterial', 'bsp.optionGroups', 'bsp.cap',
+  'bsp.label', 'bsp.material',
   'bsp.preorder', 'bsp.studioOrder', 'bsp.materialLabel', 'bsp.budgetLabel', 'bsp.preorderLabel',
   // The service's name in the menu and the footer, the same two words in both shops. The Indonesian
   // side read "Bespoke Ritual" until 2026-11-06, a capital none of the links beside it has.
@@ -90,19 +91,15 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'home.ngFeatNo',
   // The member account page: commerce and perfumery words an Indonesian receipt already prints in
   // English, plus the three bespoke production stages named the same way on both sides of the shop.
-  'cust.voucherCode', 'cust.bp.formula', 'cust.bp.sample', 'cust.bp.approval', 'cust.cap',
-  'cust.selfService', 'cust.label', 'cust.material', 'cust.order',
-  'cust.bespokeDetail', 'cust.bespokeProduction',
+  'cust.voucherCode', 'cust.bp.formula', 'cust.label', 'cust.material', 'cust.order',
   // The invoice: an Indonesian invoice already prints these words in English, and the tab carries the
   // order number rather than a sentence.
-  'inv.tab', 'inv.invoice', 'inv.customer', 'inv.item', 'inv.qty', 'inv.total', 'inv.voucherCode',
-  'inv.dashboard', 'inv.print',
+  'inv.tab', 'inv.invoice', 'inv.total', 'inv.voucherCode',
+  'inv.dashboard',
   'bsp.contactCopied',
   // A plus sign and a rupiah figure. There is nothing in it to translate.
   'bsp.optionExtra',
   // The install card: "install" is the loanword Indonesian phones already use, the brand name is the
-  // brand name, and "Share -> Add to Home Screen" is iOS quoting its own two buttons back at the reader.
-  'pwa.installTitle', 'pwa.install', 'pwa.iosShare',
   // SWIFT/BIC is the label printed on the form at every bank in both countries. Translating it would
   // mean inventing an Indonesian name for a code the sender has to type exactly as it is.
   'pay.swift',
