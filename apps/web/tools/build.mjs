@@ -376,6 +376,15 @@ const writeStaticPublicPages = (siteUrl, products = [], journal = [], facts = DE
     shell = replaceMetaContent(shell, 'name="twitter:description"', shellDescription);
     fs.writeFileSync(indexPath, shell);
     console.log(`[seo] Shell meta filled in (share image ${siteUrl ? 'absolute' : 'relative — no site URL configured'}).`);
+    // The 404 page (15 Nov 2026). vercel.json used to send EVERY unknown address to this shell with a 200,
+    // so /halaman-tidak-ada was a page as far as a crawler or a link checker could tell (noindex aside).
+    // The rewrites now name the app's real route prefixes; anything else falls through to Vercel's 404,
+    // which serves dist/404.html WITH status 404. It is the same shell, so the app still boots and shows
+    // its own "Kayaknya kamu nyasar" page in whichever shop the address belongs to — only the status differs.
+    const notFound = shell.includes('name="robots"')
+      ? shell.replace(/<meta name="robots"[^>]*>/i, '<meta name="robots" content="noindex" />')
+      : shell.replace(/<\/head>/i, '    <meta name="robots" content="noindex" />\n  </head>');
+    fs.writeFileSync(path.join(distRoot, '404.html'), notFound);
   }
 };
 

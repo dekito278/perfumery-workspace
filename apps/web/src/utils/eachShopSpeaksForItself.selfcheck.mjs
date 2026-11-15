@@ -126,14 +126,18 @@ assert.ok(bilingual >= 4, `only ${bilingual} prerendered pages describe themselv
   const vercel = JSON.parse(readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8'));
   const rewrites = vercel.rewrites || [];
   const at = (source) => rewrites.findIndex((rule) => rule.source === source);
+  // Since 15 Nov 2026 the two shells answer the app's route prefixes rather than every path (unknown paths
+  // get a real 404 — see unknownAddressesAre404); these name those two rules wherever they sit.
+  const EN_SHELL = rewrites.find((rule) => rule.destination === '/en/app.html')?.source;
+  const ID_SHELL = rewrites.find((rule) => rule.destination === '/index.html')?.source;
   assert.equal(rewrites[at('/en/articles/:slug')]?.destination, '/articles/:slug/index.html');
   assert.equal(rewrites[at('/en/journal')]?.destination, '/journal/index.html');
-  assert.ok(at('/en/articles/:slug') < at('/(.*)') && at('/en/journal') < at('/(.*)'), 'before the catch-all');
+  assert.ok(at('/en/articles/:slug') < at(ID_SHELL) && at('/en/journal') < at(ID_SHELL), 'before the shells');
   // Eighth audit, 13 Nov 2026: /en/cart, /en/track-order, /en/articles … fell to the Indonesian shell (lang=id,
   // the Indonesian home card). Every other English address answers with the English shell first.
-  assert.equal(rewrites[at('/en/:path*')]?.destination, '/en/app.html');
-  assert.ok(at('/en/articles/:slug') < at('/en/:path*') && at('/en/journal') < at('/en/:path*') && at('/en/:path*') < at('/(.*)'),
-    'after the English pages that have their own file, before the Indonesian catch-all');
+  assert.equal(rewrites[at(EN_SHELL)]?.destination, '/en/app.html');
+  assert.ok(at('/en/articles/:slug') < at(EN_SHELL) && at('/en/journal') < at(EN_SHELL) && at(EN_SHELL) < at(ID_SHELL),
+    'after the English pages that have their own file, before the Indonesian shell');
 }
 console.log(`eachShopSpeaksForItself: ok (${checked} buyer canonicals, ${journalExempt} Indonesian on `
   + `purpose because there is no English journal; ${bilingual} prerendered pages describe themselves in `
