@@ -77,14 +77,13 @@ for (const file of files) {
 }
 assert.ok(codeFields >= 3, `only ${codeFields} customer-code fields found — the scan is broken, not the pages`);
 
-// 2. The footer's newsletter field, which is on every buyer page there is.
+// 2. The footer's newsletter field, which was on every buyer page. Gone since 16 Nov 2026 (Dekito: WhatsApp
+// only): the footer now offers a link, and has no field left to name. If one comes back, it is named.
 const footer = strip(readFileSync(join(src, 'components', 'storefront', 'StorefrontFooter.jsx'), 'utf8'));
-const emailAt = footer.indexOf('<input');
-assert.ok(emailAt > 0, 'the footer no longer has an input — this check reads it out of the component');
-const emailTag = openingTag(footer, emailAt);
-assert.match(emailTag, /type="email"/, 'the first field in the footer is no longer the newsletter one');
-assert.match(emailTag, NAMED,
-  'the newsletter field in the footer has no name of its own, and that footer is on every buyer page');
+const footerInputAt = footer.indexOf('<input');
+if (footerInputAt > 0) {
+  assert.match(openingTag(footer, footerInputAt), NAMED, 'a field in the footer has no name of its own, and that footer is on every buyer page');
+}
 
 // 3. A field whose name comes from a <label> WRAPPING it, where that label holds more than the label.
 // Measured on the two bespoke forms, same two fields:

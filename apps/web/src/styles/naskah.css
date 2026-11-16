@@ -804,24 +804,6 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
   min-height: 44px;
 }
 
-.ng-footer__form {
-  display: flex;
-}
-
-.ng-footer__form .ng-field {
-  min-height: 48px;
-  font-size: 14px;
-}
-
-.ng-footer__form button {
-  flex: 0 0 48px;
-  min-height: 48px;
-  border: 1px solid var(--ng-bone);
-  background: var(--ng-bone);
-  color: var(--ng-ink);
-  cursor: pointer;
-}
-
 .ng-footer__bottom {
   display: flex;
   flex-wrap: wrap;

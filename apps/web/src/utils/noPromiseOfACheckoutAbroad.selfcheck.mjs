@@ -26,7 +26,9 @@ assert.match(en['cust.heroBody'], /WhatsApp/);
 
 const tracking = readFileSync(join(root, 'pages', 'PublicTrackingPage.jsx'), 'utf8');
 assert.match(tracking, /\{foundNothing \|\| isInternational \? <AskAtelierButton/, 'the English tracking page offers the chat before a failed lookup');
-// The footer's email field sends the request on WhatsApp; it says so before the tap.
+// The footer's sign-up is WhatsApp only since 16 Nov 2026 (no email field that then opened WhatsApp).
 assert.match(readFileSync(join(root, 'components', 'storefront', 'StorefrontFooter.jsx'), 'utf8'), /t\('nav\.subscribeHow'\)/);
 for (const lang of [id, en]) assert.match(lang['nav.subscribeHow'], /WhatsApp/);
+assert.doesNotMatch(readFileSync(join(root, 'components', 'storefront', 'StorefrontFooter.jsx'), 'utf8'), /type="email"|nav\.emailPlaceholder/, 'the footer asks for an email again');
+for (const lang of [id, en]) assert.doesNotMatch(lang['nav.subscribeDraft'], /\{email\}/);
 console.log('noPromiseOfACheckoutAbroad selfcheck OK (no code nobody gets, no page nobody sees)');
