@@ -58,13 +58,14 @@ for (const [file, pattern, why] of [
   [['pages', 'HelpPage.jsx'], /\{facts\.contactEmail \? \(/, 'an email only once one is set'],
   [['pages', 'HelpPage.jsx'], /t\('help\.bespoke', \{ days: facts\.bespokeDays \}\)/, 'the bespoke lead time comes from Studio here too'],
   [['pages', 'HelpPage.jsx'], /hours: PAYMENT_RESERVATION_TTL_HOURS/, 'the hold is the same hours the payment page counts down'],
+  [['pages', 'HelpPage.jsx'], /t\('help\.returnsCancel', \{ hours: PAYMENT_RESERVATION_TTL_HOURS \}\)/, 'the cancellation rule names the same hold'],
 ]) assert.match(read(...file), pattern, `${file.join('/')}: ${why}`);
 // Any message that names a fact placeholder must be one of the sentences checked above — a new one would
 // otherwise print "{days}" on some screen nobody looked at.
 const messages = read('i18n', 'messages.js');
 const factKeys = [...new Set([...messages.matchAll(/["']([\w.]+)["']:\s*["'][^\n]*\{(?:days|hours)\}/g)].map((m) => m[1]))].sort();
 assert.deepEqual(factKeys, ['bsp.lead', 'bsp.preorderConfirm', 'help.bespoke', 'help.dispatch', 'help.orderIdDoku',
-  'help.orderIdTransfer', 'help.problemPromise', 'pay.quoteBody'], `a fact placeholder appeared in: ${factKeys.join(', ')}`);
+  'help.orderIdTransfer', 'help.problemPromise', 'help.returnsCancel', 'pay.quoteBody'], `a fact placeholder appeared in: ${factKeys.join(', ')}`);
 // The promises are EMPTY until Dekito sets them: the shop says nothing on his behalf.
 assert.equal(DEFAULT_SITE_FACTS.dispatchDays, '', 'no dispatch promise by default');
 assert.equal(DEFAULT_SITE_FACTS.problemReportDays, 0, 'no broken-parcel window by default');

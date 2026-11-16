@@ -88,6 +88,17 @@ const HelpContent = () => {
           <AskAtelierButton className="justify-self-start" />
         </Section>
 
+        {/* Dekito's policy, agreed 16 Nov 2026 (fresh buyer audit: "Help & policies" had none). The Indonesian
+            shop is domestic and the English one abroad, so each shows the refund route and customs rule it needs. */}
+        <Section id="help-returns" title={t('help.returnsTitle')}>
+          <p className="m-0">{t('help.returnsChangeMind')}</p>
+          <p className="m-0">{t('help.returnsCancel', { hours: PAYMENT_RESERVATION_TTL_HOURS })}</p>
+          <p className="m-0">{t('help.returnsBespoke')}</p>
+          {isInternational ? <p className="m-0">{t('help.returnsAbroad')}</p> : null}
+          <p className="m-0">{t('help.returnsRefund')}</p>
+          <AskAtelierButton className="justify-self-start" labelKey="help.contactCta" />
+        </Section>
+
         <Section id="help-bespoke" title={t('help.bespokeTitle')}>
           <p className="m-0">
             {t('help.bespoke', { days: facts.bespokeDays })}
