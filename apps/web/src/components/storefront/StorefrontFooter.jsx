@@ -1,12 +1,10 @@
 import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import { useSiteFacts } from '@/hooks/useSiteFacts.js';
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // `key` is what the code branches on — the WhatsApp link hangs off the info column — and it must not be
 // a translated string, or the branch breaks the moment the shop is read in English.
@@ -38,29 +36,6 @@ const StorefrontFooter = () => {
   const siteFacts = useSiteFacts();
   // One source for the number. Rendered only when configured — a wa.me link with no recipient is a dead end.
   const whatsapp = getStorefrontWhatsAppNumber();
-  const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubscribe = (e) => {
-    e.preventDefault();
-    const trimmed = email.trim();
-    if (!EMAIL_PATTERN.test(trimmed)) {
-      setError(t('nav.invalidEmail'));
-      return;
-    }
-    // No mailing-list backend yet — route the request to the atelier's WhatsApp so it
-    // actually reaches a human instead of silently pretending to subscribe.
-    const message = t('nav.subscribeDraft', { email: trimmed });
-    const url = buildWhatsAppCheckoutUrl(message);
-    if (typeof window !== 'undefined') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-    setError('');
-    setSubscribed(true);
-    setEmail('');
-  };
-
   return (
     <footer className="ng-footer">
       <div className="ng-container">
@@ -82,32 +57,20 @@ const StorefrontFooter = () => {
             </div>
           ))}
 
+          {/* WhatsApp only (Dekito, 16 Nov 2026): the box asked for an email and then sent it on WhatsApp, so a
+              buyer without WhatsApp could not sign up and everyone else expected a newsletter. Now it says what
+              it is — news on WhatsApp — and opens the chat with the request already written. */}
           <div className="ng-footer__column ng-footer__signup">
             <span className="ng-footer__heading ng-mono">{t('nav.stayInTouch')}</span>
-            {subscribed ? (
-              <p className="m-0 text-sm text-ng-sand">{t('nav.subscribeThanks')}</p>
-            ) : (
-              <form onSubmit={handleSubscribe} className="ng-footer__form" noValidate>
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  aria-label={t('nav.emailPlaceholder')}
-                  placeholder={t('nav.emailPlaceholder')}
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
-                  required
-                  aria-invalid={error ? 'true' : undefined}
-                  className="ng-field"
-                />
-                <button type="submit" aria-label={t('nav.subscribeAria')}>
-                  <ArrowRight className="mx-auto h-4 w-4" />
-                </button>
-              </form>
-            )}
-            {error ? <p className="ng-error m-0 mt-2 text-sm" role="alert">{error}</p> : null}
-            {/* Said BEFORE the tap: typing an email and landing in WhatsApp was a surprise (twelfth visitor audit). */}
-            {subscribed ? null : <p className="m-0 mt-2 text-xs text-ng-dust">{t('nav.subscribeHow')}</p>}
+            <p className="m-0 text-sm text-ng-dust">{t('nav.subscribeHow')}</p>
+            <a
+              href={buildWhatsAppCheckoutUrl(t('nav.subscribeDraft'))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ng-btn ng-btn--ghost mt-2 self-start"
+            >
+              {t('nav.subscribeCta')}
+            </a>
           </div>
         </div>
 
