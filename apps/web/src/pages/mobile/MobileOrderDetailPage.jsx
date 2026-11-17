@@ -848,6 +848,35 @@ const MobileOrderDetailPage = () => {
             </div>
           ) : null}
         </section>
+
+        {/* Status and internal notes live on Tugas, the tab the order opens on (Studio audit, 15 Nov 2026:
+            the status picker sat at the bottom of Riwayat and the notes under Racik, two taps and a scroll
+            away from where the work is done). */}
+        <section className="mobile-card p-4">
+          <label htmlFor="mobile-order-status" className="text-[10px] font-bold uppercase text-[#6b7280]">Update status</label>
+          <select id="mobile-order-status" value={order.status} onChange={(event) => handleStatusChange(event.target.value)} className="mt-2 h-11 w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
+            {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </section>
+
+        <section className="mobile-card p-4">
+          <label htmlFor="mobile-internal-notes" className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal">
+            <NotebookPen className="h-4 w-4" />
+            Catatan internal
+          </label>
+          <textarea
+            id="mobile-internal-notes"
+            value={internalNotesDraft}
+            onChange={(event) => setInternalNotesDraft(event.target.value)}
+            rows={4}
+            placeholder="Catatan internal untuk packing, follow up, atau produksi..."
+            className="w-full rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
+          />
+          <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={saveInternalNotes} disabled={savingNotes}>
+            <Save className="h-4 w-4" />
+            {savingNotes ? 'Menyimpan...' : 'Simpan catatan'}
+          </Button>
+        </section>
         </> : null}
 
         {orderSection === 'payment' ? <>
@@ -1360,23 +1389,6 @@ const MobileOrderDetailPage = () => {
           ) : null}
         </section> : null}
 
-        {orderSection === 'production' ? <section className="mobile-card p-4">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal">
-            <NotebookPen className="h-4 w-4" />
-            Catatan internal
-          </div>
-          <textarea
-            value={internalNotesDraft}
-            onChange={(event) => setInternalNotesDraft(event.target.value)}
-            rows={4}
-            placeholder="Catatan internal untuk packing, follow up, atau produksi..."
-            className="w-full rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
-          />
-          <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={saveInternalNotes} disabled={savingNotes}>
-            <Save className="h-4 w-4" />
-            {savingNotes ? 'Menyimpan...' : 'Simpan catatan'}
-          </Button>
-        </section> : null}
 
         {orderSection === 'history' ? <>
         <section className="mobile-card p-4">
@@ -1451,12 +1463,6 @@ const MobileOrderDetailPage = () => {
           </Button>
         </section>
 
-        <section className="mobile-card p-4">
-          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Update status</div>
-          <select value={order.status} onChange={(event) => handleStatusChange(event.target.value)} className="mt-2 h-11 w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
-            {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-        </section>
         </> : null}
       </main>
       <StickyBottomActionBar fixed reserveSpace aria-label="Order detail actions">
