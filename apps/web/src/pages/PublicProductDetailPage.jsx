@@ -329,7 +329,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                         member/tier line are not shown at all: three prices on one screen left the reader to guess
                         which was theirs, which is what Dekito saw on a phone. */}
                     {exportPrice ? (
-                      <InternationalPrice price={exportPrice} />
+                      <InternationalPrice price={exportPrice} canOrder={!soldOut} />
                     ) : isInternational ? (
                       // No export price for this bottle: the English shop never shows the rupiah price instead.
                       <p className="m-0 font-ng-display text-[40px] leading-none">{t('price.onRequest')}</p>

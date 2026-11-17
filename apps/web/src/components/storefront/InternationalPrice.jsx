@@ -34,7 +34,9 @@ import { usdPriceFor } from '@/utils/usdPrice.js';
 // Labelling it "approx." would not fix it: Rp 1.260.000 genuinely is NOT the equivalent of US$80. It is
 // a different number for a different purpose. The dollar is what this buyer is asked to send, so the
 // dollar is what this buyer is shown — the rupiah stays in the books, where it belongs.
-const InternationalPrice = ({ price, className = '' }) => {
+// `canOrder` false (sold out): the sentence points at a shipping picker that is not on the page then, so
+// it is left out (live audit, 17 Nov 2026: "choose it below" above nothing).
+const InternationalPrice = ({ price, className = '', canOrder = true }) => {
   const { t } = useTranslate();
   // ONE international price since 2026-10-06, so one sentence under it. There were two — "Southeast Asia
   // price" and "priced for outside Indonesia" — while the neighbours paid 2.2x; that split is retired (see
@@ -51,10 +53,12 @@ const InternationalPrice = ({ price, className = '' }) => {
         {/* Rupiah only when there is no dollar to show — see the note at the top of this file. */}
         <span className="text-2xl font-bold text-ng-bone">{usd ? `US$${usd}` : formatRupiah(price)}</span>
       </p>
-      <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold leading-relaxed text-ng-dust">
-        <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        <span>{t('intl.priceNote')}</span>
-      </p>
+      {canOrder ? (
+        <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold leading-relaxed text-ng-dust">
+          <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>{t('intl.priceNote')}</span>
+        </p>
+      ) : null}
     </div>
   );
 };
