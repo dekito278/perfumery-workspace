@@ -11,6 +11,7 @@ import { useCustomers } from '@/hooks/useCustomers.js';
 import CustomerTierSelect from '@/components/CustomerTierSelect.jsx';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
+import { searchCustomers } from '@/utils/customerSearch.js';
 
 const formatDate = (value) => (
   value
@@ -21,7 +22,9 @@ const formatDate = (value) => (
 const MobileCustomersPage = () => {
   const { customers, summary, loading, error, tierSchemaReady } = useCustomers();
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
-  const visibleCustomers = customers.slice(0, visibleCount);
+  const [query, setQuery] = useState('');
+  const matched = searchCustomers(customers, query);
+  const visibleCustomers = matched.slice(0, visibleCount);
 
   const copyCode = async (customer) => {
     const copied = await copyTextToClipboard(customer.customerCode);
@@ -63,6 +66,19 @@ const MobileCustomersPage = () => {
         ) : null}
 
         <section className="space-y-3">
+          <label className="block">
+            <span className="sr-only">Cari pelanggan</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => { setQuery(event.target.value); setVisibleCount(MOBILE_PAGE_SIZE); }}
+              placeholder="Cari nama, nomor WA, atau kode"
+              className="h-11 w-full rounded-2xl border border-[#e5e7eb] bg-white px-4 text-sm font-semibold outline-none focus:border-amber-300"
+            />
+          </label>
+          {query.trim() && !matched.length ? (
+            <p className="px-1 text-sm font-semibold text-[#6b7280]">Tidak ada pelanggan yang cocok dengan “{query.trim()}”.</p>
+          ) : null}
           {visibleCustomers.map((customer) => (
             <article key={customer.id || customer.customerCode} className="mobile-card mobile-list-card p-3">
               <div className="flex items-start justify-between gap-3">
@@ -94,7 +110,7 @@ const MobileCustomersPage = () => {
           ))}
           <PaginationOrLoadMore
             visibleCount={visibleCustomers.length}
-            totalCount={customers.length}
+            totalCount={matched.length}
             loading={loading}
             onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)}
           />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { AlertTriangle, Clipboard, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
@@ -6,6 +6,8 @@ import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useCustomers } from '@/hooks/useCustomers.js';
 import CustomerTierSelect from '@/components/CustomerTierSelect.jsx';
+import { copyTextToClipboard } from '@/utils/clipboard.js';
+import { searchCustomers } from '@/utils/customerSearch.js';
 
 const formatDate = (value) => (
   value
@@ -16,9 +18,13 @@ const formatDate = (value) => (
 const CustomersPage = () => {
   const { customers, summary, loading, error, tierSchemaReady } = useCustomers();
 
+  const [query, setQuery] = useState('');
+  const shown = searchCustomers(customers, query);
+
+  // Blocked clipboards reject; say so instead of doing nothing (Studio audit, 15 Nov 2026).
   const copyCode = async (customer) => {
-    await navigator.clipboard.writeText(customer.customerCode);
-    toast.success(`${customer.customerCode} disalin`);
+    const copied = await copyTextToClipboard(customer.customerCode);
+    copied ? toast.success(`${customer.customerCode} disalin`) : toast.error('Kode belum bisa disalin. Blok kodenya lalu salin manual.');
   };
 
   return (
@@ -51,6 +57,16 @@ const CustomersPage = () => {
             <h2 className="text-xl font-bold">Customer</h2>
             <span className="text-sm font-bold text-amber-700">Kode SOLI lama</span>
           </div>
+          <label className="mt-4 block">
+            <span className="sr-only">Cari pelanggan</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Cari nama, nomor WhatsApp, atau kode"
+              className="h-11 w-full rounded-2xl border bg-white px-4 text-sm font-semibold outline-none focus:border-amber-300"
+            />
+          </label>
           {!tierSchemaReady ? (
             <div role="alert" className="mt-4 flex gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
@@ -70,7 +86,10 @@ const CustomersPage = () => {
               <span>Tingkat</span>
               <span>Kode</span>
             </div>
-            {customers.map((customer) => (
+            {query.trim() && !shown.length ? (
+              <p className="border-t bg-white px-4 py-6 text-sm font-semibold text-muted-foreground">Tidak ada pelanggan yang cocok dengan “{query.trim()}”.</p>
+            ) : null}
+            {shown.map((customer) => (
               <article key={customer.id || customer.customerCode} className="grid gap-3 border-t bg-white px-4 py-4 text-sm font-semibold lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_0.6fr_0.8fr_auto_auto] lg:items-center">
                 <div>
                   <div className="font-bold text-editorial-charcoal">{customer.customerName}</div>
