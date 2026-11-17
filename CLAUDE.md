@@ -43,10 +43,15 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
 - Footer "Tetap terhubung" is WhatsApp-only (no email list).
 
 ## Open items (as of 17 Nov 2026)
-- Dekito to run `supabase/manual/20261116090000_jason_voorhees_typos.sql`; then merge it so the next deploy
-  refreshes the article's prerendered copy.
-- Owner content: stock for Samhain / Ambar Segara; descriptions, notes and photos for Samhain, Bloody
-  Luwak, Ambar Segara; bottle photos for Aquilaria tuberosa, HUG N°1, Jata Bhumi, Maskumambang, Pantura,
-  Sudra (white label cards today).
-- Larger follow-ups not done: bespoke checkout differs from the main checkout; Studio customer search;
-  bespoke settings only on the phone Studio; restocking an existing product from a batch.
+- Owner content: stock for Samhain / Ambar Segara (Studio batch → Stok → "Tambah stok" adds to an existing
+  product); descriptions, notes and photos for Samhain, Bloody Luwak, Ambar Segara; bottle photos for
+  Aquilaria tuberosa, HUG N°1, Jata Bhumi, Maskumambang, Pantura, Sudra (white label cards today).
+- Done 17 Nov 2026 (#680–#685): bespoke checkout matches the main one; Studio customer search; phone order
+  status + notes on Tugas; bespoke settings on the laptop (/studio/bespoke); batch restock of an existing
+  product (stock only, never price); Jason Voorhees typo SQL run by Dekito.
+
+## Verifying Studio screens
+- Studio needs an admin session, which we never have. Run the dev server with
+  `VITE_SUPABASE_URL=https://example.supabase.co VITE_ADMIN_EMAILS=studio@example.test`, put a fake session
+  in localStorage key `solivagant.supabase.auth.v1`, and answer every `*.supabase.co` request from Playwright
+  routes (stub rows; writes fulfilled locally). Nothing reaches the real backend.
