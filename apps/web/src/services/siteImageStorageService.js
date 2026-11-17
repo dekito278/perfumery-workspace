@@ -1,5 +1,8 @@
 import supabase from '@/lib/supabaseClient.js';
 
+import { SITE_IMAGES_FOLDER, siteImageEntries } from '@/utils/siteImageMap.js';
+
+// The same name utils/siteImageMap.js holds for the build (heroStartsWithThePage checks they agree).
 export const SITE_IMAGES_BUCKET = 'site-images';
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -128,29 +131,10 @@ export const listSiteImages = async () => {
     throw new Error(error.message || 'Failed to list site images.');
   }
 
-  const imageMap = new Map();
-
-  // Newest first, so if a key still has multiple formats (legacy dupes) we keep the latest upload,
-  // not the alphabetically-first one (which wrongly let an old .jpg beat a newer .webp).
-  const sortedFiles = [...(files || [])].sort((a, b) => (
-    new Date(b.updated_at || b.created_at || 0).getTime()
-    - new Date(a.updated_at || a.created_at || 0).getTime()
-  ));
-
-  for (const file of sortedFiles) {
-    // Extract key from filename: "home-hero.webp" → "home-hero"
-    const dotIndex = file.name.lastIndexOf('.');
-    const key = dotIndex > 0 ? file.name.slice(0, dotIndex) : file.name;
-
-    // Only keep the newest match per key (in case multiple extensions exist)
-    if (!imageMap.has(key)) {
-      const { data: urlData } = supabase.storage
-        .from(SITE_IMAGES_BUCKET)
-        .getPublicUrl(`site/${file.name}`);
-
-      imageMap.set(key, urlData.publicUrl);
-    }
-  }
+  // The listing becomes { slot: url } in utils/siteImageMap.js, which the build uses too (home-page preload).
+  const imageMap = new Map(siteImageEntries(files, (name) => supabase.storage
+    .from(SITE_IMAGES_BUCKET)
+    .getPublicUrl(`${SITE_IMAGES_FOLDER}/${name}`).data.publicUrl));
 
   return imageMap;
 };

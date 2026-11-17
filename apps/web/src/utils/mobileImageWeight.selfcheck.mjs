@@ -41,8 +41,10 @@ assert.deepEqual(warmers, [], `these files warm a local fallback nobody may ever
 
 // --- 2. the phone gets capped widths on the one home, never a heavier one than before -----------------
 const page = read('pages', 'HomePage.jsx');
+// PHONE_HERO_WIDTHS moved to utils/siteImageMap.js on 16 Nov 2026 (the build preloads the hero with it).
+const heroSource = read('utils', 'siteImageMap.js');
 const widths = (name) => {
-  const m = page.match(new RegExp(`const ${name} = \\[([^\\]]*)\\]`));
+  const m = page.match(new RegExp(`const ${name} = \\[([^\\]]*)\\]`)) || heroSource.match(new RegExp(`export const ${name} = \\[([^\\]]*)\\]`));
   assert.ok(m, `${name} must be declared`);
   return m[1].split(',').map((n) => Number(n.trim()));
 };
