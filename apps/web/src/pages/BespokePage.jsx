@@ -4,7 +4,8 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { BadgePercent, CheckCircle2, CreditCard, Globe, Search, X } from 'lucide-react';
+import { BadgePercent, CheckCircle2, CreditCard, Globe, Search, UserRound, X } from 'lucide-react';
+import { useSignOut } from '@/hooks/useSignOut.js';
 import { toast } from 'sonner';
 import { addressLooksAbroad } from '@/utils/addressAbroad.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
@@ -581,7 +582,8 @@ const BespokePage = () => {
   // (useCheckoutFlow). The typed SOLI field left both checkouts (#595), so this is how a bespoke order is
   // filed under the customer it belongs to rather than a fresh code; a guest's history is matched by the
   // order server as before. A draft or anything already typed is never overwritten.
-  const { currentUser } = useAuth();
+  const { currentUser, loginWithGoogle } = useAuth();
+  const { signOut } = useSignOut(null);
   const { country: destinationCountry, setCountry: setDestinationCountry } = useShippingDestination();
   useEffect(() => {
     if (!currentUser) return undefined;
@@ -599,6 +601,27 @@ const BespokePage = () => {
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [currentUser]);
+
+  // Sign in from the contact step, as the main checkout offers (fresh buyer audit, 15 Nov 2026: bespoke had
+  // no way in). The brief is already in the session draft; a flag brings the buyer back to this step after
+  // Google, which returns to the clean address (a hash there broke the token parse — see CheckoutPage).
+  const RESUME_KEY = 'solivagant.bespoke.resumeCheckout';
+  const handleGoogleLogin = async () => {
+    try { window.sessionStorage.setItem(RESUME_KEY, '1'); } catch { /* back on the design step, that is all */ }
+    try {
+      await loginWithGoogle(`${window.location.origin}${window.location.pathname}`);
+    } catch {
+      toast.error(t('checkout.googleFail'));
+    }
+  };
+  // Back from Google with the flag set: return to the contact step (the brief came back from the draft).
+  useEffect(() => {
+    let resume = false;
+    try { resume = window.sessionStorage.getItem(RESUME_KEY) === '1'; } catch { resume = false; }
+    if (!resume || !currentUser || !form.scentDescription.trim()) return;
+    try { window.sessionStorage.removeItem(RESUME_KEY); } catch { /* nothing */ }
+    if (location.hash !== '#checkout') navigate({ search: location.search, hash: 'checkout' });
+  }, [currentUser, form.scentDescription, location.hash, location.search, navigate]);
 
   // The scent direction is the brief. It was only asked for at the very end of checkout, so "Lanjut ke
   // checkout" opened a payment form for an empty brief, and the English WhatsApp button sent "Scent: -"
@@ -1052,6 +1075,17 @@ const BespokePage = () => {
                   {/* Bespoke ships through the same domestic courier API as the product checkout, so the
                       same dead end waits here: a foreign city returns an empty area list with no error. */}
                   <InternationalCheckoutNotice quotedOnRequest className="mb-4" />
+                  {currentUser ? (
+                    <div className="flex items-center justify-between gap-3 border border-ng-bone/20 px-4 py-3 text-sm">
+                      <span className="min-w-0 text-ng-sand [overflow-wrap:anywhere]">{t('checkout.signedInAuto', { email: currentUser.email })}</span>
+                      <button type="button" onClick={signOut} className="ng-link ng-mono min-h-[44px] shrink-0 border-0 bg-transparent p-0 underline underline-offset-4">{t('checkout.signOut')}</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={handleGoogleLogin} className="ng-btn ng-btn--ghost ng-btn--block !min-h-[56px] !justify-start !normal-case !tracking-normal !font-ng-body !text-[15px]">
+                      <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      {t('checkout.signInPlain')}
+                    </button>
+                  )}
                   <div className="grid gap-5 md:grid-cols-2">
                     {/* No SOLI customer code here any more, as in the main checkout (#595): signing in fills the
                         details, and a guest just types them. */}
@@ -1066,6 +1100,16 @@ const BespokePage = () => {
                       <p className="ng-mono m-0 text-ng-ember">{t('bsp.shippingLegend')}</p>
                       <strong className="font-ng-display text-[30px] font-normal">{t('bsp.pickArea')}</strong>
                     </div>
+                    {/* Courier first, then the area — the order the main checkout asks in (fresh buyer audit). */}
+                    <label className="ng-label">
+                      <span className="ng-mono text-ng-dust">{selectedCourier ? courierLabels[selectedCourier] : t('bsp.pickShippingCourier')}</span>
+                      <select id="bespoke-courier" className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')} aria-invalid={invalidFor('courier')}>
+                        <option value="">{t('bsp.pickCourier')}</option>
+                        {checkoutCourierOptions.map((courier) => (
+                          <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
+                        ))}
+                      </select>
+                    </label>
                     <div className="flex gap-2">
                       <input
                         id="bespoke-area"
@@ -1083,15 +1127,6 @@ const BespokePage = () => {
                         <Search className="h-4 w-4" />
                       </button>
                     </div>
-                    <label className="ng-label">
-                      <span className="ng-mono text-ng-dust">{selectedCourier ? courierLabels[selectedCourier] : t('bsp.pickShippingCourier')}</span>
-                      <select id="bespoke-courier" className="ng-field" value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')} aria-invalid={invalidFor('courier')}>
-                        <option value="">{t('bsp.pickCourier')}</option>
-                        {checkoutCourierOptions.map((courier) => (
-                          <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
-                        ))}
-                      </select>
-                    </label>
                     {/* The rate is chosen for the buyer, as in the cart checkout: the cheapest, which they can change.
                         It used to wait for a tap nobody knew they owed, then refuse the order (tenth visitor audit). */}
                     <button id="bespoke-show-rates" type="button" className="ng-btn ng-btn--ghost self-start" onClick={() => autoCalculateShipping({ autoSelectBest: true })} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
@@ -1108,14 +1143,15 @@ const BespokePage = () => {
                       </div>
                     ) : null}
                     {visibleShippingOptions.length ? (
-                      <div id="bespoke-rates" className="flex flex-col gap-2">
+                      <div id="bespoke-rates" className="flex flex-col gap-2" role="radiogroup" aria-label={t('checkout.fieldRate')}>
                         {visibleShippingOptions.map((rate) => {
                           const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
                           return (
                             <button
                               key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
                               type="button"
-                              aria-pressed={active}
+                              role="radio"
+                              aria-checked={active}
                               className="ng-choice"
                               onClick={() => setSelectedShipping(rate)}
                             >
@@ -1175,7 +1211,28 @@ const BespokePage = () => {
                     <div className="flex justify-between gap-4"><dt className="text-ng-dust">{t('bsp.shipping')}</dt><dd className="m-0">{shippingFee ? formatRupiah(shippingFee) : '-'}</dd></div>
                     <div className="flex items-baseline justify-between gap-4 border-t border-ng-bone/30 pt-3"><dt className="ng-mono text-ng-dust">{t(isManualPayment ? 'bsp.transferTotal' : 'checkout.total')}</dt><dd className="m-0 font-ng-display text-[34px]">{priceReady ? formatRupiah(totalDue) : '—'}</dd></div>
                   </dl>
-                  <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.payment')}</span><select className="ng-field" value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
+                  {/* Cards you can read, as the main checkout draws them, instead of a closed dropdown. */}
+                  <div className="flex flex-col gap-2">
+                    <span className="ng-mono text-ng-dust">{t('bsp.payment')}</span>
+                    <div className="flex flex-col gap-2" role="radiogroup" aria-label={t('bsp.payment')}>
+                      {checkoutPaymentMethods.map((method) => (
+                        <button
+                          key={method.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={form.paymentMethod === method.id}
+                          className="ng-choice"
+                          onClick={() => updateField('paymentMethod', method.id)}
+                        >
+                          <span className="flex flex-col gap-1 text-left">
+                            <span>{t(method.labelKey)}</span>
+                            {method.descriptionKey ? <span className="text-[13px] text-ng-dust">{t(method.descriptionKey)}</span> : null}
+                          </span>
+                          <span className="ng-choice__dot" aria-hidden="true" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <label className="flex items-start gap-3 text-[15px] leading-relaxed text-ng-sand">
                     <input id="bespoke-preorder" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#d4573a]" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} aria-invalid={invalidFor('preorder')} />
                     {t('bsp.preorderConfirm', { days: siteFacts.bespokeDays })}
