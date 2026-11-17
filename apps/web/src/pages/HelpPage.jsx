@@ -105,7 +105,8 @@ const HelpContent = () => {
           </p>
           {/* Its own line: run on after the sentence it read as one ("…your brief. Bespoke ritual"). */}
           <p className="m-0">
-            <Link to="/bespoke" className="underline underline-offset-4">{t('nav.bespoke')} →</Link>
+            {/* A link on its own line is a button to the thumb: 44 px tall (live audit, 17 Nov 2026: 20 px). */}
+            <Link to="/bespoke" className="inline-flex min-h-11 items-center underline underline-offset-4">{t('nav.bespoke')} →</Link>
           </p>
         </Section>
 
