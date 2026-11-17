@@ -27,6 +27,7 @@ import {
   Globe2,
   Truck,
   UsersRound,
+  WandSparkles,
   ListChecks,
 } from 'lucide-react';
 import AdminSessionNotice from '@/components/AdminSessionNotice.jsx';
@@ -95,6 +96,7 @@ const AppShell = ({ children }) => {
         { path: '/studio/export-shipping', label: 'Ekspor', icon: Globe2 },
         { path: '/studio/orders', label: 'Order', icon: PackageCheck },
         { path: '/studio/customers', label: 'Customer', icon: UsersRound },
+        { path: '/studio/bespoke', label: 'Bespoke', icon: WandSparkles },
         { path: '/studio/shipments', label: 'Pengiriman', icon: Truck },
         { path: '/studio/site-images', label: 'Gambar Situs', icon: ImagePlus },
         { path: '/studio/site-facts', label: 'Fakta Toko', icon: ListChecks },

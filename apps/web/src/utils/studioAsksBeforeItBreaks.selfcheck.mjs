@@ -34,7 +34,7 @@ const queue = read('utils', 'whatsAppFollowUps.js');
 assert.doesNotMatch(queue, /navigator\.clipboard/, 'the follow-up queue puts nothing on the clipboard');
 assert.match(queue, /action: \{ label: 'Buka berikutnya'/);
 
-assert.match(read('pages', 'mobile', 'MobileBespokeSettingsPage.jsx'), /const handleReset = async \(\) => \{[\s\S]{0,400}confirmAction\(\{\s*title: 'Kembalikan semua opsi bespoke ke bawaan\?'/);
+assert.match(read('components', 'BespokeSettingsEditor.jsx'), /const handleReset = async \(\) => \{[\s\S]{0,400}confirmAction\(\{\s*title: 'Kembalikan semua opsi bespoke ke bawaan\?'/);
 
 const templates = read('services', 'notificationTemplateService.js');
 assert.match(templates, /unpaid\(order\) && getPaymentLinkUrl\(order\) \? `Link bayar:/);

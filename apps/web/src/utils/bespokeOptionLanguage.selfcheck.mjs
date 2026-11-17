@@ -88,7 +88,7 @@ assert.match(service, /description_en: option\.descriptionEn \|\| null/);
 
 // --- 5. Studio never gets translated rows -------------------------------------------------------------
 // It writes them back. This is the one caller that must NOT ask for the shop's language.
-const studio = read('pages', 'mobile', 'MobileBespokeSettingsPage.jsx');
+const studio = read('components', 'BespokeSettingsEditor.jsx');
 assert.match(studio, /useBespokeSettings\(\)/, 'Studio must read the raw rows it is about to save');
 assert.doesNotMatch(studio, /useBespokeSettings\(\{[^}]*forShop/,
   'Studio asked for translated rows; the next save would write English over the Indonesian label');

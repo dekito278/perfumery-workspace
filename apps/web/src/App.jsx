@@ -103,6 +103,7 @@ const ShippingPromotionPage = lazyRoute(() => import('@/pages/ShippingPromotionP
 const OrdersPage = lazyRoute(() => import('@/pages/OrdersPage.jsx'));
 const OrderDetailPage = lazyRoute(() => import('@/pages/OrderDetailPage.jsx'));
 const CustomersPage = lazyRoute(() => import('@/pages/CustomersPage.jsx'));
+const BespokeSettingsPage = lazyRoute(() => import('@/pages/BespokeSettingsPage.jsx'));
 const ShipmentsPage = lazyRoute(() => import('@/pages/ShipmentsPage.jsx'));
 
 const JournalPage = lazyRoute(() => import('@/pages/JournalPage.jsx'));
@@ -892,6 +893,12 @@ function AppRoutes() {
         <Route path="/studio/customers" element={
           <ProtectedRoute>
             <CustomersPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/bespoke" element={
+          <ProtectedRoute>
+            <BespokeSettingsPage />
           </ProtectedRoute>
         } />
 
