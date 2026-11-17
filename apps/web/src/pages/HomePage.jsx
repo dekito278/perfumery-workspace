@@ -18,6 +18,7 @@ import { shortNoteList } from '@/utils/shortNoteList.js';
 import { CURATED_LIMIT_DESKTOP, pickCuratedProducts } from '@/utils/curatedProducts.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
+import { PHONE_HERO_WIDTHS } from '@/utils/siteImageMap.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublishedJournalPosts, getJournalCategoryShopLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 import { DEFAULT_SHARE_IMAGE, buildOrganizationJsonLd, buildWebSiteJsonLd, getSiteOrigin, shopCanonicalUrl, toAbsoluteUrl } from '@/utils/seo.js';
@@ -33,7 +34,6 @@ const FALLBACK_LIBRARY_SRCSET = '/brand/home/raw-material-library-900.jpg 900w, 
 // A phone is ~390 CSS px, so sizes="100vw" on a 3x screen asks for ~1170 and the full list answers 1600.
 // The phone home this page replaced (2026-10-31) capped its hero at 900 and its second full-bleed image
 // at 750; those stay the ceilings, so one responsive home is never heavier on a phone than the old one.
-const PHONE_HERO_WIDTHS = [480, 720, 900];
 const PHONE_COLLAB_WIDTHS = [480, 600, 750];
 
 // `family` is the perfumery family and stays as it is in both languages — Fresh, Gourmand, Woody, Floral

@@ -14,6 +14,15 @@ const DEFAULT_IMAGES = {
   'home-statement': '/brand/home/perfumer-pipettes.jpg',
 };
 
+const bakedSiteImages = () => {
+  try {
+    const baked = typeof window !== 'undefined' ? window.__SITE_IMAGES__ : null;
+    return baked && typeof baked === 'object' ? { ...DEFAULT_IMAGES, ...baked } : null;
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Hook to fetch and cache site images.
  * Returns { images, loading, refresh }.
@@ -21,9 +30,12 @@ const DEFAULT_IMAGES = {
  * Merges uploaded images over defaults.
  */
 export const useSiteImages = () => {
-  // Empty until the real list settles: '' means "not known yet", not "nothing here".
-  const [imageMap, setImageMap] = useState({});
-  const [loading, setLoading] = useState(true);
+  // Empty until the real list settles: '' means "not known yet", not "nothing here" — unless the build baked
+  // the list into this page (window.__SITE_IMAGES__, tools/build.mjs), in which case it IS known and the
+  // hero can paint at once (its download already started from the page's preload). The live list is still
+  // fetched below and wins if Studio changed a photo since the deploy.
+  const [imageMap, setImageMap] = useState(() => bakedSiteImages() || {});
+  const [loading, setLoading] = useState(() => !bakedSiteImages());
 
   const refresh = useCallback(async () => {
     try {

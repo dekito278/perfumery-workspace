@@ -434,6 +434,58 @@ const writeLlmsTxt = (distRoot, siteUrl) => {
   );
 };
 
+// The Studio photos (site-images bucket) baked into the home page, so its hero starts downloading with the
+// page instead of after the app has run AND listed the bucket (15 Nov 2026: ~6 s on a slow phone before
+// the hero appeared). window.__SITE_IMAGES__ seeds useSiteImages, which still re-lists the bucket and wins
+// if Studio changed a photo after this deploy. The preload is added only on the home addresses: the shell
+// file also answers /cart, /checkout and the rest, which have no hero. Any failure bakes nothing, and the
+// page behaves exactly as before.
+const BAKED_HOME_FILES = ['index.html', 'home/index.html', 'en/index.html', 'en/home/index.html'];
+const bakeSiteImages = async (env) => {
+  if (!env.supabaseUrl || !env.supabaseKey) return;
+  const {
+    SITE_IMAGES_BUCKET, SITE_IMAGES_FOLDER, siteImageEntries, PHONE_HERO_WIDTHS, PHONE_HERO_MEDIA, DESKTOP_HERO_MEDIA,
+  } = await import('../src/utils/siteImageMap.js');
+  const { getOptimizedStorageImageUrl, getStorageImageSrcSet } = await import('../src/utils/storageImage.js');
+  let files;
+  try {
+    const res = await fetch(`${env.supabaseUrl}/storage/v1/object/list/${SITE_IMAGES_BUCKET}`, {
+      method: 'POST',
+      headers: { apikey: env.supabaseKey, Authorization: `Bearer ${env.supabaseKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefix: SITE_IMAGES_FOLDER, limit: 100, offset: 0 }),
+    });
+    if (!res.ok) throw new Error(`storage ${res.status}`);
+    files = await res.json();
+  } catch (error) {
+    console.warn('[site-images] not baked:', error.message || error);
+    return;
+  }
+  const publicUrlFor = (name) => `${env.supabaseUrl}/storage/v1/object/public/${SITE_IMAGES_BUCKET}/${SITE_IMAGES_FOLDER}/${name}`;
+  const map = Object.fromEntries(siteImageEntries(files, publicUrlFor));
+  const hero = map['home-hero'];
+  const links = hero ? [
+    { media: PHONE_HERO_MEDIA, href: getOptimizedStorageImageUrl(hero, PHONE_HERO_WIDTHS.at(-1)), srcset: getStorageImageSrcSet(hero, PHONE_HERO_WIDTHS) },
+    { media: DESKTOP_HERO_MEDIA, href: getOptimizedStorageImageUrl(hero, 1600), srcset: getStorageImageSrcSet(hero) },
+  ] : [];
+  const json = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
+  const script = '<script data-site-images>window.__SITE_IMAGES__=' + json(map) + ';(function(){'
+    + "var p=location.pathname.replace(/\\/+$/,'')||'/';"
+    + "if(['/','/home','/en','/en/home'].indexOf(p)<0)return;"
+    + 'var l=' + json(links) + ';'
+    + "for(var i=0;i<l.length;i++){var e=document.createElement('link');e.rel='preload';e.as='image';"
+    + "e.setAttribute('imagesrcset',l[i].srcset);e.setAttribute('imagesizes','100vw');e.media=l[i].media;e.href=l[i].href;"
+    + 'document.head.appendChild(e);}})();</script>';
+  let baked = 0;
+  for (const rel of BAKED_HOME_FILES) {
+    const file = path.join(webRoot, 'dist', rel);
+    if (!fs.existsSync(file)) continue;
+    const html = fs.readFileSync(file, 'utf8').replace(/\s*<script data-site-images>[\s\S]*?<\/script>/, '');
+    fs.writeFileSync(file, html.replace(/<\/head>/i, `    ${script}\n  </head>`));
+    baked += 1;
+  }
+  console.log(`[site-images] ${Object.keys(map).length} Studio photo(s) baked into ${baked} home file(s)${hero ? ', hero preloaded' : ''}.`);
+};
+
 const generateSeoArtifacts = async () => {
   const distRoot = path.join(webRoot, 'dist');
   const indexPath = path.join(distRoot, 'index.html');
@@ -485,6 +537,7 @@ const generateSeoArtifacts = async () => {
   // last words), so a missing row must never cost the build its products.
   const facts = await fetchSiteFacts(env);
   writeStaticPublicPages(env.siteUrl, products, journal, facts);
+  await bakeSiteImages(env);
   writeLlmsTxt(distRoot, env.siteUrl);
 
   if (env.siteUrl && (products.length || journal.length)) {
