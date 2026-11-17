@@ -12,6 +12,8 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip from '@/components/ui/status-chip.jsx';
 import { useProductionCostPage } from '@/hooks/useProductionCostPage.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import BatchStockTarget, { NEW_PRODUCT, RESTOCK } from '@/components/batch/BatchStockTarget.jsx';
+import { confirmAction } from '@/utils/confirmAction.js';
 import { deductBatchMaterialStock, getBatches, getBatchUsageRecords, saveBatch } from '@/services/batchesService.js';
 import {
   getProductBatchKey,
@@ -30,6 +32,7 @@ import {
   PRODUCT_BATCH_USABLE_TAG_PREFIX,
   PRODUCT_DRAFT_TAG,
   PRODUCT_FORMULA_TAG_PREFIX,
+  restockProductFromBatch,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
 import { updateFormulaStatus } from '@/services/formulasSupabaseService.js';
@@ -137,6 +140,7 @@ const BatchProductionPage = () => {
   const [batchStatus, setBatchStatus] = useState('planned');
   const [savingBatch, setSavingBatch] = useState(false);
   const [publishingProduct, setPublishingProduct] = useState(false);
+  const [stockTarget, setStockTarget] = useState({ mode: NEW_PRODUCT, productId: '', variantId: '' });
   const [savedBatch, setSavedBatch] = useState(null);
   const [batchHistory, setBatchHistory] = useState([]);
   const [usageRecords, setUsageRecords] = useState([]);
@@ -375,6 +379,58 @@ const BatchProductionPage = () => {
     return saveProductionBatch(nextStatus);
   };
 
+  // The second batch of a perfume already on sale adds to its stock instead of minting a duplicate draft
+  // (17 Nov 2026). Stock only: price, notes and photos stay as they are. Same as the phone screen.
+  const restockFromBatch = async () => {
+    if (!selectedFormula || bottleCount <= 0) {
+      toast.error('Isi dulu: formula, ukuran batch, dan ukuran botol');
+      return;
+    }
+    if (qcStatus !== 'passed') {
+      toast.error('QC harus lulus sebelum stok ditambah');
+      return;
+    }
+    if (publishedProduct) {
+      toast.info('Stok batch ini sudah masuk ke produk. Buka produknya untuk mengubah stok.');
+      return;
+    }
+    const target = catalogProducts.find((product) => product.id === stockTarget.productId);
+    const variant = (target?.variants || []).find((item) => String(item.id) === String(stockTarget.variantId));
+    if (!target || !variant) {
+      toast.error('Pilih produk dan ukuran yang mendapat stok');
+      return;
+    }
+    if (!await confirmAction({
+      title: `Tambah ${bottleCount} botol ke ${target.name}?`,
+      message: `Stok ${variant.size} jadi ${Number(variant.stock || 0) + bottleCount}. Harga, aroma, dan foto tidak berubah.`,
+      confirmText: 'Tambah stok',
+    })) return;
+
+    setPublishingProduct(true);
+    try {
+      const batch = await ensureBatchRecord('ready_for_product');
+      if (!batch) return;
+      await restockProductFromBatch({
+        productId: target.id,
+        variantId: variant.id,
+        bottles: bottleCount,
+        note: `Batch ${batch.batch_code}: +${bottleCount} botol`,
+      });
+      const linked = await saveBatch(buildBatchPayload('converted_to_product', {
+        id: batch.id,
+        batch_code: batch.batch_code,
+        product_id: target.id,
+      }));
+      setSavedBatch(linked || { ...batch, status: 'converted_to_product', product_id: target.id });
+      await refreshBatchHistory();
+      toast.success(`${bottleCount} botol masuk ke stok ${target.name}`);
+    } catch (error) {
+      toast.error(error.message || 'Stok gagal ditambah');
+    } finally {
+      setPublishingProduct(false);
+    }
+  };
+
   const publishBatchAsProduct = async () => {
     if (!selectedFormula || bottleCount <= 0) {
       toast.error('Isi dulu: formula, ukuran batch, dan ukuran botol');
@@ -578,8 +634,12 @@ const BatchProductionPage = () => {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="text-xs font-bold uppercase text-amber-700">Stok produk</div>
-                    <h2 className="mt-1 text-xl font-bold">{publishedProduct ? 'Batch ini sudah punya stok produk' : 'Draf produk dari batch'}</h2>
-                    <p className="mt-1 text-sm font-semibold text-muted-foreground">Produk dibuat sebagai draf agar foto dan deskripsinya bisa diubah dulu sebelum tampil di toko.</p>
+                    <h2 className="mt-1 text-xl font-bold">{publishedProduct ? 'Batch ini sudah punya stok produk' : stockTarget.mode === RESTOCK ? 'Tambah stok dari batch' : 'Draf produk dari batch'}</h2>
+                    <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                      {stockTarget.mode === RESTOCK && !publishedProduct
+                        ? 'Botol dari batch ini masuk ke stok produk yang sudah ada.'
+                        : 'Produk dibuat sebagai draf agar foto dan deskripsinya bisa diubah dulu sebelum tampil di toko.'}
+                    </p>
                   </div>
                   <ShoppingBag className="h-5 w-5 text-amber-700" />
                 </div>
@@ -592,12 +652,24 @@ const BatchProductionPage = () => {
                     <span className="text-xs font-bold uppercase text-muted-foreground">Susut %</span>
                     <input value={lossPercent} onChange={(event) => setLossPercent(event.target.value)} inputMode="decimal" className={fieldClass} />
                   </label>
-                  <label className="grid gap-2">
+                  {publishedProduct || stockTarget.mode === NEW_PRODUCT ? <label className="grid gap-2">
                     <span className="text-xs font-bold uppercase text-muted-foreground">Harga jual</span>
                     <input value={sellingPrice} onChange={(event) => setSellingPrice(event.target.value)} inputMode="decimal" placeholder={formatPrice(suggestedPrice)} className={fieldClass} />
-                  </label>
+                  </label> : null}
                 </div>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {!publishedProduct ? (
+                  <div className="max-w-xl">
+                    <BatchStockTarget
+                      products={catalogProducts}
+                      formulaId={selectedFormula?.id}
+                      bottleMl={bottleValue}
+                      bottles={bottleCount}
+                      value={stockTarget}
+                      onChange={setStockTarget}
+                    />
+                  </div>
+                ) : null}
+                {publishedProduct || stockTarget.mode === NEW_PRODUCT ? <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {/* The price this button is about to publish, and what it leaves. An empty Sell price
                       field falls back to the suggestion, and until now the only trace of that was the
                       grey placeholder inside the field — which reads as an example, not as the number
@@ -607,10 +679,12 @@ const BatchProductionPage = () => {
                   <MetricCard label="Margin" value={formatPrice(marginPerBottle)} helper={`${formatQuantity(marginPercent, 1)}%`} tone={marginPerBottle >= 0 ? 'emerald' : 'amber'} />
                   <MetricCard label="Stok draf" value={`${publishedProduct?.stock ?? bottleCount} botol`} helper={publishedProduct ? 'stok produk tertaut' : 'dihitung dari volume terpakai'} tone="emerald" />
                   <MetricCard label="SKU" value={productSku || '-'} helper={publishedProduct ? 'sudah tertaut' : 'dibuat otomatis'} />
-                </div>
-                <Button type="button" className="mt-4 h-11 w-full rounded-2xl gap-2" onClick={publishedProduct ? () => navigate(`/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`) : publishBatchAsProduct} disabled={publishingProduct || (!publishedProduct && bottleCount <= 0)}>
+                </div> : null}
+                <Button type="button" className="mt-4 h-11 w-full rounded-2xl gap-2" onClick={publishedProduct ? () => navigate(`/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`) : stockTarget.mode === RESTOCK ? restockFromBatch : publishBatchAsProduct} disabled={publishingProduct || (!publishedProduct && bottleCount <= 0) || (!publishedProduct && stockTarget.mode === RESTOCK && !stockTarget.variantId)}>
                   <ShoppingBag className="h-4 w-4" />
-                  {publishedProduct ? 'Buka produk tertaut' : publishingProduct ? 'Membuat draf...' : 'Buat draf stok produk'}
+                  {publishedProduct ? 'Buka produk tertaut'
+                    : stockTarget.mode === RESTOCK ? (publishingProduct ? 'Menambah stok...' : `Tambah ${bottleCount} botol ke stok`)
+                      : publishingProduct ? 'Membuat draf...' : 'Buat draf stok produk'}
                 </Button>
               </section>
             </div>

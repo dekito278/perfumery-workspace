@@ -20,6 +20,8 @@ import { Label } from '@/components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx';
 import { useProductionCostPage } from '@/hooks/useProductionCostPage.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import BatchStockTarget, { NEW_PRODUCT, RESTOCK } from '@/components/batch/BatchStockTarget.jsx';
+import { confirmAction } from '@/utils/confirmAction.js';
 import {
   getProductBatchKey,
   PRODUCT_BATCH_CODE_TAG_PREFIX,
@@ -37,6 +39,7 @@ import {
   PRODUCT_BATCH_USABLE_TAG_PREFIX,
   PRODUCT_DRAFT_TAG,
   PRODUCT_FORMULA_TAG_PREFIX,
+  restockProductFromBatch,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
 import { deductBatchMaterialStock, getBatches, getBatchUsageRecords, saveBatch } from '@/services/batchesService.js';
@@ -284,6 +287,7 @@ const MobileBatchesPage = () => {
   const [productPrice, setProductPrice] = useState('');
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [publishingProduct, setPublishingProduct] = useState(false);
+  const [stockTarget, setStockTarget] = useState({ mode: NEW_PRODUCT, productId: '', variantId: '' });
   const [batchStatus, setBatchStatus] = useState('planned');
   const [batchStep, setBatchStep] = useState('setup');
   const [savingBatch, setSavingBatch] = useState(false);
@@ -625,6 +629,58 @@ const MobileBatchesPage = () => {
     setPublishConfirmOpen(true);
   };
 
+  // The second batch of a perfume already on sale adds to its stock instead of minting a duplicate draft
+  // (17 Nov 2026). Stock only: price, notes and photos stay as they are.
+  const restockFromBatch = async () => {
+    if (!selectedFormula || productBottleCount <= 0) {
+      toast.error('Isi dulu: formula, ukuran batch, dan ukuran botol');
+      return;
+    }
+    if (qcStatus !== 'passed') {
+      toast.error('QC harus lulus sebelum stok ditambah');
+      return;
+    }
+    if (publishedProduct) {
+      toast.info('Stok batch ini sudah masuk ke produk. Buka produknya untuk mengubah stok.');
+      return;
+    }
+    const target = catalogProducts.find((product) => product.id === stockTarget.productId);
+    const variant = (target?.variants || []).find((item) => String(item.id) === String(stockTarget.variantId));
+    if (!target || !variant) {
+      toast.error('Pilih produk dan ukuran yang mendapat stok');
+      return;
+    }
+    if (!await confirmAction({
+      title: `Tambah ${productBottleCount} botol ke ${target.name}?`,
+      message: `Stok ${variant.size} jadi ${Number(variant.stock || 0) + productBottleCount}. Harga, aroma, dan foto tidak berubah.`,
+      confirmText: 'Tambah stok',
+    })) return;
+
+    setPublishingProduct(true);
+    try {
+      const batch = await ensureBatchRecord('ready_for_product');
+      if (!batch) return;
+      await restockProductFromBatch({
+        productId: target.id,
+        variantId: variant.id,
+        bottles: productBottleCount,
+        note: `Batch ${batch.batch_code}: +${productBottleCount} botol`,
+      });
+      const linked = await saveBatch(buildBatchPayload('converted_to_product', {
+        id: batch.id,
+        batch_code: batch.batch_code,
+        product_id: target.id,
+      }));
+      setSavedBatch(linked || { ...batch, status: 'converted_to_product', product_id: target.id });
+      await refreshBatchHistory();
+      toast.success(`${productBottleCount} botol masuk ke stok ${target.name}`);
+    } catch (error) {
+      toast.error(error.message || 'Stok gagal ditambah');
+    } finally {
+      setPublishingProduct(false);
+    }
+  };
+
   const publishBatchAsProduct = async () => {
     if (!selectedFormula || productBottleCount <= 0) {
       toast.error('Isi dulu: formula, ukuran batch, dan ukuran botol');
@@ -790,6 +846,10 @@ const MobileBatchesPage = () => {
         navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`);
         return;
       }
+      if (stockTarget.mode === RESTOCK) {
+        restockFromBatch();
+        return;
+      }
       openPublishConfirmation();
       return;
     }
@@ -801,7 +861,9 @@ const MobileBatchesPage = () => {
     setup: 'Lanjut ke produksi',
     produce: savingBatch ? 'Menyimpan batch...' : savedBatch ? 'Perbarui batch' : 'Simpan batch',
     qc: savingBatch ? 'Menyimpan QC...' : 'Simpan hasil QC',
-    stock: publishedProduct ? 'Ubah produk tertaut' : publishingProduct ? 'Membuat draf...' : 'Buat draf stok produk',
+    stock: publishedProduct ? 'Ubah produk tertaut'
+      : stockTarget.mode === RESTOCK ? (publishingProduct ? 'Menambah stok...' : `Tambah ${productBottleCount} botol ke stok`)
+        : publishingProduct ? 'Membuat draf...' : 'Buat draf stok produk',
     review: 'Ekspor PDF formula',
   }[batchStep];
 
@@ -1121,25 +1183,35 @@ const MobileBatchesPage = () => {
                       <Input value={productLossPercent} onChange={(event) => setProductLossPercent(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-1 gap-2">
+                  {!publishedProduct ? (
+                    <BatchStockTarget
+                      products={catalogProducts}
+                      formulaId={selectedFormula?.id}
+                      bottleMl={bottleSizeValue}
+                      bottles={productBottleCount}
+                      value={stockTarget}
+                      onChange={setStockTarget}
+                    />
+                  ) : null}
+                  {publishedProduct || stockTarget.mode === NEW_PRODUCT ? <div className="mt-3 grid grid-cols-1 gap-2">
                     <div className="min-w-0 space-y-2">
                       <Label className="text-xs font-bold text-[#6b7280]">Harga jual</Label>
                       <Input value={productPrice} onChange={(event) => setProductPrice(normalizeLocalizedDecimalInput(event.target.value))} placeholder={formatPrice(productPriceSuggestion)} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
                     </div>
-                  </div>
+                  </div> : null}
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <MetricTile label="Stok" value={`${publishedProduct?.stock ?? productBottleCount} botol`} helper={publishedProduct ? 'stok produk tertaut' : 'akan jadi stok produk'} tone="emerald" />
+                    <MetricTile label="Stok" value={`${publishedProduct?.stock ?? productBottleCount} botol`} helper={publishedProduct ? 'stok produk tertaut' : stockTarget.mode === RESTOCK ? 'akan ditambah ke produk' : 'akan jadi stok produk'} tone="emerald" />
                     <MetricTile label="HPP / botol" value={formatPrice(productCogsPerBottle)} helper="perkiraan bahan" tone="amber" />
                   </div>
                   <Button
                     type="button"
-                    onClick={publishedProduct ? () => navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`) : openPublishConfirmation}
-                    disabled={publishingProduct || (!publishedProduct && productBottleCount <= 0)}
+                    onClick={publishedProduct ? () => navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`) : stockTarget.mode === RESTOCK ? restockFromBatch : openPublishConfirmation}
+                    disabled={publishingProduct || (!publishedProduct && productBottleCount <= 0) || (!publishedProduct && stockTarget.mode === RESTOCK && !stockTarget.variantId)}
                     variant="outline"
                     className="mt-3 h-11 w-full rounded-2xl bg-white gap-2 text-xs font-bold"
                   >
                     <ShoppingBag className="h-4 w-4" />
-                    {publishedProduct ? 'Buka produk tertaut' : 'Tinjau draf produk'}
+                    {publishedProduct ? 'Buka produk tertaut' : stockTarget.mode === RESTOCK ? (publishingProduct ? 'Menambah stok...' : `Tambah ${productBottleCount} botol ke stok`) : 'Tinjau draf produk'}
                   </Button>
                 </div>
               </div>

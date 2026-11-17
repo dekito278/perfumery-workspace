@@ -12,6 +12,7 @@ import { withoutNotesHeading } from '@/utils/shortNoteList.js';
 import { deleteProductImages } from '@/services/productImageStorageService.js';
 import { toLaunchYear } from '@/utils/launchYear.js';
 import { batchParts, normalizeProcessImages } from '@/utils/processImages.js';
+import { planBatchRestock } from '@/utils/batchRestock.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
@@ -967,6 +968,41 @@ export const saveCustomProduct = async (input) => {
     // one person who could have fixed it (audit round 9).
     throw new Error(`${product.name} gagal disimpan ke server: ${error.message || 'penyebab tidak diketahui'}. Produk BELUM tersimpan — muat ulang halaman dan coba lagi.`);
   }
+};
+
+/**
+ * A finished batch adds its bottles to a product that already exists (17 Nov 2026), instead of minting a
+ * second draft of the same perfume. Writes `variants`, `stock` and `tags` only, never through
+ * saveCustomProduct: that path also fills in missing member/export prices, and a restock must not touch a
+ * price. Guarded by the row's updated_at, so an order that cut stock in between is never written over.
+ */
+export const restockProductFromBatch = async ({ productId, variantId, bottles, note }) => {
+  const { data: row, error: readError } = await supabase
+    .from('storefront_products')
+    .select('id, name, stock, variants, tags, updated_at')
+    .eq('id', productId)
+    .maybeSingle();
+  if (readError) throw new Error(`Produk tujuan gagal dibaca: ${readError.message}`);
+
+  const plan = planBatchRestock({ row, variantId, bottles, note });
+  const tags = [...splitList(row.tags), serializeStockCorrection(plan.correction)];
+  const { data, error } = await supabase
+    .from('storefront_products')
+    .update({ variants: plan.variants, stock: plan.stock, tags })
+    .eq('id', productId)
+    .eq('updated_at', row.updated_at)
+    .select('*')
+    .maybeSingle();
+  if (error) throw new Error(`Stok gagal ditambah: ${error.message}`);
+  // Zero rows: the product changed after it was read (an order cut its stock), or RLS refused. Either way
+  // nothing was written, and saying "added" would be a lie.
+  if (!data) {
+    throw new Error(`${row.name} berubah saat stok mau ditambah, atau sesi admin belum terverifikasi. Stok BELUM bertambah — muat ulang lalu coba lagi.`);
+  }
+  const saved = fromDatabaseRow(data);
+  upsertStoredProduct(saved);
+  dispatchProductsUpdated();
+  return saved;
 };
 
 // Tagging writes one column, not the whole row. saveCustomProduct is a blind full-row write guarded by
