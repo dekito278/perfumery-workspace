@@ -12,6 +12,7 @@ import { applyStandaloneClass, installConnectivityEvents, installStaleShellRecov
 import { installRevealSafetyNet } from '@/utils/revealSafetyNet.js';
 import { installPrerenderedHeadHandover } from '@/utils/prerenderedHead.js';
 import { recordMobileRuntimeError } from '@/utils/mobileDiagnostics.js';
+import { installPageAnalytics } from '@/utils/pageAnalytics.js';
 
 const RESIZE_OBSERVER_MESSAGES = [
   'ResizeObserver loop completed with undelivered notifications.',
@@ -41,6 +42,7 @@ installStaleShellRecovery();
 installPrerenderedHeadHandover();
 installConnectivityEvents();
 installRevealSafetyNet();
+installPageAnalytics();
 
 window.addEventListener('error', (event) => {
   if (isResizeObserverNoise(event.message) || isExtensionNoise(event)) {
