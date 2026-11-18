@@ -3,6 +3,7 @@ import { quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
+import AbroadAskLink from '@/components/storefront/AbroadAskLink.jsx';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, ShoppingBag } from 'lucide-react';
@@ -402,7 +403,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                       // /en lives under the other router's basename.
                       <p className="m-0 text-sm text-ng-dust">
                         {t('pdp.shipAbroad')}{' '}
-                        <a href={`/en/catalog/${product.slug}`} className="ng-link inline-flex min-h-[44px] items-center">{t('pdp.seeIntlVersion')}</a>
+                        {/* WhatsApp since 18 Nov 2026: a link from Indonesia to /en comes straight back (middleware.js). */}
+                        <AbroadAskLink labelKey="pdp.askAbroad" draftKey="pdp.abroadDraft" vars={{ name: plainName(product.name) }} className="ng-link inline-flex min-h-[44px] items-center" />
                       </p>
                     )}
                     <ShareProductButton product={product} />

@@ -5,6 +5,7 @@ import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { addressLooksAbroad } from '@/utils/addressAbroad.js';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useMemo, useState } from 'react';
+import AbroadAskLink from '@/components/storefront/AbroadAskLink.jsx';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { BadgePercent, CreditCard, Search, ShoppingBag, UserRound, X } from 'lucide-react';
@@ -280,7 +281,7 @@ const CheckoutPage = () => {
                       {addressLooksAbroad(deliveryAddress) ? (
                         <p role="status" className="ng-notice m-0">
                           {t('checkout.abroadHint')}{' '}
-                          <a href="/en/cart" className="ng-link">{t('checkout.abroadLink')}</a>
+                          <AbroadAskLink labelKey="checkout.abroadAsk" draftKey="checkout.abroadDraft" />
                         </p>
                       ) : null}
                       {triedSubmit && fieldErrors.deliveryAddress ? <span className="ng-error text-sm" role="alert">{fieldErrors.deliveryAddress}</span> : null}

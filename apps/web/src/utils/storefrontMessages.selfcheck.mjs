@@ -58,8 +58,6 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'pay.link.fieldBank', // the label above a bank name, one word, the same one here
   'pay.link.fieldBic',  // an ISO code's name
   'why.atelier.cta',  // "Bespoke ritual" is the name of the service, not a description of it
-  'region.enTitle',   // the international option is named in English on BOTH sides on purpose: it is
-                      // what an Indonesian reader is switching TO, so translating it hides the switch
   // home.tab left this list on 13 Nov 2026: it is also the WhatsApp card title of the bare domain, and
   // Dekito saw his Indonesian shop shared as "Artisan Perfumery Atelier by Dekito".
   'home.tabMobile',   // same
@@ -79,8 +77,6 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // 15 Nov 2026 (full copy review): the invoice, the bespoke stages, the quantity line and the app-install
   // words left this list — the Indonesian shop now says them in Indonesian (Pembeli, Parfum, Jml, Cetak,
   // Sampel, Persetujuan, Pasang…), as Dekito asked for every text a buyer sees.
-  // A language is named in itself, whichever shop the switch sits in (screen-reader names, 15 Nov 2026).
-  'region.idName', 'region.enName',
   'pay.status',  // Status is Status
   // Payment providers are named, not translated: DOKU is DOKU and QRIS is QRIS on both sides.
   'paymethod.doku', 'paymethod.qris',
@@ -305,7 +301,6 @@ for (const file of [
   ['components', 'storefront', 'StorefrontFooter.jsx'],
   ['components', 'storefront', 'StorefrontLoadingState.jsx'],
   ['components', 'storefront', 'WhyBuyDirect.jsx'],
-  ['components', 'storefront', 'RegionSwitch.jsx'],
   ['pages', 'CatalogPage.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
   ['components', 'storefront', 'StaleCatalogNotice.jsx'],

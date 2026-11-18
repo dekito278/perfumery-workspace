@@ -1,4 +1,3 @@
-import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import React, {useEffect, useState, useRef, useCallback} from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { X, Menu, ShoppingBag } from 'lucide-react';
@@ -178,8 +177,9 @@ const PublicHeader = () => {
           ))}
         </nav>
 
+        {/* No ID/EN switch since 18 Nov 2026: the visitor's country picks the shop (middleware.js), so a
+            visitor abroad can never cross into rupiah prices (Dekito). */}
         <div className="ng-header__actions ng-mono">
-          <RegionSwitch />
           {/* The owner's way back to Studio — for the owner only; isAdmin is the gate ProtectedRoute uses
               on the destination. A buyer who signed in for the member price never sees it. */}
           {isAdmin ? (
@@ -233,10 +233,6 @@ const PublicHeader = () => {
                 ))}
               </div>
             ))}
-            <div className="ng-menu__column ng-mono">
-              <span className="ng-menu__heading">{t('region.label')}</span>
-              <RegionSwitch />
-            </div>
           </div>
         </nav>
       )}

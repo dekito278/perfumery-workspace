@@ -1357,6 +1357,9 @@ const CustomerPortalPage = () => {
                 </button>
               )}
             </div>
+            {/* Not abroad (Dekito, 18 Nov 2026): the customer code and member pricing are Indonesian-shop
+                things, so the English shop does not mention them at all. */}
+            {!isInternational ? (
             <details className="rounded-none border bg-transparent p-4" open={Boolean(customerCode || lastCustomerCode) || undefined}>
               <summary className="ng-mono flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 text-ng-dust">
                 {t('cust.haveOldCode')}
@@ -1399,6 +1402,7 @@ const CustomerPortalPage = () => {
                 </p>
               </form>
             </details>
+            ) : null}
             <MemberCodePanel />
             {renderAccountPanel()}
           </div>

@@ -81,8 +81,9 @@ assert.match(nav, /min-width: 0/, 'and shrinks rather than shoving the buttons o
 // --- The markup still has the children this layout was written for --------------------------------------
 // Not a count — a count is what failed. These just have to still be there, in this order, so the rules
 // above are aiming at something real. The wordmark sits in a box of its own, so the half it takes does
-// not turn the link into a target that runs to the nav. The region switch sits inside the actions.
-const order = ['ng-header__brand', 'ng-header__wordmark', 'ng-header__nav', 'ng-header__actions', '<RegionSwitch'];
+// not turn the link into a target that runs to the nav. (The region switch that sat inside the actions is
+// gone since 18 Nov 2026: the visitor's country picks the shop.)
+const order = ['ng-header__brand', 'ng-header__wordmark', 'ng-header__nav', 'ng-header__actions'];
 let at = -1;
 for (const token of order) {
   const next = header.indexOf(token, at + 1);
