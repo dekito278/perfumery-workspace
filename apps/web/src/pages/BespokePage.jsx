@@ -2,6 +2,7 @@ import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import AbroadAskLink from '@/components/storefront/AbroadAskLink.jsx';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { BadgePercent, CheckCircle2, CreditCard, Globe, Search, UserRound, X } from 'lucide-react';
@@ -1092,7 +1093,7 @@ const BespokePage = () => {
                     <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.name')}</span><input id="bespoke-name" type="text" className="ng-field" autoComplete="name" value={form.customerName} aria-required="true" onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} aria-invalid={invalidFor('name')} />{errorFor('name')}</label>
                     <label className="ng-label"><span className="ng-mono text-ng-dust">{t('bsp.contact')}</span><input id="bespoke-contact" type="tel" inputMode="tel" autoComplete="tel" className="ng-field" value={form.contact} aria-required="true" onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.contactPlaceholder')} aria-invalid={invalidFor('contact')} />{errorFor('contact')}</label>
                     <label className="ng-label md:col-span-2"><span className="ng-mono text-ng-dust">{t('bsp.address')}</span><textarea id="bespoke-address" rows="4" className="ng-field" autoComplete="street-address" value={form.deliveryAddress} aria-required="true" onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-invalid={invalidFor('address')} />{errorFor('address')}{addressLooksAbroad(form.deliveryAddress) ? (
-                      <span role="status" className="ng-notice">{t('checkout.abroadHint')} <a href="/en/bespoke" className="ng-link">{t('bsp.abroadLink')}</a></span>
+                      <span role="status" className="ng-notice">{t('checkout.abroadHint')} <AbroadAskLink labelKey="checkout.abroadAsk" draftKey="bsp.abroadDraft" /></span>
                     ) : null}</label>
                   </div>
                   <div className="ng-fieldset">

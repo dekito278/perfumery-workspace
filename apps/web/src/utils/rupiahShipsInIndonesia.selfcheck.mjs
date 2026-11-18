@@ -55,11 +55,14 @@ for (const [address, abroad] of [
   assert.equal(addressLooksAbroad(address), abroad, `${JSON.stringify(address)} → ${countryAddressEndsIn(address) || 'Indonesia'}`);
 }
 
-// --- 4. Both rupiah forms show it, with the way to the international shop ---------------------------------
+// --- 4. Both rupiah forms show it, with the way to order abroad ------------------------------------------
+// Since 18 Nov 2026 that way is WhatsApp, not the English shop: the visitor's country picks the shop
+// (middleware.js), so a link from Indonesia to /en would only come back here.
 const checkout = readFileSync(join(root, 'pages', 'CheckoutPage.jsx'), 'utf8');
-assert.match(checkout, /\{addressLooksAbroad\(deliveryAddress\) \? \([\s\S]{0,200}t\('checkout\.abroadHint'\)[\s\S]{0,80}href="\/en\/cart"/);
+assert.match(checkout, /\{addressLooksAbroad\(deliveryAddress\) \? \([\s\S]{0,200}t\('checkout\.abroadHint'\)[\s\S]{0,80}<AbroadAskLink labelKey="checkout\.abroadAsk" draftKey="checkout\.abroadDraft" \/>/);
 const bespoke = readFileSync(join(root, 'pages', 'BespokePage.jsx'), 'utf8');
-assert.match(bespoke, /\{addressLooksAbroad\(form\.deliveryAddress\) \? \([\s\S]{0,200}t\('checkout\.abroadHint'\)[\s\S]{0,40}href="\/en\/bespoke"/);
-assert.equal(MESSAGES.id['checkout.abroadHint'], 'Untuk pengiriman ke luar negeri, harga mengikuti katalog internasional.');
+assert.match(bespoke, /\{addressLooksAbroad\(form\.deliveryAddress\) \? \([\s\S]{0,200}t\('checkout\.abroadHint'\)[\s\S]{0,40}<AbroadAskLink labelKey="checkout\.abroadAsk" draftKey="bsp\.abroadDraft" \/>/);
+assert.match(MESSAGES.id['checkout.abroadHint'], /luar negeri[\s\S]*WhatsApp/);
+for (const page of [checkout, bespoke]) assert.doesNotMatch(page, /href="\/en\//, 'no link from the rupiah forms into the English shop');
 
 console.log('rupiahShipsInIndonesia selfcheck OK (every rupiah order names a domestic destination; abroad is dollars, no voucher, no member price)');

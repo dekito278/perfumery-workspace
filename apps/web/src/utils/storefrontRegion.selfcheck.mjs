@@ -156,25 +156,15 @@ assert.match(priceHook, /const \{ isInternational: overseasVisitor \} = useStore
 assert.doesNotMatch(priceHook, /detectOverseasVisitor/,
   'and no longer detects for itself — the guess reaches it only through the region');
 
-// --- 6. A control, not a gate ---------------------------------------------------------------------------------
-// A question before the shop costs visitors who would have looked, and an Indonesian who taps
-// "international" by mistake is shown prices 3,5x higher and leaves.
-const widget = read('components', 'storefront', 'RegionSwitch.jsx');
-assert.doesNotMatch(widget, /Dialog|Modal|overlay|fixed inset-0/,
-  'the switch must never become a gate in front of the shop');
-assert.match(widget, /aria-pressed=\{region === option\.value\}/, 'the current choice is announced, not just coloured');
-assert.match(widget, /aria-label=\{t\('region\.label'\)\}/, 'the switch is labelled from the message file');
-// Both labels name BOTH languages, because this is the one control a reader of either has to find while
-// the rest of the page is in the other one.
-assert.match(MESSAGES.id['region.label'], /Wilayah harga/);
-assert.match(MESSAGES.id['region.label'], /Pricing region/);
-assert.match(MESSAGES.en['region.label'], /Pricing region/);
-assert.match(MESSAGES.en['region.label'], /Wilayah harga/);
-
-// On both storefronts. Desktop and mobile drifting apart is this repo's commonest defect, and a switch on
-// one of them teaches the visitor the other surface has no choice.
-assert.match(read('components', 'storefront', 'PublicHeader.jsx'), /<RegionSwitch /, 'in the desktop header');
-// The phone's own header retired with the phone storefront (2026-10-31): the header above is the phone's too.
+// --- 6. The country picks the shop, not a switch ------------------------------------------------------------
+// Dekito, 18 Nov 2026: "kalau dia akses luar ya udah pakai luar aja, kalau dia akses Indo ya udah Indo aja —
+// jangan sampai orang luar bisa ngelihat harga Indonesia". The ID/EN switch let anyone cross into rupiah
+// prices, so it is gone from the header, the menu and the footer, and middleware.js sends each visitor to
+// their own shop before a page is served (rules in shopByCountry.js, run by shopByCountry.selfcheck.mjs).
+// Still not a gate: nothing asks the visitor anything.
+for (const parts of [['components', 'storefront', 'PublicHeader.jsx'], ['components', 'storefront', 'StorefrontFooter.jsx']]) {
+  assert.doesNotMatch(read(...parts), /RegionSwitch|setRegion\(/, `${parts.at(-1)} offers a way across to the other shop's prices again`);
+}
 
 // --- The boot screen, before the bundle arrives -----------------------------------------------------------
 // index.html paints #root synchronously, before React mounts: what every visitor sees while a slow phone

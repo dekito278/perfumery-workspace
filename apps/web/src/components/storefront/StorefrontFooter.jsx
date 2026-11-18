@@ -1,4 +1,3 @@
-import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import { useSiteFacts } from '@/hooks/useSiteFacts.js';
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -77,7 +76,7 @@ const StorefrontFooter = () => {
         <div className="ng-footer__bottom ng-mono">
           <small>&copy; {new Date().getFullYear()} {siteFacts.footerOwner}</small>
           {/* It read "· ID / EN" — letters that looked like the switch and did nothing when tapped. */}
-          <span className="ng-footer__place">{t('nav.footerPlace')}<RegionSwitch /></span>
+          <span className="ng-footer__place">{t('nav.footerPlace')}</span>
         </div>
       </div>
     </footer>

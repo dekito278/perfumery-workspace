@@ -537,31 +537,6 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
   cursor: pointer;
 }
 
-.ng-region {
-  display: inline-flex;
-  align-items: center;
-}
-
-.ng-region button {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 6px;
-  border: 0;
-  background: transparent;
-  color: var(--ng-bone);
-  opacity: 0.6;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: inherit;
-}
-
-.ng-region button[aria-pressed="true"] {
-  opacity: 1;
-  text-decoration: underline;
-  text-decoration-color: var(--ng-ember);
-  text-underline-offset: 6px;
-}
-
 .ng-menu {
   position: absolute;
   top: 100%;
@@ -614,12 +589,6 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
 
 .ng-menu__column a:hover {
   color: #fff;
-}
-
-/* The menu's links start at the column's edge; the two 44px buttons centred their letters 14px in. */
-.ng-menu .ng-region button {
-  padding: 0;
-  text-align: left;
 }
 
 .price-change-notice {
@@ -676,8 +645,7 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
   }
 
   .ng-header > .ng-header__nav,
-  .ng-header__account,
-  .ng-header .ng-region {
+  .ng-header__account {
     display: none;
   }
 
@@ -688,10 +656,6 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
   .ng-header__wordmark {
     font-size: 18px;
     letter-spacing: 0.22em;
-  }
-
-  .ng-menu .ng-region {
-    display: inline-flex;
   }
 }
 
@@ -825,12 +789,6 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-}
-
-/* The last letter ends on the content edge, as the line above it does. */
-.ng-footer__place .ng-region button:last-child {
-  padding-right: 0;
-  text-align: right;
 }
 
 @media (prefers-reduced-motion: reduce) {

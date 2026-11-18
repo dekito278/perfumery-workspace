@@ -491,9 +491,12 @@ for (const key of ['export.priceLine', 'export.notIncluded', 'export.intlCartLin
 {
   const pdp = read('pages', 'PublicProductDetailPage.jsx');
   assert.match(pdp, /\) : isInternational \? \(\s*<OverseasInquiryButton/, 'the dollar enquiry belongs to the English shop only');
-  assert.match(pdp, /<a href=\{`\/en\/catalog\/\$\{product\.slug\}`\}[^>]*>\{t\('pdp\.seeIntlVersion'\)\}<\/a>/,
-    'the Indonesian page points to the international version of the same perfume, with no figure');
-  for (const language of ['id', 'en']) assert.doesNotMatch(MESSAGES[language]['pdp.shipAbroad'] + MESSAGES[language]['pdp.seeIntlVersion'], /\d|US\$|Rp/);
+  // Since 18 Nov 2026 the way abroad from the Indonesian page is WhatsApp, not the English page: the
+  // visitor's country picks the shop (middleware.js), and a link from Indonesia to /en comes straight back.
+  assert.match(pdp, /<AbroadAskLink labelKey="pdp\.askAbroad" draftKey="pdp\.abroadDraft"/,
+    'the Indonesian page offers a way to send abroad, with no figure');
+  assert.doesNotMatch(pdp, /href=\{`\/en\//, 'and no link into the English shop');
+  for (const language of ['id', 'en']) assert.doesNotMatch(MESSAGES[language]['pdp.shipAbroad'] + MESSAGES[language]['pdp.askAbroad'], /\d|US\$|Rp/);
 }
 
 // THE SAME PROMISE, EVERYWHERE, NOT JUST IN THE KEY THIS SECTION WAS WRITTEN AROUND.
