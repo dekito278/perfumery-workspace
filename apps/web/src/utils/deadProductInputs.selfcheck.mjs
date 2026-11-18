@@ -63,7 +63,8 @@ for (const page of [['pages', 'PublicProductDetailPage.jsx']]) {
   // The sentence around it is translated now, so the literal "Intensitas" moved into the message file.
   // What still has to hold is that the page RENDERS the field: carrying it through the mapper alone
   // renders nothing, which is the bug this assertion was written for.
-  assert.match(read(...page), /product\.intensity \? <(span|li)>\{t\('pdp\.intensity', \{ level: product\.intensity/,
+  // (Not on a discovery set since 18 Nov 2026 — there it is the catalogue default, not a fact.)
+  assert.match(read(...page), /product\.intensity( && !isDiscoverySet\(product\))? \? <(span|li)>\{t\('pdp\.intensity', \{ level: product\.intensity/,
     `${page.join('/')} must show intensity — carrying it through the mapper alone still renders nothing`);
 }
 assert.match(MESSAGES.id['pdp.intensity'], /Intensitas/, 'and the Indonesian wording is still the one Dekito wrote');

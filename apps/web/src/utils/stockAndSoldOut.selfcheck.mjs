@@ -29,7 +29,8 @@ for (const page of ['CartPage.jsx', 'InternationalCartPage.jsx']) {
 }
 
 const pdp = read('pages', 'PublicProductDetailPage.jsx');
-assert.match(pdp, /\{soldOut \? null : <FreeVialNote/, 'no gift offer beside a sold-out bottle');
+// (Nor beside a discovery set since 18 Nov 2026: a set earns no vial.)
+assert.match(pdp, /\{soldOut( \|\| isDiscoverySet\(product\))? \? null : <FreeVialNote/, 'no gift offer beside a sold-out bottle');
 assert.match(pdp, /\{soldOut \? \(\s*<AskAtelierButton labelKey="pdp\.restockAsk" draftKey="pdp\.restockDraft"/, 'a way to hear it is back instead of the overseas enquiry');
 assert.match(pdp, /\{exportPrice && !soldOut \? \(\s*<InternationalShippingQuote/, 'and no shipping quote for it');
 for (const language of ['id', 'en']) {

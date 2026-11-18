@@ -38,6 +38,7 @@
 // and the build runs in plain node with no bundler.
 
 import { itemWeightGram } from './itemWeight.js';
+import { isDiscoverySet } from './discoverySet.js';
 
 /** The tag that marks the vial product. Written on the product in Studio, like every other tag. */
 export const FREE_VIAL_TAG = 'Vial hadiah';
@@ -184,8 +185,9 @@ export const splitFreeVialLines = (items = []) => {
 };
 
 /** Bottles bought in these lines: what the vial allowance is counted from. */
+// A discovery set is not a bottle and earns no vial (Dekito's set sheet, 18 Nov 2026).
 export const bottleCount = (lines = []) => (Array.isArray(lines) ? lines : [])
-  .filter((line) => !isFreeVialLine(line))
+  .filter((line) => !isFreeVialLine(line) && !isDiscoverySet(line))
   .reduce((sum, line) => sum + Math.max(0, Math.round(Number(line?.quantity) || 0)), 0);
 
 /** The variant ids of the chosen vials. */

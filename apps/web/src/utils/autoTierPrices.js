@@ -21,6 +21,7 @@ import {
   overseasPriceFromRetail,
 } from './memberPriceFill.js';
 import { isFreeVialProduct } from './freeVial.js';
+import { isDiscoverySet } from './discoverySet.js';
 
 export const AUTO_TIER_RULES = [
   { tier: 'member', compute: (retail) => memberPriceFromRetail(retail, DEFAULT_MEMBER_DISCOUNT_PERCENT) },
@@ -66,6 +67,8 @@ export const planAutoTierPrices = ({ product, previousProduct = null, savedRows 
   // A gift has no member price and no export price. The vial rows are stock, not a sale — pricing them
   // would put "MEMBER Rp 0" beside a thing nobody pays for, and write two tier rows per aroma for it.
   if (isFreeVialProduct(product)) return { writes: [], kept: [] };
+  // A discovery set keeps exactly the price Dekito set (his set sheet, 18 Nov 2026): no member, no export.
+  if (isDiscoverySet(product)) return { writes: [], kept: [] };
   const nextRetail = retailByVariant(product);
   const previousRetail = previousProduct ? retailByVariant(previousProduct) : {};
   const saved = savedTierIndex(savedRows);

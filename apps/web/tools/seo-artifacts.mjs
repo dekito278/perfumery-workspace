@@ -5,6 +5,7 @@
 import { normalizeSiteFacts } from '../src/data/siteFacts.js';
 import fs from 'node:fs';
 import { isFreeVialProduct } from '../src/utils/freeVial.js';
+import { isDiscoverySet } from '../src/utils/discoverySet.js';
 import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
 import { PRODUCT_HERO_SIZES, PRODUCT_HERO_WIDTH, getOptimizedProductImageUrl, getProductImageSrcSet } from '../src/utils/productImageSrcSet.js';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, brandedTitle, metaSnippet as snippet, productMetaDescription, stripTrailingBrand } from '../src/utils/seo.js';
@@ -383,6 +384,8 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
 
     for (const lang of ['id', 'en']) {
       const english = lang === 'en';
+      // Sold in the Indonesian shop only (utils/discoverySet.js): no English page is written for a set.
+      if (english && isDiscoverySet(product)) continue;
       const canonical = abs(siteUrl, english ? `${EN_PREFIX}${route}` : route);
       const title = `${product.name} - ${BRAND}`;
       // The live page falls back to the Indonesian description where there is no English one; so does this.
@@ -556,9 +559,12 @@ export const writeSitemap = (distRoot, siteUrl, { products = [], journal = [] } 
   const twinned = STATIC_PUBLIC_ROUTES.filter((route) => route !== '/journal');
   const pairs = [
     ...twinned.map((route) => ({ route, lastmod: '' })),
-    ...products.map((p) => ({ route: `/catalog/${p.slug}`, lastmod: p.updatedAt })),
+    ...products.filter((p) => !isDiscoverySet(p)).map((p) => ({ route: `/catalog/${p.slug}`, lastmod: p.updatedAt })),
   ];
+  // Discovery sets are sold in the Indonesian shop only (utils/discoverySet.js): listed once, no English twin.
+  const domesticOnly = products.filter((p) => isDiscoverySet(p)).map((p) => urlEntry(abs(siteUrl, `/catalog/${p.slug}`), p.updatedAt));
   const entries = [
+    ...domesticOnly,
     ...pairs.flatMap(({ route, lastmod }) => {
       const alternates = sitemapAlternates(siteUrl, route);
       return [

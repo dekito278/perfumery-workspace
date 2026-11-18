@@ -24,10 +24,13 @@ export const getScarcityCount = (stock) => {
  *
  * @param translate (key, vars) => string, from useTranslate
  */
-export const getScarcityLabel = (stock, translate) => {
+// `unit: 'set'` for a discovery set, which is not a bottle (18 Nov 2026).
+export const getScarcityLabel = (stock, translate, { unit = 'bottle' } = {}) => {
   const count = getScarcityCount(stock);
   if (!count) return '';
   if (typeof translate !== 'function') return '';
+  // Literal keys, so the message-file checks can see every one in use.
+  if (unit === 'set') return count === 1 ? translate('stock.set.one') : translate('stock.set.many', { count });
   return count === 1 ? translate('stock.one') : translate('stock.many', { count });
 };
 

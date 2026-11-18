@@ -138,6 +138,8 @@ export const MESSAGES = {
 
     'stock.one': 'Tersisa 1 botol',
     'stock.many': 'Tersisa {count} botol',
+    'stock.set.one': 'Tersisa 1 set',
+    'stock.set.many': 'Tersisa {count} set',
 
     'export.ask': 'Kirim ke luar negeri? Tanya di WhatsApp',
     // The WhatsApp draft. It leaves the page, so it is the one piece of copy a buyer keeps after they
@@ -1011,7 +1013,7 @@ export const MESSAGES = {
     'pdp.ngPyramidHeadingEm': "sampai jejak terakhir.",
     'pdp.ngDetails': 'Detail',
     "answers.shippingQ": "Ongkirnya berapa?",
-    "answers.shippingA": "Dihitung di halaman checkout, setelah kamu pilih kurir dan isi alamat — jadi angkanya sesuai tujuanmu, bukan tarif rata. Untuk kirim ke luar negeri, pakai toko berbahasa Inggris — ongkir DHL ke negaramu langsung muncul di keranjangnya — atau tanya dulu di WhatsApp.",
+    "answers.shippingA": "Dihitung di halaman checkout, setelah kamu pilih kurir dan isi alamat — jadi angkanya sesuai tujuanmu, bukan tarif rata. Untuk kirim ke luar negeri, tanya dulu di WhatsApp — harga dan ongkirnya beda.",
     "answers.paymentQ": "Bayarnya gimana?",
     "answers.paymentA": "Dua cara: transfer manual ke rekening kami lalu upload bukti transfernya di halaman pembayaran, atau bayar lewat panel DOKU. Pesanan mulai kami proses setelah pembayaran masuk.",
     "answers.paymentATransferOnly": "Transfer manual ke rekening kami, lalu upload bukti transfernya di halaman pembayaran. Pesanan mulai kami proses setelah bukti itu kami cek.",
@@ -1323,6 +1325,8 @@ export const MESSAGES = {
 
     'stock.one': '1 bottle left',
     'stock.many': '{count} bottles left',
+    'stock.set.one': '1 set left',
+    'stock.set.many': '{count} sets left',
 
     'export.ask': 'A question first? Ask on WhatsApp',
     'export.waDraft': 'Hello SOLIVAGANT, I would like to ask about sending {item} to my country.{line}\nCould you let me know the final total and how long it takes to arrive?\nI understand this enquiry does not reserve a bottle.',
