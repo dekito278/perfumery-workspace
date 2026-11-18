@@ -48,7 +48,7 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
   const price = fromCart ? quote.goodsUsd : ownPrice;
   const {
     country, bottles, setCountry, setBottles,
-    goodsUsd, shippingUsd, shippingSupportUsd, totalUsd, onRequest, bottleSizeLabel, eta,
+    goodsUsd, shippingUsd, shippingSupportUsd, totalUsd, onRequest, bottleSizeLabel, eta, nextShippingUsd,
   } = fromCart ? { ...quote, setBottles: null, bottleSizeLabel: `${SHIPPING_RATE_BOTTLE_SIZE_ML} ml` } : own;
   // A STABLE id for the country picker, not a useId one: the order buttons on this page send a buyer who
   // has not chosen yet to this control, and they find it by id.
@@ -168,6 +168,19 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
         <p className="mt-1 text-xs font-semibold leading-relaxed text-ng-bone">
           {t('intlQuote.eta', { eta })}
         </p>
+      ) : null}
+      {/* Foreign-buyer audit, 18 Nov 2026: one bottle to Europe paid more shipping than perfume, and the
+          cheaper second bottle was a line on the Help page. Said here, where the total is decided. */}
+      {totalUsd && nextShippingUsd !== null && nextShippingUsd !== undefined ? (
+        <p className="mt-2 border-l-2 border-ng-ember pl-3 text-xs font-semibold leading-relaxed text-ng-bone">
+          {nextShippingUsd < shippingUsd
+            ? t('intlQuote.nextCheaper', { from: shippingUsd, to: nextShippingUsd })
+            : t('intlQuote.nextSame')}
+        </p>
+      ) : null}
+      {/* Paying a stranger abroad by transfer feels like a risk; say when money moves (same audit). */}
+      {totalUsd ? (
+        <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">{t('intlQuote.payAfter')}</p>
       ) : null}
 
       {/* The card's own footnotes, kept with the numbers they qualify — a total that hides the duties is

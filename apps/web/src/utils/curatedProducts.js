@@ -24,3 +24,23 @@ export const pickCuratedProducts = (catalog = [], limit = CURATED_LIMIT_DESKTOP)
 export const hasCuration = (catalog = []) => (
   Array.isArray(catalog) && catalog.some((product) => product?.featured === true)
 );
+
+/**
+ * The English shop's home order (18 Nov 2026, from the foreign-buyer audit): what can be bought first, then
+ * the gentlest price first. A visitor abroad met the US$160 bottle as the featured one before any US$80
+ * one, and judged the whole shop by it. Dekito's curation is kept — it is the same set of perfumes, only
+ * reordered — and ties keep his order. `priceOf(product)` is the export price in any unit, or 0 when unset.
+ */
+export const orderForAbroad = (products = [], priceOf = () => 0) => (
+  (Array.isArray(products) ? products : [])
+    .map((product, position) => {
+      const variants = Array.isArray(product?.variants) ? product.variants : [];
+      const stock = variants.length
+        ? variants.reduce((sum, variant) => sum + Math.max(0, Number(variant?.stock) || 0), 0)
+        : Math.max(0, Number(product?.stock) || 0);
+      const price = Number(priceOf(product)) || 0;
+      return { product, position, soldOut: !(stock > 0), price: price > 0 ? price : Infinity };
+    })
+    .sort((a, b) => Number(a.soldOut) - Number(b.soldOut) || a.price - b.price || a.position - b.position)
+    .map((entry) => entry.product)
+);
