@@ -15,7 +15,11 @@ import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { shortNoteList } from '@/utils/shortNoteList.js';
-import { CURATED_LIMIT_DESKTOP, pickCuratedProducts } from '@/utils/curatedProducts.js';
+import { CURATED_LIMIT_DESKTOP, orderForAbroad, pickCuratedProducts } from '@/utils/curatedProducts.js';
+import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
+import { tierPricesForLine } from '@/utils/tierPrice.js';
+import { internationalPriceFor } from '@/utils/shippingRegion.js';
+import { getPrimaryVariant } from '@/services/productCatalogService.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { PHONE_HERO_WIDTHS } from '@/utils/siteImageMap.js';
@@ -75,7 +79,20 @@ const HomePage = () => {
     [catalogProducts]
   );
   const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
-  const collectionProducts = useMemo(() => pickCuratedProducts(publicCatalog, CURATED_LIMIT_DESKTOP), [publicCatalog]);
+  const { index: tierIndex } = useTierPrices();
+  // Abroad: in stock first, then the gentlest export price first (foreign-buyer audit, 18 Nov 2026). The
+  // same curated perfumes; only the order changes, and only in the English shop.
+  const collectionProducts = useMemo(() => {
+    const curated = pickCuratedProducts(publicCatalog, CURATED_LIMIT_DESKTOP);
+    if (!isInternational) return curated;
+    return orderForAbroad(curated, (product) => {
+      const variant = getPrimaryVariant(Array.isArray(product?.variants) ? product.variants : []);
+      return internationalPriceFor({
+        tierPrices: tierPricesForLine(tierIndex, product.slug, variant?.id || ''),
+        linePrice: Number(variant?.retailPriceNumber ?? variant?.priceNumber ?? product?.retailPriceNumber ?? product?.priceNumber ?? 0),
+      });
+    });
+  }, [publicCatalog, isInternational, tierIndex]);
   const { currentUser } = useAuth();
   const featured = collectionProducts[0] || null;
   const featuredName = featured ? splitScriptName(featured.name) : null;
@@ -275,7 +292,9 @@ const HomePage = () => {
           </section>
 
           {/* ── Material notes from the journal ── */}
-          {publishedArticles.length ? (
+          {/* Not in the English shop (foreign-buyer audit, 18 Nov 2026): three Indonesian notes on the English
+              home told a visitor abroad the site was not written for them. The journal stays in the menu. */}
+          {publishedArticles.length && !isInternational ? (
             <section className="ng-section ng-section--deep" aria-labelledby="home-spec-title" data-reveal>
               <div className="ng-container flex flex-col gap-14">
                 <div className="grid items-end gap-6 md:grid-cols-2 md:gap-12">

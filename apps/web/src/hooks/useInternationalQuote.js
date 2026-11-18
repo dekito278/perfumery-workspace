@@ -74,6 +74,13 @@ export const internationalQuoteFor = ({
   const shippingSupportUsd = quote?.supportUsd ?? null;
   const transitDays = quote?.transitDays ?? null;
   const totalUsd = goodsUsd && shippingUsd ? goodsUsd + shippingUsd : null;
+  // What ONE MORE bottle would do to the shipping (foreign-buyer audit, 18 Nov 2026): two bottles share
+  // the one 1 kg DHL box and earn the larger support, so the second bottle often ships cheaper or free —
+  // which the buyer only learned from a line on the Help page. Null when it would not help; past the cap
+  // the quote itself has no price, so that is null too.
+  const nextShippingUsd = shippingUsd
+    ? (quoteInternationalShippingPrice({ countryCode: country, bottles: bottles + 1, policy })?.usd ?? null)
+    : null;
 
   // Which "no number" this is, most specific first. A size the rule was not written for is not the
   // buyer's fault and not their country's either, so it outranks both.
@@ -118,6 +125,7 @@ export const internationalQuoteFor = ({
   return {
     country, bottles, destination, transitDays, eta,
     goodsUsd, shippingUsd, shippingCostUsd, shippingSupportUsd, totalUsd, onRequest,
+    nextShippingUsd: nextShippingUsd !== null && nextShippingUsd <= shippingUsd ? nextShippingUsd : null,
     settled: Boolean(totalUsd), draftVars, needsDestination,
   };
 };
