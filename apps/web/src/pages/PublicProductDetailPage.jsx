@@ -3,6 +3,7 @@ import { quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
+import { isDiscoverySet } from '@/utils/discoverySet.js';
 import AbroadAskLink from '@/components/storefront/AbroadAskLink.jsx';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
@@ -165,7 +166,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   // don't expose exact inventory. Fall back to the product-level publicStatus when there are no variants.
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
   const soldOut = !selectedAvailable;
-  const scarcity = soldOut ? '' : getScarcityLabel(selectedVariant?.stock, t);
+  const scarcity = soldOut ? '' : getScarcityLabel(selectedVariant?.stock, t, { unit: isDiscoverySet(product) ? 'set' : 'bottle' });
   // "Batch 03 · 40 botol" beside the stock line, only when Studio holds it (brief P2-6).
   const batch = batchParts(product);
   const batchLine = [batch.name, batch.size ? t('pdp.batchSize', { count: batch.size }) : ''].filter(Boolean).join(' · ');
@@ -379,7 +380,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                     {/* Sold out: no gift offer, no shipping quote, no overseas enquiry for a bottle that cannot be
                         bought — and a way to hear when it is back instead (visitor audit, 13 Nov 2026: Sudra offered
                         a free vial and a "US$95 to my country?" draft beside a disabled button). */}
-                    {soldOut ? null : <FreeVialNote products={studioProducts} />}
+                    {/* A discovery set is not a bottle and earns no vial (18 Nov 2026). */}
+                    {soldOut || isDiscoverySet(product) ? null : <FreeVialNote products={studioProducts} />}
                     <button ref={addBtnRef} type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => handleAddToCart()} disabled={soldOut}>
                       {soldOut ? (
                         <>{t('pdp.soldOut')}</>
@@ -439,8 +441,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 <ul className="ng-tags">
                   {/* Typed in Indonesian in Studio, with no English field: the English shop shows none rather than "TENANG". */}
                   {isPlaceholderMood(product.mood) || isInternational ? null : <li>{product.mood}</li>}
-                  {product.concentration ? <li>{product.concentration}</li> : null}
-                  {product.intensity ? <li>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</li> : null}
+                  {/* Not on a discovery set: these are the catalogue's defaults there, not facts about the set. */}
+                  {product.concentration && !isDiscoverySet(product) ? <li>{product.concentration}</li> : null}
+                  {product.intensity && !isDiscoverySet(product) ? <li>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</li> : null}
                   {(product.sizeVariants || []).length ? <li>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</li> : null}
                   {/* Shown only once the atelier has stated it. A fragrance database records a launch year
                       for everything it lists, and an absent year is answered honestly rather than guessed —

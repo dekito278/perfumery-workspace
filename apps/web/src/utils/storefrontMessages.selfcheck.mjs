@@ -580,7 +580,8 @@ for (const file of [['pages', 'BespokePage.jsx']]) {
 // The scarcity line takes the translator and has NO default. A default would print Indonesian into the
 // English shop and nothing would say so.
 const scarcity = read('utils', 'stockScarcity.js');
-assert.match(scarcity, /export const getScarcityLabel = \(stock, translate\) =>/, 'the translator is required');
+// (The third argument, the unit, came on 18 Nov 2026 for discovery sets; the translator still has no default.)
+assert.match(scarcity, /export const getScarcityLabel = \(stock, translate(, \{ unit = 'bottle' \} = \{\})?\) =>/, 'the translator is required');
 assert.match(scarcity, /if \(typeof translate !== 'function'\) return '';/, 'and silence without it');
 
 // A label paired with a runtime value is copy, and it hides from every check above: `['Aroma', item?.notes]`

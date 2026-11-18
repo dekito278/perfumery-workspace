@@ -24,6 +24,7 @@ import {
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
+import { isDiscoverySet } from '../../src/utils/discoverySet.js';
 import { FREE_VIAL_LINE_QUANTITY, FREE_VIAL_PRICE_LABEL, FREE_VIAL_TAG, freeVialProblem, isFreeVialProduct, weighFreeVialLines } from '../../src/utils/freeVial.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
@@ -302,7 +303,8 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
     if (isVial) {
       vialVariantIds.push(String(variant?.id || size || ''));
       unitPrice = 0;
-    } else {
+    } else if (!isDiscoverySet(product)) {
+      // A discovery set is not a bottle and earns no vial (18 Nov 2026).
       bottles += qty;
     }
     const lineQuantity = isVial ? FREE_VIAL_LINE_QUANTITY : qty;

@@ -13,6 +13,7 @@ import { deleteProductImages } from '@/services/productImageStorageService.js';
 import { toLaunchYear } from '@/utils/launchYear.js';
 import { batchParts, normalizeProcessImages } from '@/utils/processImages.js';
 import { planBatchRestock } from '@/utils/batchRestock.js';
+import { shownInThisShop } from '@/utils/discoverySet.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
@@ -97,8 +98,9 @@ export const isProductDraft = (product = {}) => (
 // The vial rows carry stock for a gift, not something to sell. They have to be READABLE by an anonymous
 // browser — that is how the cart knows which aromas are still available — so they sit in the public view
 // like everything else, and are kept out of the listings here instead. One helper, eleven pages.
+// Discovery sets stay out of the English shop's listings (utils/discoverySet.js, 18 Nov 2026).
 export const isProductVisibleInStorefront = (product = {}) => (
-  !isProductDraft(product) && !isFreeVialProduct(product)
+  !isProductDraft(product) && !isFreeVialProduct(product) && shownInThisShop(product)
 );
 
 export const getProductPublishChecklist = (product = {}) => {

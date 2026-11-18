@@ -37,6 +37,8 @@ const lift = (pattern, what) => {
 };
 const visibility = await import(`data:text/javascript;base64,${Buffer.from([
   "import { isFreeVialProduct } from 'file://" + join(root, 'utils', 'freeVial.js') + "';",
+  // Discovery sets leave the English listings through the same helper (18 Nov 2026).
+  "import { shownInThisShop } from 'file://" + join(root, 'utils', 'discoverySet.js') + "';",
   lift(/const PRODUCT_DRAFT_TAG = '[^']*';/, 'the draft tag'),
   lift(/const splitList = [\s\S]*?\n\};/, 'splitList'),
   lift(/export const isProductDraft = [\s\S]*?\n\);/, 'isProductDraft'),
@@ -176,7 +178,8 @@ assert.match(endpoint, /if \(isVial\) \{[\s\S]{0,200}?unitPrice = 0;/,
   'the gift costs nothing whatever the variant says');
 assert.match(endpoint, /const vialProblem = bottles > 0 \? freeVialProblem\(\{ bottles, variantIds: vialVariantIds \}\) : '';\s*if \(vialProblem\) throw new Error\(vialProblem\);/,
   'more vials than the bottles earned, or one scent twice, must be refused, not quietly honoured');
-assert.match(endpoint, /\} else \{\s*bottles \+= qty;\s*\}/, 'the bottles are counted from the priced lines, never from the client');
+// (A discovery set is skipped there since 18 Nov 2026: it is not a bottle — discoverySet.selfcheck.mjs.)
+assert.match(endpoint, /\} else if \(!isDiscoverySet\(product\)\) \{[\s\S]{0,120}?bottles \+= qty;\s*\}/, 'the bottles are counted from the priced lines, never from the client');
 assert.match(endpoint, /const lineQuantity = isVial \? FREE_VIAL_LINE_QUANTITY : qty;/,
   'and one line may not carry fifty of them');
 
