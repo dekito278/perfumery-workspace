@@ -1,4 +1,12 @@
-// One free 2 ml vial per order, chosen by the buyer in the cart.
+// One free 2 ml vial PER BOTTLE, at most three per order, each a different aroma (Dekito, 18 Nov 2026).
+//
+// That replaces the rule below of one per order. He asked for it plainly: a buyer who puts two bottles in
+// the cart picks two vials — offered at add-to-cart, and in the cart for anyone who skipped. The cap of
+// three and "every vial a different scent" are his answers to the two questions it raised: a buyer of ten
+// bottles would otherwise empty the vial stock, and three vials of one scent teach the buyer nothing new.
+//
+// The September reasoning is kept because most of it still holds (one pool, stock per aroma, the vial as
+// a product); only the count changed.
 //
 // Dekito's decisions, 2026-09-29: ONE vial per order rather than per bottle; stock counted per aroma so a
 // scent the shop has run out of stops being offered; and ONE pool — every aroma, no tiers. The tiered version
@@ -34,8 +42,16 @@ import { itemWeightGram } from './itemWeight.js';
 /** The tag that marks the vial product. Written on the product in Studio, like every other tag. */
 export const FREE_VIAL_TAG = 'Vial hadiah';
 
-/** How many a buyer gets. One, per ORDER — not per bottle. */
-export const FREE_VIALS_PER_ORDER = 1;
+/** The most vials one order can carry, whatever it buys (Dekito, 18 Nov 2026). */
+export const FREE_VIALS_MAX_PER_ORDER = 3;
+
+/** Each vial is its own line of one: two vials are two aromas, never one aroma twice. */
+export const FREE_VIAL_LINE_QUANTITY = 1;
+
+/** How many vials `bottles` bought bottles earn: one each, up to the cap. */
+export const freeVialAllowance = (bottles = 0) => (
+  Math.max(0, Math.min(FREE_VIALS_MAX_PER_ORDER, Math.floor(Number(bottles) || 0)))
+);
 
 /**
  * What a gift line says where every other line says a price.
@@ -121,8 +137,10 @@ const nameKey = (value) => String(value ?? '')
 const ownedKeys = (bought = []) => new Set((Array.isArray(bought) ? bought : []).map(nameKey).filter(Boolean));
 const labelIsOwned = (label, owned) => owned.has(nameKey(label)) || owned.has(nameKey(String(label).split(/\s+[^\x00-\x7F]/)[0]));
 
-export const freeVialChoices = (vialProduct = {}, bought = []) => {
+// `taken`: aromas already chosen for the other vials of this order — each vial is a different scent.
+export const freeVialChoices = (vialProduct = {}, bought = [], taken = []) => {
   const owned = ownedKeys(bought);
+  const takenIds = new Set((Array.isArray(taken) ? taken : []).map((id) => String(id || '')).filter(Boolean));
   return (Array.isArray(vialProduct?.variants) ? vialProduct.variants : [])
     .map((variant) => ({
       variantId: String(variant?.id || ''),
@@ -130,7 +148,8 @@ export const freeVialChoices = (vialProduct = {}, bought = []) => {
       stock: Math.max(0, Math.round(Number(variant?.stock) || 0)),
     }))
     .filter((choice) => choice.variantId && choice.label && choice.stock > 0)
-    .filter((choice) => !labelIsOwned(choice.label, owned));
+    .filter((choice) => !labelIsOwned(choice.label, owned))
+    .filter((choice) => !takenIds.has(choice.variantId));
 };
 
 /**
@@ -158,8 +177,30 @@ export const boughtNames = (items = []) => splitFreeVialLines(items).lines.map((
  */
 export const splitFreeVialLines = (items = []) => {
   const list = Array.isArray(items) ? items : [];
-  const gift = list.find(isFreeVialLine) || null;
-  return { lines: list.filter((item) => !isFreeVialLine(item)), gift };
+  const gifts = list.filter(isFreeVialLine);
+  const lines = list.filter((item) => !isFreeVialLine(item));
+  // `gift` is the first one, for the screens that only need to know whether there is any.
+  return { lines, gifts, gift: gifts[0] || null, bottles: bottleCount(lines) };
+};
+
+/** Bottles bought in these lines: what the vial allowance is counted from. */
+export const bottleCount = (lines = []) => (Array.isArray(lines) ? lines : [])
+  .filter((line) => !isFreeVialLine(line))
+  .reduce((sum, line) => sum + Math.max(0, Math.round(Number(line?.quantity) || 0)), 0);
+
+/** The variant ids of the chosen vials. */
+export const giftVariantIds = (gifts = []) => (Array.isArray(gifts) ? gifts : []).map((gift) => String(gift?.variantId || ''));
+
+/**
+ * Is this set of vials one an order may carry? '' when it is, else the reason — the same words on the
+ * server, which is where it counts: a cart is only a suggestion.
+ */
+export const freeVialProblem = ({ bottles = 0, variantIds = [] } = {}) => {
+  const ids = (Array.isArray(variantIds) ? variantIds : []).map((id) => String(id || ''));
+  const allowance = freeVialAllowance(bottles);
+  if (ids.length > allowance) return `Pesanan dengan ${bottles} botol dapat paling banyak ${allowance} vial hadiah`;
+  if (new Set(ids).size !== ids.length) return 'Setiap vial hadiah harus aroma yang berbeda';
+  return '';
 };
 
 /**
@@ -185,7 +226,7 @@ export const buildFreeVialCartItem = ({ vialProduct = {}, choice = {} } = {}) =>
   tags: [FREE_VIAL_TAG],
   priceNumber: 0,
   price: FREE_VIAL_PRICE_LABEL,
-  quantity: FREE_VIALS_PER_ORDER,
+  quantity: FREE_VIAL_LINE_QUANTITY,
   maxStock: choice.stock,
 });
 
@@ -207,10 +248,21 @@ export const buildFreeVialCartItem = ({ vialProduct = {}, choice = {} } = {}) =>
  * Applied where the cart is READ, which is the one place both halves of the problem meet: no writer can
  * create the state, and a browser already holding one is healed the moment anything reads the cart.
  */
+//
+// Since 18 Nov 2026 the same read also fits the vials to the bottles: one per bottle, at most three, each a
+// different scent. Take a bottle out and the last vial goes with it; nothing else in the shop has to know.
 export const dropOrphanedGift = (lines = []) => {
   const list = Array.isArray(lines) ? lines : [];
-  if (list.some((line) => !isFreeVialLine(line))) return list;
-  return list.filter((line) => !isFreeVialLine(line));
+  let left = freeVialAllowance(bottleCount(list));
+  const seen = new Set();
+  return list.filter((line) => {
+    if (!isFreeVialLine(line)) return true;
+    const id = String(line?.variantId || line?.slug || '');
+    if (left <= 0 || seen.has(id)) return false;
+    seen.add(id);
+    left -= 1;
+    return true;
+  });
 };
 
 /**
@@ -221,9 +273,8 @@ export const dropOrphanedGift = (lines = []) => {
  * worth keeping: add-to-cart is the highest-friction moment in the shop. So the answer here is "no"
  * wherever asking would cost more than the gift is worth.
  *
- *   - once an aroma is chosen, never again. The rule is one vial per ORDER, not per bottle; asking on
- *     the second bottle would be asking about a gift the buyer already has, and turns a thank-you into a
- *     toll on every tap.
+ *   - once every vial the bottles earned is chosen, never again. (Until 18 Nov 2026 that was "once one
+ *     aroma is chosen": one vial per order. The rule is now one per bottle, up to three.)
  *   - the shop is no longer part of it: both have a cart since 2026-10-06, and the parameter that
  *     carried the old rule was removed rather than left to be ignored.
  *   - never when there is nothing to offer: no vial product, or every aroma out of stock.
@@ -231,11 +282,15 @@ export const dropOrphanedGift = (lines = []) => {
  * A pure rule rather than a condition inside the component, so it can be RUN — the component is the one
  * part of this a guard cannot mount.
  */
-export const shouldOfferFreeVial = ({ opened = false, vialProduct = null, gift = null, bought = [] } = {}) => (
-  Boolean(opened)
-  && !gift
-  && freeVialChoices(vialProduct, bought).length > 0
-);
+//
+// Since 18 Nov 2026 (one per bottle): it opens while the bottles have earned a vial not yet chosen, and
+// offers only the scents not already chosen. `gift` alone (the old one-vial form) still reads as one vial.
+export const shouldOfferFreeVial = ({ opened = false, vialProduct = null, gift = null, gifts = null, bought = [], bottles = 1 } = {}) => {
+  const chosen = Array.isArray(gifts) ? gifts : (gift ? [gift] : []);
+  return Boolean(opened)
+    && chosen.length < freeVialAllowance(bottles)
+    && freeVialChoices(vialProduct, bought, giftVariantIds(chosen)).length > 0;
+};
 
 /**
  * A gift the shop can no longer hand over stops being in the cart at all.

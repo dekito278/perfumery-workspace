@@ -51,6 +51,7 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'price.memberIs',   // "Member Rp 675.000" — "member" is the loanword in both
   'nav.bespokeShort', // "Bespoke" is the word used in both, and the tab has room for one
   'nav.info',         // same word, same meaning
+  'cart.giftSlot',    // "Vial 2" — the word is the same in both and the number is the point (18 Nov 2026)
   'pay.link.wuTitle',   // "Western Union" is the company's name, not a description of it
   'pay.link.wireTitle', // "Wire USD (SWIFT)" — SWIFT is the network's name and "wire" is the word the
                         // bank form itself prints, in both languages

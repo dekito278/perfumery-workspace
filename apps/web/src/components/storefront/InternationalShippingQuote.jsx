@@ -127,12 +127,13 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
         {/* The gift the buyer chose, in the box that sums the order (ninth visitor audit, 13 Nov 2026: the
             English summary never mentioned it, so a chosen vial looked forgotten until the parcel came).
             The aroma, not the product name — the gift is one product with a variant per scent. */}
-        {quote?.gift ? (
-          <div className="flex items-baseline justify-between gap-3">
-            <dt className="text-ng-dust">{t('intlQuote.giftLine', { name: quote.gift.size || quote.gift.name })}</dt>
+        {/* One row per vial since 18 Nov 2026 (one per bottle, up to three). */}
+        {(quote?.gifts || (quote?.gift ? [quote.gift] : [])).map((one) => (
+          <div key={one.variantId || one.size} className="flex items-baseline justify-between gap-3">
+            <dt className="text-ng-dust">{t('intlQuote.giftLine', { name: one.size || one.name })}</dt>
             <dd className="font-semibold text-ng-bone">{t('cart.giftFree')}</dd>
           </div>
-        ) : null}
+        ))}
         <div className="flex items-baseline justify-between gap-3">
           <dt className="text-ng-dust">{t('intlQuote.shippingLine')}</dt>
           <dd className="font-semibold text-ng-bone">

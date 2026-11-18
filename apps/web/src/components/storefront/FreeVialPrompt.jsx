@@ -7,7 +7,7 @@ import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CART_ITEM_ADDED_EVENT } from '@/services/cartService.js';
-import { boughtNames, isFreeVialProduct, shouldOfferFreeVial, splitFreeVialLines } from '@/utils/freeVial.js';
+import { boughtNames, giftVariantIds, isFreeVialProduct, shouldOfferFreeVial, splitFreeVialLines } from '@/utils/freeVial.js';
 
 // Once "Nanti saja" (or the X, or the backdrop) has been said, later adds in the same visit stay silent:
 // asking on every bottle turned a thank-you into a toll (visitor audit, 13 Nov 2026). The cart page still
@@ -23,9 +23,11 @@ const rememberDismissed = () => { try { window.sessionStorage.setItem(DISMISSED_
  * one, and the reason it was dropped is worth keeping written down: add-to-cart is the highest-friction
  * moment in the shop. So this is built to cost as little of that moment as possible.
  *
- * It opens ONLY while no aroma has been chosen. The rule is one vial per ORDER, not per bottle — asking
- * again on the second bottle would be asking about a gift the buyer already has, and would turn a
- * thank-you into a toll on every tap. Once an aroma is picked, every later add is silent.
+ * One vial PER BOTTLE since 18 Nov 2026, up to three, each a different scent (Dekito: "masukin keranjang
+ * … langsung muncul pop up … kalau skip, di keranjangnya ada pilihan"). So it opens on an add while the
+ * bottles have earned a vial not yet chosen, and offers only scents not already chosen. Once three are
+ * chosen — or every earned one is — later adds are silent. "Nanti saja" still silences it for the visit;
+ * the cart then offers the rest. (Until that day: one vial per order, and silent after the first pick.)
  *
  * It also never opens when there is nothing to offer: no vial product, or no aroma left in stock.
  *
@@ -45,11 +47,11 @@ const rememberDismissed = () => { try { window.sessionStorage.setItem(DISMISSED_
 const FreeVialPrompt = () => {
   const { t } = useTranslate();
   const catalog = useStorefrontProducts();
-  const { items, setGift } = useCart();
+  const { items, setGifts } = useCart();
   const [open, setOpen] = useState(false);
 
   const vialProduct = catalog.find(isFreeVialProduct);
-  const { gift } = splitFreeVialLines(items);
+  const { gifts, bottles } = splitFreeVialLines(items);
   const bought = boughtNames(items);
   const dismiss = useCallback(() => { rememberDismissed(); setOpen(false); }, []);
 
@@ -66,15 +68,15 @@ const FreeVialPrompt = () => {
   // Closed by picking, not only by the X: the buyer has answered, and leaving the sheet up afterwards
   // makes them dismiss a question they have already dealt with.
   // …and it says what it did: the sheet vanished with no word about the vial (eleventh visitor audit).
+  // One bottle, one vial (18 Nov 2026): a pick ADDS this bottle's vial to the ones already chosen.
   const pick = useCallback((item) => {
-    setGift(item);
-    if (item) {
-      setOpen(false);
-      toast.success(t('cart.giftAdded', { name: item.size }));
-    }
-  }, [setGift, t]);
+    if (!item) return;
+    setGifts([...gifts, item]);
+    setOpen(false);
+    toast.success(t('cart.giftAdded', { name: item.size }));
+  }, [gifts, setGifts, t]);
 
-  const visible = shouldOfferFreeVial({ opened: open, vialProduct, gift, bought });
+  const visible = shouldOfferFreeVial({ opened: open, vialProduct, gifts, bought, bottles });
   const sheetRef = useRef(null);
   // A real modal for a keyboard (visitor audit, 13 Nov 2026: focus stayed on the page behind, Tab walked the
   // hidden page, Escape did nothing). Focus moves in, Tab stays in, Escape declines like the X, and focus
@@ -118,7 +120,7 @@ const FreeVialPrompt = () => {
           <strong>{t('cart.giftTitle')}</strong>
         </p>
         <p className="free-vial__body">{t('cart.giftBody')}</p>
-        <FreeVialChoices vialProduct={vialProduct} gift={gift} onPick={pick} bought={bought} />
+        <FreeVialChoices vialProduct={vialProduct} gift={null} onPick={pick} bought={bought} taken={giftVariantIds(gifts)} />
         <button type="button" className="free-vial__clear" onClick={dismiss}>
           {t('cart.giftLater')}
         </button>

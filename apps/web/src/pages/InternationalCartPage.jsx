@@ -43,7 +43,7 @@ import { useCartLineRemoval } from '@/hooks/useCartLineRemoval.js';
  */
 const InternationalCartPage = () => {
   const { t } = useTranslate();
-  const { items, updateQuantity, removeItem, setGift } = useCart();
+  const { items, updateQuantity, removeItem, setGifts } = useCart();
   const catalog = useStorefrontProducts();
   const quote = useCartInternationalQuote(items);
   const phone = getStorefrontWhatsAppNumber();
@@ -146,7 +146,7 @@ const InternationalCartPage = () => {
                   {/* The gift, in both shops since 2026-10-06. Every word of it comes from the message file, so
                       it reads in English here; the line it writes into the cart carries Dekito's own Indonesian
                       'Gratis' for the packing slip, which the buyer never sees. */}
-                  <FreeVialPicker items={items} products={catalog} onPick={setGift} />
+                  <FreeVialPicker items={items} products={catalog} onPick={setGifts} />
                 </div>
 
                 {/* An empty cart has nothing to sum: the box said Subtotal Rp 0, listed a free vial, and offered the
