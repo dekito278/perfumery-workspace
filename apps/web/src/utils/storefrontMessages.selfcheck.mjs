@@ -368,8 +368,10 @@ for (const file of [
   ['components', 'storefront', 'WearFilter.jsx'],
 ]) {
   // React `key=` props legitimately use the message key as an identity — it is never shown — so they are
-  // removed before the scan. What is left is text the browser would print.
-  const source = read(...file).replace(/\bkey=\{[^}]*\}/g, '');
+  // removed before the scan. So are `labelKey=` props (18 Nov 2026): they hand the KEY to a component that
+  // translates it (MemberAskLink), which is the opposite of printing it. What is left is text the browser
+  // would print.
+  const source = read(...file).replace(/\b(?:key|labelKey)=\{[^}]*\}/g, '');
   // Named suffixes, not "anything ending in Key": `{selectedVariantKey}` is a variant id, not a message
   // key, and a regex broad enough to catch it would cry wolf until someone deletes this check.
   const rendered = source.match(/\{\s*\w+\.(?:label|title|body|cta|name|notes|caption)Key\s*\}/g) || [];

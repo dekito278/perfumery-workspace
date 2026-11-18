@@ -1,4 +1,5 @@
 import React from 'react';
+import MemberAskLink from '@/components/storefront/MemberAskLink.jsx';
 import { Link } from 'react-router-dom';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
@@ -60,12 +61,7 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
       <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-ng-ember ${className}`}>
         {/* Said, not priced (Dekito, 12 Nov 2026): the member price depends on the community code. */}
         <span>{t('price.memberHint')}</span>
-        <Link
-          to="/customer"
-          className="inline-flex min-h-[44px] items-center font-bold normal-case tracking-normal underline underline-offset-2"
-        >
-          {t('price.howToMember')}
-        </Link>
+        <MemberAskLink className="inline-flex min-h-[44px] items-center font-bold normal-case tracking-normal underline underline-offset-2" />
       </p>
     );
   }

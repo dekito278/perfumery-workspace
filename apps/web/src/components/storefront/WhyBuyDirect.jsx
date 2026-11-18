@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MessageCircle } from 'lucide-react';
+import MemberAskLink from '@/components/storefront/MemberAskLink.jsx';
 import { whyDirectReasons } from '@/data/whyDirect.js';
 import { getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -36,7 +37,9 @@ const WhyBuyDirect = () => {
               <p className="ng-mono m-0 text-ng-ember">{ROMAN[index] || index + 1}</p>
               <h3 className="m-0 font-ng-display text-[28px] font-normal leading-tight md:text-[30px]">{t(reason.titleKey)}</h3>
               <p className="m-0 text-[15px] leading-relaxed text-ng-dust">{t(reason.bodyKey)}</p>
-              {reason.whatsapp ? (
+              {reason.askMember ? (
+                <MemberAskLink labelKey={reason.ctaKey} withIcon className="ng-link ng-mono mt-auto inline-flex min-h-[44px] items-center gap-2" />
+              ) : reason.whatsapp ? (
                 <a
                   href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(t('why.whatsappMessage'))}`}
                   target="_blank"

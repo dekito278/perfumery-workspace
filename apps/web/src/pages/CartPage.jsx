@@ -3,6 +3,7 @@ import { atStockCap, nextQuantityUp } from '@/utils/cartQuantity.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useEffect, useMemo, useRef } from 'react';
+import MemberAskLink from '@/components/storefront/MemberAskLink.jsx';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BadgePercent, ShoppingBag, X } from 'lucide-react';
@@ -250,7 +251,7 @@ const CartPage = () => {
                     {offerMemberSignIn ? (
                       <div className="flex flex-col gap-1.5 border border-ng-bone/20 p-4 text-sm">
                         <span>{t('price.memberHint')}</span>
-                        <Link to="/customer" className="ng-link ng-mono inline-flex min-h-[44px] items-center underline underline-offset-4">{t('why.member.cta')}</Link>
+                        <MemberAskLink labelKey="why.member.cta" withIcon className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-2 underline underline-offset-4" />
                       </div>
                     ) : null}
 

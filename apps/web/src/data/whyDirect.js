@@ -23,7 +23,9 @@ export const WHY_DIRECT_REASONS = [
     bodyKey: 'why.member.body',
     to: '/customer',
     ctaKey: 'why.member.cta',
-    en: { titleKey: 'why.intl.title', bodyKey: 'why.intl.body', to: '/catalog', ctaKey: 'why.intl.cta' },
+    // The code is asked for on WhatsApp (Dekito, 18 Nov 2026); `to` stays as the fallback with no number.
+    askMember: true,
+    en: { titleKey: 'why.intl.title', bodyKey: 'why.intl.body', to: '/catalog', ctaKey: 'why.intl.cta', askMember: false },
   },
   {
     key: 'atelier',
