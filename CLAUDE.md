@@ -32,6 +32,12 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
 - Home headline is "Buat yang jalan sendiri." / "For those who wander alone." (what *solivagant* means).
 - "kode pelanggan" is the one name for the old SOLI code (no longer handed out; member pricing = member
   code + Google sign-in). "Bespoke ritual" stays as the menu name.
+- The visitor's COUNTRY picks the shop (18 Nov 2026, `apps/web/middleware.js` + `src/utils/shopByCountry.js`):
+  abroad → `/en` (US$, no member, no rupiah anywhere), Indonesia → `/`. No ID/EN switch on the pages. Robots,
+  order pages (payment, pay, track, invoices), Studio and login are never moved. Dekito previews the other
+  shop with `?toko=en` / `?toko=id` (cookie, 30 days); `?toko=auto` turns it back on.
+- "Cara jadi member" opens WhatsApp ("saya mau jadi member"); Dekito replies with a code (Indonesian shop only).
+- Free vial: one per bottle, at most 3 per order, each a different scent (18 Nov 2026); server enforces it.
 
 ## Policies he agreed (16 Nov 2026) — on the Help page, guarded by returnsPolicyIsWritten
 - Damaged/wrong/short parcel: report within 2×24 h with an unboxing video → resend or full refund incl.
