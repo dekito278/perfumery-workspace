@@ -24,7 +24,7 @@ import {
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
-import { FREE_VIAL_PRICE_LABEL, FREE_VIAL_TAG, FREE_VIALS_PER_ORDER, isFreeVialProduct, weighFreeVialLines } from '../../src/utils/freeVial.js';
+import { FREE_VIAL_LINE_QUANTITY, FREE_VIAL_PRICE_LABEL, FREE_VIAL_TAG, freeVialProblem, isFreeVialProduct, weighFreeVialLines } from '../../src/utils/freeVial.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
 import { isInternalErrorMessage } from '../../src/utils/publicErrorMessage.js';
@@ -225,7 +225,8 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
     throw new Error(`Order has too many item lines (${items.length}, max ${MAX_ORDER_LINES})`);
   }
   let subtotal = 0;
-  let freeVials = 0;
+  const vialVariantIds = [];
+  let bottles = 0;
   const resolved = [];
   for (const line of items) {
     const slug = String(line.productSlug || line.product_slug || line.slug || '').trim();
@@ -293,18 +294,18 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
 
     // The gift, decided from the product's own tags rather than from anything the client sent. Three
     // things follow, and all three are server-side because all three are worth tampering with: it costs
-    // nothing whatever the variant says, there is at most ONE of it, and nobody gets a second one by
-    // sending a second line. Without the clamp a stranger could POST fifty free vials and empty the
-    // stock of a scent without paying for anything.
+    // nothing whatever the variant says, each vial line is ONE vial whatever quantity it claims, and the
+    // number of vials is checked against the bottles after the loop (one per bottle, at most three, each a
+    // different scent — Dekito, 18 Nov 2026; it was one per order). Without the clamp a stranger could POST
+    // fifty free vials and empty the stock of a scent without paying for anything.
     const isVial = isFreeVialProduct(product);
     if (isVial) {
-      if (freeVials >= FREE_VIALS_PER_ORDER) {
-        throw new Error(`An order carries at most ${FREE_VIALS_PER_ORDER} free vial`);
-      }
-      freeVials += 1;
+      vialVariantIds.push(String(variant?.id || size || ''));
       unitPrice = 0;
+    } else {
+      bottles += qty;
     }
-    const lineQuantity = isVial ? FREE_VIALS_PER_ORDER : qty;
+    const lineQuantity = isVial ? FREE_VIAL_LINE_QUANTITY : qty;
 
     subtotal += unitPrice * lineQuantity;
     // Preserve the client line's display fields (image, name, ...) but enforce the DB price AND category —
@@ -321,6 +322,9 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail', memberPercent
       // can label a bottle they paid for as a gift on their own receipt.
       tags: isVial ? [FREE_VIAL_TAG] : [] });
   }
+  // A gift with no bottle at all is refused further on as "nothing priced" (422), as it always was.
+  const vialProblem = bottles > 0 ? freeVialProblem({ bottles, variantIds: vialVariantIds }) : '';
+  if (vialProblem) throw new Error(vialProblem);
   return { subtotal, resolved, quantity: resolved.reduce((sum, l) => sum + l.quantity, 0) };
 };
 
@@ -809,7 +813,7 @@ const priceInternationalLines = async (items = []) => {
     const variant = variants.find((v) => (variantRef ? v.id === variantRef : v.size === line?.size));
     if (variants.length && !variant) throw new Error(`No matching variant for ${slug}`);
     if (isFreeVialProduct(product)) {
-      if (gifts.length >= FREE_VIALS_PER_ORDER) throw new Error(`An order carries at most ${FREE_VIALS_PER_ORDER} free vial.`);
+      // Counted against the bottles once every line is read (one per bottle, at most three, distinct).
       gifts.push({ product, variant, slug, name: product.name, size: variant?.size || line?.size || '' });
       continue;
     }
@@ -827,6 +831,12 @@ const priceInternationalLines = async (items = []) => {
       tierPrices,
     });
   }
+  // A gift with no bottle falls through to the quote's own refusal (422), as it always did.
+  const vialProblem = lines.length ? freeVialProblem({
+    bottles: lines.reduce((sum, line) => sum + line.quantity, 0),
+    variantIds: gifts.map((gift) => String(gift.variant?.id || gift.size || '')),
+  }) : '';
+  if (vialProblem) throw new Error(vialProblem);
   return { lines, gifts };
 };
 
@@ -884,7 +894,7 @@ const createInternationalOrder = async (res, input, clientContext) => {
     cartSlug: `${gift.slug}-${gift.variant?.id || gift.size}`,
     variantId: gift.variant?.id || '',
     size: gift.size,
-    quantity: FREE_VIALS_PER_ORDER,
+    quantity: FREE_VIAL_LINE_QUANTITY,
     priceNumber: 0,
     price: FREE_VIAL_PRICE_LABEL,
     tags: [FREE_VIAL_TAG],

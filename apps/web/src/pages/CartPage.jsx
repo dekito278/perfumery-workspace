@@ -35,7 +35,7 @@ const CartPage = () => {
   // reads the cart, so "Lanjut ke checkout" opens it without a wait. A failure is harmless: the route
   // loads it again on its own.
   useEffect(() => { import('@/pages/CheckoutPage.jsx').catch(() => {}); }, []);
-  const { items, summary, updateQuantity, removeItem, setGift } = useCart();
+  const { items, summary, updateQuantity, removeItem, setGifts } = useCart();
   const { index: memberIndex } = useMemberPrices();
   const { tier } = useTierPrices();
   const memberSaving = memberSavingForCart(items, memberIndex);
@@ -59,14 +59,14 @@ const CartPage = () => {
   const unavailableItems = items.filter((item) => item.unavailable || item.outOfStock);
   // The gift is not a purchase: it has no price to show, no quantity to change and no line of its own in
   // the list. The picker below owns it.
-  const { lines: boughtLines, gift } = splitFreeVialLines(items);
+  const { lines: boughtLines, gift, gifts } = splitFreeVialLines(items);
   const { removeLine, removedName } = useCartLineRemoval(removeItem, boughtLines);
   // The last bottle out takes the gift with it (fresh buyer audit, 15 Nov 2026: the cart read "empty" yet
   // kept "Subtotal Rp 0", the vial line and an active "Lanjut ke checkout"). The same rule dropOrphanedGift
   // applies when a cart is read back; this applies it the moment it happens.
   useEffect(() => {
-    if (!boughtLines.length && gift) setGift(null);
-  }, [boughtLines.length, gift, setGift]);
+    if (!boughtLines.length && gift) setGifts([]);
+  }, [boughtLines.length, gift, setGifts]);
 
   const recommendations = useMemo(() => {
     const inCart = new Set(items.map((item) => item.productSlug || item.slug));
@@ -171,7 +171,7 @@ const CartPage = () => {
                       })
                     )}
                   </div>
-                  <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />
+                  <FreeVialPicker items={items} products={catalogProducts} onPick={setGifts} />
                 </div>
 
                 {/* An empty cart has nothing to sum: the box said Subtotal Rp 0, listed a free vial, and offered the
@@ -234,7 +234,7 @@ const CartPage = () => {
                           already in the parcel (visitor audit, 13 Nov 2026). */}
                       {gift ? (
                         <div className="flex justify-between gap-4">
-                          <dt className="text-ng-dust">{t('cart.giftTitle')}</dt>
+                          <dt className="text-ng-dust">{gifts.length > 1 ? t('cart.giftCount', { count: gifts.length }) : t('cart.giftTitle')}</dt>
                           <dd className="m-0 text-ng-sand">{t('cart.giftFree')}</dd>
                         </div>
                       ) : null}

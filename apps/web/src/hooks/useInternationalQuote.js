@@ -182,7 +182,7 @@ export const useCartInternationalQuote = (items = []) => {
   const { index } = useTierPrices();
   const catalog = useStorefrontProducts();
 
-  const { gift } = splitFreeVialLines(items);
+  const { gift, gifts } = splitFreeVialLines(items);
   const lines = useMemo(() => {
     const { lines: bought } = splitFreeVialLines(items);
     return bought.map((item) => {
@@ -239,7 +239,8 @@ export const useCartInternationalQuote = (items = []) => {
     // row, which the English shop never translates and should not, since the perfume names are
     // deliberately Indonesian. The variant holds the aroma on its own, and "free vial" already says
     // what the thing is, so the product name adds nothing in either shop.
-    ...(gift ? [t('export.waCartGiftLine', { name: gift.size || gift.name })] : []),
+    // One line per vial since 18 Nov 2026 (one per bottle, up to three).
+    ...gifts.map((one) => t('export.waCartGiftLine', { name: one.size || one.name })),
   ].join('\n');
   // Settled: the total. Chosen but unquotable — "another country", seven bottles, a size the rule was not
   // written for: the basket and the destination, asking for the rate. Nothing chosen: no draft, and the
@@ -247,7 +248,7 @@ export const useCartInternationalQuote = (items = []) => {
   const draft = core.draftVars
     ? { key: core.settled ? 'export.waCartDraft' : 'export.waCartAsk', vars: { ...core.draftVars, lines: lineText } }
     : null;
-  return { ...core, lines, gift, unpriced, bottles, setCountry, draft, focusDestinationPicker };
+  return { ...core, lines, gift, gifts, unpriced, bottles, setCountry, draft, focusDestinationPicker };
 };
 
 export default useInternationalQuote;

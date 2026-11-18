@@ -15,8 +15,8 @@ import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
 import {
-  FREE_VIAL_SIZE, FREE_VIAL_TAG, FREE_VIAL_WEIGHT_GRAM, FREE_VIALS_PER_ORDER,
-  FREE_VIAL_PRICE_LABEL,
+  FREE_VIAL_SIZE, FREE_VIAL_TAG, FREE_VIAL_WEIGHT_GRAM, FREE_VIALS_MAX_PER_ORDER, FREE_VIAL_LINE_QUANTITY,
+  FREE_VIAL_PRICE_LABEL, dropOrphanedGift, freeVialAllowance, freeVialProblem,
   buildFreeVialCartItem, dropUnfulfillableGift, freeVialChoices, isFreeVialLine, isFreeVialProduct,
   boughtNames, shouldOfferFreeVial, splitFreeVialLines, weighFreeVialLines,
 } from './freeVial.js';
@@ -56,8 +56,17 @@ assert.equal(isFreeVialProduct(bottle), false);
 assert.equal(isFreeVialProduct({}), false, 'a product with no tags at all is not a vial');
 assert.equal(isFreeVialProduct(), false, 'called with nothing, no crash');
 
-// --- 2. It is one per ORDER, and that is a decision, not a default -------------------------------------
-assert.equal(FREE_VIALS_PER_ORDER, 1, "Dekito's decision, 2026-09-29: per order, not per bottle");
+// --- 2. One per BOTTLE, at most three, each a different scent: a decision, not a default ---------------
+// Dekito, 18 Nov 2026 (it was one per order from 29 Sep): "checkout 2 kali … pilihnya 2 vial", capped at 3
+// and every vial a different scent — his answers when asked.
+assert.equal(FREE_VIALS_MAX_PER_ORDER, 3);
+assert.equal(FREE_VIAL_LINE_QUANTITY, 1, 'a vial line is one vial; two vials are two lines, two scents');
+assert.deepEqual([0, 1, 2, 3, 4, 10, -1, 2.7].map(freeVialAllowance), [0, 1, 2, 3, 3, 3, 0, 2]);
+assert.equal(freeVialProblem({ bottles: 2, variantIds: ['a', 'b'] }), '');
+assert.match(freeVialProblem({ bottles: 1, variantIds: ['a', 'b'] }), /paling banyak 1/, 'two vials on one bottle is refused');
+assert.match(freeVialProblem({ bottles: 9, variantIds: ['a', 'b', 'c', 'd'] }), /paling banyak 3/, 'four vials is refused however many bottles');
+assert.match(freeVialProblem({ bottles: 3, variantIds: ['a', 'a'] }), /berbeda/, 'one scent twice is refused');
+assert.equal(freeVialProblem({ bottles: 0, variantIds: [] }), '');
 
 // --- 3. The weight, which is where this costs money ----------------------------------------------------
 // Unmeasured, a 2 ml vial falls to the 300 g default — heavier than a 30 ml bottle — and every order
@@ -165,9 +174,10 @@ assert.match(endpoint, /const isVial = isFreeVialProduct\(product\);/,
   'decided from the product the endpoint just fetched, never from the line the client sent');
 assert.match(endpoint, /if \(isVial\) \{[\s\S]{0,200}?unitPrice = 0;/,
   'the gift costs nothing whatever the variant says');
-assert.match(endpoint, /if \(freeVials >= FREE_VIALS_PER_ORDER\) \{[\s\S]{0,120}?throw new Error/,
-  'a second vial line must be refused, not quietly honoured');
-assert.match(endpoint, /const lineQuantity = isVial \? FREE_VIALS_PER_ORDER : qty;/,
+assert.match(endpoint, /const vialProblem = bottles > 0 \? freeVialProblem\(\{ bottles, variantIds: vialVariantIds \}\) : '';\s*if \(vialProblem\) throw new Error\(vialProblem\);/,
+  'more vials than the bottles earned, or one scent twice, must be refused, not quietly honoured');
+assert.match(endpoint, /\} else \{\s*bottles \+= qty;\s*\}/, 'the bottles are counted from the priced lines, never from the client');
+assert.match(endpoint, /const lineQuantity = isVial \? FREE_VIAL_LINE_QUANTITY : qty;/,
   'and one line may not carry fifty of them');
 
 // --- 10. Which aromas are offered: in stock, and that is the whole switch -------------------------------
@@ -190,16 +200,30 @@ const chosen = buildFreeVialCartItem({
   choice: { variantId: 'hug-n-1', label: 'HUG N°1', stock: 4 },
 });
 assert.equal(chosen.priceNumber, 0, 'the gift costs nothing in the cart either');
-assert.equal(chosen.quantity, FREE_VIALS_PER_ORDER);
+assert.equal(chosen.quantity, FREE_VIAL_LINE_QUANTITY);
 assert.deepEqual(chosen.tags, [FREE_VIAL_TAG], 'and carries the tag every rule here reads');
 assert.equal(isFreeVialLine(chosen), true, 'so the cart line and the order line answer the same question');
 assert.match(chosen.name, /Vial hadiah 2 ml — HUG N°1/,
   "the name is the owner's own words — it is the only thing on the packing slip saying this was not paid for");
 assert.ok(chosen.slug.includes('hug-n-1'), 'two aromas of one product must not collide on the cart key');
 
-const { lines, gift } = splitFreeVialLines([{ slug: 'bottle', name: 'HUG N°1' }, chosen]);
+const { lines, gift, gifts, bottles } = splitFreeVialLines([{ slug: 'bottle', name: 'HUG N°1', quantity: 2 }, chosen]);
 assert.deepEqual(lines.map((line) => line.slug), ['bottle'], 'the gift never renders as a purchased line');
 assert.equal(gift.slug, chosen.slug);
+assert.deepEqual(gifts.map((one) => one.slug), [chosen.slug]);
+assert.equal(bottles, 2, 'the bottle count is what the vials are earned from');
+
+// The cart fits the vials to the bottles wherever it is read: one per bottle, at most three, no repeat.
+{
+  const vialLine = (id) => ({ ...chosen, slug: `vial-hadiah-${id}`, variantId: id });
+  const fit = (bottleQty, ids) => dropOrphanedGift([{ slug: 'b', name: 'B', quantity: bottleQty }, ...ids.map(vialLine)])
+    .filter(isFreeVialLine).map((line) => line.variantId);
+  assert.deepEqual(fit(1, ['a', 'b']), ['a'], 'one bottle keeps one vial — the first chosen');
+  assert.deepEqual(fit(2, ['a', 'b']), ['a', 'b']);
+  assert.deepEqual(fit(5, ['a', 'b', 'c', 'd']), ['a', 'b', 'c'], 'never more than three');
+  assert.deepEqual(fit(3, ['a', 'a', 'b']), ['a', 'b'], 'one scent twice keeps one');
+  assert.deepEqual(fit(0, ['a']), [], 'no bottle, no vial');
+}
 // A cart that somehow held two must not show one of them as a purchase.
 assert.equal(splitFreeVialLines([chosen, { ...chosen, slug: 'x' }]).lines.length, 0);
 assert.deepEqual(splitFreeVialLines().lines, [], 'called with nothing, no crash');
@@ -207,26 +231,31 @@ assert.deepEqual(splitFreeVialLines().lines, [], 'called with nothing, no crash'
 // Both carts render the bought lines, never the raw cart, and both hand the picker the same writer.
 for (const page of ['pages/CartPage.jsx']) {
   const source = read(...page.split('/'));
-  assert.match(source, /const \{ lines: boughtLines(, gift)? \} = splitFreeVialLines\(items\);/,
+  assert.match(source, /const \{ lines: boughtLines(, gift)?(, gifts)? \} = splitFreeVialLines\(items\);/,
     `${page} must separate the gift from what was bought`);
   assert.match(source, /boughtLines\.map\(/, `${page} must render the bought lines, not the raw cart`);
   assert.doesNotMatch(source, /\{items\.map\(/, `${page} still renders the raw cart somewhere — the gift would appear as a Rp 0 purchase`);
-  assert.match(source, /<FreeVialPicker items=\{items\} products=\{\w+\} onPick=\{setGift\} \/>/,
+  assert.match(source, /<FreeVialPicker items=\{items\} products=\{\w+\} onPick=\{setGifts\} \/>/,
     `${page} must show the picker, and hand it the whole cart so it can see the current choice`);
 }
 
-// One writer for the gift, so picking a second aroma REPLACES the first rather than stacking.
+// One writer for the vials: the whole set is written back and fitted to the bottles, so a set the
+// bottles have not earned, or a scent twice, cannot be written.
 const cart = read('services', 'cartService.js');
-assert.match(cart, /const items = readCart\(\)\.filter\(\(line\) => !isFreeVialLine\(line\)\);/,
-  'setFreeVialCartItem must drop every vial line before writing the new one');
+assert.match(cart, /export const setFreeVialCartItems = \(gifts = \[\]\) => \{\s*const items = readCart\(\)\.filter\(\(line\) => !isFreeVialLine\(line\)\);\s*const next = dropOrphanedGift\(/,
+  'setFreeVialCartItems must drop every vial line, then write the set fitted to the bottles');
+assert.match(cart, /export const updateCartQuantity[\s\S]{0,200}dropOrphanedGift\(/, 'fewer bottles, fewer vials — on the write, not only the next read');
+assert.match(cart, /const nextItems = dropOrphanedGift\(readCart\(\)\.filter\(\(item\) => item\.slug !== slug\)\);/);
 
 // The picker shows nothing until there is something to show: no vial product, no aroma in stock, or an
 // empty cart. A picker offering a gift the shop cannot pack is worse than no picker.
 const picker = read('components', 'storefront', 'FreeVialPicker.jsx');
-assert.match(picker, /if \(!vialProduct \|\| !choices\.length \|\| !lines\.length\) return null;/,
+assert.match(picker, /if \(!vialProduct \|\| !lines\.length \|\| !allowance\) return null;\s*if \(!kept\.length && !freeVialChoices\(vialProduct, bought\)\.length\) return null;/,
   'the picker must stay invisible until the vial product exists, has stock, and the cart has something in it');
+assert.match(picker, /Array\.from\(\{ length: allowance \}/, 'one dropdown per vial the bottles earned');
+assert.match(picker, /taken=\{giftVariantIds\(slots\.filter\(\(other, slot\) => other && slot !== index\)\)\}/, 'each dropdown leaves out the scents chosen in the others');
 // Its strings are in the message file in both languages, like every other storefront string.
-for (const key of ['cart.giftTitle', 'cart.giftBody', 'cart.giftChosen', 'cart.giftRemove']) {
+for (const key of ['cart.giftTitle', 'cart.giftBody', 'cart.giftChosenList', 'cart.giftMore', 'cart.giftSlot', 'cart.giftRemove']) {
   assert.match(picker, new RegExp(`'${key.replace('.', '\\.')}'`), `the picker uses ${key}`);
 }
 
@@ -443,13 +472,21 @@ assert.match(portalSource, /import \{ splitFreeVialLines \} from '@\/utils\/free
   const one = { variants: [{ id: 'a', size: 'La Rose', stock: 2 }] };
   assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: one, bought: ['La Rose'] }), false,
     'when the only aroma left is the bottle being bought, nothing is offered');
+  const two = { variants: [{ id: 'a', size: 'La Rose', stock: 2 }, { id: 'b', size: 'Sudra', stock: 2 }, { id: 'c', size: 'Wongka!', stock: 2 }] };
+  const gA = { variantId: 'a', size: 'La Rose' };
+  assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: two, gifts: [gA], bottles: 2 }), true, 'second bottle, second vial offered');
+  assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: two, gifts: [gA], bottles: 1 }), false, 'one bottle, one vial: already chosen');
+  assert.equal(shouldOfferFreeVial({ opened: true, vialProduct: two, gifts: [gA, { variantId: 'b' }, { variantId: 'c' }], bottles: 5 }), false, 'three chosen: silent');
+  assert.deepEqual(freeVialChoices(two, [], ['a']).map((choice) => choice.variantId), ['b', 'c'], 'a chosen scent is not offered again');
   const cart = [{ name: 'La Rose', quantity: 1 }, buildFreeVialCartItem({ vialProduct: { id: 'vial', slug: 'vial-hadiah', name: 'Vial', variants: one.variants }, choice: { variantId: 'a', label: 'La Rose' } })];
   assert.deepEqual(boughtNames(cart), ['La Rose'], 'the gift line is not counted as bought');
 }
 // Both doors pass what was bought, and the prompt stays quiet once declined in a visit.
 const promptSource = read('components', 'storefront', 'FreeVialPrompt.jsx');
 const pickerSource = read('components', 'storefront', 'FreeVialPicker.jsx');
-assert.match(promptSource, /shouldOfferFreeVial\(\{ opened: open, vialProduct, gift, bought \}\)/, 'the prompt leaves out what is bought');
+assert.match(promptSource, /shouldOfferFreeVial\(\{ opened: open, vialProduct, gifts, bought, bottles \}\)/, 'the prompt leaves out what is bought, and counts the bottles');
+assert.match(promptSource, /setGifts\(\[\.\.\.gifts, item\]\)/, 'a pick in the prompt ADDS this bottle\'s vial');
+assert.match(promptSource, /taken=\{giftVariantIds\(gifts\)\}/, 'and never offers a scent already chosen');
 assert.match(pickerSource, /freeVialChoices\(vialProduct, bought\)/, 'and so does the cart panel');
 assert.match(promptSource, /event\.detail\?\.announcedByScreen \|\| wasDismissed\(\)/, 'a declined prompt does not reopen on the next bottle');
 assert.equal((promptSource.match(/onClick=\{dismiss\}/g) || []).length, 3, 'the backdrop, the X and "Nanti saja" all count as declining');
@@ -457,4 +494,4 @@ assert.equal((promptSource.match(/onClick=\{dismiss\}/g) || []).length, 3, 'the 
 // The checkout summary does not repeat the chosen scent under the gift vial's name (fifth audit, 13 Nov 2026).
 assert.match(readFileSync(new URL('../pages/CheckoutPage.jsx', import.meta.url), 'utf8'),
   /\{isFreeVialLine\(item\) \? null : <span className="text-xs text-ng-ash">\{t\('checkout\.sizeQty'/, 'checkout: no "La Rose / La Rose"');
-console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per order at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);
+console.log(`freeVial selfcheck OK (one ${FREE_VIAL_SIZE} vial per bottle, at most ${FREE_VIALS_MAX_PER_ORDER}, at ${FREE_VIAL_WEIGHT_GRAM} g, kept out of ${listings} listings, out of the automatic pricing, and out of the sitemap)`);

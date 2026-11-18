@@ -16,26 +16,29 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...parts) => readFileSync(join(root, ...parts), 'utf8');
 
 const intl = read('components', 'storefront', 'InternationalShippingQuote.jsx');
-assert.match(intl, /\{quote\?\.gift \? \(/, 'the English summary does not look at the chosen gift');
-assert.match(intl, /t\('intlQuote\.giftLine', \{ name: quote\.gift\.size \|\| quote\.gift\.name \}\)/,
+// One row per vial since 18 Nov 2026 (one per bottle, up to three).
+assert.match(intl, /\(quote\?\.gifts \|\| \(quote\?\.gift \? \[quote\.gift\] : \[\]\)\)\.map\(/, 'the English summary does not look at the chosen gifts');
+assert.match(intl, /t\('intlQuote\.giftLine', \{ name: one\.size \|\| one\.name \}\)/,
   'the gift row must name the aroma (the variant), not the product');
 assert.match(intl, /\{t\('cart\.giftFree'\)\}/, 'the gift row must say it is free, in the shop language');
 
 // The form sends the same gift the summary shows.
 // The WhatsApp order names it too, by its aroma (the English cart orders on WhatsApp since 14 Nov 2026).
-assert.match(read('hooks', 'useInternationalQuote.js'), /\.\.\.\(gift \? \[t\('export\.waCartGiftLine', \{ name: gift\.size \|\| gift\.name \}\)\] : \[\]\)/);
-// The quote exposes it.
-assert.match(read('hooks', 'useInternationalQuote.js'), /return \{ \.\.\.core, lines, gift,/);
+assert.match(read('hooks', 'useInternationalQuote.js'), /\.\.\.gifts\.map\(\(one\) => t\('export\.waCartGiftLine', \{ name: one\.size \|\| one\.name \}\)\)/);
+// The quote exposes them.
+assert.match(read('hooks', 'useInternationalQuote.js'), /return \{ \.\.\.core, lines, gift, gifts,/);
 
 // The Indonesian checkout keeps its row.
 assert.match(read('pages', 'CheckoutPage.jsx'), /isFreeVialLine\(item\) \? FREE_VIAL_PRICE_LABEL/);
 
 // Tenth visitor audit, 13 Nov 2026: a buyer who went from the product page straight to checkout never saw
 // the cart's picker, so the gift the product page promised ("nanti di keranjang") was lost without a word.
-// Checkout offers the same picker while no vial is chosen.
+// Checkout offers the same picker while a vial the bottles earned is still unchosen (one per bottle since
+// 18 Nov 2026).
 const checkout = read('pages', 'CheckoutPage.jsx');
-assert.match(checkout, /const \{ gift: chosenGift \} = splitFreeVialLines\(items\);/);
-assert.match(checkout, /\{chosenGift && !giftScentIsBought\(chosenGift, boughtNames\(items\)\) \? null : <FreeVialPicker items=\{items\} products=\{catalogProducts\} onPick=\{setGift\} \/>\}/,
+assert.match(checkout, /const \{ gifts: chosenGifts, bottles: boughtBottles \} = splitFreeVialLines\(items\);/);
+assert.match(checkout, /const giftsSettled = chosenGifts\.length >= freeVialAllowance\(boughtBottles\)/);
+assert.match(checkout, /\{giftsSettled \? null : <FreeVialPicker items=\{items\} products=\{catalogProducts\} onPick=\{setGifts\} \/>\}/,
   'checkout no longer offers the free vial to a buyer who skipped the cart');
 
 for (const language of ['id', 'en']) {

@@ -1,5 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { FREE_VIAL_PRICE_LABEL, boughtNames, giftScentIsBought, isFreeVialLine, splitFreeVialLines } from '@/utils/freeVial.js';
+import { FREE_VIAL_PRICE_LABEL, boughtNames, freeVialAllowance, giftScentIsBought, isFreeVialLine, splitFreeVialLines } from '@/utils/freeVial.js';
 import FreeVialPicker from '@/components/storefront/FreeVialPicker.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { addressLooksAbroad } from '@/utils/addressAbroad.js';
@@ -35,13 +35,16 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
 
 const CheckoutPage = () => {
   const { t } = useTranslate();
-  const { items, summary, clear, setGift } = useCart();
+  const { items, summary, clear, setGifts } = useCart();
   // The gift, offered here too when it was not chosen in the cart. Tenth visitor audit, 13 Nov 2026: the
   // product page says the aroma can be chosen "nanti di keranjang"; a buyer who went straight from the
   // product page to checkout never saw the cart, and the free vial was lost without a word. The same
   // picker as the cart; it renders nothing when there is no aroma to give.
   const catalogProducts = useStorefrontProducts();
-  const { gift: chosenGift } = splitFreeVialLines(items);
+  // One per bottle since 18 Nov 2026: the picker stays while a vial the bottles earned is still unchosen.
+  const { gifts: chosenGifts, bottles: boughtBottles } = splitFreeVialLines(items);
+  const giftsSettled = chosenGifts.length >= freeVialAllowance(boughtBottles)
+    && !chosenGifts.some((gift) => giftScentIsBought(gift, boughtNames(items)));
   const { currentUser, loginWithGoogle } = useAuth();
   // Stays on the page: a buyer signing out mid-checkout keeps their place, and a refused sign-out says so.
   const { signOut } = useSignOut(null);
@@ -479,7 +482,7 @@ const CheckoutPage = () => {
                     ))}
                   </div>
                   {/* Also while the chosen vial's bottle is in the cart: the picker releases it and says so. */}
-                  {chosenGift && !giftScentIsBought(chosenGift, boughtNames(items)) ? null : <FreeVialPicker items={items} products={catalogProducts} onPick={setGift} />}
+                  {giftsSettled ? null : <FreeVialPicker items={items} products={catalogProducts} onPick={setGifts} />}
 
                   <dl className="m-0 flex flex-col gap-3 text-[15px]">
                     <div className="flex justify-between gap-4">

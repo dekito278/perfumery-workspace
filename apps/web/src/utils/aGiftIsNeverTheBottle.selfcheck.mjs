@@ -31,10 +31,12 @@ for (const bought of [['La rose'], ['Sudra'], []]) {
 
 const picker = read('components', 'storefront', 'FreeVialPicker.jsx');
 assert.match(picker, /giftScentIsBought\(gift, bought\)/);
-assert.match(picker, /onPick\(null\)/, 'the stale gift must be released, not just hidden');
+// One per bottle since 18 Nov 2026: the stale vial is released by writing back the set without it.
+assert.match(picker, /onPick\(kept\)/, 'the stale gift must be released, not just hidden');
 assert.match(picker, /t\('cart\.giftReleased'/, 'and the buyer is told why');
-assert.match(read('pages', 'CheckoutPage.jsx'), /chosenGift && !giftScentIsBought\(chosenGift, boughtNames\(items\)\) \? null : <FreeVialPicker/,
-  'checkout hides the picker once a gift is chosen — except a gift that has to be released');
+assert.match(read('pages', 'CheckoutPage.jsx'), /&& !chosenGifts\.some\(\(gift\) => giftScentIsBought\(gift, boughtNames\(items\)\)\);/,
+  'checkout hides the picker once every earned vial is chosen — except a gift that has to be released');
+assert.match(read('pages', 'CheckoutPage.jsx'), /\{giftsSettled \? null : <FreeVialPicker/);
 
 assert.match(read('components', 'storefront', 'FreeVialPrompt.jsx'), /toast\.success\(t\('cart\.giftAdded', \{ name: item\.size \}\)\)/);
 for (const lang of ['id', 'en']) {

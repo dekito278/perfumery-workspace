@@ -183,31 +183,32 @@ export const addCartItem = (product, quantity = 1) => {
   return nextItems;
 };
 
+// Fitted on the way out as well as in (18 Nov 2026): lowering a bottle's quantity can leave more vials than
+// the bottles earn, and the screen is drawn from what these return, not from the next read.
 export const updateCartQuantity = (slug, quantity) => {
   const nextQuantity = Math.max(Number(quantity || 1), 1);
-  const nextItems = readCart().map((item) => (
+  const nextItems = dropOrphanedGift(readCart().map((item) => (
     item.slug === slug ? { ...item, quantity: item.maxStock > 0 ? Math.min(nextQuantity, Number(item.maxStock)) : nextQuantity } : item
-  ));
+  )));
   writeCart(nextItems);
   return nextItems;
 };
 
 export const removeCartItem = (slug) => {
-  const nextItems = readCart().filter((item) => item.slug !== slug);
+  const nextItems = dropOrphanedGift(readCart().filter((item) => item.slug !== slug));
   writeCart(nextItems);
   return nextItems;
 };
 
 /**
- * Put the chosen gift in the cart, or take it out with `null`.
- *
- * Every vial line is dropped first, so picking a second aroma REPLACES the first rather than adding to
- * it — one per order is the rule, and a cart that can hold two would hand the endpoint something it is
- * going to refuse anyway.
+ * Put the chosen vials in the cart: `gifts` is the whole set, in order (18 Nov 2026: one per bottle, up to
+ * three, each a different scent). Every vial line is dropped first and the set written back, then fitted to
+ * the bottles by dropOrphanedGift — so a set the bottles have not earned, or a scent chosen twice, cannot
+ * be written and hand the endpoint something it would refuse anyway. `[]` takes them all out.
  */
-export const setFreeVialCartItem = (item) => {
+export const setFreeVialCartItems = (gifts = []) => {
   const items = readCart().filter((line) => !isFreeVialLine(line));
-  const next = item ? [...items, item] : items;
+  const next = dropOrphanedGift([...items, ...(Array.isArray(gifts) ? gifts : []).filter(Boolean)]);
   writeCart(next);
   return next;
 };

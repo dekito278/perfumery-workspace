@@ -11,14 +11,18 @@ import { splitScriptName } from '@/utils/scriptName.js';
  * aromas as buttons filled a phone screen and pushed the order summary below it; one field holds the same
  * choice in a line. Choosing an aroma takes it, choosing another swaps it, choosing "none" releases it.
  *
- * `onPick` is handed the finished cart line, or null to release. The caller passes cartService's single
- * writer, which drops every vial line before adding, so a second aroma REPLACES rather than stacking.
+ * `onPick` is handed the finished cart line, or null to release. One dropdown is one vial; the caller
+ * puts it in its slot of the order's set (FreeVialPicker) or adds it (FreeVialPrompt).
  */
-const FreeVialChoices = ({ vialProduct, gift, onPick, bought = [], className = '' }) => {
+//
+// `taken` (18 Nov 2026): the aromas chosen for this order's OTHER vials, which this one may not repeat.
+// `label` names the slot when there is more than one ("Vial 2").
+const FreeVialChoices = ({ vialProduct, gift, onPick, bought = [], taken = [], label = '', className = '' }) => {
   const { t } = useTranslate();
   const id = useId();
-  const choices = freeVialChoices(vialProduct, bought);
-  if (!choices.length) return null;
+  const choices = freeVialChoices(vialProduct, bought, taken);
+  // The chosen aroma stays listed in its own dropdown even when its stock reads 0 after the pick.
+  if (!choices.length && !gift) return null;
 
   const pick = (variantId) => {
     const choice = choices.find((item) => item.variantId === variantId);
@@ -27,9 +31,12 @@ const FreeVialChoices = ({ vialProduct, gift, onPick, bought = [], className = '
 
   return (
     <label htmlFor={id} className={`flex flex-col gap-2 ${className}`.trim()}>
-      <span className="ng-mono text-ng-dust">{t('cart.giftPick')}</span>
+      <span className="ng-mono text-ng-dust">{label || t('cart.giftPick')}</span>
       <select id={id} className="ng-field" value={gift?.variantId || ''} onChange={(event) => pick(event.target.value)}>
         <option value="">{t('cart.giftNone')}</option>
+        {gift && !choices.some((choice) => choice.variantId === gift.variantId) ? (
+          <option value={gift.variantId}>{splitScriptName(String(gift.size || '')).name}</option>
+        ) : null}
         {choices.map((choice) => (
           // The Latin name only: an option cannot set the aksara legibly, and the product page already does.
           <option key={choice.variantId} value={choice.variantId}>{splitScriptName(choice.label).name}</option>

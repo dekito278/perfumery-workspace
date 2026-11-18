@@ -92,12 +92,13 @@ for (const page of ['pages/InternationalCartPage.jsx']) {
   assert.match(source, /US\$\$\{/, `${page} must print its prices in dollars`);
   // The gift, offered here and carried into the order. A picker with no line in the message would let a
   // buyer choose an aroma that never reaches them.
-  assert.match(source, /<FreeVialPicker items=\{items\} products=\{(catalog|products)\} onPick=\{setGift\} \/>/,
+  assert.match(source, /<FreeVialPicker items=\{items\} products=\{(catalog|products)\} onPick=\{setGifts\} \/>/,
     `${page} does not offer the free vial — both shops have had it since 2026-10-06`);
 }
 {
   const hook = readCode('hooks/useInternationalQuote.js');
-  assert.match(hook, /gift \? \[t\('export\.waCartGiftLine'/,
+  // One line per vial since 18 Nov 2026 (one per bottle, up to three).
+  assert.match(hook, /gifts\.map\(\(one\) => t\('export\.waCartGiftLine'/,
     'the English cart order does not name the gift, so Dekito would pack the parcel without it');
   for (const shop of ['id', 'en']) {
     assert.ok(MESSAGES[shop]['export.waCartGiftLine'], `export.waCartGiftLine is missing from the ${shop} shop`);
@@ -112,7 +113,7 @@ for (const page of ['pages/InternationalCartPage.jsx']) {
   // from the product row, not a message in this file. The English shop does not translate product
   // names and must not — the perfumes are called Ayang-ayang and Maskumambang on purpose. The variant
   // already holds the aroma by itself, and "free vial" says what the thing is.
-  assert.match(hook, /waCartGiftLine', \{ name: gift\.size \|\| gift\.name \}/,
+  assert.match(hook, /waCartGiftLine', \{ name: one\.size \|\| one\.name \}/,
     'the gift line must be built from the aroma; gift.name drags the Indonesian product name into an '
     + 'English order message');
 }
