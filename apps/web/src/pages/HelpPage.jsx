@@ -1,4 +1,5 @@
 import React from 'react';
+import MemberAskLink from '@/components/storefront/MemberAskLink.jsx';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
@@ -50,7 +51,7 @@ const HelpContent = () => {
           {!isInternational ? (
             <p className="m-0">
               {t('help.member')}{' '}
-              <Link to="/customer" className="underline underline-offset-4">{t('price.howToMember')}</Link>
+              <MemberAskLink className="underline underline-offset-4" />
             </p>
           ) : null}
         </Section>

@@ -140,7 +140,14 @@ for (const language of ['id', 'en']) assert.doesNotMatch(MESSAGES[language]['pri
 // that the way in is offered at all, in BOTH languages — a number with no button is a tease.
 // Since 10 Nov 2026 the way in is the account page, not a sign-in button: signing in alone no longer gives
 // the member price (a member code or a paid order here does), and that page says so and takes the code.
-assert.match(note, /<Link\s+to="\/customer"[\s\S]{0,200}?t\('price\.howToMember'\)/, 'and must offer the way in, not just the number');
+// Since 18 Nov 2026 the way in starts with ASKING for a code (Dekito): MemberAskLink opens WhatsApp with
+// "saya mau jadi member" typed, and falls back to the account page when no number is configured.
+assert.match(note, /<MemberAskLink\b/, 'and must offer the way in, not just the number');
+const ask = read('components', 'storefront', 'MemberAskLink.jsx');
+assert.match(ask, /labelKey = 'price\.howToMember'/);
+assert.match(ask, /buildWhatsAppCheckoutUrl\(t\('member\.waDraft'\), phoneNumber\)/, 'the chat opens with the request already typed');
+assert.match(ask, /if \(!phoneNumber\) \{\s*return <Link to="\/customer"/, 'no number: the account page, never a chat with nobody');
+assert.match(MESSAGES.id['member.waDraft'], /mau jadi member/);
 assert.match(MESSAGES.id['price.howToMember'], /member/);
 assert.ok(MESSAGES.en['price.howToMember'], 'in English too, or the English shop shows a raw key on the button');
 assert.doesNotMatch(note, /loginWithGoogle/, 'a sign-in button here would promise a price that signing in no longer gives');
@@ -296,7 +303,8 @@ for (const page of ['pages/CartPage.jsx']) {
   assert.match(source, /t\('price\.memberHint'\)/, `${page} must say member pricing exists`);
   assert.doesNotMatch(source, /formatTotal\(memberSaving\)/, `${page} must not print a member saving`);
   // And a way to act on it, or the number is a tease.
-  assert.match(source, /customer['"]/, `${page} must offer the door to the account, not just the number`);
+  // Since 18 Nov 2026 that is MemberAskLink: ask for a code on WhatsApp (account page with no number).
+  assert.match(source, /customer['"]|<MemberAskLink\b/, `${page} must offer the door to the account, not just the number`);
 }
 
 // --- 11. The public mapper must CARRY the field, not just the pages RENDER it -----------------------------

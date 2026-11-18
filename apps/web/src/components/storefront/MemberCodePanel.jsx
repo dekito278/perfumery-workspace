@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { KeyRound, Loader2 } from 'lucide-react';
+import MemberAskLink from '@/components/storefront/MemberAskLink.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { refreshTierPrices, useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { redeemMemberCode } from '@/services/tierPricingService.js';
@@ -50,7 +51,7 @@ const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
     setBusy(false);
   };
 
-  let body = t('member.howBody');
+  let body = null;
   // A member from before their code pays the cheaper of the two per perfume (resolveTierPrice), so "N% on
   // every perfume" would be wrong for them wherever their old member price is lower.
   const viaCodeKey = keepsMemberPrice ? 'member.activeViaCodeKept' : 'member.activeViaCode';
@@ -59,7 +60,11 @@ const MemberCodePanel = ({ className = '', hideForMembers = false }) => {
   return (
     <section className={`rounded-none border border-ng-bone/10 bg-transparent p-4 ${className}`}>
       <p className="ng-mono m-0 text-ng-bone">{isMember ? t('member.activeTitle') : t('member.howTitle')}</p>
-      <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">{body}</p>
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-ng-dust">{body || t('member.howBody')}</p>
+      {/* No code yet: ask for one (Dekito, 18 Nov 2026). Above the field, because that is the order it happens in. */}
+      {!isMember ? (
+        <MemberAskLink labelKey="member.askCode" withIcon className="ng-link ng-mono mt-3 inline-flex min-h-[44px] items-center gap-2" />
+      ) : null}
       {currentUser ? (
         // Not a form element: checkout renders this INSIDE its own form, where a nested one is dropped by the
         // browser and "Pakai" — or Enter in the field — would submit the order form instead.

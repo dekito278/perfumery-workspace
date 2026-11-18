@@ -57,7 +57,8 @@ for (const dir of [['pages'], ['pages', 'mobile'], ['components', 'storefront']]
   }
 }
 const WINDOW = 500;
-const AFFORDANCE = /<AskAtelierButton|<OverseasInquiryButton|buildWhatsAppCheckoutUrl|wa\.me/;
+// MemberAskLink (18 Nov 2026) opens the WhatsApp chat that asks for a member code.
+const AFFORDANCE = /<AskAtelierButton|<OverseasInquiryButton|<MemberAskLink|buildWhatsAppCheckoutUrl|wa\.me/;
 
 let guarded = 0;
 for (const parts of surfaces) {
