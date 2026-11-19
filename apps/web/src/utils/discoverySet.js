@@ -4,10 +4,13 @@
 //
 // They are ordinary products in the catalogue, told apart by their CATEGORY, which every cart and order
 // line already carries (a tag would not: the cart copies category, not tags). Three rules follow:
-//   1. Indonesian shop only. Abroad a parcel goes by DHL, whose smallest bracket costs more than the set
-//      itself to Europe, so the English shop does not show them.
+//   1. Abroad (Dekito, 18 Nov 2026: US$35 for Set I–III, US$45 Set IV, US$115 Set Lengkap) a set rides
+//      WITH a bottle. A set alone would go in DHL's smallest bracket, which to Europe costs more than the
+//      set; beside a bottle it fits the same 1 kg box. So: one set per bottle adds no parcel weight, a set
+//      beyond that counts as a bottle, and an English order with sets and no bottle cannot be sent.
 //   2. A set is not a bottle: it earns no free vial (one per BOTTLE, up to three).
-//   3. Their price is exactly the one Dekito set — no automatic member or export price is written for them.
+//   3. Their price is exactly the one Dekito set — no automatic member or export price is written for them;
+//      the export price is his number, stored by hand.
 //
 // Import-free: the browser, the order endpoint, the build and the guards all read it.
 
@@ -20,10 +23,9 @@ export const isDiscoverySet = (productOrLine = {}) => (
   norm(productOrLine?.category ?? productOrLine?.product?.category) === norm(DISCOVERY_SET_CATEGORY)
 );
 
-/** Is the page being shown the English (abroad) shop? Path-based, so it holds before React has a region. */
-export const onEnglishShop = () => (
-  typeof window !== 'undefined' && /^\/en(\/|$)/.test(String(window.location?.pathname || ''))
-);
-
-/** Shown in this shop? Discovery sets are for the Indonesian shop only (rule 1). */
-export const shownInThisShop = (product = {}, { english = onEnglishShop() } = {}) => !(english && isDiscoverySet(product));
+/** How many bottles a parcel holding `bottles` bottles and `sets` sets ships as (rule 1). */
+export const parcelBottlesFor = (bottles = 0, sets = 0) => {
+  const b = Math.max(0, Math.round(Number(bottles) || 0));
+  const s = Math.max(0, Math.round(Number(sets) || 0));
+  return b + Math.max(0, s - b);
+};

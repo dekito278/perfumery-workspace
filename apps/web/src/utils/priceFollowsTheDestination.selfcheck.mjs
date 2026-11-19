@@ -23,6 +23,7 @@ import { dirname, join } from 'node:path';
 
 import { USD_PRICE_RATE, USD_PRICE_STEP, usdPriceFor } from './usdPrice.js';
 import { MESSAGES } from '../i18n/messages.js';
+import { DISCOVERY_SET_CATEGORY, isDiscoverySet, parcelBottlesFor } from './discoverySet.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -170,6 +171,10 @@ const loadExportShippingPolicy = () => {};
 const subscribeExportShippingPolicy = () => () => {};
 const useEffect = () => {};
 const useSyncExternalStore = (subscribe, getSnapshot) => getSnapshot();
+// Discovery sets ride with bottles (18 Nov 2026); the real rule, run as-is.
+const isDiscoverySet = ${isDiscoverySet.toString()};
+const DISCOVERY_SET_CATEGORY = ${asJs(DISCOVERY_SET_CATEGORY)};
+const parcelBottlesFor = ${parcelBottlesFor.toString()};
 ${withoutImports(readRaw('hooks', 'useInternationalQuote.js'))}
 `);
 const { useInternationalQuote, internationalQuoteFor } = quoteHook;

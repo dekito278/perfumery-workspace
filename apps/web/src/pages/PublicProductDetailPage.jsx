@@ -414,7 +414,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
                   {/* Under the buy button for the reason written out on the phone page: the form stood between
                       the price and the first word about the perfume. */}
-                  {exportPrice && !soldOut ? (
+                  {/* A set abroad rides in a bottle's parcel (utils/discoverySet.js): said instead of a quote. */}
+                  {exportPrice && !soldOut && isDiscoverySet(product) ? (
+                    <p className="m-0 border-l-2 border-ng-ember pl-3 text-sm font-semibold leading-relaxed text-ng-bone">{t('pdp.setAbroad')}</p>
+                  ) : null}
+                  {exportPrice && !soldOut && !isDiscoverySet(product) ? (
                     <InternationalShippingQuote product={product} variant={selectedVariant} />
                   ) : null}
                   {/* Customs and reviewers read this, not shoppers: a US shipment was held over the word

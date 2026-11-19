@@ -55,6 +55,8 @@ const InternationalCartPage = () => {
   // a buyer who chose "another country" — the one option that describes a destination the carrier sheet
   // does not list, and therefore the buyer who most needs to reach Dekito — pressed a button that did
   // nothing at all. Same for seven bottles, and for a line with no export price.
+  // A set with no bottle is WARNED about below (utils/discoverySet.js), not blocked: the button never goes
+  // dead, and Dekito can still answer a buyer who asks about a set on its own.
   const canOrder = Boolean(message) && Boolean(phone);
   // Lines the catalogue can no longer fulfil. The domestic cart has said this since audit round 9; this
   // one said nothing, and three bottles are out of stock in the shop as this is written.
@@ -92,6 +94,9 @@ const InternationalCartPage = () => {
                       <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">
                         {t('cart.intl.unavailable', { names: unfulfillable.map((line) => line.name).join(', ') })}
                       </p>
+                    ) : null}
+                    {quote.setsNeedBottle ? (
+                      <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">{t('cart.intl.setNeedsBottle')}</p>
                     ) : null}
                     {unpriced.length ? (
                       <p className="ng-error m-0 border-b border-ng-bone/15 py-4 text-sm" role="alert">
