@@ -24,7 +24,7 @@ import {
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
-import { isDiscoverySet } from '../../src/utils/discoverySet.js';
+import { isDiscoverySet, weighSetLines } from '../../src/utils/discoverySet.js';
 import { FREE_VIAL_LINE_QUANTITY, FREE_VIAL_PRICE_LABEL, FREE_VIAL_TAG, freeVialProblem, isFreeVialProduct, weighFreeVialLines } from '../../src/utils/freeVial.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
@@ -526,7 +526,8 @@ export default async function handler(req, res) {
     // The gift weighs a vial, whatever its variant is called. A label naming the aroma parses to no
     // millilitres and would fall to the flat fallback, which is heavier than the bottle it rides with —
     // freight charged for something that is not in the box, on both sides of the quote.
-    const weight = totalItemWeightGram(weighFreeVialLines(weighedLines), itemWeight);
+    // A discovery set weighs its weighed 250 g (utils/discoverySet.js), the same on the browser's quote.
+    const weight = totalItemWeightGram(weighSetLines(weighFreeVialLines(weighedLines)), itemWeight);
     const { fee: shippingFee, summary: shippingSummary } = await computeShippingFee(baseUrl, {
       destinationId: input.shipping?.destinationId,
       destination: input.shipping?.destination,

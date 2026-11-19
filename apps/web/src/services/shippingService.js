@@ -4,6 +4,7 @@ import {
 } from '@/services/shippingPromotionService.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '@/utils/itemWeight.js';
 import { weighFreeVialLines } from '@/utils/freeVial.js';
+import { weighSetLines } from '@/utils/discoverySet.js';
 import { courierAreaSpelling, rankDestinations, resultsNameTheArea } from '@/utils/areaFromAddress.js';
 
 // A body that is not JSON is a BROKEN service, never an empty result.
@@ -118,7 +119,8 @@ export const getCheckoutShippingWeight = (items) => {
   // The free gift weighs a vial, whatever its variant is labelled — the same rule api/orders/create.js
   // applies before it charges. The browser quotes the freight and the endpoint bills it; a buyer shown
   // one courier fee and charged another is the same class of bug as a price that moves at checkout.
-  return totalItemWeightGram(weighFreeVialLines(items), fallback);
+  // …and a discovery set weighs its weighed 250 g (utils/discoverySet.js), on both sides alike.
+  return totalItemWeightGram(weighSetLines(weighFreeVialLines(items)), fallback);
 };
 
 export const describeShippingRate = (rate) => {

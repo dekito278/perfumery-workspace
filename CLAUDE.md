@@ -57,8 +57,8 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
   product); descriptions, notes and photos for Samhain, Bloody Luwak, Ambar Segara; bottle photos for
   Aquilaria tuberosa, HUG N°1, Jata Bhumi, Maskumambang, Pantura, Sudra (white label cards today).
 - Discovery sets are live (SQL 20261118120000, 20261119090000, 20261119100000 run) but stock is 0 until
-  Dekito fills it in Studio. Still waiting: the code printed on the Rp50.000/Rp100.000 card (make it a
-  voucher), and a set's real parcel weight (300 g fallback today).
+  Dekito fills it in Studio. A set ships as 250 g (his scale, 19 Nov 2026; Set Lengkap's own weight not
+  given yet). Still waiting: the code printed on the Rp50.000/Rp100.000 card (make it a voucher).
 - Studio product screens read the full table since 19 Nov 2026 (#694): drafts show, internal tags survive.
 
 ## Verifying Studio screens

@@ -92,3 +92,17 @@ export const withShopNames = (products = [], english = false) => {
   });
   return changed ? next : products;
 };
+
+/** What one set adds to a parcel — box, pouch and vials. Dekito's scale, 19 Nov 2026 ("berat satu set 250g"). */
+export const DISCOVERY_SET_WEIGHT_GRAM = 250;
+
+/**
+ * The lines to weigh, with each set at its weighed 250 g. Its size label ("5 vial") names no millilitres,
+ * so the weight table fell back to 300 g. Used by BOTH sides — the browser that quotes the courier fee
+ * and the endpoint that charges it — so the two cannot disagree.
+ */
+export const weighSetLines = (lines = []) => (
+  (Array.isArray(lines) ? lines : []).map((line) => (
+    isDiscoverySet(line) ? { ...line, weightGram: DISCOVERY_SET_WEIGHT_GRAM } : line
+  ))
+);

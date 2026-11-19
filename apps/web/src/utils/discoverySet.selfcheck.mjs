@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { DISCOVERY_SET_CATEGORY, SET_NAMES_EN, isDiscoverySet, parcelBottlesFor, setContents, setSizeLabel, shopNameFor, withShopNames } from './discoverySet.js';
+import { DISCOVERY_SET_CATEGORY, SET_NAMES_EN, isDiscoverySet, parcelBottlesFor, setContents, setSizeLabel, shopNameFor, withShopNames, DISCOVERY_SET_WEIGHT_GRAM, weighSetLines } from './discoverySet.js';
+import { totalItemWeightGram } from './itemWeight.js';
 import { bottleCount, freeVialAllowance } from './freeVial.js';
 import { planAutoTierPrices } from './autoTierPrices.js';
 
@@ -84,6 +85,16 @@ assert.match(catalogPage, /t\('catalog\.ngEyebrow', \{ count: perfumeCount \}\)/
 const productsHook = read('hooks', 'useStorefrontProducts.js');
 assert.match(productsHook, /const named = withShopNames\(base, isInternational\);\s*return named === base \? base : carryCatalogFlags\(named, base\);/, 'the storefront catalogue is renamed in one place, flags kept');
 assert.match(read('..', 'tools', 'seo-artifacts.mjs'), /const shown = \{ \.\.\.product, name: shopNameFor\(product, english\) \};/, 'and so is the prerendered English page');
+
+// A set weighs 250 g — Dekito's scale, 19 Nov 2026 — on both sides of the courier quote. Its size label names
+// no millilitres, so without this it fell back to 300 g.
+assert.equal(DISCOVERY_SET_WEIGHT_GRAM, 250);
+assert.equal(totalItemWeightGram(weighSetLines([{ ...set, size: '5 vial', quantity: 1 }])), 250);
+assert.equal(totalItemWeightGram(weighSetLines([{ ...set, size: '5 vial', quantity: 2 }, { category: 'Limited', size: '30 ml', quantity: 1 }])), 750, 'two sets and a 30 ml bottle');
+assert.equal(totalItemWeightGram(weighSetLines([{ category: 'Limited', size: '30 ml', quantity: 1 }])), 250, 'a bottle is weighed by its size, as before');
+assert.equal(totalItemWeightGram([{ ...set, size: '5 vial', quantity: 1 }]), 300, 'unweighed, a set would fall back to 300 g');
+assert.match(read('services', 'shippingService.js'), /weighSetLines\(weighFreeVialLines\(items\)\)/, 'the browser quote weighs sets');
+assert.match(read('..', 'api', 'orders', 'create.js'), /weighSetLines\(weighFreeVialLines\(weighedLines\)\)/, 'and the endpoint charges the same weight');
 
 // The box images the SQL points at ship with the site.
 for (const name of ['set-i-floral', 'set-ii-hangat-manis', 'set-iii-jalan-pulang', 'set-iv-limited', 'set-lengkap']) {

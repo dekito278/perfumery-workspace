@@ -58,7 +58,10 @@ export const isWeighedSize = (size) => {
 export const totalItemWeightGram = (items = [], fallback = DEFAULT_ITEM_WEIGHT_GRAM) => {
   const total = (Array.isArray(items) ? items : []).reduce((sum, item) => {
     const quantity = Math.max(0, Math.round(Number(item?.quantity) || 0));
-    return sum + quantity * itemWeightGram(item?.size, fallback);
+    // A line that was actually weighed says so (`weightGram`, e.g. a discovery set — its size label,
+    // "5 vial", names no millilitres). Otherwise the weight comes from the size table.
+    const own = Number(item?.weightGram);
+    return sum + quantity * (Number.isFinite(own) && own > 0 ? own : itemWeightGram(item?.size, fallback));
   }, 0);
   if (total > 0) return total;
   return Number(fallback) > 0 ? Number(fallback) : DEFAULT_ITEM_WEIGHT_GRAM;
