@@ -12,7 +12,10 @@ import { confirmAction } from '@/utils/confirmAction.js';
 
 const ProductCategoriesPage = () => {
   const navigate = useNavigate();
-  const products = useCatalogProducts();
+  // The full table, admin-only (19 Nov 2026): the public view hides drafts and strips the internal tags
+  // (batch, stock corrections, restock threshold), so a Studio screen built on it could not see a draft
+  // and saved products back without those tags.
+  const products = useCatalogProducts({ editableOnly: true });
   const categories = useStorefrontCategories(products);
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
   const [savingCategory, setSavingCategory] = useState(false);

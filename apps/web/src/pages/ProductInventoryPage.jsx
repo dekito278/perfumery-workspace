@@ -9,7 +9,10 @@ import { getProductRestockThreshold, getProductStockCorrections } from '@/servic
 
 const ProductInventoryPage = () => {
   const navigate = useNavigate();
-  const products = useCatalogProducts();
+  // The full table, admin-only (19 Nov 2026): the public view hides drafts and strips the internal tags
+  // (batch, stock corrections, restock threshold), so a Studio screen built on it could not see a draft
+  // and saved products back without those tags.
+  const products = useCatalogProducts({ editableOnly: true });
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
   const lowStockProducts = useMemo(() => customProducts.filter((product) => product.stock > 0 && product.stock <= getProductRestockThreshold(product)), [customProducts]);
   const stockCorrectionHistory = useMemo(() => customProducts.flatMap((product) => (
