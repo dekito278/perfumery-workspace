@@ -18,7 +18,8 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * navigator.share is the native sheet: one tap to WhatsApp, Instagram or a message. Where it does not
  * exist (most desktop browsers) the link goes to the clipboard instead, which is the same errand.
  */
-const ShareProductButton = ({ product, className = '', compact = false }) => {
+// `asSet`: a discovery set is shared as a set, not as "this scent" (audit, 19 Nov 2026).
+const ShareProductButton = ({ product, className = '', compact = false, asSet = false }) => {
   const { t, region } = useTranslate();
   const [copied, setCopied] = useState(false);
 
@@ -59,7 +60,7 @@ const ShareProductButton = ({ product, className = '', compact = false }) => {
       className={`ng-btn ng-btn--ghost ng-btn--block ${compact ? '!min-h-[44px]' : ''} ${className}`}
     >
       {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-      {copied ? t('pdp.shareCopied') : t('pdp.share')}
+      {copied ? t('pdp.shareCopied') : asSet ? t('pdp.shareSet') : t('pdp.share')}
     </button>
   );
 };

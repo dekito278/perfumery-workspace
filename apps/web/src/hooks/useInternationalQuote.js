@@ -13,7 +13,7 @@ import { tierPricesForLine } from '@/utils/tierPrice.js';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML } from '@/data/internationalShippingRates.js';
 import { plainName } from '@/utils/scriptName.js';
-import { isDiscoverySet, parcelBottlesFor } from '@/utils/discoverySet.js';
+import { isDiscoverySet, parcelBottlesFor, setSizeLabel } from '@/utils/discoverySet.js';
 
 /**
  * One international total, computed once, for every surface that shows or sends it.
@@ -221,11 +221,13 @@ export const useCartInternationalQuote = (items = []) => {
         unitUsd,
         lineUsd: unitUsd ? unitUsd * quantity : null,
         isSet: isDiscoverySet(item),
+        // "5 vial" reads "5 vials" in the English cart and its WhatsApp order.
+        size: isDiscoverySet(item) ? setSizeLabel(item.size, region === 'en') : item.size,
         // A set is priced by its own export row and rides in a bottle's box, so its "size" is not a bottle size.
         onTheCard: isDiscoverySet(item) || sizeIsOnTheCard(item.size),
       };
     });
-  }, [items, catalog, index]);
+  }, [items, catalog, index, region]);
 
   const unpriced = lines.filter((line) => !line.unitUsd);
   const bottles = lines.filter((line) => !line.isSet).reduce((sum, line) => sum + line.quantity, 0);

@@ -23,7 +23,7 @@ import { dirname, join } from 'node:path';
 
 import { USD_PRICE_RATE, USD_PRICE_STEP, usdPriceFor } from './usdPrice.js';
 import { MESSAGES } from '../i18n/messages.js';
-import { DISCOVERY_SET_CATEGORY, isDiscoverySet, parcelBottlesFor } from './discoverySet.js';
+import { DISCOVERY_SET_CATEGORY, isDiscoverySet, parcelBottlesFor, setSizeLabel } from './discoverySet.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -175,6 +175,7 @@ const useSyncExternalStore = (subscribe, getSnapshot) => getSnapshot();
 const isDiscoverySet = ${isDiscoverySet.toString()};
 const DISCOVERY_SET_CATEGORY = ${asJs(DISCOVERY_SET_CATEGORY)};
 const parcelBottlesFor = ${parcelBottlesFor.toString()};
+const setSizeLabel = ${setSizeLabel.toString()};
 ${withoutImports(readRaw('hooks', 'useInternationalQuote.js'))}
 `);
 const { useInternationalQuote, internationalQuoteFor } = quoteHook;

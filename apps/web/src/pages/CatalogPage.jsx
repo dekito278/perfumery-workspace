@@ -1,5 +1,6 @@
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { isDiscoverySet } from '@/utils/discoverySet.js';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Plus } from 'lucide-react';
@@ -105,9 +106,11 @@ const CatalogPage = () => {
 
   const catalogCategories = useMemo(() => catalogCategoryPills(products), [products]);
   // A family the catalogue really has, else 'All' — an unknown ?family= never yields an empty list.
+  // Matched without regard to case (19 Nov 2026): the address carries the family in lower case, and
+  // capitalising its first letter could not find a two-word family — "Discovery Set" did nothing when tapped.
   const activeCategory = useMemo(() => {
-    const capitalized = familyParam.charAt(0).toUpperCase() + familyParam.slice(1);
-    return catalogCategories.includes(capitalized) ? capitalized : 'All';
+    const wanted = String(familyParam || '').trim().toLowerCase();
+    return (wanted && catalogCategories.find((category) => String(category).toLowerCase() === wanted)) || 'All';
   }, [familyParam, catalogCategories]);
   const setActiveCategory = useCallback((category) => {
     setSearchParams((previous) => {
@@ -161,11 +164,16 @@ const CatalogPage = () => {
   const filteredProducts = useMemo(
     () => narrowedProducts
       .filter((product) => matchesCatalogCategory(product, activeCategory))
-      .map((product, index) => ({ product, index, soldOut: product.publicStatus !== 'Available' }))
-      .sort((a, b) => (Number(a.soldOut) - Number(b.soldOut)) || (a.index - b.index))
+      .map((product, index) => ({ product, index, soldOut: product.publicStatus !== 'Available', set: isDiscoverySet(product) }))
+      // In stock first; then perfumes before discovery sets (19 Nov 2026: the sets are the newest rows, and
+      // five near-identical boxes would otherwise open the collection); then the catalogue's own order.
+      .sort((a, b) => (Number(a.soldOut) - Number(b.soldOut)) || (Number(a.set) - Number(b.set)) || (a.index - b.index))
       .map(({ product }) => product),
     [narrowedProducts, activeCategory],
   );
+  const perfumeCount = products.filter((product) => !isDiscoverySet(product)).length;
+  const shownPerfumeCount = filteredProducts.filter((product) => !isDiscoverySet(product)).length;
+  const shownSetsOnly = filteredProducts.length > 0 && shownPerfumeCount === 0;
 
   const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
 
@@ -211,9 +219,12 @@ const CatalogPage = () => {
               <div className="flex flex-col gap-5">
                 <p className="ng-eyebrow ng-mono m-0">{/* "19 KARYA" over a single search result read as a count of what is shown (fifth visitor
                     audit, 13 Nov 2026): a narrowed list says how many of how many. */}
+                  {/* Perfumes are counted as perfumes (audit, 19 Nov 2026: "27 parfum" counted the five discovery
+                      sets); a list narrowed to sets alone says so. */}
                   {!products.length ? t('catalog.ngEyebrowBare')
-                    : filteredProducts.length !== products.length ? t('catalog.ngEyebrowFiltered', { shown: filteredProducts.length, count: products.length })
-                      : t('catalog.ngEyebrow', { count: products.length })}</p>
+                    : shownSetsOnly ? t('catalog.ngEyebrowSets', { count: filteredProducts.length })
+                      : filteredProducts.length !== products.length ? t('catalog.ngEyebrowFiltered', { shown: shownPerfumeCount, count: perfumeCount })
+                        : t('catalog.ngEyebrow', { count: perfumeCount })}</p>
                 <h1 className="ng-display ng-h1">{t('catalog.title')}</h1>
               </div>
               <p className="ng-lead max-w-[440px] !text-base">{t('catalog.ngLead')}</p>
