@@ -51,13 +51,14 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
 - Refund within 3 working days of approval.
 - Footer "Tetap terhubung" is WhatsApp-only (no email list).
 
-## Open items (as of 17 Nov 2026)
+## Open items (as of 19 Nov 2026)
 - Owner content: stock for Samhain / Ambar Segara (Studio batch → Stok → "Tambah stok" adds to an existing
   product); descriptions, notes and photos for Samhain, Bloody Luwak, Ambar Segara; bottle photos for
   Aquilaria tuberosa, HUG N°1, Jata Bhumi, Maskumambang, Pantura, Sudra (white label cards today).
-- Done 17 Nov 2026 (#680–#685): bespoke checkout matches the main one; Studio customer search; phone order
-  status + notes on Tugas; bespoke settings on the laptop (/studio/bespoke); batch restock of an existing
-  product (stock only, never price); Jason Voorhees typo SQL run by Dekito.
+- Discovery sets are live (SQL 20261118120000, 20261119090000, 20261119100000 run) but stock is 0 until
+  Dekito fills it in Studio. Still waiting: the code printed on the Rp50.000/Rp100.000 card (make it a
+  voucher), and a set's real parcel weight (300 g fallback today).
+- Studio product screens read the full table since 19 Nov 2026 (#694): drafts show, internal tags survive.
 
 ## Verifying Studio screens
 - Studio needs an admin session, which we never have. Run the dev server with
