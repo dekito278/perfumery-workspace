@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { DISCOVERY_SET_CATEGORY, isDiscoverySet, parcelBottlesFor, setContents, setSizeLabel } from './discoverySet.js';
+import { DISCOVERY_SET_CATEGORY, SET_NAMES_EN, isDiscoverySet, parcelBottlesFor, setContents, setSizeLabel, shopNameFor, withShopNames } from './discoverySet.js';
 import { bottleCount, freeVialAllowance } from './freeVial.js';
 import { planAutoTierPrices } from './autoTierPrices.js';
 
@@ -65,6 +65,25 @@ assert.match(pdpPage, /\{isSet \? \(\s*<>\s*<h2 id="pdp-pyramid-heading"[^>]*>\{
 const catalogPage = read('pages', 'CatalogPage.jsx');
 assert.match(catalogPage, /const perfumeCount = products\.filter\(\(product\) => !isDiscoverySet\(product\)\)\.length;/);
 assert.match(catalogPage, /t\('catalog\.ngEyebrow', \{ count: perfumeCount \}\)/);
+
+// The English shop names the sets in English (Dekito, 19 Nov 2026); perfumes and the Indonesian shop do not change.
+{
+  const lengkap = { ...set, slug: 'set-lengkap', name: 'Set Lengkap · Semua varian' };
+  assert.equal(shopNameFor(lengkap, true), 'The Complete Set · All scents');
+  assert.equal(shopNameFor(lengkap, false), 'Set Lengkap · Semua varian');
+  assert.equal(shopNameFor({ ...bottle, name: 'Jata Bhumi' }, true), 'Jata Bhumi', 'a perfume keeps its name in both shops');
+  assert.equal(shopNameFor({ ...set, slug: 'set-baru', name: 'Set Baru' }, true), 'Set Baru', 'a set not listed keeps its own name');
+  assert.deepEqual(Object.keys(SET_NAMES_EN).sort(), ['set-i-floral', 'set-ii-hangat-manis', 'set-iii-jalan-pulang', 'set-iv-limited', 'set-lengkap']);
+  for (const name of Object.values(SET_NAMES_EN)) assert.doesNotMatch(name, /Hangat|Manis|Jalan|Pulang|Lengkap|Semua|varian/i, `${name} is still Indonesian`);
+  const list = [lengkap, bottle];
+  assert.equal(withShopNames(list, false), list, 'the Indonesian shop gets the very same array');
+  assert.equal(withShopNames([bottle], true)[0], bottle);
+  assert.equal(withShopNames(list, true)[0].name, 'The Complete Set · All scents');
+  assert.equal(lengkap.name, 'Set Lengkap · Semua varian', 'the stored product is not mutated');
+}
+const productsHook = read('hooks', 'useStorefrontProducts.js');
+assert.match(productsHook, /const named = withShopNames\(base, isInternational\);\s*return named === base \? base : carryCatalogFlags\(named, base\);/, 'the storefront catalogue is renamed in one place, flags kept');
+assert.match(read('..', 'tools', 'seo-artifacts.mjs'), /const shown = \{ \.\.\.product, name: shopNameFor\(product, english\) \};/, 'and so is the prerendered English page');
 
 // The box images the SQL points at ship with the site.
 for (const name of ['set-i-floral', 'set-ii-hangat-manis', 'set-iii-jalan-pulang', 'set-iv-limited', 'set-lengkap']) {

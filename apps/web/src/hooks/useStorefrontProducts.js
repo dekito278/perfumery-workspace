@@ -5,6 +5,9 @@ import { applyTierPrices } from '@/utils/tierPricedCatalog.js';
 import { attachMemberPrices } from '@/utils/memberPriceNudge.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import supabase from '@/lib/supabaseClient.js';
+import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
+import { withShopNames } from '@/utils/discoverySet.js';
+import { carryCatalogFlags } from '@/utils/catalogArrayFlags.js';
 
 // The tier the visitor is on and the prices they are entitled to. Both are resolved by the server from
 // the session — nothing here asks the browser who it is.
@@ -103,14 +106,19 @@ export const useStorefrontProducts = (options) => {
   const products = useCatalogProducts(options);
   const { tier, index, memberPercent, keepsMemberPrice } = useTierPrices();
   const { index: memberIndex } = useMemberPrices();
+  const { isInternational } = useStorefrontRegion();
   return useMemo(
     // The nudge is for retail visitors only. A code member can pay MORE than the product member price
     // (a 5% community), so "finds nothing lower" no longer keeps a member from being nudged — the tier does.
     () => {
       const priced = applyTierPrices(products, tier, index, formatRupiah, memberPercent, keepsMemberPrice);
-      return tier === 'retail' ? attachMemberPrices(priced, memberIndex) : priced;
+      // The English shop reads the discovery sets by their English names (utils/discoverySet.js).
+      // `loading` and `stale` hang off the array (useCatalogProducts), so they are carried across the rename.
+      const base = tier === 'retail' ? attachMemberPrices(priced, memberIndex) : priced;
+      const named = withShopNames(base, isInternational);
+      return named === base ? base : carryCatalogFlags(named, base);
     },
-    [products, tier, index, memberPercent, keepsMemberPrice, memberIndex],
+    [products, tier, index, memberPercent, keepsMemberPrice, memberIndex, isInternational],
   );
 };
 

@@ -41,6 +41,7 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
 - Discovery sets (category "Discovery Set", `src/utils/discoverySet.js`): Set I–III Rp199.000 / US$35, Set IV
   Rp269.000 / US$45, Set Lengkap Rp699.000 / US$115 (Dekito's numbers). Not a bottle → no free vial; no
   automatic member/export price. Abroad a set rides with a bottle (one set per bottle adds no DHL weight).
+  English shop shows English set names from `SET_NAMES_EN` (he asked, 19 Nov 2026); perfume names never change.
 
 ## Policies he agreed (16 Nov 2026) — on the Help page, guarded by returnsPolicyIsWritten
 - Damaged/wrong/short parcel: report within 2×24 h with an unboxing video → resend or full refund incl.

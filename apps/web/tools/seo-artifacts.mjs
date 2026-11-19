@@ -5,6 +5,7 @@
 import { normalizeSiteFacts } from '../src/data/siteFacts.js';
 import fs from 'node:fs';
 import { isFreeVialProduct } from '../src/utils/freeVial.js';
+import { shopNameFor } from '../src/utils/discoverySet.js';
 import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
 import { PRODUCT_HERO_SIZES, PRODUCT_HERO_WIDTH, getOptimizedProductImageUrl, getProductImageSrcSet } from '../src/utils/productImageSrcSet.js';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH, brandedTitle, metaSnippet as snippet, productMetaDescription, stripTrailingBrand } from '../src/utils/seo.js';
@@ -384,9 +385,11 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
     for (const lang of ['id', 'en']) {
       const english = lang === 'en';
       const canonical = abs(siteUrl, english ? `${EN_PREFIX}${route}` : route);
-      const title = `${product.name} - ${BRAND}`;
+      // The English shop names the discovery sets in English (src/utils/discoverySet.js).
+      const shown = { ...product, name: shopNameFor(product, english) };
+      const title = `${shown.name} - ${BRAND}`;
       // The live page falls back to the Indonesian description where there is no English one; so does this.
-      const description = productMetaDescription(product.name, english ? (product.descriptionEn || product.description) : product.description);
+      const description = productMetaDescription(shown.name, english ? (product.descriptionEn || product.description) : product.description);
 
       let html = setDocumentLanguage(baseHtml, lang);
       html = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
@@ -423,12 +426,12 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
         html = upsertMeta(html, 'property', 'product:price:currency', 'USD');
       }
       html = injectJsonLd(html, [
-        productJsonLd(product, siteUrl, canonical, { english, description }),
+        productJsonLd(shown, siteUrl, canonical, { english, description }),
         breadcrumbJsonLd(english
           ? [
             { name: 'Home', path: `${EN_PREFIX}/home` },
             { name: 'Collection', path: `${EN_PREFIX}/catalog` },
-            { name: product.name, path: `${EN_PREFIX}${route}` },
+            { name: shown.name, path: `${EN_PREFIX}${route}` },
           ]
           : [
             { name: 'Beranda', path: '/home' },
@@ -439,7 +442,7 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
 
       html = withNoscriptBody(html, noscriptBody({
         eyebrow: [product.category, product.concentration].filter(Boolean).join(' · '),
-        heading: product.name,
+        heading: shown.name,
         paragraphs: [
           english ? (product.descriptionEn || product.description) : product.description,
           [...product.topNotes, ...product.heartNotes, ...product.baseNotes].join(' · '),

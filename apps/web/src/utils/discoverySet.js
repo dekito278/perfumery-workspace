@@ -61,3 +61,34 @@ export const setSizeLabel = (size, english = false) => {
   if (!english || !match) return String(size ?? '');
   return Number(match[1]) === 1 ? '1 vial' : `${match[1]} vials`;
 };
+
+// The sets' names in the English shop (Dekito, 19 Nov 2026: "atur kamu aja, jadi pakai bahasa Inggris").
+// Perfume names stay as he wrote them in both shops; a set's name is a description ("Hangat & Manis",
+// "Semua varian"), and a buyer abroad cannot read it. Keyed by slug; a set not listed keeps its own name.
+// The Indonesian shop, the Studio and the order records are untouched.
+export const SET_NAMES_EN = {
+  'set-i-floral': 'Set I · Floral',
+  'set-ii-hangat-manis': 'Set II · Warm & Sweet',
+  'set-iii-jalan-pulang': 'Set III · The Way Home',
+  'set-iv-limited': 'Set IV · Limited',
+  'set-lengkap': 'The Complete Set · All scents',
+};
+
+/** The name to show for `product`: the English one for a set in the English shop, else its own. */
+export const shopNameFor = (product = {}, english = false) => (
+  (english && isDiscoverySet(product) && SET_NAMES_EN[String(product.slug || '')]) || product?.name || ''
+);
+
+/** The catalogue as the English shop names it: sets renamed, everything else the same objects. */
+// Returns the SAME array when nothing is renamed, so a caller that hangs flags off it loses nothing.
+export const withShopNames = (products = [], english = false) => {
+  if (!english || !Array.isArray(products)) return products;
+  let changed = false;
+  const next = products.map((product) => {
+    const name = shopNameFor(product, true);
+    if (!name || name === product.name) return product;
+    changed = true;
+    return { ...product, name };
+  });
+  return changed ? next : products;
+};
