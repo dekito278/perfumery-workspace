@@ -31,7 +31,7 @@ for (const page of ['CartPage.jsx', 'InternationalCartPage.jsx']) {
 const pdp = read('pages', 'PublicProductDetailPage.jsx');
 // (Nor beside a discovery set since 18 Nov 2026: a set earns no vial.)
 assert.match(pdp, /\{soldOut( \|\| isDiscoverySet\(product\))? \? null : <FreeVialNote/, 'no gift offer beside a sold-out bottle');
-assert.match(pdp, /\{soldOut \? \(\s*<AskAtelierButton labelKey="pdp\.restockAsk" draftKey="pdp\.restockDraft"/, 'a way to hear it is back instead of the overseas enquiry');
+assert.match(pdp, /\{soldOut \? \(\s*<AskAtelierButton labelKey=(?:"pdp\.restockAsk"|\{isSet \? 'pdp\.restockAskSet' : 'pdp\.restockAsk'\}) draftKey="pdp\.restockDraft"/, 'a way to hear it is back instead of the overseas enquiry');
 assert.match(pdp, /\{exportPrice && !soldOut( && !isDiscoverySet\(product\))? \? \(\s*<InternationalShippingQuote/, 'and no shipping quote for it');
 for (const language of ['id', 'en']) {
   assert.match(MESSAGES[language]['pdp.restockDraft'], /\{name\}/, `${language}: the restock message names the perfume`);

@@ -247,7 +247,9 @@ for (const [name, source] of pillScreens.map((rel) => [rel, readFileSync(join(he
   // Since 13 Nov 2026 the desktop catalogue DERIVES the category from ?family= on every render instead of
   // seeding state — a derived value corrects itself, so the only thing to hold is the 'All' fallback.
   if (/const activeCategory = useMemo\(/.test(source)) {
-    assert.match(source, /return catalogCategories\.includes\(capitalized\) \? capitalized : 'All';/,
+    // (Matched without regard to case since 19 Nov 2026: capitalising the first letter could not find the
+    // two-word family "Discovery Set", so its pill did nothing.)
+    assert.match(source, /return \(wanted && catalogCategories\.find\(\(category\) => String\(category\)\.toLowerCase\(\) === wanted\)\) \|\| 'All';/,
       `${name} derives its category from the address without falling back to 'All' for an unknown family`);
     continue;
   }

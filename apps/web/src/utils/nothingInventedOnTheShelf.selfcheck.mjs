@@ -28,7 +28,8 @@ assert.match(read('components', 'storefront', 'ScentPyramid.jsx'), /if \(!tiers\
 
 const catalog = read('pages', 'CatalogPage.jsx');
 assert.match(catalog, /soldOut: product\.publicStatus !== 'Available'/);
-assert.match(catalog, /\.sort\(\(a, b\) => \(Number\(a\.soldOut\) - Number\(b\.soldOut\)\) \|\| \(a\.index - b\.index\)\)/,
+// (Since 19 Nov 2026 perfumes also come before discovery sets inside each half; still stable.)
+assert.match(catalog, /\.sort\(\(a, b\) => \(Number\(a\.soldOut\) - Number\(b\.soldOut\)\) \|\| \(Number\(a\.set\) - Number\(b\.set\)\) \|\| \(a\.index - b\.index\)\)/,
   'the catalogue no longer puts what can be bought first (stable, nothing else moves)');
 
 assert.doesNotMatch(MESSAGES.id['pdp.youMayLikeSub'] + MESSAGES.en['pdp.youMayLikeSub'], /tenang|quiet signature/i);

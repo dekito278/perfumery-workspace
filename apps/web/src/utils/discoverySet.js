@@ -29,3 +29,35 @@ export const parcelBottlesFor = (bottles = 0, sets = 0) => {
   const s = Math.max(0, Math.round(Number(sets) || 0));
   return b + Math.max(0, s - b);
 };
+
+// A name as letters and digits only, accents folded: "La Rose" and "La rose", "L'iris" and "L’iris",
+// "HUG N°1" and "Hug No 1" are one perfume (the same folding the free-vial rules use).
+const nameKey = (value) => String(value ?? '')
+  .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/°/g, 'o').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * The perfumes inside a set, as catalogue products, in the order the set's description names them
+ * (audit, 19 Nov 2026: the set page had a "from the first spray to the last trace" heading over an empty
+ * pyramid, and no way to read about the scents in the box). Nothing is invented: a perfume is listed only
+ * when Dekito's own description of the set names it. Sets themselves are never listed.
+ */
+export const setContents = (set = {}, catalog = []) => {
+  if (!isDiscoverySet(set)) return [];
+  const text = nameKey(set.description);
+  if (!text) return [];
+  return (Array.isArray(catalog) ? catalog : [])
+    .filter((item) => item?.slug && item.name && !isDiscoverySet(item))
+    // The Latin name only: "Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀)" is written "Ayang-ayang" in a description.
+    .map((item) => ({ item, at: text.indexOf(nameKey(String(item.name).split(/\s+[^\x00-\x7F]/)[0].replace(/\s*\([^)]*\)\s*$/, ''))) }))
+    .filter((entry) => entry.at >= 0)
+    .sort((a, b) => a.at - b.at)
+    .map((entry) => entry.item);
+};
+
+/** "5 vial" reads "5 vials" in the English shop; any other size label is left as it is. */
+export const setSizeLabel = (size, english = false) => {
+  const match = String(size ?? '').trim().match(/^(\d+)\s*vial$/i);
+  if (!english || !match) return String(size ?? '');
+  return Number(match[1]) === 1 ? '1 vial' : `${match[1]} vials`;
+};

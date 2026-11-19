@@ -3,7 +3,7 @@ import { quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { isDiscoverySet } from '@/utils/discoverySet.js';
+import { isDiscoverySet, setContents, setSizeLabel } from '@/utils/discoverySet.js';
 import AbroadAskLink from '@/components/storefront/AbroadAskLink.jsx';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
@@ -215,7 +215,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
     }, 1800);
   };
 
-  const related = relatedFor(product, catalog);
+  // Audit, 19 Nov 2026. A set page lists the perfumes in the box (from Dekito's own description); a perfume
+  // page's "you may also like" offers perfumes, not sets.
+  const isSet = isDiscoverySet(product);
+  const inTheSet = setContents(product, catalog);
+  const related = relatedFor(product, isSet ? catalog : catalog.filter((item) => !isDiscoverySet(item)));
   const named = splitScriptName(product.name);
   // The immersive story is a long editorial narrative — a letter, not UI copy. The English shop gets it
   // only when an ENGLISH one exists; it never falls back to the Indonesian, because a full-screen
@@ -396,7 +400,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                       )}
                     </button>
                     {soldOut ? (
-                      <AskAtelierButton labelKey="pdp.restockAsk" draftKey="pdp.restockDraft" draftVars={{ name: `${plainName(product.name)} (${selectedSize})` }} className="w-full" />
+                      <AskAtelierButton labelKey={isSet ? 'pdp.restockAskSet' : 'pdp.restockAsk'} draftKey="pdp.restockDraft" draftVars={{ name: `${plainName(product.name)} (${selectedSize})` }} className="w-full" />
                     ) : isInternational ? (
                       <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} />
                     ) : (
@@ -409,7 +413,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                         <AbroadAskLink labelKey="pdp.askAbroad" draftKey="pdp.abroadDraft" vars={{ name: plainName(product.name) }} className="ng-link inline-flex min-h-[44px] items-center" />
                       </p>
                     )}
-                    <ShareProductButton product={product} />
+                    <ShareProductButton product={product} asSet={isSet} />
                   </div>
 
                   {/* Under the buy button for the reason written out on the phone page: the form stood between
@@ -437,8 +441,42 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
           <section className="ng-section ng-section--deep" aria-labelledby="pdp-pyramid-heading" data-reveal>
             <div className="ng-container flex flex-col gap-14">
-              <h2 id="pdp-pyramid-heading" className="ng-display ng-h2">{t('pdp.ngPyramidHeading')} <em>{t('pdp.ngPyramidHeadingEm')}</em></h2>
-              <ScentPyramid product={{ ...product, ...copy }} />
+              {/* A set has no pyramid of its own: it has the perfumes in the box, each a link to its page. */}
+              {isSet ? (
+                <>
+                  <h2 id="pdp-pyramid-heading" className="ng-display ng-h2">{t('pdp.setContentsHeading')} <em>{t('pdp.setContentsHeadingEm')}</em></h2>
+                  {/* Nineteen cards is five screens on a phone: past six, the box is a plain list of names. */}
+                  {inTheSet.length > 6 ? (
+                    <ul className="m-0 grid list-none grid-cols-2 gap-x-6 p-0 md:grid-cols-4">
+                      {inTheSet.map((item) => (
+                        <li key={item.slug} className="border-b border-ng-bone/15">
+                          <Link to={`/catalog/${item.slug}`} className="flex min-h-[52px] flex-col justify-center py-2">
+                            <span className="font-ng-display text-[22px] leading-tight">{splitScriptName(item.name).name}</span>
+                            <span className="ng-mono text-ng-ash">{item.category}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : inTheSet.length ? (
+                    <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-10 p-0 md:grid-cols-5 md:gap-6">
+                      {inTheSet.map((item) => (
+                        <li key={item.slug}>
+                          <Link to={`/catalog/${item.slug}`} className="ng-card">
+                            <ProductVisual product={item} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 240px" />
+                            <span className="ng-mono text-ng-ash">{item.category}</span>
+                            <span className="font-ng-display text-[24px] leading-none md:text-[26px]">{splitScriptName(item.name).name}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <h2 id="pdp-pyramid-heading" className="ng-display ng-h2">{t('pdp.ngPyramidHeading')} <em>{t('pdp.ngPyramidHeadingEm')}</em></h2>
+                  <ScentPyramid product={{ ...product, ...copy }} />
+                </>
+              )}
 
               <div className="flex flex-col gap-4">
                 <p className="ng-mono m-0 text-ng-ash">{t('pdp.ngDetails')}</p>
@@ -448,7 +486,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                   {/* Not on a discovery set: these are the catalogue's defaults there, not facts about the set. */}
                   {product.concentration && !isDiscoverySet(product) ? <li>{product.concentration}</li> : null}
                   {product.intensity && !isDiscoverySet(product) ? <li>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</li> : null}
-                  {(product.sizeVariants || []).length ? <li>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</li> : null}
+                  {(product.sizeVariants || []).length ? <li>{(product.sizeVariants || []).map((v) => (isSet ? setSizeLabel(v.size, isInternational) : v.size)).join(' / ')}</li> : null}
                   {/* Shown only once the atelier has stated it. A fragrance database records a launch year
                       for everything it lists, and an absent year is answered honestly rather than guessed —
                       created_at is right there and means something else entirely. */}

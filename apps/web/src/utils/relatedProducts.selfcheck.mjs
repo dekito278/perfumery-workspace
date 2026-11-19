@@ -73,7 +73,8 @@ for (const [name, file] of [
   ['desktop', ['pages', 'PublicProductDetailPage.jsx']],
 ]) {
   const source = read(...file);
-  assert.match(source, /relatedFor\(product, catalog\)/, `${name} must ask the shared rule`);
+  // (Since 19 Nov 2026 a perfume page hands the rule the catalogue without discovery sets.)
+  assert.match(source, /relatedFor\(product, isSet \? catalog : catalog\.filter\(\(item\) => !isDiscoverySet\(item\)\)\)/, `${name} must ask the shared rule`);
   assert.doesNotMatch(source, /catalog\s*\n?\s*\.filter\([^)]*\)\s*\n?\s*\.slice\(0, 4\)/,
     `${name} still builds its own "first four in the catalogue" list`);
 }
