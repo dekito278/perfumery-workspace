@@ -38,6 +38,9 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
   shop with `?toko=en` / `?toko=id` (cookie, 30 days); `?toko=auto` turns it back on.
 - "Cara jadi member" opens WhatsApp ("saya mau jadi member"); Dekito replies with a code (Indonesian shop only).
 - Free vial: one per bottle, at most 3 per order, each a different scent (18 Nov 2026); server enforces it.
+- Discovery sets (category "Discovery Set", `src/utils/discoverySet.js`): Set I–III Rp199.000 / US$35, Set IV
+  Rp269.000 / US$45, Set Lengkap Rp699.000 / US$115 (Dekito's numbers). Not a bottle → no free vial; no
+  automatic member/export price. Abroad a set rides with a bottle (one set per bottle adds no DHL weight).
 
 ## Policies he agreed (16 Nov 2026) — on the Help page, guarded by returnsPolicyIsWritten
 - Damaged/wrong/short parcel: report within 2×24 h with an unboxing video → resend or full refund incl.

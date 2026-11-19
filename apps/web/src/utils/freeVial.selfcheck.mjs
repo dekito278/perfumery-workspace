@@ -37,8 +37,6 @@ const lift = (pattern, what) => {
 };
 const visibility = await import(`data:text/javascript;base64,${Buffer.from([
   "import { isFreeVialProduct } from 'file://" + join(root, 'utils', 'freeVial.js') + "';",
-  // Discovery sets leave the English listings through the same helper (18 Nov 2026).
-  "import { shownInThisShop } from 'file://" + join(root, 'utils', 'discoverySet.js') + "';",
   lift(/const PRODUCT_DRAFT_TAG = '[^']*';/, 'the draft tag'),
   lift(/const splitList = [\s\S]*?\n\};/, 'splitList'),
   lift(/export const isProductDraft = [\s\S]*?\n\);/, 'isProductDraft'),

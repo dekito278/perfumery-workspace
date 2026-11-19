@@ -13,6 +13,7 @@ import { tierPricesForLine } from '@/utils/tierPrice.js';
 import { splitFreeVialLines } from '@/utils/freeVial.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML } from '@/data/internationalShippingRates.js';
 import { plainName } from '@/utils/scriptName.js';
+import { isDiscoverySet, parcelBottlesFor } from '@/utils/discoverySet.js';
 
 /**
  * One international total, computed once, for every surface that shows or sends it.
@@ -58,16 +59,20 @@ export const useExportShippingPolicy = () => {
  *                  A CART has lines whether or not they can be priced, and a basket of unpriced lines
  *                  still has to reach Dekito.
  */
+//
+// `sets`: discovery sets riding in the same parcel (utils/discoverySet.js). One per bottle adds nothing;
+// beyond that each ships as a bottle. A basket of sets and no bottle cannot be sent (`setsNeedBottle`).
 export const internationalQuoteFor = ({
   country = '', bottles = 1, goodsUsd = null, onTheCard = true, hasOrder = null, t, region = 'en',
-  policy = getExportShippingPolicy(),
+  policy = getExportShippingPolicy(), sets = 0,
 } = {}) => {
+  const parcel = parcelBottlesFor(bottles, sets);
   // Nothing picked is its own case and must not be confused with a destination we cannot serve: the
   // first is a question the buyer has not answered, the second is an answer we do not have.
   const quote = country && onTheCard
     // The same two policy numbers the Studio quote reads, out of the one cache, so a figure sent by
     // hand on WhatsApp cannot disagree with the cart.
-    ? quoteInternationalShippingPrice({ countryCode: country, bottles, policy })
+    ? quoteInternationalShippingPrice({ countryCode: country, bottles: Math.max(1, parcel), policy })
     : null;
   const shippingUsd = quote?.usd ?? null;
   const shippingCostUsd = quote?.costUsd ?? null;
@@ -79,7 +84,7 @@ export const internationalQuoteFor = ({
   // which the buyer only learned from a line on the Help page. Null when it would not help; past the cap
   // the quote itself has no price, so that is null too.
   const nextShippingUsd = shippingUsd
-    ? (quoteInternationalShippingPrice({ countryCode: country, bottles: bottles + 1, policy })?.usd ?? null)
+    ? (quoteInternationalShippingPrice({ countryCode: country, bottles: Math.max(1, parcelBottlesFor(bottles + 1, sets)), policy })?.usd ?? null)
     : null;
 
   // Which "no number" this is, most specific first. A size the rule was not written for is not the
@@ -101,7 +106,10 @@ export const internationalQuoteFor = ({
     : '';
   // "1 bottle(s)" is what a template with the noun baked in produces; the count arrives already worded
   // from the catalogue, in the shop's own language, so the template only places it.
-  const countLabel = t(bottles === 1 ? 'intlQuote.bottleOne' : 'intlQuote.bottleMany', { count: bottles });
+  const countLabel = [
+    bottles ? t(bottles === 1 ? 'intlQuote.bottleOne' : 'intlQuote.bottleMany', { count: bottles }) : '',
+    sets ? t(sets === 1 ? 'intlQuote.setOne' : 'intlQuote.setMany', { count: sets }) : '',
+  ].filter(Boolean).join(' + ');
   // The arrival estimate, worded once here for both the screen and the draft.
   const eta = transitDays ? t('intlQuote.etaRange', { min: transitDays[0], max: transitDays[1] }) : '';
 
@@ -126,7 +134,7 @@ export const internationalQuoteFor = ({
     country, bottles, destination, transitDays, eta,
     goodsUsd, shippingUsd, shippingCostUsd, shippingSupportUsd, totalUsd, onRequest,
     nextShippingUsd: nextShippingUsd !== null && nextShippingUsd <= shippingUsd ? nextShippingUsd : null,
-    settled: Boolean(totalUsd), draftVars, needsDestination,
+    settled: Boolean(totalUsd), draftVars, needsDestination, sets, setsNeedBottle: sets > 0 && !bottles,
   };
 };
 
@@ -212,18 +220,21 @@ export const useCartInternationalQuote = (items = []) => {
         quantity,
         unitUsd,
         lineUsd: unitUsd ? unitUsd * quantity : null,
-        onTheCard: sizeIsOnTheCard(item.size),
+        isSet: isDiscoverySet(item),
+        // A set is priced by its own export row and rides in a bottle's box, so its "size" is not a bottle size.
+        onTheCard: isDiscoverySet(item) || sizeIsOnTheCard(item.size),
       };
     });
   }, [items, catalog, index]);
 
   const unpriced = lines.filter((line) => !line.unitUsd);
-  const bottles = lines.reduce((sum, line) => sum + line.quantity, 0);
+  const bottles = lines.filter((line) => !line.isSet).reduce((sum, line) => sum + line.quantity, 0);
+  const sets = lines.filter((line) => line.isSet).reduce((sum, line) => sum + line.quantity, 0);
   const goodsUsd = lines.length && !unpriced.length
     ? lines.reduce((sum, line) => sum + line.lineUsd, 0)
     : null;
   const core = internationalQuoteFor({
-    country, bottles: Math.max(1, bottles), goodsUsd, hasOrder: lines.length > 0,
+    country, bottles, sets, goodsUsd, hasOrder: lines.length > 0,
     onTheCard: lines.every((line) => line.onTheCard), t, region, policy,
   });
   // Every line travels, priced or not: a line the shop cannot price yet is the one Dekito most needs to

@@ -25,7 +25,8 @@ for (const country of ['SG', 'US', 'GB', 'DE', 'AU', 'AE']) {
   assert.ok(two <= one, `${country}: a second bottle would make shipping dearer (${one} → ${two}), and the line would lie`);
 }
 const hook = read('hooks', 'useInternationalQuote.js');
-assert.match(hook, /quoteInternationalShippingPrice\(\{ countryCode: country, bottles: bottles \+ 1, policy \}\)/);
+// (Counted as a parcel since 18 Nov 2026, so discovery sets riding along are included.)
+assert.match(hook, /quoteInternationalShippingPrice\(\{ countryCode: country, bottles: Math\.max\(1, parcelBottlesFor\(bottles \+ 1, sets\)\), policy \}\)/);
 assert.match(hook, /nextShippingUsd: nextShippingUsd !== null && nextShippingUsd <= shippingUsd \? nextShippingUsd : null/,
   'only ever said when one more bottle makes shipping cheaper or free — never when it costs more');
 const quote = read('components', 'storefront', 'InternationalShippingQuote.jsx');

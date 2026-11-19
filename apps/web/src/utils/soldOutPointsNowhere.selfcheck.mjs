@@ -17,7 +17,7 @@ assert.match(price, /canOrder = true/);
 assert.match(price, /\{canOrder \? \(\s*<p[\s\S]{0,300}t\('intl\.priceNote'\)/, 'the "choose it below" line only shows when the picker does');
 const pdp = read('pages', 'PublicProductDetailPage.jsx');
 assert.match(pdp, /<InternationalPrice price=\{exportPrice\} canOrder=\{!soldOut\} \/>/);
-assert.match(pdp, /\{exportPrice && !soldOut \? \(\s*<InternationalShippingQuote/, 'the picker the sentence points to is hidden when sold out');
+assert.match(pdp, /\{exportPrice && !soldOut( && !isDiscoverySet\(product\))? \? \(\s*<InternationalShippingQuote/, 'the picker the sentence points to is hidden when sold out');
 
 assert.match(read('pages', 'HelpPage.jsx'), /<Link to="\/bespoke" className="inline-flex min-h-11 items-center/);
 console.log('soldOutPointsNowhere selfcheck OK (no pointer to a hidden picker; help link is thumb-sized)');

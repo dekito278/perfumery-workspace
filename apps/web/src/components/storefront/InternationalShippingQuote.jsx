@@ -48,7 +48,7 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
   const price = fromCart ? quote.goodsUsd : ownPrice;
   const {
     country, bottles, setCountry, setBottles,
-    goodsUsd, shippingUsd, shippingSupportUsd, totalUsd, onRequest, bottleSizeLabel, eta, nextShippingUsd,
+    goodsUsd, shippingUsd, shippingSupportUsd, totalUsd, onRequest, bottleSizeLabel, eta, nextShippingUsd, sets = 0,
   } = fromCart ? { ...quote, setBottles: null, bottleSizeLabel: `${SHIPPING_RATE_BOTTLE_SIZE_ML} ml` } : own;
   // A STABLE id for the country picker, not a useId one: the order buttons on this page send a buyer who
   // has not chosen yet to this control, and they find it by id.
@@ -120,7 +120,9 @@ const InternationalShippingQuote = ({ product = null, variant = null, quote = nu
       <dl className="mt-3 space-y-1 text-sm">
         <div className="flex items-baseline justify-between gap-3">
           <dt className="text-ng-dust">
-            {t('intlQuote.goodsLine', { count: bottles, size: bottleSizeLabel })}
+            {sets
+              ? t('intlQuote.goodsLineSets', { count: bottles, size: bottleSizeLabel, sets })
+              : t('intlQuote.goodsLine', { count: bottles, size: bottleSizeLabel })}
           </dt>
           <dd className="font-semibold text-ng-bone">US${goodsUsd}</dd>
         </div>
