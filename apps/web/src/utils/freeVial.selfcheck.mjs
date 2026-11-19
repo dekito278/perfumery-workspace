@@ -159,10 +159,11 @@ assert.equal(isFreeVialLine({ tags: [FREE_VIAL_TAG] }), true);
 // The browser quotes the freight, the endpoint charges it. A rule applied to one of them is a rule that
 // does not hold — it is the shape of "shown one courier fee, charged another".
 const shipping = read('services', 'shippingService.js');
-assert.match(shipping, /totalItemWeightGram\(weighFreeVialLines\(items\), fallback\)/,
+// (Wrapped in weighSetLines since 19 Nov 2026: a discovery set weighs its weighed 250 g.)
+assert.match(shipping, /totalItemWeightGram\(weighSetLines\(weighFreeVialLines\(items\)\), fallback\)/,
   'the browser must weigh the gift as a vial before it quotes');
 const endpoint = readFileSync(join(root, '..', 'api', 'orders', 'create.js'), 'utf8');
-assert.match(endpoint, /totalItemWeightGram\(weighFreeVialLines\(weighedLines\), itemWeight\)/,
+assert.match(endpoint, /totalItemWeightGram\(weighSetLines\(weighFreeVialLines\(weighedLines\)\), itemWeight\)/,
   'and so must the endpoint that charges');
 
 // --- 9. The endpoint decides the gift from the PRODUCT, and refuses a second one -----------------------
