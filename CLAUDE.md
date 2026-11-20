@@ -43,6 +43,14 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
   automatic member/export price. Abroad a set rides with a bottle (one set per bottle adds no DHL weight).
   English shop shows English set names from `SET_NAMES_EN` (he asked, 19 Nov 2026); perfume names never change.
 
+- Buyer reviews (20 Nov 2026, `src/utils/reviews.js`, SQL `supabase/manual/20261120090000_buyer_reviews.sql`): only
+  for perfumes in a SHIPPED order of the signed-in buyer (linked customer code, or `client_context.buyer_account`
+  written by `api/orders/create.js` from the verified session); 1–5 stars, text optional (600); "Rina D." or
+  "Pembeli terverifikasi"; every review waits until Dekito publishes it in Studio → Ulasan (he can reply, never
+  edit); editable 30 days, an edit waits again. PDP shows them only when there are any; catalogue stars from 3
+  reviews; `/reviews` page; EN shop shows them with "Reviews from buyers in Indonesia, in Indonesian." The old
+  pasted quotes stay, headed "Dari chat pembeli". Studio order page has a separate "Minta ulasan" WhatsApp button.
+
 ## Policies he agreed (16 Nov 2026) — on the Help page, guarded by returnsPolicyIsWritten
 - Damaged/wrong/short parcel: report within 2×24 h with an unboxing video → resend or full refund incl.
   shipping (window can be set in Studio → Fakta toko).

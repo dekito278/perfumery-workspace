@@ -10,7 +10,7 @@
 // simply is not served and the queue below is never read.
 
 const BUYER_PREFIXES = [
-  '/home', '/catalog', '/products', '/articles', '/about', '/bespoke', '/journal', '/help', '/cart',
+  '/home', '/catalog', '/products', '/articles', '/about', '/bespoke', '/journal', '/help', '/reviews', '/cart',
   '/checkout', '/payment', '/customer', '/welcome', '/track', '/track-order',
 ];
 

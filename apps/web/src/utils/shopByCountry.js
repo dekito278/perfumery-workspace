@@ -27,7 +27,7 @@ export const PREVIEW_PARAM = 'toko';
 
 // The shop pages each shop has, by first path segment. '' is the home page.
 const SHOP_PAGES = new Set([
-  '', 'home', 'catalog', 'products', 'articles', 'about', 'bespoke', 'journal', 'help', 'cart', 'checkout',
+  '', 'home', 'catalog', 'products', 'articles', 'about', 'bespoke', 'journal', 'help', 'reviews', 'cart', 'checkout',
   'welcome', 'hug', 'chant-nocturne', 'jaipong', 'porte-vers-le-paradis', 'trace-daventure', 'customer',
 ]);
 // Under a shop page but belonging to an order already placed: left alone (rule 2 above).

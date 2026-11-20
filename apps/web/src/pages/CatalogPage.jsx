@@ -1,4 +1,6 @@
 import CardPrice from '@/components/storefront/CardPrice.jsx';
+import CardRating from '@/components/storefront/CardRating.jsx';
+import { useReviewStats } from '@/hooks/useReviews.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { isDiscoverySet } from '@/utils/discoverySet.js';
 import { Helmet } from 'react-helmet';
@@ -35,6 +37,8 @@ const CARD_NOTE_LIMIT = 3;
 const CatalogPage = () => {
   const fetchedProducts = useStorefrontProducts();
   const { t, region } = useTranslate();
+  // Published-review stars per perfume; a card shows them from three reviews up (CardRating).
+  const reviewStats = useReviewStats();
   // No fallback to the bundled seed data. featuredProducts is six invented perfumes — Santal Morn,
   // Petal Smoke and so on — that this shop has never sold. When the catalogue query came back empty, a
   // customer was shown all six with prices, and clicking one landed on "Halaman tidak ditemukan". An
@@ -312,6 +316,7 @@ const CatalogPage = () => {
                               visitor audit, 13 Nov 2026: 19 perfumes under one h1 and nothing else). */}
                           <h2 className="m-0 font-ng-display text-[28px] font-normal leading-none [overflow-wrap:anywhere] md:text-[34px]">{named.name}</h2>
                           <span className="ng-cat-row__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || t('catalog.cardFallbackLabel')}</span>
+                          <CardRating stats={reviewStats[product.slug]} className="self-start" />
                         </Link>
                         {/* What it smells of, in three words. The field holds the full material list since
                             2026-10-07 — far too long for a row — so this reuses the clamp the cart lines

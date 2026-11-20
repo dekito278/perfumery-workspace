@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, FileCheck2, FileText, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, Printer, ReceiptText, RefreshCw, Save, Send, ShieldCheck, Sparkles, Truck, UserRound } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, FileCheck2, FileText, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, Printer, ReceiptText, RefreshCw, Save, Send, ShieldCheck, Sparkles, Star, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -64,7 +64,9 @@ import {
   stockReservationTone,
 } from '@/utils/orderWorkflow.js';
 import { formatClientContext } from '@/utils/clientContext.js';
-import { STUDIO_STEP_KEYS, studioActiveStepIndex } from '@/utils/trackingLead.js';
+import { STUDIO_STEP_KEYS, orderHasShipped, studioActiveStepIndex } from '@/utils/trackingLead.js';
+import { reviewRequestMessage } from '@/utils/reviews.js';
+import { getSiteOrigin } from '@/utils/seo.js';
 import {
   AUDIT_KEYS_THAT_MATTER,
   auditChanges,
@@ -830,6 +832,14 @@ const OrderDetailPage = () => {
                 <MessageCircle className="h-4 w-4" />
                 WA update
               </Button>
+              {/* Its own message, sent when Dekito chooses — the update/confirmation templates are untouched.
+                  Indonesian shop only: the English shop orders on WhatsApp and has no account to review from. */}
+              {orderHasShipped(order) && order.clientContext?.shop !== 'en' ? (
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => openWhatsApp(reviewRequestMessage(order, getSiteOrigin()))}>
+                  <Star className="h-4 w-4" />
+                  Minta ulasan
+                </Button>
+              ) : null}
             </div>
           </div>
         </section>

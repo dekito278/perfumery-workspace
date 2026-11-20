@@ -38,6 +38,7 @@ import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import FreeVialNote from '@/components/storefront/FreeVialNote.jsx';
 import BuyerAnswers from '@/components/storefront/BuyerAnswers.jsx';
 import ProductTestimonials from '@/components/storefront/ProductTestimonials.jsx';
+import ProductReviews from '@/components/storefront/ProductReviews.jsx';
 import InternationalShippingQuote from '@/components/storefront/InternationalShippingQuote.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
@@ -521,6 +522,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
           <div className="ng-section empty:hidden">
             <ProductStoryLink product={product} className="ng-container" />
           </div>
+          <ProductReviews product={product} />
           <ProductTestimonials product={product} />
           <BuyerAnswers />
 

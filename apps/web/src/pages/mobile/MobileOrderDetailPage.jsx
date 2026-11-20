@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, Factory, FileCheck2, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, Factory, FileCheck2, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Star, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -67,7 +67,9 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
-import { STUDIO_STEP_KEYS, studioActiveStepIndex } from '@/utils/trackingLead.js';
+import { STUDIO_STEP_KEYS, orderHasShipped, studioActiveStepIndex } from '@/utils/trackingLead.js';
+import { reviewRequestMessage } from '@/utils/reviews.js';
+import { getSiteOrigin } from '@/utils/seo.js';
 import {
   auditChanges,
   auditRowIsImportant,
@@ -810,6 +812,18 @@ const MobileOrderDetailPage = () => {
               <MessageCircle className="h-4 w-4" />
               WA customer
             </Button>
+            {/* A separate message, sent when Dekito chooses; the customer templates are untouched. ID shop only. */}
+            {orderHasShipped(order) && order.clientContext?.shop !== 'en' ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold"
+                onClick={() => window.open(getNotificationHandoffUrl(order, reviewRequestMessage(order, getSiteOrigin())), '_blank', 'noopener,noreferrer')}
+              >
+                <Star className="h-4 w-4" />
+                Minta ulasan
+              </Button>
+            ) : null}
             <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={copyDraft}>
               <Clipboard className="h-4 w-4" />
               Salin draft

@@ -48,6 +48,7 @@ import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { shopPrefixForRegion } from '@/utils/storefrontRegion.js';
 import MemberCodePanel from '@/components/storefront/MemberCodePanel.jsx';
+import MyReviewsPanel from '@/components/storefront/MyReviewsPanel.jsx';
 import useTranslate from '@/hooks/useTranslate.js';
 import { asCustomerCode } from '@/utils/customerCode.js';
 
@@ -1408,6 +1409,10 @@ const CustomerPortalPage = () => {
           </div>
 
           <div className="space-y-4">
+            {/* Reviews need the account, not the code: the server matches the signed-in buyer to their own
+                shipped orders — through a linked customer code, or the account they ordered with. So the
+                panel stands outside the portal, and a portal opened by code alone shows none. */}
+            {currentUser ? <MyReviewsPanel /> : null}
             {portal?.requiresIdentity ? (
               <section className="rounded-none border bg-transparent p-5">
                 <div className="flex items-start gap-3">
