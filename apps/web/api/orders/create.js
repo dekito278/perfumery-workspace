@@ -680,7 +680,11 @@ export default async function handler(req, res) {
       // that column, told all 11 shipped buyers "Kurir: belum tersedia" about a parcel already on a van.
       courier_name: shippingSummary || null,
       source: isBespoke ? 'bespoke_request' : (input.source || 'storefront'),
-      client_context: clientContext,
+      // The signed-in account that placed this order, from the verified session (resolveBuyer), never from
+      // the request body. It lets that account review the perfumes once they ship (Dekito, 20 Nov 2026) —
+      // storefront_my_reviewable_items reads it — without linking the account to a customer row found by
+      // phone number, which would hand a stranger who typed someone's number their order history.
+      client_context: buyer.authUserId ? { ...clientContext, buyer_account: buyer.authUserId } : clientContext,
       ...(isBespoke ? { bespoke_production_status: 'review_brief' } : {}),
     };
 

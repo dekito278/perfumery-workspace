@@ -20,6 +20,7 @@ import {
   ImagePlus,
   WandSparkles,
   ListChecks,
+  MessageSquareText,
 } from 'lucide-react';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import { cn } from '@/lib/utils.js';
@@ -37,6 +38,7 @@ const navGroups = [
       { path: '/mobile/studio/orders', label: 'Orders', helper: 'Antrean order dari checkout', icon: PackageCheck },
       { path: '/mobile/studio/fulfillment', label: 'Fulfillment', helper: 'Packing dan pengiriman', icon: PackageOpen },
       { path: '/mobile/studio/customers', label: 'Customer', helper: 'Cari kode customer', icon: UsersRound },
+      { path: '/mobile/studio/reviews', label: 'Ulasan', helper: 'Cek ulasan pembeli', icon: MessageSquareText },
       { path: '/mobile/studio/bespoke', label: 'Bespoke', helper: 'Botol, cap, label', icon: WandSparkles },
       { path: '/mobile/studio/vouchers', label: 'Vouchers', helper: 'Kode promo', icon: BadgePercent },
       { path: '/mobile/studio/member-codes', label: 'Kode member', helper: 'Satu kode per komunitas', icon: BadgeCheck },

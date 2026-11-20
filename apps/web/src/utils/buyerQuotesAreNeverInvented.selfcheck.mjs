@@ -5,6 +5,10 @@
 // 4 reviews on the best page and 0 or 1 on most, and "Ulasan (0)" on 14 of 18 product pages announces
 // that nobody has bought.
 //
+// 20 Nov 2026: Dekito asked for verified buyer reviews as well (buyerReviews.selfcheck.mjs). They sit beside
+// these quotes, under their own heading, and inherit both rules below: nothing invents one, none = silence.
+// The quotes stay — headed "Dari chat pembeli" now, so the two kinds are never mistaken for each other.
+//
 // Two things this guard holds, and they matter in different ways:
 //
 //   1. NOTHING IN THIS REPO MAY INVENT A QUOTE. A fabricated customer sentence is a fake review whatever

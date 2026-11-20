@@ -24,6 +24,7 @@ const DESKTOP_TO_MOBILE_PATHS = [
 
   [/^\/studio\/vouchers$/, '/mobile/studio/vouchers'],
   [/^\/studio\/member-codes$/, '/mobile/studio/member-codes'],
+  [/^\/studio\/reviews$/, '/mobile/studio/reviews'],
   [/^\/studio\/shipping$/, '/mobile/studio/shipping'],
   [/^\/studio\/orders$/, '/mobile/studio/orders'],
   [/^\/studio\/orders\/([^/]+)$/, '/mobile/studio/orders/$1'],

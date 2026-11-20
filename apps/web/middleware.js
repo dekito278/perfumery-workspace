@@ -7,8 +7,8 @@ export const config = {
   matcher: [
     '/',
     '/en',
-    '/:first(home|catalog|products|articles|about|bespoke|journal|help|cart|checkout|welcome|hug|chant-nocturne|jaipong|porte-vers-le-paradis|trace-daventure|customer)/:rest*',
-    '/en/:first(home|catalog|products|articles|about|bespoke|journal|help|cart|checkout|welcome|hug|chant-nocturne|jaipong|porte-vers-le-paradis|trace-daventure|customer)/:rest*',
+    '/:first(home|catalog|products|articles|about|bespoke|journal|help|reviews|cart|checkout|welcome|hug|chant-nocturne|jaipong|porte-vers-le-paradis|trace-daventure|customer)/:rest*',
+    '/en/:first(home|catalog|products|articles|about|bespoke|journal|help|reviews|cart|checkout|welcome|hug|chant-nocturne|jaipong|porte-vers-le-paradis|trace-daventure|customer)/:rest*',
   ],
 };
 

@@ -99,6 +99,7 @@ const ProductInventoryPage = lazyRoute(() => import('@/pages/ProductInventoryPag
 const ProductCategoriesPage = lazyRoute(() => import('@/pages/ProductCategoriesPage.jsx'));
 const VoucherManagementPage = lazyRoute(() => import('@/pages/VoucherManagementPage.jsx'));
 const MemberCodesPage = lazyRoute(() => import('@/pages/MemberCodesPage.jsx'));
+const ReviewsModerationPage = lazyRoute(() => import('@/pages/ReviewsModerationPage.jsx'));
 const ShippingPromotionPage = lazyRoute(() => import('@/pages/ShippingPromotionPage.jsx'));
 const OrdersPage = lazyRoute(() => import('@/pages/OrdersPage.jsx'));
 const OrderDetailPage = lazyRoute(() => import('@/pages/OrderDetailPage.jsx'));
@@ -135,6 +136,7 @@ const StoryEditorPage = lazyRoute(() => import('@/pages/StoryEditorPage.jsx'));
 const MobileLoginPage = lazyRoute(() => import('@/pages/mobile/MobileLoginPage.jsx'));
 const AboutPage = lazyRoute(() => import('@/pages/AboutPage.jsx'));
 const HelpPage = lazyRoute(() => import('@/pages/HelpPage.jsx'));
+const ReviewsPage = lazyRoute(() => import('@/pages/ReviewsPage.jsx'));
 // The international cart is lazy like the phone's: it is one shop's page, not every visitor's.
 const InternationalCartPage = lazyRoute(() => import('@/pages/InternationalCartPage.jsx'));
 // Lazy since 15 Nov 2026 (−18 kB brotli on every first visit): nobody lands on checkout cold. It is fetched
@@ -157,6 +159,7 @@ const MobileProductCategoriesPage = lazyRoute(() => import('@/pages/mobile/Mobil
 const MobileBespokeSettingsPage = lazyRoute(() => import('@/pages/mobile/MobileBespokeSettingsPage.jsx'));
 const MobileVoucherManagementPage = lazyRoute(() => import('@/pages/mobile/MobileVoucherManagementPage.jsx'));
 const MobileMemberCodesPage = lazyRoute(() => import('@/pages/mobile/MobileMemberCodesPage.jsx'));
+const MobileReviewsPage = lazyRoute(() => import('@/pages/mobile/MobileReviewsPage.jsx'));
 const MobileShippingPromotionPage = lazyRoute(() => import('@/pages/mobile/MobileShippingPromotionPage.jsx'));
 const MobileOrdersPage = lazyRoute(() => import('@/pages/mobile/MobileOrdersPage.jsx'));
 const MobileOrderDetailPage = lazyRoute(() => import('@/pages/mobile/MobileOrderDetailPage.jsx'));
@@ -211,6 +214,7 @@ const storefrontRoutePrefixes = [
   '/about',
   '/bespoke',
   '/journal',
+  '/reviews',
   '/cart',
   '/checkout',
   '/payment',
@@ -524,6 +528,8 @@ function AppRoutes() {
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/help" element={<HelpPage />} />
+        {/* Verified buyer reviews, all perfumes (Dekito, 20 Nov 2026). */}
+        <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/journal" element={<PublicJournalPage />} />
         <Route path="/cart" element={<ByShop domestic={<CartPage />} international={<InternationalCartPage />} />} />
@@ -624,6 +630,12 @@ function AppRoutes() {
         <Route path="/mobile/studio/member-codes" element={
           <ProtectedRoute>
             <MobileMemberCodesPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/reviews" element={
+          <ProtectedRoute>
+            <MobileReviewsPage />
           </ProtectedRoute>
         } />
 
@@ -869,6 +881,12 @@ function AppRoutes() {
         <Route path="/studio/member-codes" element={
           <ProtectedRoute>
             <MemberCodesPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/reviews" element={
+          <ProtectedRoute>
+            <ReviewsModerationPage />
           </ProtectedRoute>
         } />
 

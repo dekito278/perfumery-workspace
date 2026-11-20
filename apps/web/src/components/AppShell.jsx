@@ -29,6 +29,7 @@ import {
   UsersRound,
   WandSparkles,
   ListChecks,
+  MessageSquareText,
 } from 'lucide-react';
 import AdminSessionNotice from '@/components/AdminSessionNotice.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -96,6 +97,7 @@ const AppShell = ({ children }) => {
         { path: '/studio/export-shipping', label: 'Ekspor', icon: Globe2 },
         { path: '/studio/orders', label: 'Order', icon: PackageCheck },
         { path: '/studio/customers', label: 'Customer', icon: UsersRound },
+        { path: '/studio/reviews', label: 'Ulasan', icon: MessageSquareText },
         { path: '/studio/bespoke', label: 'Bespoke', icon: WandSparkles },
         { path: '/studio/shipments', label: 'Pengiriman', icon: Truck },
         { path: '/studio/site-images', label: 'Gambar Situs', icon: ImagePlus },
