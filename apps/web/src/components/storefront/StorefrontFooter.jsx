@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { useReviewStats } from '@/hooks/useReviews.js';
 
 
 // `key` is what the code branches on — the WhatsApp link hangs off the info column — and it must not be
@@ -14,6 +15,9 @@ const footerColumns = [
     links: [
       { labelKey: 'nav.allFragrances', to: '/catalog' },
       { labelKey: 'nav.bespoke', to: '/bespoke' },
+      // Only once a review is published (Dekito, 25 Nov 2026): a link to an empty page would say nobody has
+      // bought — the reason the product page stays silent with no reviews.
+      { labelKey: 'nav.reviews', to: '/reviews', onlyWithReviews: true },
     ],
   },
   {
@@ -35,6 +39,8 @@ const StorefrontFooter = () => {
   const siteFacts = useSiteFacts();
   // One source for the number. Rendered only when configured — a wa.me link with no recipient is a dead end.
   const whatsapp = getStorefrontWhatsAppNumber();
+  const reviewStats = useReviewStats();
+  const hasReviews = Object.values(reviewStats).some((stats) => stats.count > 0);
   return (
     <footer className="ng-footer">
       <div className="ng-container">
@@ -47,7 +53,7 @@ const StorefrontFooter = () => {
           {footerColumns.map((col) => (
             <div key={col.key} className="ng-footer__column">
               <span className="ng-footer__heading ng-mono">{t(col.titleKey)}</span>
-              {col.links.map((link) => (
+              {col.links.filter((link) => !link.onlyWithReviews || hasReviews).map((link) => (
                 <Link key={link.to} to={link.to} className="ng-link">{t(link.labelKey)}</Link>
               ))}
               {col.key === 'info' && whatsapp ? (
