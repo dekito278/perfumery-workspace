@@ -3,7 +3,8 @@ import { isReadyToPack, isShippedOrder, matchesOrderFilter } from '@/utils/order
 import { materialsWithoutGuidance } from '@/utils/guidanceGap.js';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, ShieldCheck, Sparkles, Truck, UsersRound, WandSparkles, WifiOff } from 'lucide-react';
+import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, ShieldCheck, Sparkles, Truck, UsersRound, WandSparkles, WifiOff, MessageSquareText } from 'lucide-react';
+import { usePendingReviewSummary } from '@/hooks/useReviews.js';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -125,6 +126,7 @@ const PriorityCard = ({ icon: Icon, label, title, helper, tone = 'amber', onClic
 
 const MobileDashboardPage = () => {
   const navigate = useNavigate();
+  const pendingReviews = usePendingReviewSummary();
   const location = useLocation();
   const { currentUser } = useAuth();
   const { fetchMaterialsSummary, fetchMaterialsReferenceSummary } = useRawMaterials();
@@ -338,6 +340,17 @@ const MobileDashboardPage = () => {
               <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Order</Button>
             </div>
             <div className="grid gap-3">
+              {/* Only while a buyer review waits (25 Nov 2026), and only once the reviews SQL has run. */}
+              {pendingReviews.ready && pendingReviews.count ? (
+                <PriorityCard
+                  icon={MessageSquareText}
+                  label="Ulasan pembeli"
+                  title={`${pendingReviews.count} ulasan menunggu dicek`}
+                  helper="Tekan Tampilkan supaya muncul di toko"
+                  tone="amber"
+                  onClick={() => navigate('/mobile/studio/reviews')}
+                />
+              ) : null}
               <PriorityCard
                 icon={FileCheck2}
                 label="Bukti transfer"

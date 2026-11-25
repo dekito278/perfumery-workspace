@@ -137,3 +137,24 @@ export const updateStudioReview = async (id, { status, reply } = {}) => {
   if (error) throw error;
   return normalizeStudioReview(data);
 };
+
+/**
+ * What the Studio dashboards need: how many reviews wait for Dekito, and the newest few. `ready: false` until
+ * the SQL has run (then the dashboards show nothing about reviews at all). Never throws — a dashboard card
+ * must not take the dashboard down with it.
+ */
+export const getPendingReviewSummary = async ({ limit = 3 } = {}) => {
+  try {
+    const { data, error, count } = await supabase
+      .from(TABLE)
+      .select('*, product:storefront_products(name,slug)', { count: 'exact' })
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return { ready: true, count: Number(count ?? (data || []).length), reviews: (data || []).map(normalizeStudioReview) };
+  } catch (error) {
+    if (!isSchemaMissing(error)) console.warn('Pending reviews could not be counted:', error.message || error);
+    return { ready: false, count: 0, reviews: [] };
+  }
+};

@@ -115,6 +115,14 @@ assert.match(read('../App.jsx'), /<Route path="\/reviews" element=\{<ReviewsPage
 assert.match(read('../App.jsx'), /<Route path="\/studio\/reviews"/);
 assert.match(read('../App.jsx'), /<Route path="\/mobile\/studio\/reviews"/);
 
+// Both Studio dashboards say when a review waits (25 Nov 2026) — and say nothing when none does.
+const desk = read('../pages/DashboardPage.jsx');
+assert.match(desk, /pendingReviews\.ready && pendingReviews\.count \?/);
+assert.match(desk, /navigate\('\/studio\/reviews'\)/);
+const phone = read('../pages/mobile/MobileDashboardPage.jsx');
+assert.match(phone, /pendingReviews\.ready && pendingReviews\.count \?/);
+assert.match(phone, /navigate\('\/mobile\/studio\/reviews'\)/);
+
 // --- 7. The SQL (developer machine only — Vercel checks out apps/web alone) -----------------------------
 const SQL = path.resolve(HERE, '../../../../supabase/manual/20261120090000_buyer_reviews.sql');
 if (!fs.existsSync(SQL) || !fs.readFileSync(SQL, 'utf8').trim()) {
