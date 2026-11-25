@@ -87,6 +87,12 @@ const service = stripComments(read('../services/reviewService.js'));
 const updateFn = service.slice(service.indexOf('export const updateStudioReview'));
 assert.doesNotMatch(updateFn, /patch\.(body|rating|display_name|anonymous)\s*=/, 'Studio must not edit what the buyer wrote');
 
+// The footer links /reviews only once a review is published — an empty page linked from every page would
+// say what "Ulasan (0)" says (25 Nov 2026).
+const footer = stripComments(read('../components/storefront/StorefrontFooter.jsx'));
+assert.match(footer, /to: '\/reviews', onlyWithReviews: true/);
+assert.match(footer, /!link\.onlyWithReviews \|\| hasReviews/);
+
 // --- 4. Who may review is decided by the server, from the verified session ------------------------------
 const create = read('../../api/orders/create.js');
 assert.match(create, /buyer_account: buyer\.authUserId/,
