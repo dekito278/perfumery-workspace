@@ -2,7 +2,8 @@ import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { isReadyToPack, matchesOrderFilter, ORDER_AUDIT_LABELS } from '@/utils/orderWorkflow.js';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, FileCheck2, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent } from 'lucide-react';
+import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, FileCheck2, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent, MessageSquareText } from 'lucide-react';
+import { usePendingReviewSummary } from '@/hooks/useReviews.js';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
@@ -84,6 +85,7 @@ const runWithRetry = async (loader, retries = 1) => {
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const pendingReviews = usePendingReviewSummary();
   const location = useLocation();
   const { currentUser } = useAuth();
   const { fetchMaterialsSummary, fetchMaterialsReferenceSummary } = useRawMaterials();
@@ -327,6 +329,25 @@ const DashboardPage = () => {
     }
   };
   const actionCenterItems = [
+    // Buyer reviews waiting for "Tampilkan" (25 Nov 2026). Only once the reviews SQL has run, and only while
+    // something waits: an empty review card every day would be one more box to read past.
+    ...(pendingReviews.ready && pendingReviews.count ? [{
+      key: 'reviews',
+      icon: MessageSquareText,
+      label: 'Ulasan menunggu',
+      count: pendingReviews.count,
+      tone: 'border-violet-100 bg-violet-50 text-violet-800',
+      helper: 'Ulasan pembeli baru tampil di toko sesudah kamu tekan Tampilkan.',
+      action: 'Cek ulasan',
+      onClick: () => navigate('/studio/reviews'),
+      rows: pendingReviews.reviews.map((review) => ({
+        id: review.id,
+        title: `${review.productName || 'Produk'} · ${review.rating}★`,
+        helper: review.body || (review.anonymous ? 'Anonim' : review.displayName || 'Pembeli terverifikasi'),
+        onClick: () => navigate('/studio/reviews'),
+      })),
+      empty: 'Tidak ada ulasan menunggu.',
+    }] : []),
     {
       key: 'proof',
       icon: FileCheck2,
@@ -518,7 +539,7 @@ const DashboardPage = () => {
         ) : null}
 
         <DashboardSection title="Yang perlu dikerjakan" subtitle="Urutan ini dibuat untuk kerja harian: cek bukti bayar, packing order paid, amankan stok, rapikan voucher, lalu bersihkan sync issue.">
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+          <div className={`grid grid-cols-1 gap-4 ${actionCenterItems.length > 5 ? 'md:grid-cols-2 xl:grid-cols-3' : 'xl:grid-cols-5'}`}>
             {actionCenterItems.map((item) => {
               const Icon = item.icon;
               return (

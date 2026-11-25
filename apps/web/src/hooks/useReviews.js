@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getPublicReviews, getReviewStats } from '@/services/reviewService.js';
+import { getPendingReviewSummary, getPublicReviews, getReviewStats } from '@/services/reviewService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { SET_NAMES_EN } from '@/utils/discoverySet.js';
 
@@ -36,4 +36,17 @@ export const useReviewStats = () => {
     return () => { cancelled = true; };
   }, []);
   return stats;
+};
+
+/** Studio: { ready, count, reviews } of reviews waiting to be checked. Read once when the dashboard opens. */
+export const usePendingReviewSummary = () => {
+  const [summary, setSummary] = useState({ ready: false, count: 0, reviews: [] });
+  useEffect(() => {
+    let cancelled = false;
+    getPendingReviewSummary().then((result) => {
+      if (!cancelled) setSummary(result);
+    });
+    return () => { cancelled = true; };
+  }, []);
+  return summary;
 };
