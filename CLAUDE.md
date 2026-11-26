@@ -50,6 +50,11 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
   edit); editable 30 days, an edit waits again. PDP shows them only when there are any; catalogue stars from 3
   reviews; `/reviews` page; EN shop shows them with "Reviews from buyers in Indonesia, in Indonesian." The old
   pasted quotes stay, headed "Dari chat pembeli". Studio order page has a separate "Minta ulasan" WhatsApp button.
+  Old buyers link a past order on the account page (order number + WhatsApp number, SQL
+  `20261126120000_claim_past_orders.sql`, 10 misses/hour lock) so it becomes reviewable.
+- Home (26 Nov 2026): featured bottle + grid of 8 chosen by `pickHomeShelf` (only bottle photos from
+  `/brand/products/`, Studio-flagged first, featured needs stock ≥ 3); catalogue is a photo grid, photographed
+  bottles before label cards. Bottle photos ship with -240/-600 copies (storageImage.js picks the size).
 
 ## Policies he agreed (16 Nov 2026) — on the Help page, guarded by returnsPolicyIsWritten
 - Damaged/wrong/short parcel: report within 2×24 h with an unboxing video → resend or full refund incl.

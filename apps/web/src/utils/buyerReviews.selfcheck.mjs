@@ -143,4 +143,20 @@ if (!fs.existsSync(SQL) || !fs.readFileSync(SQL, 'utf8').trim()) {
   assert.doesNotMatch(publicView, /order_id|customer_id|auth_user_id|order_number|contact/, 'the public view carries no order or buyer data');
 }
 
+// --- 8. Old buyers can link a past order (26 Nov 2026) ---------------------------------------------------
+// Most past orders were placed without signing in, so no review panel ever opened for those buyers.
+const panel = stripComments(read('../components/storefront/MyReviewsPanel.jsx'));
+assert.match(panel, /<ClaimOrderForm onLinked=\{load\} open \/>/, 'with nothing shipped on the account, the panel offers to link an old order');
+assert.match(panel, /<ClaimOrderForm onLinked=\{load\} \/>/, 'and with reviews listed, it still offers it below them');
+const CLAIM_SQL = path.resolve(HERE, '../../../../supabase/manual/20261126120000_claim_past_orders.sql');
+if (fs.existsSync(CLAIM_SQL) && fs.readFileSync(CLAIM_SQL, 'utf8').trim()) {
+  const claim = fs.readFileSync(CLAIM_SQL, 'utf8');
+  assert.match(claim, /public\.normalize_phone\(o\.contact\) = wanted_phone/, 'the WhatsApp number must match the order, not just the order number');
+  assert.match(claim, /owner is not null and owner <> caller::text/, 'an order linked to another account cannot be taken');
+  assert.match(claim, /recent_failures >= 10/, 'ten misses an hour lock the form');
+  assert.doesNotMatch(claim.slice(claim.indexOf('create function public.storefront_claim_order')), /raise exception '[^']*' using errcode = 'P0002'/,
+    'a wrong guess must RETURN, not raise — a raise rolls back the attempt it just recorded and the lock never counts');
+  assert.match(claim, /revoke execute on function public\.storefront_claim_order\(text, text\) from public, anon/);
+}
+
 console.log('buyerReviews selfcheck OK');
