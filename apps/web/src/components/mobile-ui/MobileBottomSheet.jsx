@@ -4,8 +4,9 @@ import { useMobileKeyboardAvoidance } from '@/hooks/useMobileKeyboardAvoidance.j
 import { cn } from '@/lib/utils.js';
 import { lockBodyScroll } from '@/utils/bodyScrollLock.js';
 import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
+import { KEYBOARD_FOCUS_TARGETS } from '@/utils/keyboardTargets.js';
 
-const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="combobox"], [cmdk-input]';
+const focusTargets = KEYBOARD_FOCUS_TARGETS;
 const MIN_KEYBOARD_SHEET_HEIGHT = 260;
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 

@@ -71,8 +71,15 @@ export const productStock = (product) => {
     : Math.max(0, Number(product?.stock) || 0);
 };
 
-/** A real bottle photograph as the main image — not a label card, not a set box. */
-export const hasBottlePhoto = (product) => String(product?.imageUrl || product?.image_url || '').includes(BOTTLE_PHOTO_PATH);
+/**
+ * A real bottle photograph as the main image — not a label card, not a set box. Either one served from the
+ * site (/brand/products/) or one Dekito uploaded himself and ticked "Foto utama = foto botol" for in Studio
+ * (26 Nov 2026) — the tick needs a main image to mean anything.
+ */
+export const hasBottlePhoto = (product) => {
+  const main = String(product?.imageUrl || product?.image_url || '');
+  return main.includes(BOTTLE_PHOTO_PATH) || (product?.bottlePhoto === true && main !== '');
+};
 
 /**
  * { featured, grid } for the home. `curated` is Dekito's flagged set (already ordered for the shop it is

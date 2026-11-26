@@ -72,6 +72,7 @@ export const emptyProduct = {
   imageUrl: '',
   images: [],
   featured: false,
+  bottlePhoto: false,
   limited: false,
   reserve: false,
   testimonials: [],
@@ -599,6 +600,14 @@ const MobileProductForm = ({ product = null, onSaved, backTo = '' }) => {
           <p className="mt-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
             Upload otomatis dikompres ke WebP ringan sekitar 250 KB per foto. Foto pertama jadi cover katalog.
           </p>
+          {/* See ProductForm: the home shows bottles only; an uploaded one counts once this is ticked. */}
+          <label className="mt-3 flex items-start gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-xs font-bold">
+            <input type="checkbox" checked={Boolean(form.bottlePhoto)} onChange={(event) => updateField('bottlePhoto', event.target.checked)} className="mt-0.5" />
+            <span>
+              <span className="block">Foto utama = foto botol</span>
+              <span className="mt-0.5 block text-[10px] font-semibold text-[#6b7280]">Centang kalau cover adalah foto botol asli, bukan kartu label. Beranda hanya memajang parfum dengan foto botol.</span>
+            </span>
+          </label>
           <label className="mt-3 grid gap-1.5">
             <ProductInputLabel>Alamat foto (satu per baris)</ProductInputLabel>
             <textarea value={(form.images || []).join('\n')} onChange={(event) => updateImagesFromText(event.target.value)} placeholder="https://.../depan.jpg" rows={4} className="w-full rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
@@ -700,7 +709,7 @@ const MobileProductForm = ({ product = null, onSaved, backTo = '' }) => {
           <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} className="mt-0.5" />
           <span>
             <span className="block">Pilihan di beranda</span>
-            <span className="mt-0.5 block text-[10px] font-semibold opacity-75">Beranda memuat maks. 6 pilihan, urut katalog. Yang pertama jadi sorotan utama.</span>
+            <span className="mt-0.5 block text-[10px] font-semibold opacity-75">Didahulukan di beranda. Sorotan utama: pilihan pertama yang punya foto botol dan stok minimal 3.</span>
           </span>
         </label>
         {/* A badge, kept apart from the scent family — see ProductForm for why. */}

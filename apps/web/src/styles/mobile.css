@@ -53,16 +53,18 @@ textarea::placeholder,
     font-size: 16px;
   }
 
+  /* A ticked checkbox is not typing (26 Nov 2026): on Android it takes focus, and Simpan vanished with it.
+     The same list as src/utils/keyboardTargets.js. */
   @supports selector(body:has(input:focus)) {
-    body:has(input:focus) .mobile-bottom-nav,
+    body:has(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="button"]):not([type="submit"]):focus) .mobile-bottom-nav,
 body:has(textarea:focus) .mobile-bottom-nav,
 body:has(select:focus) .mobile-bottom-nav,
 body:has([contenteditable="true"]:focus) .mobile-bottom-nav,
-body:has(input:focus) .mobile-fab,
+body:has(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="button"]):not([type="submit"]):focus) .mobile-fab,
 body:has(textarea:focus) .mobile-fab,
 body:has(select:focus) .mobile-fab,
 body:has([contenteditable="true"]:focus) .mobile-fab,
-body:has(input:focus) .mobile-fixed-action,
+body:has(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="button"]):not([type="submit"]):focus) .mobile-fixed-action,
 body:has(textarea:focus) .mobile-fixed-action,
 body:has(select:focus) .mobile-fixed-action,
 body:has([contenteditable="true"]:focus) .mobile-fixed-action {

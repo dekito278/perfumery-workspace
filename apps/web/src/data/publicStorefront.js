@@ -7,6 +7,7 @@ import {
   getVisibleProductTags,
   normalizeProductImages,
   normalizeProductVariants,
+  productMainPhotoIsBottle,
 } from '@/services/productCatalogService.js';
 import { normalizeWear } from '@/utils/productWear.js';
 
@@ -198,6 +199,8 @@ export const toPublicFragrance = (product = {}) => {
     batchLabel: product.batchLabel || '',
     batchSize: product.batchSize ?? null,
     processImages: Array.isArray(product.processImages) ? product.processImages : [],
+    // Studio's "Foto utama = foto botol" (26 Nov 2026): the home and the catalogue read it via hasBottlePhoto.
+    bottlePhoto: product.bottlePhoto === true || productMainPhotoIsBottle(product),
     wear: normalizeWear(product.wear),
     materialHighlights: product.materialHighlights || inferMaterialHighlights(product),
     relatedFragrances: product.relatedFragrances || [],

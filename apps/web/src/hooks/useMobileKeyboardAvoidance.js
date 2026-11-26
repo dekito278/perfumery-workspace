@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
+import { KEYBOARD_FOCUS_TARGETS } from '../utils/keyboardTargets.js';
 
-const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="combobox"], [cmdk-input]';
+const focusTargets = KEYBOARD_FOCUS_TARGETS;
 const SETTLE_DELAYS = [0, 80, 180, 320];
 const SAFE_TOP_GAP = 18;
 const SAFE_BOTTOM_GAP = 28;
