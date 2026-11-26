@@ -1,9 +1,10 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, MessageSquareText, PencilLine } from 'lucide-react';
+import { Link2, Loader2, MessageSquareText, PencilLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { getMyReviewableItems, submitReview } from '@/services/reviewService.js';
+import { claimPastOrder, getMyReviewableItems, submitReview } from '@/services/reviewService.js';
+import { buildWhatsAppCheckoutUrl } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import {
   REVIEW_BODY_MAX,
@@ -98,19 +99,92 @@ const ReviewForm = ({ item, onSaved, onCancel }) => {
   );
 };
 
+/**
+ * "Pesanan lama belum muncul?" — link an order placed without signing in (Dekito, 26 Nov 2026: old buyers may
+ * review too). Order number + the WhatsApp number used to order; the server checks both and locks after ten
+ * misses an hour (supabase/manual/20261126120000_claim_past_orders.sql). Shows nothing until the SQL has run.
+ */
+const ClaimOrderForm = ({ onLinked, open: startOpen = false }) => {
+  const { t } = useTranslate();
+  const orderId = useId();
+  const contactId = useId();
+  const [orderNumber, setOrderNumber] = useState('');
+  const [contact, setContact] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!orderNumber.trim() || !contact.trim()) {
+      toast.error(t('review.claim.missing'));
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await claimPastOrder({ orderNumber, contact });
+      if (result.reason === 'unavailable') { setUnavailable(true); return; }
+      if (result.ok) {
+        toast.success(result.reason === 'already_yours'
+          ? t('review.claim.alreadyYours', { order: result.orderNumber })
+          : t('review.claim.linked', { order: result.orderNumber }));
+        setOrderNumber('');
+        setContact('');
+        onLinked();
+      } else if (result.reason === 'taken' || result.reason === 'too_many') {
+        // Both sentences send the buyer to us, so the toast carries the way there.
+        const askUs = { label: t('nav.whatsapp'), onClick: () => window.open(buildWhatsAppCheckoutUrl(t('review.claim.waMessage')), '_blank', 'noopener,noreferrer') };
+        if (result.reason === 'taken') toast.error(t('review.claim.taken'), { action: askUs });
+        else toast.error(t('review.claim.tooMany'), { action: askUs });
+      }
+      else if (result.reason === 'missing') toast.error(t('review.claim.missing'));
+      else toast.error(t('review.claim.notFound'));
+    } catch (error) {
+      toast.error(publicErrorMessage(error, t('review.claim.failed')));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (unavailable) return null;
+  return (
+    <details className="group mt-4 border-t border-ng-bone/10 pt-4" open={startOpen || undefined}>
+      <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-2 text-sm font-bold text-ng-bone">
+        <Link2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+        {t('review.claim.title')}
+      </summary>
+      <form onSubmit={submit} className="mt-2 grid gap-3">
+        <p className="m-0 text-sm leading-relaxed text-ng-dust">{t('review.claim.body')}</p>
+        <label htmlFor={orderId} className="grid gap-1 text-sm text-ng-bone">
+          {t('review.claim.order')}
+          <input id={orderId} value={orderNumber} onChange={(event) => setOrderNumber(event.target.value.toUpperCase())} autoCapitalize="characters" spellCheck={false} autoComplete="off" placeholder={t('review.claim.orderHint')} className="h-11 w-full rounded-none border border-ng-bone/20 bg-transparent px-3 text-[15px] uppercase tracking-[0.04em] outline-none placeholder:normal-case placeholder:tracking-normal focus:border-ng-bone/50" />
+        </label>
+        <label htmlFor={contactId} className="grid gap-1 text-sm text-ng-bone">
+          {t('review.claim.contact')}
+          <input id={contactId} value={contact} onChange={(event) => setContact(event.target.value)} type="tel" inputMode="tel" autoComplete="tel" placeholder={t('review.claim.contactHint')} className="h-11 w-full rounded-none border border-ng-bone/20 bg-transparent px-3 text-[15px] outline-none focus:border-ng-bone/50" />
+        </label>
+        <button type="submit" disabled={busy} className="ng-btn ng-btn--ghost justify-self-start">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+          {t('review.claim.submit')}
+        </button>
+      </form>
+    </details>
+  );
+};
+
 const MyReviewsPanel = () => {
   const { t } = useTranslate();
   const [items, setItems] = useState(null);
   const [failed, setFailed] = useState(false);
   const [openKey, setOpenKey] = useState('');
 
-  useEffect(() => {
+  const load = useCallback(() => {
     let cancelled = false;
     getMyReviewableItems()
       .then((rows) => { if (!cancelled) setItems(rows); })
       .catch(() => { if (!cancelled) { setItems([]); setFailed(true); } });
     return () => { cancelled = true; };
   }, []);
+  useEffect(() => load(), [load]);
 
   // Arriving from Studio's WhatsApp ask (/customer#<REVIEWS_ANCHOR>): bring the panel into view once it exists.
   useEffect(() => {
@@ -126,7 +200,20 @@ const MyReviewsPanel = () => {
       </section>
     );
   }
-  if (!items?.length) return null;
+  if (items === null) return null;
+  // Nothing shipped on this account yet: the one useful thing here is to link an order placed without signing in
+  // (26 Nov 2026). Before, the panel said nothing at all, and an old buyer had no way in.
+  if (!items.length) {
+    return (
+      <section id={REVIEWS_ANCHOR} className="scroll-mt-24 rounded-none border bg-transparent p-5" aria-labelledby="my-reviews-title">
+        <div className="flex items-start gap-3">
+          <MessageSquareText className="mt-1 h-5 w-5 shrink-0 text-ng-sand" aria-hidden="true" />
+          <h2 id="my-reviews-title" className="ng-display text-[1.75rem]">{t('review.mine.title')}</h2>
+        </div>
+        <ClaimOrderForm onLinked={load} open />
+      </section>
+    );
+  }
 
   const waiting = items.filter((item) => !item.review).length;
   const keyOf = (item) => `${item.orderId}:${item.productId}`;
@@ -198,6 +285,7 @@ const MyReviewsPanel = () => {
           );
         })}
       </ul>
+      <ClaimOrderForm onLinked={load} />
     </section>
   );
 };

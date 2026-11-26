@@ -158,3 +158,23 @@ export const getPendingReviewSummary = async ({ limit = 3 } = {}) => {
     return { ready: false, count: 0, reviews: [] };
   }
 };
+
+/**
+ * Link an order placed without signing in to the signed-in account, so its perfumes can be reviewed once it
+ * has shipped (supabase/manual/20261126120000_claim_past_orders.sql). The server checks the order number AND
+ * the WhatsApp number, refuses an order already linked to another account, and locks after ten misses an hour.
+ * Answers { ok, reason, orderNumber }; reason is 'linked' | 'already_yours' | 'not_found' | 'taken' | 'too_many'
+ * | 'missing' | 'unavailable' (the SQL has not run yet).
+ */
+export const claimPastOrder = async ({ orderNumber = '', contact = '' } = {}) => {
+  const { data, error } = await supabase.rpc('storefront_claim_order', {
+    p_order_number: String(orderNumber || '').trim(),
+    p_contact: String(contact || '').trim(),
+  });
+  if (error) {
+    if (isSchemaMissing(error)) return { ok: false, reason: 'unavailable', orderNumber: '' };
+    throw error;
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  return { ok: row?.ok === true, reason: String(row?.reason || 'not_found'), orderNumber: String(row?.order_number || '') };
+};
