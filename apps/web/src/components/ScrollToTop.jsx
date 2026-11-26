@@ -64,6 +64,41 @@ const scrollToTop = (scroller, top) => {
     scroller.scrollTo({ top, left: 0, behavior: 'auto' });
 };
 
+// Back to a page that is still building itself. The home renders its bottle grid a moment after it mounts; the
+// position was restored into the short page, then the grid appeared ABOVE it and the browser's scroll anchoring
+// carried the buyer 1,800px further down (Back from a product on the home: 2400 -> 4188, measured on production,
+// 26 Nov 2026). The saved number is a position in the finished page, so: anchoring off, and every time the page
+// grows the target is applied again — for a short while, and never once the buyer touches, scrolls or types.
+const SETTLE_MS = 2500;
+const keepPositionWhileSettling = (target) => {
+    if (!(target > 0) || typeof window.ResizeObserver !== 'function') return () => {};
+    const root = document.documentElement;
+    const anchorBefore = root.style.overflowAnchor;
+    root.style.overflowAnchor = 'none';
+    let done = false;
+    const stopEvents = ['touchstart', 'wheel', 'keydown', 'pointerdown'];
+    const reapply = () => {
+        if (done) return;
+        const scroller = getActiveScroller();
+        if (Math.abs(getScrollTop(scroller) - target) > 2) scrollToTop(scroller, target);
+    };
+    const observer = new window.ResizeObserver(reapply);
+    observer.observe(document.body);
+    const shell = document.querySelector('[data-mobile-primary-scroller="true"]');
+    if (shell?.firstElementChild) observer.observe(shell.firstElementChild);
+    const stop = () => {
+        if (done) return;
+        done = true;
+        observer.disconnect();
+        window.clearTimeout(timer);
+        stopEvents.forEach((name) => window.removeEventListener(name, stop, true));
+        root.style.overflowAnchor = anchorBefore;
+    };
+    const timer = window.setTimeout(stop, SETTLE_MS);
+    stopEvents.forEach((name) => window.addEventListener(name, stop, { capture: true, passive: true }));
+    return stop;
+};
+
 const ScrollToTop = () => {
     const location = useLocation();
     const { pathname, search, state } = location;
@@ -115,6 +150,7 @@ const ScrollToTop = () => {
         const hasExplicitPosition = Number.isFinite(explicitPosition);
         let timeoutId = null;
         let cancelled = false;
+        let stopSettling = () => {};
 
         const restoreScrollPosition = (targetPosition, attempt = 0) => {
             if (cancelled) {
@@ -143,8 +179,10 @@ const ScrollToTop = () => {
 
         if (shouldRestore && hasExplicitPosition) {
             restoreScrollPosition(explicitPosition);
+            stopSettling = keepPositionWhileSettling(explicitPosition);
         } else if (shouldRestore && savedPosition !== null) {
             restoreScrollPosition(Number(savedPosition));
+            stopSettling = keepPositionWhileSettling(Number(savedPosition));
         } else if (isSamePathNavigation) {
             previousPathnameRef.current = pathname;
             return () => {
@@ -162,6 +200,7 @@ const ScrollToTop = () => {
 
         return () => {
             cancelled = true;
+            stopSettling();
             if (timeoutId) {
                 window.clearTimeout(timeoutId);
             }
