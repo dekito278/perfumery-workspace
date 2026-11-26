@@ -68,10 +68,17 @@ assert.match(css, /@media \(min-width: 640px\) \{\s*\.free-vial-prompt \{ align-
 const cart = read('hooks', 'useCart.js');
 assert.match(cart, /addItem: \(product, quantity, \{ announcedByScreen = false \} = \{\}\) =>/,
   'addItem no longer lets a screen say it is announcing the add itself');
-assert.match(cart, /CART_ITEM_ADDED_EVENT, \{ detail: \{ announcedByScreen \} \}/,
+assert.match(cart, /CART_ITEM_ADDED_EVENT, \{ detail: \{ announcedByScreen, name: String\(product\?\.name \|\| ''\) \} \}/,
   'the flag is not carried on the event, so nothing downstream can read it');
 const prompt = read('components', 'storefront', 'FreeVialPrompt.jsx');
 assert.match(prompt, /if \(event\.detail\?\.announcedByScreen( \|\| wasDismissed\(\))?\) return;/,
   'the gift prompt opens even when the screen has already announced the add — two modals for one event');
+
+// --- 4. When the gift sheet opens, it IS the announcement (26 Nov 2026) ----------------------------------
+// The toast at the top and the sheet at the bottom were still two boxes for one tap. The sheet says what went
+// in and offers the cart, and the toast is dismissed the moment the sheet is visible.
+assert.match(prompt, /if \(!visible\) return undefined;\s*const timer = window\.setTimeout\(\(\) => toast\.dismiss\(\), 0\);/, 'the sheet must take over from the toast');
+assert.match(prompt, /t\('pdp\.addedToast', \{ name: addedName \}\)/, 'and say what went into the cart');
+assert.match(prompt, /<Link to="\/cart"/, 'and keep the way to the cart');
 
 console.log(`oneAnnouncement selfcheck OK (${adders.length} screens add to the cart, each with one toast at the top, clear of the gift sheet)`);

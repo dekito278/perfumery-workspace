@@ -2,7 +2,7 @@ import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { quotedInternationalPrice } from '@/utils/overseasEnquiry.js';
 import { cardLabels } from '@/utils/productBadge.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { isDiscoverySet, setContents, setSizeLabel } from '@/utils/discoverySet.js';
 import AbroadAskLink from '@/components/storefront/AbroadAskLink.jsx';
 import { Helmet } from 'react-helmet';
@@ -76,7 +76,10 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const [lastAddedSlug, setLastAddedSlug] = useState('');
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [showStickyBar, setShowStickyBar] = useState(false);
-  const addBtnRef = useRef(null);
+  // The main add button, held in STATE (a callback ref) rather than a plain ref: the button can mount after
+  // the product resolves (prices and stock still arriving), and an effect keyed on the slug then ran once with
+  // no button and never watched it — the sticky bar never appeared (buyer walk, 26 Nov 2026).
+  const [addBtn, setAddBtn] = useState(null);
   const revealRef = useScrollReveal();
 
   // Below every useState it reads and above every early return: useOverseasPrice is a HOOK, so it cannot
@@ -100,7 +103,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
   // Reveal a compact sticky buy-bar once the main add-to-cart button scrolls out of view.
   useEffect(() => {
-    const target = addBtnRef.current;
+    const target = addBtn;
     if (!target) return undefined;
     const observer = new IntersectionObserver(
       ([entry]) => setShowStickyBar(!entry.isIntersecting),
@@ -108,7 +111,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [product?.slug]);
+  }, [addBtn]);
 
   if (!product) {
     // Don't 404 while the catalog is still loading (cold cache / shared deep link):
@@ -387,7 +390,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                         a free vial and a "US$95 to my country?" draft beside a disabled button). */}
                     {/* A discovery set is not a bottle and earns no vial (18 Nov 2026). */}
                     {soldOut || isDiscoverySet(product) ? null : <FreeVialNote products={studioProducts} />}
-                    <button ref={addBtnRef} type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => handleAddToCart()} disabled={soldOut}>
+                    <button ref={setAddBtn} type="button" className="ng-btn ng-btn--lg ng-btn--block" onClick={() => handleAddToCart()} disabled={soldOut}>
                       {soldOut ? (
                         <>{t('pdp.soldOut')}</>
                       ) : allInCart ? (
@@ -562,7 +565,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             </div>
             <div className="flex min-w-0 flex-col gap-0.5">
               {/* Two lines before an ellipsis: "Maskuma..." did not say which perfume the bar was for (fresh audit). */}
-              <span className="line-clamp-2 break-words font-ng-display text-lg leading-tight sm:text-xl">{named.name}</span>
+              {/* Whole words only (buyer walk, 26 Nov 2026: "Maskumam / bang" — break-words split a long name in
+                  the middle). The button below takes less room on a phone so the name keeps its words. */}
+              <span className="line-clamp-2 font-ng-display text-lg leading-tight [overflow-wrap:normal] sm:text-xl">{named.name}</span>
               {/* The dollar, for the same reason the headline shows it — see the note at the top of
                   InternationalPrice.jsx. The rupiah of an export price is Dekito's book figure, not the
                   amount the buyer is asked to send. */}
@@ -583,7 +588,12 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             ) : lastAddedSlug === product.slug ? (
               <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> {t('pdp.inCart')}</>
             ) : (
-              <><ShoppingBag className="h-4 w-4" aria-hidden="true" /> {t('pdp.addToCart')}</>
+              <>
+                <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                {/* "+ Keranjang" on a phone, the full words from 640px: the long label left the name a third of the bar. */}
+                <span className="sm:hidden">{t('catalog.quickAdd')}</span>
+                <span className="hidden sm:inline">{t('pdp.addToCart')}</span>
+              </>
             )}
           </button>
         </div>

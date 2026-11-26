@@ -245,9 +245,12 @@ const CheckoutPage = () => {
                     ) : (
                       <button type="button" onClick={handleGoogleLogin} className="ng-btn ng-btn--ghost ng-btn--block !min-h-[56px] !justify-start !normal-case !tracking-normal !font-ng-body !text-[15px]">
                         <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        {memberSaving > 0
-                          ? t('checkout.signInSaving')
-                          : t('checkout.signInPlain')}
+                        {/* Left-aligned: centred, the sentence broke into three ragged lines on a phone (buyer walk, 26 Nov 2026). */}
+                        <span className="min-w-0 text-left leading-snug">
+                          {memberSaving > 0
+                            ? t('checkout.signInSaving')
+                            : t('checkout.signInPlain')}
+                        </span>
                       </button>
                     )}
                     {/* No code fields here (Dekito, 13 Nov 2026: too many codes). A member code goes in the one

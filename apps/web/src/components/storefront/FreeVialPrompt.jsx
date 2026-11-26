@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Gift, X } from 'lucide-react';
+import { CheckCircle2, Gift, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import FreeVialChoices from '@/components/storefront/FreeVialChoices.jsx';
@@ -8,6 +8,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CART_ITEM_ADDED_EVENT } from '@/services/cartService.js';
 import { boughtNames, giftVariantIds, isFreeVialProduct, shouldOfferFreeVial, splitFreeVialLines } from '@/utils/freeVial.js';
+import { plainName } from '@/utils/scriptName.js';
 
 // Once "Nanti saja" (or the X, or the backdrop) has been said, later adds in the same visit stay silent:
 // asking on every bottle turned a thank-you into a toll (visitor audit, 13 Nov 2026). The cart page still
@@ -49,6 +50,7 @@ const FreeVialPrompt = () => {
   const catalog = useStorefrontProducts();
   const { items, setGifts } = useCart();
   const [open, setOpen] = useState(false);
+  const [addedName, setAddedName] = useState('');
 
   const vialProduct = catalog.find(isFreeVialProduct);
   const { gifts, bottles } = splitFreeVialLines(items);
@@ -60,7 +62,11 @@ const FreeVialPrompt = () => {
     // one event put a full-screen panel over the sheet's way forward, and the sheet's own modal machinery
     // marked this one aria-hidden, so a screen reader was never told about the thing covering the screen.
     // The cart page still offers the same aromas, which is where a dismissed prompt sends everyone anyway.
-    const onAdded = (event) => { if (event.detail?.announcedByScreen || wasDismissed()) return; setOpen(true); };
+    const onAdded = (event) => {
+      if (event.detail?.announcedByScreen || wasDismissed()) return;
+      setAddedName(plainName(event.detail?.name || ''));
+      setOpen(true);
+    };
     window.addEventListener(CART_ITEM_ADDED_EVENT, onAdded);
     return () => window.removeEventListener(CART_ITEM_ADDED_EVENT, onAdded);
   }, []);
@@ -77,6 +83,15 @@ const FreeVialPrompt = () => {
   }, [gifts, setGifts, t]);
 
   const visible = shouldOfferFreeVial({ opened: open, vialProduct, gifts, bought, bottles });
+  // One event, one announcement (26 Nov 2026, from the buyer walk): the add-to-cart toast at the top AND this
+  // sheet at the bottom were two boxes for one tap. When the sheet opens it takes over the announcement —
+  // it says what went in (below) and already offers "Lihat keranjang" — and the toast goes.
+  // A tick later, not at once: the screen raises its toast in the same click, after the add that opened this.
+  useEffect(() => {
+    if (!visible) return undefined;
+    const timer = window.setTimeout(() => toast.dismiss(), 0);
+    return () => window.clearTimeout(timer);
+  }, [visible]);
   const sheetRef = useRef(null);
   // A real modal for a keyboard (visitor audit, 13 Nov 2026: focus stayed on the page behind, Tab walked the
   // hidden page, Escape did nothing). Focus moves in, Tab stays in, Escape declines like the X, and focus
@@ -115,6 +130,12 @@ const FreeVialPrompt = () => {
         <button type="button" className="free-vial-prompt__close" aria-label={t('cart.giftLater')} onClick={dismiss}>
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
+        {addedName ? (
+          <p className="free-vial__added" role="status">
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            {t('pdp.addedToast', { name: addedName })}
+          </p>
+        ) : null}
         <p className="free-vial__head">
           <Gift className="h-4 w-4" aria-hidden="true" />
           <strong>{t('cart.giftTitle')}</strong>

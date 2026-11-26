@@ -60,8 +60,9 @@ export const useCart = () => {
       const before = lineQuantity(getCartItems());
       const next = addCartItem(product, quantity);
       setStoredItems(next);
+      // The name rides along on the event so the gift prompt, when it opens, can say what went in (26 Nov 2026).
       const added = Math.max(0, lineQuantity(next) - before);
-      if (added > 0) window.dispatchEvent(new CustomEvent(CART_ITEM_ADDED_EVENT, { detail: { announcedByScreen } }));
+      if (added > 0) window.dispatchEvent(new CustomEvent(CART_ITEM_ADDED_EVENT, { detail: { announcedByScreen, name: String(product?.name || '') } }));
       return added;
     },
     updateQuantity: (slug, quantity) => setStoredItems(updateCartQuantity(slug, quantity)),
