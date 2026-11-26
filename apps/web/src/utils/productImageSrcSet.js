@@ -1,5 +1,5 @@
 // Relative, not '@/': the build imports this file under plain Node.
-import { getOptimizedStorageImageUrl } from './storageImage.js';
+import { getOptimizedStorageImageUrl, getStorageImageSrcSet } from './storageImage.js';
 
 // The product photo's srcset, in one pure place: the page draws it (ProductVisual) and the build preloads it
 // (tools/seo-artifacts.mjs). The preload only helps when its URLs are EXACTLY the ones the page then asks
@@ -18,6 +18,8 @@ export const getOptimizedProductImageUrl = (imageUrl, width = 520) => getOptimiz
 export const getProductImageSrcSet = (imageUrl) => {
   const sourceUrl = String(imageUrl || '').trim();
   if (!sourceUrl) return undefined;
+  // The bottle photos served from the site (26 Nov 2026) come in 240 / 600 / 1200 — see storageImage.js.
+  if (sourceUrl.includes('/brand/products/')) return getStorageImageSrcSet(sourceUrl, PRODUCT_IMAGE_WIDTHS);
 
   try {
     const url = new URL(sourceUrl);

@@ -25,6 +25,11 @@ if (!fs.existsSync(SQL) || !fs.readFileSync(SQL, 'utf8').trim()) {
       const file = path.join(PHOTOS, slug, `${name}.webp`);
       assert.ok(fs.existsSync(file), `${slug}/${name}.webp is in the SQL but not in public/brand/products`);
       assert.ok(fs.statSync(file).size < 400 * 1024, `${slug}/${name}.webp is over 400 KB — resize it before it ships`);
+      // The two smaller copies the image helpers serve to phones and thumbnails (storageImage.js, 26 Nov 2026).
+      for (const width of [240, 600]) {
+        assert.ok(fs.existsSync(path.join(PHOTOS, slug, `${name}-${width}.webp`)),
+          `${slug}/${name}-${width}.webp is missing — every bottle photo ships with a 240 and a 600 px copy`);
+      }
     }
   }
 }

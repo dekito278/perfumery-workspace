@@ -7,9 +7,20 @@
 const PUBLIC_PATH = '/storage/v1/object/public/';
 const RENDER_PATH = '/storage/v1/render/image/public/';
 
+// The bottle photos served from the site itself (Dekito's photographs, 26 Nov 2026) have no render endpoint,
+// so each one ships with two smaller copies made beside it: <name>-240.webp and <name>-600.webp next to the
+// 1200 px <name>.webp. Without them a gallery thumbnail on a phone downloaded the full 55 KB photo for a 44 px
+// square — five of them racing the main photo (speed walk, 26 Nov 2026). bottlePhotosExist checks the copies.
+const BOTTLE_PHOTO_PATH = '/brand/products/';
+export const BOTTLE_PHOTO_WIDTHS = [240, 600, 1200];
+const isBottlePhoto = (url) => /\/brand\/products\/[^/]+\/[^/]+\.webp$/.test(url) && !/-(240|600)\.webp$/.test(url);
+const bottlePhotoAt = (url, width) => (width >= 1200 ? url : url.replace(/\.webp$/, `-${width}.webp`));
+const bottlePhotoFor = (url, width) => bottlePhotoAt(url, BOTTLE_PHOTO_WIDTHS.find((w) => w >= width) || 1200);
+
 export const getOptimizedStorageImageUrl = (imageUrl, width = 1280) => {
   const sourceUrl = String(imageUrl || '').trim();
   if (!sourceUrl) return '';
+  if (sourceUrl.includes(BOTTLE_PHOTO_PATH) && isBottlePhoto(sourceUrl.split('?')[0])) return bottlePhotoFor(sourceUrl, width);
 
   try {
     const url = new URL(sourceUrl);
@@ -45,6 +56,12 @@ export const getOptimizedStorageImageUrl = (imageUrl, width = 1280) => {
 export const getStorageImageSrcSet = (imageUrl, widths = [480, 768, 1080, 1600]) => {
   const sourceUrl = String(imageUrl || '').trim();
   if (!sourceUrl) return undefined;
+  // A bottle photo has exactly three sizes on disk; offer the ones the caller's widths can use.
+  if (sourceUrl.includes(BOTTLE_PHOTO_PATH) && isBottlePhoto(sourceUrl)) {
+    const largest = Math.max(...widths);
+    const usable = BOTTLE_PHOTO_WIDTHS.filter((w, i) => i === 0 || BOTTLE_PHOTO_WIDTHS[i - 1] < largest);
+    return usable.map((w) => `${bottlePhotoAt(sourceUrl, w)} ${w}w`).join(', ');
+  }
 
   try {
     if (!new URL(sourceUrl).pathname.includes(PUBLIC_PATH)) return undefined;
