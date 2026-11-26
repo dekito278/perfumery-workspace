@@ -888,29 +888,6 @@ input[type="search"].ng-field::-webkit-search-cancel-button {
   }
 }
 
-.ng-row {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1.3fr) minmax(0, 1.2fr) 100px 220px 24px;
-  gap: 24px;
-  align-items: center;
-  padding: 28px 0;
-  border-bottom: 1px solid var(--ng-line);
-  color: var(--ng-bone);
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-}
-
-a.ng-row:hover {
-  background: rgba(237, 230, 214, 0.035);
-  color: var(--ng-bone);
-}
-
-.ng-row--head {
-  padding: 0 0 14px;
-  border-bottom-color: var(--ng-line-strong);
-  color: var(--ng-ash);
-}
-
 .ng-specimen {
   display: flex;
   flex-direction: column;
@@ -1015,23 +992,6 @@ a.ng-row:hover {
   }
 
   .ng-hero__scroll {
-    display: none;
-  }
-
-  .ng-row {
-    grid-template-columns: 32px minmax(0, 1fr);
-    gap: 10px 14px;
-    padding: 22px 0;
-  }
-
-  .ng-row__price {
-    grid-column: 2;
-  }
-
-  .ng-row--head,
-  .ng-row__notes,
-  .ng-row__size,
-  .ng-row__arrow {
     display: none;
   }
 

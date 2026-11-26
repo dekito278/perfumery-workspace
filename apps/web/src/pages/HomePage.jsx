@@ -1,7 +1,7 @@
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MessageCircle } from 'lucide-react';
@@ -15,7 +15,7 @@ import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { shortNoteList } from '@/utils/shortNoteList.js';
-import { CURATED_LIMIT_DESKTOP, orderForAbroad, pickCuratedProducts } from '@/utils/curatedProducts.js';
+import { CURATED_LIMIT_DESKTOP, orderForAbroad, perfumeCountOf, pickCuratedProducts, pickHomeShelf } from '@/utils/curatedProducts.js';
 import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { tierPricesForLine } from '@/utils/tierPrice.js';
 import { internationalPriceFor } from '@/utils/shippingRegion.js';
@@ -82,19 +82,27 @@ const HomePage = () => {
   const { index: tierIndex } = useTierPrices();
   // Abroad: in stock first, then the gentlest export price first (foreign-buyer audit, 18 Nov 2026). The
   // same curated perfumes; only the order changes, and only in the English shop.
+  const exportPriceOf = useCallback((product) => {
+    const variant = getPrimaryVariant(Array.isArray(product?.variants) ? product.variants : []);
+    return internationalPriceFor({
+      tierPrices: tierPricesForLine(tierIndex, product.slug, variant?.id || ''),
+      linePrice: Number(variant?.retailPriceNumber ?? variant?.priceNumber ?? product?.retailPriceNumber ?? product?.priceNumber ?? 0),
+    });
+  }, [tierIndex]);
   const collectionProducts = useMemo(() => {
     const curated = pickCuratedProducts(publicCatalog, CURATED_LIMIT_DESKTOP);
     if (!isInternational) return curated;
-    return orderForAbroad(curated, (product) => {
-      const variant = getPrimaryVariant(Array.isArray(product?.variants) ? product.variants : []);
-      return internationalPriceFor({
-        tierPrices: tierPricesForLine(tierIndex, product.slug, variant?.id || ''),
-        linePrice: Number(variant?.retailPriceNumber ?? variant?.priceNumber ?? product?.retailPriceNumber ?? product?.priceNumber ?? 0),
-      });
-    });
-  }, [publicCatalog, isInternational, tierIndex]);
+    return orderForAbroad(curated, exportPriceOf);
+  }, [publicCatalog, isInternational, exportPriceOf]);
+  // What the home shows (Dekito, 26 Nov 2026): bottles with a real photograph — one featured, eight in a
+  // grid, his flagged perfumes first. A label card stays in the catalogue. See pickHomeShelf.
+  const { featured, grid: shelf } = useMemo(() => pickHomeShelf({
+    curated: collectionProducts,
+    catalog: publicCatalog,
+    order: isInternational ? (list) => orderForAbroad(list, exportPriceOf) : (list) => list,
+  }), [collectionProducts, publicCatalog, isInternational, exportPriceOf]);
+  const perfumeCount = perfumeCountOf(publicCatalog);
   const { currentUser } = useAuth();
-  const featured = collectionProducts[0] || null;
   const featuredName = featured ? splitScriptName(featured.name) : null;
 
   // Journal articles
@@ -237,57 +245,74 @@ const HomePage = () => {
             </section>
           ) : null}
 
-          {/* ── The curated set, as a numbered list ── */}
+          {/* ── The shelf: bottles, photographed (Dekito, 26 Nov 2026) ──
+              It was five names in a table with no picture, and a buyer had to go looking for the catalogue
+              to see a single bottle. Now: the bottles themselves, then the way to all of them. */}
           <section className="ng-section" aria-labelledby="home-table-title" data-reveal>
             <div className="ng-container flex flex-col gap-12">
               <div className="flex flex-wrap items-end justify-between gap-6">
                 <div className="flex flex-col gap-3.5">
-                  <p className="ng-mono m-0 text-ng-ash">{collectionProducts.length ? t('home.ngTableEyebrow', { count: collectionProducts.length }) : t('home.ngTableEyebrowBare')}</p>
+                  <p className="ng-mono m-0 text-ng-ash">{perfumeCount ? t('home.ngTableEyebrow', { count: perfumeCount }) : t('home.ngTableEyebrowBare')}</p>
                   <h2 id="home-table-title" className="ng-display ng-h2">{t('home.ngTableTitle')} <em>{t('home.ngTableTitleEm')}</em></h2>
                 </div>
                 <Link to="/catalog" className="ng-link ng-mono inline-flex min-h-[44px] items-center gap-3">
                   {t('home.seeAll')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </div>
-              {collectionProducts.length ? (
-                <div className="flex flex-col">
-                  <div className="ng-row ng-row--head ng-mono" aria-hidden="true">
-                    <span />
-                    <span>{t('home.ngColWork')}</span>
-                    <span className="ng-row__notes">{t('home.ngColNotes')}</span>
-                    <span className="ng-row__size">{t('home.ngColSize')}</span>
-                    <span>{t('home.ngColPrice')}</span>
-                    <span />
-                  </div>
-                  {collectionProducts.map((product, index) => {
+              {shelf.length ? (
+                <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-10 p-0 md:grid-cols-4 md:gap-x-6">
+                  {shelf.map((product) => {
                     const named = splitScriptName(product.name);
                     return (
-                      <Link key={product.slug || product.id} to={`/catalog/${product.slug}`} className="ng-row">
-                        <span className="ng-mono text-ng-ember">{String(index + 1).padStart(2, '0')}</span>
-                        <span className="flex flex-col gap-1.5">
-                          <span className="font-ng-display text-[28px] leading-none [overflow-wrap:anywhere] md:text-[36px]">{named.name}</span>
+                      <li key={product.slug || product.id} className="min-w-0">
+                        <Link to={`/catalog/${product.slug}`} className="ng-card">
+                          <ProductVisual product={product} className="aspect-[4/5] w-full" imageFit="cover" label={false} sizes="(max-width: 767px) 50vw, 300px" />
                           <span className="ng-mono text-ng-ash">{familyLine(product)}</span>
-                        </span>
-                        {/* What it smells of, on the first list a visitor ever sees — same helper and the
-                            same three notes as the catalogue, so the two cannot drift apart. */}
-                        <span className="ng-row__notes text-[15px] leading-normal text-ng-dust">{shortNoteList(productCopyFor(product, region).notes, HOME_CARD_NOTE_LIMIT)}</span>
-                        <span className="ng-row__size ng-mono text-ng-dust">{product.size}</span>
-                        <span className="ng-row__price flex flex-col gap-1 text-[15px]">
-                          {(product.price || product.priceNumber) ? (
-                            <CardPrice product={product} />
-                          ) : null}
-                        </span>
-                        <ArrowRight className="ng-row__arrow h-4 w-4 opacity-60" aria-hidden="true" />
-                      </Link>
+                          <span className="font-ng-display text-[24px] leading-none [overflow-wrap:anywhere] md:text-[28px]">{named.name}</span>
+                          {/* What it smells of — the same helper and the same three notes as the catalogue. */}
+                          <span className="text-[14px] leading-normal text-ng-dust">{shortNoteList(productCopyFor(product, region).notes, HOME_CARD_NOTE_LIMIT)}</span>
+                          <span className="flex flex-col gap-1 text-[15px]">
+                            {(product.price || product.priceNumber) ? <CardPrice product={product} /> : null}
+                          </span>
+                        </Link>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               ) : fetchedProducts.loading ? (
                 <span aria-hidden="true" className="editorial-skel block h-40 w-full" />
-              ) : (
+              ) : !featured ? (
                 // "A new collection is being prepared" is a promise; after a failed fetch it was a false one.
                 <p className="m-0 text-ng-dust">{t(fetchedProducts.stale ? 'catalog.notLoaded' : 'home.emptyCollection')}</p>
-              )}
+              ) : null}
+              {perfumeCount ? (
+                <Link to="/catalog" className="ng-btn self-center">
+                  {t('home.seeAllCount', { count: perfumeCount })} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              ) : null}
+            </div>
+          </section>
+
+          {/* ── Explore by mood — right under the bottles, for a buyer who does not know which yet (26 Nov 2026) ── */}
+          <section className="ng-section" aria-labelledby="home-mood-title" data-reveal>
+            <div className="ng-container flex flex-col gap-12">
+              <div className="flex flex-col gap-3.5">
+                <p className="ng-mono m-0 text-ng-ash">{t('home.byMood')}</p>
+                <h2 id="home-mood-title" className="ng-display ng-h2">{t('home.ngMoodTitle')} <em>{t('home.ngMoodTitleEm')}</em></h2>
+              </div>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                {moodCategories.map((mood) => (
+                  <Link key={mood.nameKey} to={`/catalog?family=${mood.filter}`} className="ng-mood">
+                    <span className="ng-mood__swatch" data-family={mood.family.toLowerCase()}>
+                      {siteImages[mood.siteImageKey] ? (
+                        <img src={img(siteImages[mood.siteImageKey], 720)} srcSet={srcSet(siteImages[mood.siteImageKey])} sizes="(max-width: 767px) 50vw, 320px" alt="" loading="lazy" decoding="async" />
+                      ) : null}
+                    </span>
+                    <span className="font-ng-display text-[24px] leading-none md:text-[28px]">{t(mood.nameKey)}</span>
+                    <span className="ng-mono text-ng-ash">{t(mood.shortKey)}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
 
@@ -327,29 +352,6 @@ const HomePage = () => {
               </div>
             </section>
           ) : null}
-
-          {/* ── Explore by mood ── */}
-          <section className="ng-section" aria-labelledby="home-mood-title" data-reveal>
-            <div className="ng-container flex flex-col gap-12">
-              <div className="flex flex-col gap-3.5">
-                <p className="ng-mono m-0 text-ng-ash">{t('home.byMood')}</p>
-                <h2 id="home-mood-title" className="ng-display ng-h2">{t('home.ngMoodTitle')} <em>{t('home.ngMoodTitleEm')}</em></h2>
-              </div>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {moodCategories.map((mood) => (
-                  <Link key={mood.nameKey} to={`/catalog?family=${mood.filter}`} className="ng-mood">
-                    <span className="ng-mood__swatch" data-family={mood.family.toLowerCase()}>
-                      {siteImages[mood.siteImageKey] ? (
-                        <img src={img(siteImages[mood.siteImageKey], 720)} srcSet={srcSet(siteImages[mood.siteImageKey])} sizes="(max-width: 767px) 50vw, 320px" alt="" loading="lazy" decoding="async" />
-                      ) : null}
-                    </span>
-                    <span className="font-ng-display text-[24px] leading-none md:text-[28px]">{t(mood.nameKey)}</span>
-                    <span className="ng-mono text-ng-ash">{t(mood.shortKey)}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
 
           {/* ── Why buy here ── */}
           <WhyBuyDirect />
