@@ -15,7 +15,8 @@ with photos(slug, files) as (
       ('ayang-ayang',       array['1-samping-label', '2-samping-kanan', '3-belakang']),
       ('aquilaria-tuberosa', array['1-depan', '2-samping-label', '3-samping-kanan', '4-belakang']),
       ('pantura',           array['1-depan', '2-samping-label', '3-samping-kanan', '4-samping', '5-belakang']),
-      ('jason-voorhees',    array['1-depan', '2-samping-label', '3-samping-kanan', '4-samping', '5-belakang'])
+      ('jason-voorhees',    array['1-depan', '2-samping-label', '3-samping-kanan', '4-samping', '5-belakang']),
+      ('la-rose',           array['1-depan', '2-samping-label', '3-samping-kanan', '4-samping', '5-belakang'])
 )
 update public.storefront_products as p
    set image_url = 'https://www.solivagantscent.com/brand/products/' || p.slug || '/' || ph.files[1] || '.webp',
@@ -31,5 +32,5 @@ commit;
 
 -- CEK
 --   select slug, image_url, jsonb_array_length(image_urls) from public.storefront_products
---    where slug in ('patchouli-so-sexy', 'lintang-asmoro', 'jata-bhumi', 'ayang-ayang', 'aquilaria-tuberosa', 'pantura', 'jason-voorhees') order by slug;
+--    where slug in ('patchouli-so-sexy', 'lintang-asmoro', 'jata-bhumi', 'ayang-ayang', 'aquilaria-tuberosa', 'pantura', 'jason-voorhees', 'la-rose') order by slug;
 --   -> ayang-ayang 3 foto, aquilaria-tuberosa 4, yang lain 5; image_url = foto pertama.
