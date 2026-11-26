@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES } from '../i18n/messages.js';
-import { CURATED_LIMIT_DESKTOP, hasCuration, pickCuratedProducts } from './curatedProducts.js';
+import { CURATED_LIMIT_DESKTOP, FEATURED_MIN_STOCK, HOME_GRID_LIMIT, hasBottlePhoto, hasCuration, perfumeCountOf, pickCuratedProducts, pickHomeShelf } from './curatedProducts.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -66,5 +66,39 @@ assert.ok(MESSAGES.en['home.note'].length > 20, 'but it must still give a reason
 // The redesign uppercases in CSS, so the call is optional; following the session is not.
 assert.match(home, /to="\/customer"[\s\S]{0,240}?\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)(\.toUpperCase\(\))?\}/, 'desktop hero second CTA follows the session');
 assert.match(home, /\{t\('home\.seeCollection'\)\}/, 'the original CTA stays — the reason is added, not swapped in');
+
+// --- 8. The home shows bottles (Dekito, 26 Nov 2026) --------------------------------------------------------
+// "Jangan Maskumambang yang jadi poin utamanya" — a label card at Rp999.000 with two left led the home — and
+// "foto produknya belum banyak di home". He chose: featured chosen automatically, a grid of eight, see all.
+const photo = (slug) => `https://www.solivagantscent.com/brand/products/${slug}/1-depan.webp`;
+const bottle = (slug, extra = {}) => ({ slug, featured: false, stock: 5, category: 'Floral', imageUrl: photo(slug), ...extra });
+const shelfCatalog = [
+  bottle('patchouli', { stock: 9 }),
+  bottle('maskumambang', { featured: true, stock: 2, imageUrl: 'https://x.supabase.co/storage/v1/object/public/label-card.webp' }),
+  bottle('ayang', { featured: true, stock: 1 }),
+  bottle('jason', { featured: true, stock: 1 }),
+  bottle('sold-out', { featured: true, stock: 0 }),
+  bottle('set', { category: 'Discovery Set', stock: 50 }),
+  ...Array.from({ length: 10 }, (_, i) => bottle(`b${i}`)),
+];
+assert.equal(hasBottlePhoto(shelfCatalog[0]), true);
+assert.equal(hasBottlePhoto(shelfCatalog[1]), false, 'a label card in storage is not a bottle photo');
+const shelf = pickHomeShelf({ curated: pickCuratedProducts(shelfCatalog, CURATED_LIMIT_DESKTOP), catalog: shelfCatalog });
+assert.equal(FEATURED_MIN_STOCK, 3);
+assert.equal(shelf.featured.slug, 'patchouli',
+  'featured: the first flagged bottle with a photo and at least FEATURED_MIN_STOCK — none here — else the first such bottle in the catalogue');
+assert.deepEqual(shelf.grid.slice(0, 2).map((x) => x.slug), ['ayang', 'jason'], 'flagged bottles with a photo lead the grid');
+assert.equal(shelf.grid.length, HOME_GRID_LIMIT, 'eight in the grid');
+for (const slug of ['maskumambang', 'sold-out', 'set', 'patchouli']) {
+  assert.ok(!shelf.grid.some((x) => x.slug === slug), `${slug} is not in the grid (label card / sold out / a set / already featured)`);
+}
+// Before any bottle photo exists the home falls back to the curation, so it is never empty because of this.
+const bare = shelfCatalog.map((x) => ({ ...x, imageUrl: '' }));
+const bareShelf = pickHomeShelf({ curated: pickCuratedProducts(bare, CURATED_LIMIT_DESKTOP), catalog: bare });
+assert.equal(bareShelf.featured.slug, 'maskumambang');
+assert.equal(perfumeCountOf(shelfCatalog), shelfCatalog.length - 1, 'sets are not counted as perfumes');
+assert.match(home, /pickHomeShelf\(\{/, 'the home takes its featured bottle and grid from pickHomeShelf');
+assert.match(home, /\{t\('home\.seeAllCount', \{ count: perfumeCount \}\)\}/, 'and ends on "Lihat semua N parfum"');
+assert.match(MESSAGES.id['home.seeAllCount'], /^Lihat semua \{count\} parfum$/);
 
 console.log('curatedProducts selfcheck OK (the featured flag decides the home; the hero says why to buy here)');
