@@ -18,6 +18,7 @@ import {
   getProductStockCorrections,
   getVisibleProductTags,
   isProductDraft,
+  productMainPhotoIsBottle,
 } from '@/services/productCatalogService.js';
 import { moodForEditing } from '@/utils/productMood.js';
 
@@ -40,6 +41,9 @@ export const toProductFormState = (product) => {
     // separately — the visible `tags` string above strips them, and without this a save would drop
     // every internal tag.
     internalTags: product.tags.filter((tag) => !visibleTags.includes(tag)),
+    // "Foto utama = foto botol": a checkbox on the form, a tag in the row. The tag also sits in internalTags
+    // above; normalizeProduct takes the boolean over it, so unticking really removes it.
+    bottlePhoto: product.bottlePhoto === true || productMainPhotoIsBottle(product),
     restockThreshold: getProductRestockThreshold(product),
     stockAdjustmentNote: '',
     stockCorrections: getProductStockCorrections(product),

@@ -50,6 +50,7 @@ export const snapshotProductForm = (product = {}) => JSON.stringify({
   // them out meant typing one and walking away threw it out with no warning at all.
   testimonials: normalizeTestimonials(product.testimonials),
   featured: Boolean(product.featured),
+  bottlePhoto: Boolean(product.bottlePhoto),
   limited: Boolean(product.limited),
   reserve: Boolean(product.reserve),
   catalogVisible: Boolean(product.catalogVisible),

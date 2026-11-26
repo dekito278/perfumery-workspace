@@ -72,7 +72,8 @@ Owner talks Indonesian; reply to him in Indonesian, plain and short. Code, commi
 - New bottle photos (26 Nov 2026, live, SQL 20261126090000 run): 11 perfumes are served from
   `public/brand/products/<slug>/*.webp` (1200×1600 webp, front-with-label first); old storage files kept, unused.
   Add more the same way: optimise into that folder, add the slug + file list to a new manual SQL, guard
-  `bottlePhotosExist` checks every listed file exists.
+  `bottlePhotosExist` checks every listed file exists. Or, with no code: Dekito uploads the photo in Studio and ticks "Foto utama = foto botol"
+  (tag `Main photo: bottle`, hidden in the app but passed by the public view; `hasBottlePhoto` reads both).
 - Discovery sets are live (SQL 20261118120000, 20261119090000, 20261119100000 run) but stock is 0 until
   Dekito fills it in Studio. A set ships as 250 g (his scale, 19 Nov 2026; Set Lengkap's own weight not
   given yet). Still waiting: the code printed on the Rp50.000/Rp100.000 card (make it a voucher).

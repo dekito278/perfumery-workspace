@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { KEYBOARD_FOCUS_TARGETS } from '../utils/keyboardTargets.js';
 
-const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="combobox"], [cmdk-input]';
+const focusTargets = KEYBOARD_FOCUS_TARGETS;
 const MIN_VISUAL_VIEWPORT_HEIGHT = 260;
 
 const getKeyboardMetrics = () => {

@@ -35,6 +35,12 @@ export const PRODUCT_BATCH_MOVEMENT_TAG_PREFIX = 'Stock movement:';
 export const PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX = 'Batch published at:';
 export const PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX = 'Restock threshold:';
 export const PRODUCT_STOCK_CORRECTION_TAG_PREFIX = 'Stock correction:';
+// "Foto utama = foto botol" (Dekito, 26 Nov 2026): a checkbox in Studio, so a bottle photo he uploads himself
+// counts on the home and in the catalogue like the ones served from /brand/products/. A tag, not a column, so
+// nothing has to be run in the database. Hidden from every tag list here (isHiddenProductTag); the public view
+// strips only the internal prefixes and lets it through, so the shop can read it.
+export const PRODUCT_MAIN_PHOTO_TAG_PREFIX = 'Main photo:';
+export const PRODUCT_MAIN_PHOTO_BOTTLE_TAG = 'Main photo: bottle';
 
 const PRODUCT_INTERNAL_TAG_PREFIXES = [
   PRODUCT_BATCH_TAG_PREFIX,
@@ -54,6 +60,12 @@ const PRODUCT_INTERNAL_TAG_PREFIXES = [
   PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX,
   PRODUCT_STOCK_CORRECTION_TAG_PREFIX,
 ];
+
+// Not a label and not a secret: hidden from every tag list in the app, but deliberately NOT internal — the
+// public view strips internal prefixes (publicProductsView guard keeps the two lists equal), and the shop
+// must read this one.
+const isHiddenProductTag = (tag) => PRODUCT_INTERNAL_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix))
+  || tag.startsWith(PRODUCT_MAIN_PHOTO_TAG_PREFIX);
 
 const FALLBACK_VISUALS = [
   'from-[#f5d78f] via-[#f8efe1] to-[#d7b98b]',
@@ -260,9 +272,13 @@ const getProductInternalTagValue = (product = {}, prefix) => {
   return tag ? tag.slice(prefix.length).trim() : '';
 };
 
+/** The product's main photo is a bottle photograph (the Studio checkbox). */
+export const productMainPhotoIsBottle = (product = {}) => splitList(product?.tags)
+  .some((tag) => tag.trim().toLowerCase() === PRODUCT_MAIN_PHOTO_BOTTLE_TAG.toLowerCase());
+
 export const getVisibleProductTags = (product = {}) => splitList(product.tags).filter((tag) => (
   tag.toLowerCase() !== PRODUCT_DRAFT_TAG.toLowerCase()
-  && !PRODUCT_INTERNAL_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix))
+  && !isHiddenProductTag(tag)
 ));
 
 export const getProductBatchDetails = (product = {}) => ({
@@ -537,11 +553,15 @@ export const normalizeProduct = (input, existingProducts = []) => {
   const slug = ensureUniqueSlug(toSlug(input.slug || input.name), existingProducts, id);
   const visualIndex = Math.abs(String(slug).split('').reduce((sum, character) => sum + character.charCodeAt(0), 0)) % FALLBACK_VISUALS.length;
   const parsedVisibleTags = splitList(input.tags)
-    .filter((tag) => !PRODUCT_INTERNAL_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix)));
+    .filter((tag) => !isHiddenProductTag(tag));
   const visibleTags = parsedVisibleTags.length ? parsedVisibleTags : ['Custom'];
   const preservedInternalTags = [...splitList(input.tags), ...splitList(input.internalTags)]
     .filter((tag) => PRODUCT_INTERNAL_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix)))
     .filter((tag) => !tag.startsWith(PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX) && !tag.startsWith(PRODUCT_STOCK_CORRECTION_TAG_PREFIX));
+  // The form sends the checkbox as a boolean; a row from the database carries only the tag.
+  const bottlePhoto = typeof input.bottlePhoto === 'boolean'
+    ? input.bottlePhoto
+    : productMainPhotoIsBottle(input) || productMainPhotoIsBottle({ tags: input.internalTags });
   const restockThreshold = getProductRestockThreshold(input);
   const stockCorrections = Array.isArray(input.stockCorrections) ? input.stockCorrections : getProductStockCorrections(input);
 
@@ -595,7 +615,9 @@ export const normalizeProduct = (input, existingProducts = []) => {
       ...preservedInternalTags,
       `${PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX}${restockThreshold}`,
       ...stockCorrections.slice(0, 20).map(serializeStockCorrection),
+      ...(bottlePhoto ? [PRODUCT_MAIN_PHOTO_BOTTLE_TAG] : []),
     ],
+    bottlePhoto,
     intensity: input.intensity || 'Medium',
     wear: normalizeWear(input.wear),
     featured: Boolean(input.featured),
