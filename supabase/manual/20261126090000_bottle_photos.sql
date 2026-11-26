@@ -17,12 +17,13 @@ update public.storefront_products as p
        updated_at = now()
  where p.slug in (
      'patchouli-so-sexy',
-     'lintang-asmoro'
+     'lintang-asmoro',
+     'jata-bhumi'
  );
 
 commit;
 
 -- CEK
 --   select slug, image_url, jsonb_array_length(image_urls) from public.storefront_products
---    where slug in ('patchouli-so-sexy', 'lintang-asmoro');
+--    where slug in ('patchouli-so-sexy', 'lintang-asmoro', 'jata-bhumi');
 --   -> tiap baris .../1-depan.webp dan 5
