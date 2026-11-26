@@ -37,11 +37,21 @@ const getMaxScrollableTop = (scroller) => {
 // of the home page opened the catalogue at the bottom and slid it up over a second. On an iPhone the slide was cut
 // short while the page was still loading and the buyer was left halfway down (Dekito, 26 Nov 2026: "pada saat saya
 // klik kartu ini dia mengarahnya turun ke bawah"). The smooth setting is lifted for this one jump and put back.
+//
+// The style has to be READ before the jump: set-and-restore with nothing in between let the browser skip the
+// 'auto' entirely (no style recalc happened), and the slide stayed — measured on production, 26 Nov 2026. So the
+// override is flushed (getComputedStyle), and the jump also asks for 'instant' itself, which modern browsers honour
+// over the stylesheet.
 const jumpWindowTo = (top) => {
     const root = document.documentElement;
     const before = root.style.scrollBehavior;
     root.style.scrollBehavior = 'auto';
-    window.scrollTo(0, top);
+    void window.getComputedStyle(root).scrollBehavior;
+    try {
+        window.scrollTo({ top, left: 0, behavior: 'instant' });
+    } catch {
+        window.scrollTo(0, top);
+    }
     root.style.scrollBehavior = before;
 };
 
