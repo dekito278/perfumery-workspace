@@ -103,6 +103,11 @@ assert.doesNotMatch(create, /buyer_account:\s*input\./, 'a buyer_account the bro
 const ask = reviewRequestMessage({ customerName: 'rina sari' }, 'https://www.solivagantscent.com/');
 assert.match(ask, /^Halo Rina, ini SOLIVAGANT\./);
 assert.match(ask, /https:\/\/www\.solivagantscent\.com\/customer#ulasan/);
+// With an order number, the ask carries it and how to link the order (26 Nov 2026) — Dekito types nothing.
+const askWithOrder = reviewRequestMessage({ customerName: 'rina', orderNumber: 'DKT-ABC123' });
+assert.match(askWithOrder, /nomor order DKT-ABC123/);
+assert.match(askWithOrder, /Pesanan lama belum muncul\?/, 'and names the button the buyer presses');
+assert.doesNotMatch(ask, /nomor order/, 'no number, no linking line');
 assert.doesNotMatch(read('../services/notificationTemplateService.js'), /reviewRequestMessage|minta ulasan/i,
   'the order-confirmation/notification templates are Dekito\'s flow and stay untouched');
 

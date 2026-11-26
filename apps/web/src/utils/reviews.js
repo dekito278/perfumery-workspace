@@ -135,10 +135,16 @@ export const normalizeReviewableItem = (row = {}) => ({
 export const reviewRequestMessage = (order = {}, origin = 'https://www.solivagantscent.com') => {
   const firstName = reviewDisplayName(order.customerName || order.customer_name || '').split(' ')[0];
   const hello = firstName ? `Halo ${firstName}, ini SOLIVAGANT.` : 'Halo, ini SOLIVAGANT.';
+  const orderNumber = String(order.orderNumber || order.order_number || '').trim();
   return [
     hello,
     'Parfumnya sudah sempat dipakai? Kalau berkenan, kami minta ulasannya ya — cukup pilih bintang, tulisannya boleh singkat.',
-    `Masuk dengan akun Google yang kamu pakai waktu pesan di ${String(origin).replace(/\/$/, '')}/customer#${REVIEWS_ANCHOR}`,
+    `Masuk dengan akun Google di ${String(origin).replace(/\/$/, '')}/customer#${REVIEWS_ANCHOR}`,
+    // An order placed without signing in is not on the account yet (26 Nov 2026): the buyer links it with the
+    // order number and their WhatsApp number — so the message carries the number, and Dekito types nothing.
+    orderNumber
+      ? `Kalau pesananmu belum muncul di sana, tekan "Pesanan lama belum muncul?" lalu isi nomor order ${orderNumber} dan nomor WhatsApp yang kamu pakai waktu pesan.`
+      : null,
     'Terima kasih sudah jalan bareng kami.',
-  ].join('\n\n');
+  ].filter(Boolean).join('\n\n');
 };
