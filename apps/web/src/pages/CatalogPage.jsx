@@ -3,6 +3,7 @@ import CardRating from '@/components/storefront/CardRating.jsx';
 import { useReviewStats } from '@/hooks/useReviews.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { isDiscoverySet } from '@/utils/discoverySet.js';
+import { hasBottlePhoto } from '@/utils/curatedProducts.js';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Plus } from 'lucide-react';
@@ -168,10 +169,13 @@ const CatalogPage = () => {
   const filteredProducts = useMemo(
     () => narrowedProducts
       .filter((product) => matchesCatalogCategory(product, activeCategory))
-      .map((product, index) => ({ product, index, soldOut: product.publicStatus !== 'Available', set: isDiscoverySet(product) }))
+      .map((product, index) => ({ product, index, soldOut: product.publicStatus !== 'Available', set: isDiscoverySet(product), card: !hasBottlePhoto(product) }))
       // In stock first; then perfumes before discovery sets (19 Nov 2026: the sets are the newest rows, and
-      // five near-identical boxes would otherwise open the collection); then the catalogue's own order.
-      .sort((a, b) => (Number(a.soldOut) - Number(b.soldOut)) || (Number(a.set) - Number(b.set)) || (a.index - b.index))
+      // five near-identical boxes would otherwise open the collection); then bottles with a photograph before
+      // the ones still on a label card (26 Nov 2026 — the grid is photos now, and a page that opened on white
+      // cards looked unfinished); then the catalogue's own order.
+      .sort((a, b) => (Number(a.soldOut) - Number(b.soldOut)) || (Number(a.set) - Number(b.set))
+        || (Number(a.card) - Number(b.card)) || (a.index - b.index))
       .map(({ product }) => product),
     [narrowedProducts, activeCategory],
   );
@@ -273,68 +277,59 @@ const CatalogPage = () => {
           <section className="ng-section !pt-6 md:!pt-12" aria-label={t('catalog.ngResults')}>
             <div className="ng-container">
               {isLoading ? (
-                <div className="flex flex-col" aria-hidden="true">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="ng-cat-row">
-                      <span />
-                      <span className="editorial-skel block h-[90px] w-[72px]" />
-                      <span className="editorial-skel block h-8 w-2/3" />
+                <div className="ng-cat-grid" aria-hidden="true">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="flex flex-col gap-3">
+                      <span className="editorial-skel block aspect-[4/5] w-full" />
+                      <span className="editorial-skel block h-7 w-2/3" />
                     </div>
                   ))}
                 </div>
               ) : filteredProducts.length ? (
-                <div className="flex flex-col" id="catalog-results" tabIndex={-1}>
-                  <div className="ng-cat-row ng-cat-row--head ng-mono" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span>{t('home.ngColWork')}</span>
-                    <span className="ng-cat-row__notes">{t('home.ngColNotes')}</span>
-                    <span>{t('home.ngColPrice')}</span>
-                    <span />
-                  </div>
+                // A grid of photographs (Dekito, 26 Nov 2026: "foto produknya belum banyak … orang buat nyari seluruh
+                // fragrance itu agak sulit"). It was a table with a 72 px thumbnail; a buyer choosing a bottle
+                // wants to see the bottle. 2 columns on a phone, 3 on a tablet, 4 on a laptop.
+                <ul className="ng-cat-grid m-0 list-none p-0" id="catalog-results" tabIndex={-1}>
                   {visibleProducts.map((product, index) => {
                     const named = splitScriptName(product.name);
                     const available = product.publicStatus === 'Available';
                     return (
-                      <div key={product.slug || product.id} className="ng-cat-row">
-                        <span className="ng-cat-row__no ng-mono text-ng-ember">{String(index + 1).padStart(2, '0')}</span>
-                        {/* The photo and the name are the two links; the add button sits beside them, not
+                      <li key={product.slug || product.id} className="ng-cat-card">
+                        {/* The photo and the name are the two links; the add button sits below them, not
                             inside an <a> — a button nested in a link is two controls a keyboard cannot
                             tell apart, which is how the old card was built. */}
-                        <Link to={`/catalog/${product.slug}`} className="ng-cat-row__thumb" tabIndex={-1} aria-hidden="true">
+                        <Link to={`/catalog/${product.slug}`} className="block" tabIndex={-1} aria-hidden="true">
                           <ProductVisual
                             product={product}
-                            className="h-full w-full"
+                            className="aspect-[4/5] w-full"
                             imageFit="cover"
                             priority={index < 4}
                             label={false}
-                            sizes="72px"
+                            sizes="(max-width: 767px) 50vw, (max-width: 1099px) 33vw, 300px"
                           />
                         </Link>
-                        <Link to={`/catalog/${product.slug}`} className="ng-cat-row__name">
+                        <Link to={`/catalog/${product.slug}`} className="ng-cat-card__name">
+                          <span className="ng-cat-card__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || t('catalog.cardFallbackLabel')}</span>
                           {/* A heading per perfume, so a screen reader can move through the list by name (fifth
                               visitor audit, 13 Nov 2026: 19 perfumes under one h1 and nothing else). */}
-                          <h2 className="m-0 font-ng-display text-[28px] font-normal leading-none [overflow-wrap:anywhere] md:text-[34px]">{named.name}</h2>
-                          <span className="ng-cat-row__label ng-mono text-ng-ash">{cardLabels(product).join(' · ') || t('catalog.cardFallbackLabel')}</span>
+                          <h2 className="m-0 font-ng-display text-[24px] font-normal leading-none [overflow-wrap:anywhere] md:text-[28px]">{named.name}</h2>
                           <CardRating stats={reviewStats[product.slug]} className="self-start" />
                         </Link>
-                        {/* What it smells of, in three words. The field holds the full material list since
-                            2026-10-07 — far too long for a row — so this reuses the clamp the cart lines
-                            already use rather than inventing a second idea of how much is too much. */}
-                        <span className="ng-cat-row__notes text-[15px] leading-normal text-ng-dust">
+                        {/* What it smells of, in three words — the clamp the cart lines already use. */}
+                        <span className="text-[14px] leading-normal text-ng-dust">
                           {shortNoteList(productCopyFor(product, region).notes, CARD_NOTE_LIMIT)}
                         </span>
-                        <span className="ng-cat-row__price flex flex-col gap-1 text-base">
+                        <span className="flex flex-col gap-1 text-[15px]">
                           <CardPrice product={product} />
                         </span>
-                        <span className="ng-cat-row__act">
+                        <span className="mt-auto pt-1">
                           {/* Quick-add in both shops since 2026-10-06. It once added the bottle at the
                               DOMESTIC price into a cart the English shop could not open. The English cart
-                              now prices every line at its export price on read, so what the row adds is a
+                              now prices every line at its export price on read, so what the card adds is a
                               line, not a price. */}
                           <button
                             type="button"
-                            className="ng-btn ng-btn--ghost !min-h-[44px] !px-4"
+                            className="ng-btn ng-btn--ghost !min-h-[44px] w-full !px-3"
                             onClick={(event) => handleQuickAdd(event, product)}
                             aria-label={!available ? t('catalog.soldOutAria', { name: plainName(product.name) }) : t('catalog.addAria', { name: plainName(product.name) })}
                             disabled={!available}
@@ -348,10 +343,10 @@ const CatalogPage = () => {
                             )}
                           </button>
                         </span>
-                      </div>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               ) : (
                 <div className="flex flex-col items-start gap-5 py-14">
                   {/* Two different situations, two different messages: nothing matched the filter, or the

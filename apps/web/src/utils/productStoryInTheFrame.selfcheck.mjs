@@ -30,7 +30,7 @@ assert.match(page, /import ProductStory from '@\/components\/storefront\/Product
 
 // --- 2. Between the buy block and the pyramid ----------------------------------------------------------
 const storyAt = page.indexOf('<ProductStory product={product} story={productStory}');
-const buyAt = page.indexOf('ref={addBtnRef}');
+const buyAt = page.indexOf('ref={setAddBtn}'); // a callback ref since 26 Nov 2026 (the sticky bar watches it once it mounts)
 const pyramidAt = page.indexOf('aria-labelledby="pdp-pyramid-heading"');
 assert.ok(storyAt > 0, 'the product page no longer shows the story');
 assert.ok(buyAt > 0 && pyramidAt > 0, 'the buy button or the pyramid moved — this check lost its landmarks');

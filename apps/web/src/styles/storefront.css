@@ -2319,8 +2319,21 @@ main :is(a, figure, picture, div, span):has(> img) {
 }
 
 /* Clear of the close button in the corner. */
-.free-vial-prompt__sheet > .free-vial__head {
+.free-vial-prompt__sheet > .free-vial__head,
+.free-vial-prompt__sheet > .free-vial__added {
   padding-right: 48px;
+}
+
+/* What just went into the cart — the sheet is the one announcement for the add (26 Nov 2026). */
+.free-vial__added {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ng-line);
+  font-size: 15px;
+  color: var(--ng-bone);
 }
 
 .free-vial-prompt__close {
