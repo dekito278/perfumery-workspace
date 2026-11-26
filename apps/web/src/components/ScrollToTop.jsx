@@ -32,9 +32,22 @@ const getMaxScrollableTop = (scroller) => {
     return scroller.scrollHeight - scroller.clientHeight;
 };
 
+// A new page starts where it starts — instantly. The storefront sets `scroll-behavior: smooth` on <html> (for
+// "back to top" and in-page links), and that made window.scrollTo ANIMATE here: a tap on a card near the bottom
+// of the home page opened the catalogue at the bottom and slid it up over a second. On an iPhone the slide was cut
+// short while the page was still loading and the buyer was left halfway down (Dekito, 26 Nov 2026: "pada saat saya
+// klik kartu ini dia mengarahnya turun ke bawah"). The smooth setting is lifted for this one jump and put back.
+const jumpWindowTo = (top) => {
+    const root = document.documentElement;
+    const before = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    window.scrollTo(0, top);
+    root.style.scrollBehavior = before;
+};
+
 const scrollToTop = (scroller, top) => {
     if (scroller === window) {
-        window.scrollTo(0, top);
+        jumpWindowTo(top);
         return;
     }
 
